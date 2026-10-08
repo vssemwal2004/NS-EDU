@@ -1,0 +1,174 @@
+{
+  "date": "2026-10-06",
+  "scope": "Public homepage research, 32 references attempted; 21 rendered, 11 blocked. Selected mobile and lower-page captures. No accounts created or forms submitted.",
+  "notes": [
+    [
+      "Shiksha",
+      "Text; browser403",
+      "Dense course taxonomy; comparison, predictors, current-student Q&A; exact visual/font not verified."
+    ],
+    [
+      "CollegeDekho",
+      "Desktop/mobile",
+      "Navy/orange photo-video hero; two actions; journey and guidance tiles; system font stack."
+    ],
+    [
+      "CollegeDunia",
+      "Text; browser403",
+      "Goal/city selection, program tabs, course finder, scholarships, reviews and news; visual not verified."
+    ],
+    [
+      "Careers360",
+      "Desktop/mobile",
+      "White search header, lilac split hero, orange CTA, predictor promos, news and counselling; Arial."
+    ],
+    [
+      "GetMyUni",
+      "Desktop/mobile",
+      "Blue header, campus carousel, tabbed search, city discovery and scholarships; system sans."
+    ],
+    [
+      "CollegePravesh",
+      "Text; browser403",
+      "Institution/exam information reference; challenge page is not brand UI."
+    ],
+    [
+      "CollegeBatch",
+      "Desktop",
+      "Very large campus photo/search hero; recently updated profiles and reviews; Roboto."
+    ],
+    [
+      "Vidyavision",
+      "Desktop",
+      "Two navigation tiers, campus hero, results and admissions blocks; Arial."
+    ],
+    [
+      "Sarvgyan",
+      "Desktop",
+      "Article-led cards/carousel and course-career articles; Poppins/system stack."
+    ],
+    [
+      "CollegeSearch",
+      "Desktop/mobile",
+      "Graphite navigation, course-location search, preferred-course panel, compact news cards; Roboto."
+    ],
+    [
+      "CollegeChalo",
+      "Desktop",
+      "Centered blue search hero, live application cards, stream/news/scholarship sections; Poppins."
+    ],
+    [
+      "Buddy4Study",
+      "Desktop/mobile",
+      "Scholarship-first search, banners and opportunities; Poppins; floating WhatsApp overlaps content in captured mobile state."
+    ],
+    [
+      "Mindler",
+      "Desktop/mobile",
+      "Centered assessment hero, career illustration, stage-specific programs, AI prompt; Open Sans."
+    ],
+    [
+      "iDreamCareer",
+      "Text; browser403",
+      "Career-guidance reference only; challenge prevents reliable visual comparison."
+    ],
+    [
+      "Univariety",
+      "Desktop",
+      "Current home is institution/alumni oriented; B2B adjacent reference, not direct college-search competitor; Jost."
+    ],
+    [
+      "CareerGuide",
+      "Desktop/mobile",
+      "AI/assessment positioning, watercolor rocket hero and counselling paths; Inter/Noto Sans Devanagari."
+    ],
+    [
+      "Yocket",
+      "Desktop/mobile",
+      "Graduation photo hero, expert guidance and product dashboard previews; Satoshi; sticky eligibility bar."
+    ],
+    [
+      "LeverageEdu",
+      "Desktop",
+      "Editorial serif photography hero, consultation CTA and study/work paths; Source Serif Pro/Proxima Nova/Rubik."
+    ],
+    [
+      "IDP",
+      "Browser403; web fetch failed",
+      "No current UI conclusions drawn."
+    ],
+    [
+      "ApplyBoard",
+      "Desktop/mobile",
+      "Student cutout shapes, prominent registration action, application benefits; Montserrat/Open Sans; cookie overlay captured."
+    ],
+    [
+      "Bachelorsportal",
+      "Text; browser403",
+      "Degree discipline filters, personalized suggestions and study tools; no visual conclusions."
+    ],
+    [
+      "Mastersportal",
+      "Text; browser403",
+      "Explore/compare/apply journey, saved recommendations, Sophia AI advisor; no visual conclusions."
+    ],
+    [
+      "Educations",
+      "Desktop/mobile",
+      "Subject/destination inputs, subject cards, matching quiz; Poppins/Open Sans; mobile cookie dialog obscures hero."
+    ],
+    [
+      "HotcoursesAbroad",
+      "Browser403; web fetch failed",
+      "No current UI conclusions drawn."
+    ],
+    [
+      "SI-UK / StudyIn",
+      "Text; browser403",
+      "Redirected to StudyIn; counselling reference; visual blocked."
+    ],
+    [
+      "StudyLink / Goingto.University",
+      "Text; browser403",
+      "Redirected education-journey resource; visual blocked."
+    ],
+    [
+      "Studyportals",
+      "Desktop",
+      "Institution/student audience split; adjacent parent-company reference; Plus Jakarta Sans."
+    ],
+    [
+      "Niche",
+      "Text; browser403",
+      "Fit quiz, personal list, reviews and compare; direct-admissions offering exists but cannot be promised by NSEDU."
+    ],
+    [
+      "UCAS",
+      "Desktop + text",
+      "Search-led course/university/career journey, dates/funding and account CTA; cookie overlay captured; Roboto."
+    ],
+    [
+      "Prospects",
+      "Desktop + text",
+      "Career-first matching quiz and clear job/study paths; Ne10 simplified/Source Sans Pro; cookie overlay captured."
+    ],
+    [
+      "Whatuni",
+      "Desktop + text",
+      "Course/university search, student-choice rankings, open days and scholarship navigation; Farro/Inter; cookie overlay."
+    ],
+    [
+      "UniCompare",
+      "Desktop + text",
+      "Course/degree-level search, university photos, favorites and guides; Outfit."
+    ]
+  ],
+  "limitations": [
+    "Homepage review does not prove a feature is absent elsewhere.",
+    "Computed font-family reports CSS declarations, not verified licensed font files.",
+    "Animation counts are snapshots, not descriptions of all animation behavior.",
+    "Generated boards are static concepts; motion is proposed, not implemented.",
+    "Demonstration institution names, numbers, dates and labels are not publication-ready factual content.",
+    "No conversion uplift or global uniqueness claim."
+  ]
+}

@@ -1,0 +1,232 @@
+{
+  "date": "2026-10-07 (IST)",
+  "status": "passed",
+  "responsive": {
+    "widths": [
+      320,
+      360,
+      390,
+      600,
+      640,
+      768,
+      900,
+      901,
+      1100,
+      1101,
+      1280,
+      1440,
+      1672,
+      1920
+    ],
+    "checks": 28,
+    "failures": [],
+    "browserErrors": [],
+    "captureNote": "Same responsive width; isolated captures hide header and extend viewport height for full paint. Viewport captures retain fixed header."
+  },
+  "heights": [
+    {
+      "section": "course-eligibility",
+      "width": 320,
+      "before": 857.47,
+      "after": 908.53
+    },
+    {
+      "section": "college-budget",
+      "width": 320,
+      "before": 1455.16,
+      "after": 1492.41
+    },
+    {
+      "section": "course-eligibility",
+      "width": 360,
+      "before": 794.7,
+      "after": 827.27
+    },
+    {
+      "section": "college-budget",
+      "width": 360,
+      "before": 1346.92,
+      "after": 1365.58
+    },
+    {
+      "section": "course-eligibility",
+      "width": 390,
+      "before": 778.23,
+      "after": 810.8
+    },
+    {
+      "section": "college-budget",
+      "width": 390,
+      "before": 1311.66,
+      "after": 1330.31
+    },
+    {
+      "section": "course-eligibility",
+      "width": 600,
+      "before": 785.14,
+      "after": 817.7
+    },
+    {
+      "section": "college-budget",
+      "width": 600,
+      "before": 1267.55,
+      "after": 1319.78
+    },
+    {
+      "section": "course-eligibility",
+      "width": 640,
+      "before": 785.14,
+      "after": 817.7
+    },
+    {
+      "section": "college-budget",
+      "width": 640,
+      "before": 1267.55,
+      "after": 1319.78
+    },
+    {
+      "section": "course-eligibility",
+      "width": 768,
+      "before": 605.94,
+      "after": 638.5
+    },
+    {
+      "section": "college-budget",
+      "width": 768,
+      "before": 808.94,
+      "after": 821.67
+    },
+    {
+      "section": "course-eligibility",
+      "width": 900,
+      "before": 605.94,
+      "after": 638.5
+    },
+    {
+      "section": "college-budget",
+      "width": 900,
+      "before": 808.94,
+      "after": 821.67
+    },
+    {
+      "section": "course-eligibility",
+      "width": 901,
+      "before": 448.75,
+      "after": 448.84
+    },
+    {
+      "section": "college-budget",
+      "width": 901,
+      "before": 808.94,
+      "after": 821.67
+    },
+    {
+      "section": "course-eligibility",
+      "width": 1100,
+      "before": 448.75,
+      "after": 448.84
+    },
+    {
+      "section": "college-budget",
+      "width": 1100,
+      "before": 808.94,
+      "after": 821.67
+    },
+    {
+      "section": "course-eligibility",
+      "width": 1101,
+      "before": 447.19,
+      "after": 447.28
+    },
+    {
+      "section": "college-budget",
+      "width": 1101,
+      "before": 724.34,
+      "after": 737.08
+    },
+    {
+      "section": "course-eligibility",
+      "width": 1280,
+      "before": 452.13,
+      "after": 450.47
+    },
+    {
+      "section": "college-budget",
+      "width": 1280,
+      "before": 732.78,
+      "after": 745.69
+    },
+    {
+      "section": "course-eligibility",
+      "width": 1440,
+      "before": 461.97,
+      "after": 458.94
+    },
+    {
+      "section": "college-budget",
+      "width": 1440,
+      "before": 749.05,
+      "after": 762.38
+    },
+    {
+      "section": "course-eligibility",
+      "width": 1672,
+      "before": 473.34,
+      "after": 470.94
+    },
+    {
+      "section": "college-budget",
+      "width": 1672,
+      "before": 760.31,
+      "after": 774.89
+    },
+    {
+      "section": "course-eligibility",
+      "width": 1920,
+      "before": 473.34,
+      "after": 470.94
+    },
+    {
+      "section": "college-budget",
+      "width": 1920,
+      "before": 760.31,
+      "after": 774.89
+    }
+  ],
+  "implementation": {
+    "theme": "frontend/src/styles/index.css",
+    "sharedArtwork": [
+      "frontend/src/features/landing/SectionVisuals.js",
+      "frontend/src/features/landing/SectionVisuals.module.css"
+    ],
+    "iconAdditions": [
+      "wallet",
+      "spark"
+    ],
+    "featureLogicChanged": false,
+    "newRasterDownloads": 0,
+    "newFontDownloads": 0,
+    "newDependencies": 0,
+    "decorativeAnimations": false,
+    "accessibility": "Decorative layers use aria-hidden and do not intercept controls. Mobile inputs remain >=16px and action targets >=44px."
+  },
+  "checks": {
+    "lint": {
+      "command": "npm run lint",
+      "status": "passed",
+      "exitCode": 0
+    },
+    "interactionTests": {
+      "command": "node node_modules/@playwright/test/cli.js test --config frontend/playwright.config.mjs --workers 1 --timeout 120000 budget.spec.js eligibility.spec.js header-scroll.spec.js",
+      "status": "passed",
+      "passed": 34,
+      "failed": 0,
+      "note": "Initial parallel run was interrupted after test timeouts while host CPU usage measured 100%. A serial run verifies the same cases with a longer per-test timeout."
+    },
+    "productionBuild": {
+      "command": "npm run build",
+      "status": "passed",
+      "exitCode": 0
+    }
+  }
+}

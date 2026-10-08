@@ -1,0 +1,1073 @@
+{
+  "sizes": [
+    {
+      "width": 1920,
+      "section": {
+        "x": 0,
+        "y": 288.109375,
+        "width": 1920,
+        "height": 652.609375
+      },
+      "layout": {
+        "x": 220,
+        "y": 344.109375,
+        "width": 1480,
+        "height": 540.609375
+      },
+      "horizontalOverflow": false,
+      "cards": [
+        {
+          "x": 706.796875,
+          "y": 440.09375,
+          "width": 301.71875,
+          "height": 336.03125,
+          "title": {
+            "x": 727.796875,
+            "y": 653.09375,
+            "width": 111.875,
+            "height": 53.75
+          },
+          "description": {
+            "x": 727.796875,
+            "y": 714.84375,
+            "width": 259.71875,
+            "height": 40.28125
+          }
+        },
+        {
+          "x": 1024.515625,
+          "y": 440.09375,
+          "width": 301.734375,
+          "height": 336.03125,
+          "title": {
+            "x": 1045.515625,
+            "y": 653.09375,
+            "width": 105.171875,
+            "height": 53.75
+          },
+          "description": {
+            "x": 1045.515625,
+            "y": 714.84375,
+            "width": 259.734375,
+            "height": 40.28125
+          }
+        },
+        {
+          "x": 1342.25,
+          "y": 440.09375,
+          "width": 301.71875,
+          "height": 336.03125,
+          "title": {
+            "x": 1363.25,
+            "y": 653.09375,
+            "width": 165.59375,
+            "height": 53.75
+          },
+          "description": {
+            "x": 1363.25,
+            "y": 714.84375,
+            "width": 259.71875,
+            "height": 40.28125
+          }
+        }
+      ],
+      "controls": [
+        {
+          "label": "Diploma or another qualification? Choose here",
+          "x": 706.796875,
+          "y": 802.125,
+          "width": 339.75,
+          "height": 46
+        },
+        {
+          "label": "Continue",
+          "x": 1463.359375,
+          "y": 800.125,
+          "width": 180.625,
+          "height": 50
+        }
+      ],
+      "overflowText": []
+    },
+    {
+      "width": 1672,
+      "section": {
+        "x": 0,
+        "y": 288.375,
+        "width": 1672,
+        "height": 652.609375
+      },
+      "layout": {
+        "x": 96,
+        "y": 344.375,
+        "width": 1480,
+        "height": 540.609375
+      },
+      "horizontalOverflow": false,
+      "cards": [
+        {
+          "x": 582.796875,
+          "y": 440.359375,
+          "width": 301.71875,
+          "height": 336.03125,
+          "title": {
+            "x": 603.796875,
+            "y": 653.359375,
+            "width": 111.875,
+            "height": 53.75
+          },
+          "description": {
+            "x": 603.796875,
+            "y": 715.109375,
+            "width": 259.71875,
+            "height": 40.28125
+          }
+        },
+        {
+          "x": 900.515625,
+          "y": 440.359375,
+          "width": 301.734375,
+          "height": 336.03125,
+          "title": {
+            "x": 921.515625,
+            "y": 653.359375,
+            "width": 105.171875,
+            "height": 53.75
+          },
+          "description": {
+            "x": 921.515625,
+            "y": 715.109375,
+            "width": 259.734375,
+            "height": 40.28125
+          }
+        },
+        {
+          "x": 1218.25,
+          "y": 440.359375,
+          "width": 301.71875,
+          "height": 336.03125,
+          "title": {
+            "x": 1239.25,
+            "y": 653.359375,
+            "width": 165.59375,
+            "height": 53.75
+          },
+          "description": {
+            "x": 1239.25,
+            "y": 715.109375,
+            "width": 259.71875,
+            "height": 40.28125
+          }
+        }
+      ],
+      "controls": [
+        {
+          "label": "Diploma or another qualification? Choose here",
+          "x": 582.796875,
+          "y": 802.390625,
+          "width": 339.75,
+          "height": 46
+        },
+        {
+          "label": "Continue",
+          "x": 1339.359375,
+          "y": 800.390625,
+          "width": 180.625,
+          "height": 50
+        }
+      ],
+      "overflowText": []
+    },
+    {
+      "width": 1366,
+      "section": {
+        "x": 0,
+        "y": 340.328125,
+        "width": 1366,
+        "height": 601.140625
+      },
+      "layout": {
+        "x": 0,
+        "y": 386.765625,
+        "width": 1366,
+        "height": 508.265625
+      },
+      "horizontalOverflow": false,
+      "cards": [
+        {
+          "x": 448.15625,
+          "y": 476.4375,
+          "width": 277.0625,
+          "height": 310,
+          "title": {
+            "x": 466.21875,
+            "y": 663.09375,
+            "width": 102.328125,
+            "height": 49.171875
+          },
+          "description": {
+            "x": 466.21875,
+            "y": 720.265625,
+            "width": 240.9375,
+            "height": 40.28125
+          }
+        },
+        {
+          "x": 741.21875,
+          "y": 476.4375,
+          "width": 277.0625,
+          "height": 310,
+          "title": {
+            "x": 759.28125,
+            "y": 663.09375,
+            "width": 96.203125,
+            "height": 49.171875
+          },
+          "description": {
+            "x": 759.28125,
+            "y": 720.265625,
+            "width": 240.9375,
+            "height": 40.28125
+          }
+        },
+        {
+          "x": 1034.28125,
+          "y": 476.4375,
+          "width": 277.078125,
+          "height": 310,
+          "title": {
+            "x": 1052.34375,
+            "y": 663.09375,
+            "width": 151.46875,
+            "height": 49.171875
+          },
+          "description": {
+            "x": 1052.34375,
+            "y": 720.265625,
+            "width": 240.953125,
+            "height": 40.28125
+          }
+        }
+      ],
+      "controls": [
+        {
+          "label": "Diploma or another qualification? Choose here",
+          "x": 448.15625,
+          "y": 812.4375,
+          "width": 339.75,
+          "height": 46
+        },
+        {
+          "label": "Continue",
+          "x": 1130.734375,
+          "y": 810.4375,
+          "width": 180.625,
+          "height": 50
+        }
+      ],
+      "overflowText": []
+    },
+    {
+      "width": 1101,
+      "section": {
+        "x": 0,
+        "y": 363.03125,
+        "width": 1101,
+        "height": 577.921875
+      },
+      "layout": {
+        "x": 0,
+        "y": 400.453125,
+        "width": 1101,
+        "height": 503.078125
+      },
+      "horizontalOverflow": false,
+      "cards": [
+        {
+          "x": 361.21875,
+          "y": 484.9375,
+          "width": 221.25,
+          "height": 310,
+          "title": {
+            "x": 378.21875,
+            "y": 663.9375,
+            "width": 95.890625,
+            "height": 46.078125
+          },
+          "description": {
+            "x": 378.21875,
+            "y": 718.015625,
+            "width": 187.25,
+            "height": 40.28125
+          }
+        },
+        {
+          "x": 598.46875,
+          "y": 484.9375,
+          "width": 221.25,
+          "height": 310,
+          "title": {
+            "x": 615.46875,
+            "y": 663.9375,
+            "width": 90.15625,
+            "height": 46.078125
+          },
+          "description": {
+            "x": 615.46875,
+            "y": 718.015625,
+            "width": 187.25,
+            "height": 40.28125
+          }
+        },
+        {
+          "x": 835.71875,
+          "y": 484.9375,
+          "width": 221.25,
+          "height": 310,
+          "title": {
+            "x": 852.71875,
+            "y": 663.9375,
+            "width": 141.9375,
+            "height": 46.078125
+          },
+          "description": {
+            "x": 852.71875,
+            "y": 718.015625,
+            "width": 187.25,
+            "height": 40.28125
+          }
+        }
+      ],
+      "controls": [
+        {
+          "label": "Diploma or another qualification? Choose here",
+          "x": 361.21875,
+          "y": 820.9375,
+          "width": 339.75,
+          "height": 46
+        },
+        {
+          "label": "Continue",
+          "x": 876.34375,
+          "y": 818.9375,
+          "width": 180.625,
+          "height": 50
+        }
+      ],
+      "overflowText": []
+    },
+    {
+      "width": 1024,
+      "section": {
+        "x": 0,
+        "y": 370.328125,
+        "width": 1024,
+        "height": 571.15625
+      },
+      "layout": {
+        "x": 0,
+        "y": 405.140625,
+        "width": 1024,
+        "height": 501.53125
+      },
+      "horizontalOverflow": false,
+      "cards": [
+        {
+          "x": 340.375,
+          "y": 488.078125,
+          "width": 203.546875,
+          "height": 310,
+          "title": {
+            "x": 357.375,
+            "y": 667.078125,
+            "width": 103.890625,
+            "height": 49.90625
+          },
+          "description": {
+            "x": 357.375,
+            "y": 724.984375,
+            "width": 169.546875,
+            "height": 37.1875
+          }
+        },
+        {
+          "x": 559.921875,
+          "y": 488.078125,
+          "width": 203.5625,
+          "height": 310,
+          "title": {
+            "x": 576.921875,
+            "y": 667.078125,
+            "width": 97.65625,
+            "height": 49.90625
+          },
+          "description": {
+            "x": 576.921875,
+            "y": 724.984375,
+            "width": 169.5625,
+            "height": 37.1875
+          }
+        },
+        {
+          "x": 779.484375,
+          "y": 488.078125,
+          "width": 203.5625,
+          "height": 310,
+          "title": {
+            "x": 796.484375,
+            "y": 667.078125,
+            "width": 153.765625,
+            "height": 49.90625
+          },
+          "description": {
+            "x": 796.484375,
+            "y": 724.984375,
+            "width": 169.5625,
+            "height": 37.1875
+          }
+        }
+      ],
+      "controls": [
+        {
+          "label": "Diploma or another qualification? Choose here",
+          "x": 340.375,
+          "y": 824.078125,
+          "width": 339.75,
+          "height": 46
+        },
+        {
+          "label": "Continue",
+          "x": 826.421875,
+          "y": 822.078125,
+          "width": 156.625,
+          "height": 50
+        }
+      ],
+      "overflowText": []
+    },
+    {
+      "width": 1000,
+      "section": {
+        "x": 0,
+        "y": 371.328125,
+        "width": 1000,
+        "height": 569.53125
+      },
+      "layout": {
+        "x": 0,
+        "y": 405.328125,
+        "width": 1000,
+        "height": 501.53125
+      },
+      "horizontalOverflow": false,
+      "cards": [
+        {
+          "x": 332.796875,
+          "y": 488.265625,
+          "width": 198.390625,
+          "height": 310,
+          "title": {
+            "x": 349.796875,
+            "y": 667.265625,
+            "width": 94.890625,
+            "height": 45.59375
+          },
+          "description": {
+            "x": 349.796875,
+            "y": 720.859375,
+            "width": 164.390625,
+            "height": 37.1875
+          }
+        },
+        {
+          "x": 547.1875,
+          "y": 488.265625,
+          "width": 198.40625,
+          "height": 310,
+          "title": {
+            "x": 564.1875,
+            "y": 667.265625,
+            "width": 89.21875,
+            "height": 45.59375
+          },
+          "description": {
+            "x": 564.1875,
+            "y": 720.859375,
+            "width": 164.40625,
+            "height": 37.1875
+          }
+        },
+        {
+          "x": 761.59375,
+          "y": 488.265625,
+          "width": 198.40625,
+          "height": 310,
+          "title": {
+            "x": 778.59375,
+            "y": 667.265625,
+            "width": 140.453125,
+            "height": 45.59375
+          },
+          "description": {
+            "x": 778.59375,
+            "y": 720.859375,
+            "width": 164.40625,
+            "height": 37.1875
+          }
+        }
+      ],
+      "controls": [
+        {
+          "label": "Diploma or another qualification? Choose here",
+          "x": 332.796875,
+          "y": 824.265625,
+          "width": 339.75,
+          "height": 46
+        },
+        {
+          "label": "Continue",
+          "x": 803.375,
+          "y": 822.265625,
+          "width": 156.625,
+          "height": 50
+        }
+      ],
+      "overflowText": []
+    },
+    {
+      "width": 901,
+      "section": {
+        "x": 0,
+        "y": 375.0625,
+        "width": 901,
+        "height": 565.53125
+      },
+      "layout": {
+        "x": 0,
+        "y": 407.0625,
+        "width": 901,
+        "height": 501.53125
+      },
+      "horizontalOverflow": false,
+      "cards": [
+        {
+          "x": 301.5,
+          "y": 490,
+          "width": 177.15625,
+          "height": 310,
+          "title": {
+            "x": 318.5,
+            "y": 669,
+            "width": 89.90625,
+            "height": 43.1875
+          },
+          "description": {
+            "x": 318.5,
+            "y": 720.1875,
+            "width": 143.15625,
+            "height": 55.78125
+          }
+        },
+        {
+          "x": 494.65625,
+          "y": 490,
+          "width": 177.15625,
+          "height": 310,
+          "title": {
+            "x": 511.65625,
+            "y": 669,
+            "width": 84.515625,
+            "height": 43.1875
+          },
+          "description": {
+            "x": 511.65625,
+            "y": 720.1875,
+            "width": 143.15625,
+            "height": 55.78125
+          }
+        },
+        {
+          "x": 687.8125,
+          "y": 490,
+          "width": 177.15625,
+          "height": 310,
+          "title": {
+            "x": 704.8125,
+            "y": 669,
+            "width": 133.0625,
+            "height": 43.1875
+          },
+          "description": {
+            "x": 704.8125,
+            "y": 720.1875,
+            "width": 143.15625,
+            "height": 37.1875
+          }
+        }
+      ],
+      "controls": [
+        {
+          "label": "Diploma or another qualification? Choose here",
+          "x": 301.5,
+          "y": 826,
+          "width": 339.75,
+          "height": 46
+        },
+        {
+          "label": "Continue",
+          "x": 708.34375,
+          "y": 824,
+          "width": 156.625,
+          "height": 50
+        }
+      ],
+      "overflowText": []
+    },
+    {
+      "width": 900,
+      "section": {
+        "x": 0,
+        "y": 211.1875,
+        "width": 900,
+        "height": 729.53125
+      },
+      "layout": {
+        "x": 0,
+        "y": 243.1875,
+        "width": 900,
+        "height": 665.53125
+      },
+      "horizontalOverflow": false,
+      "cards": [
+        {
+          "x": 36,
+          "y": 499.03125,
+          "width": 265.328125,
+          "height": 301.09375,
+          "title": {
+            "x": 53,
+            "y": 688.03125,
+            "width": 103.890625,
+            "height": 49.90625
+          },
+          "description": {
+            "x": 53,
+            "y": 745.9375,
+            "width": 231.328125,
+            "height": 37.1875
+          }
+        },
+        {
+          "x": 317.328125,
+          "y": 499.03125,
+          "width": 265.328125,
+          "height": 301.09375,
+          "title": {
+            "x": 334.328125,
+            "y": 688.03125,
+            "width": 97.65625,
+            "height": 49.90625
+          },
+          "description": {
+            "x": 334.328125,
+            "y": 745.9375,
+            "width": 231.328125,
+            "height": 37.1875
+          }
+        },
+        {
+          "x": 598.65625,
+          "y": 499.03125,
+          "width": 265.34375,
+          "height": 301.09375,
+          "title": {
+            "x": 615.65625,
+            "y": 688.03125,
+            "width": 153.765625,
+            "height": 49.90625
+          },
+          "description": {
+            "x": 615.65625,
+            "y": 745.9375,
+            "width": 231.34375,
+            "height": 37.1875
+          }
+        }
+      ],
+      "controls": [
+        {
+          "label": "Diploma or another qualification? Choose here",
+          "x": 36,
+          "y": 826.125,
+          "width": 339.75,
+          "height": 46
+        },
+        {
+          "label": "Continue",
+          "x": 707.375,
+          "y": 824.125,
+          "width": 156.625,
+          "height": 50
+        }
+      ],
+      "overflowText": []
+    },
+    {
+      "width": 768,
+      "section": {
+        "x": 0,
+        "y": 211.890625,
+        "width": 768,
+        "height": 729.53125
+      },
+      "layout": {
+        "x": 0,
+        "y": 243.890625,
+        "width": 768,
+        "height": 665.53125
+      },
+      "horizontalOverflow": false,
+      "cards": [
+        {
+          "x": 30.71875,
+          "y": 499.734375,
+          "width": 224.84375,
+          "height": 301.09375,
+          "title": {
+            "x": 47.71875,
+            "y": 688.734375,
+            "width": 103.890625,
+            "height": 49.90625
+          },
+          "description": {
+            "x": 47.71875,
+            "y": 746.640625,
+            "width": 190.84375,
+            "height": 37.1875
+          }
+        },
+        {
+          "x": 271.5625,
+          "y": 499.734375,
+          "width": 224.859375,
+          "height": 301.09375,
+          "title": {
+            "x": 288.5625,
+            "y": 688.734375,
+            "width": 97.65625,
+            "height": 49.90625
+          },
+          "description": {
+            "x": 288.5625,
+            "y": 746.640625,
+            "width": 190.859375,
+            "height": 37.1875
+          }
+        },
+        {
+          "x": 512.421875,
+          "y": 499.734375,
+          "width": 224.859375,
+          "height": 301.09375,
+          "title": {
+            "x": 529.421875,
+            "y": 688.734375,
+            "width": 153.765625,
+            "height": 49.90625
+          },
+          "description": {
+            "x": 529.421875,
+            "y": 746.640625,
+            "width": 190.859375,
+            "height": 37.1875
+          }
+        }
+      ],
+      "controls": [
+        {
+          "label": "Diploma or another qualification? Choose here",
+          "x": 30.71875,
+          "y": 826.828125,
+          "width": 339.75,
+          "height": 46
+        },
+        {
+          "label": "Continue",
+          "x": 580.65625,
+          "y": 824.828125,
+          "width": 156.625,
+          "height": 50
+        }
+      ],
+      "overflowText": []
+    },
+    {
+      "width": 640,
+      "section": {
+        "x": 0,
+        "y": 80.625,
+        "width": 640,
+        "height": 909.296875
+      },
+      "layout": {
+        "x": 0,
+        "y": 112.625,
+        "width": 640,
+        "height": 845.296875
+      },
+      "horizontalOverflow": false,
+      "cards": [
+        {
+          "x": 25.59375,
+          "y": 436.046875,
+          "width": 588.8125,
+          "height": 110,
+          "title": {
+            "x": 125.59375,
+            "y": 466.421875,
+            "width": 167.515625,
+            "height": 23.40625
+          },
+          "description": {
+            "x": 125.59375,
+            "y": 497.828125,
+            "width": 274.421875,
+            "height": 17.84375
+          }
+        },
+        {
+          "x": 25.59375,
+          "y": 558.046875,
+          "width": 588.8125,
+          "height": 110,
+          "title": {
+            "x": 125.59375,
+            "y": 588.421875,
+            "width": 161.6875,
+            "height": 23.40625
+          },
+          "description": {
+            "x": 125.59375,
+            "y": 619.828125,
+            "width": 280.75,
+            "height": 17.84375
+          }
+        },
+        {
+          "x": 25.59375,
+          "y": 680.046875,
+          "width": 588.8125,
+          "height": 110,
+          "title": {
+            "x": 125.59375,
+            "y": 710.421875,
+            "width": 226.4375,
+            "height": 23.40625
+          },
+          "description": {
+            "x": 125.59375,
+            "y": 741.828125,
+            "width": 230.34375,
+            "height": 17.84375
+          }
+        }
+      ],
+      "controls": [
+        {
+          "label": "Diploma or another qualification? Choose here",
+          "x": 25.59375,
+          "y": 806.046875,
+          "width": 588.8125,
+          "height": 44
+        },
+        {
+          "label": "Continue",
+          "x": 474.671875,
+          "y": 858.046875,
+          "width": 139.734375,
+          "height": 48
+        }
+      ],
+      "overflowText": []
+    },
+    {
+      "width": 390,
+      "section": {
+        "x": 0,
+        "y": 80.953125,
+        "width": 390,
+        "height": 947.0625
+      },
+      "layout": {
+        "x": 0,
+        "y": 112.953125,
+        "width": 390,
+        "height": 883.0625
+      },
+      "horizontalOverflow": false,
+      "cards": [
+        {
+          "x": 20,
+          "y": 459.640625,
+          "width": 350,
+          "height": 110,
+          "title": {
+            "x": 120,
+            "y": 481.09375,
+            "width": 167.515625,
+            "height": 23.40625
+          },
+          "description": {
+            "x": 120,
+            "y": 512.5,
+            "width": 203,
+            "height": 35.6875
+          }
+        },
+        {
+          "x": 20,
+          "y": 581.640625,
+          "width": 350,
+          "height": 110,
+          "title": {
+            "x": 120,
+            "y": 603.09375,
+            "width": 161.6875,
+            "height": 23.40625
+          },
+          "description": {
+            "x": 120,
+            "y": 634.5,
+            "width": 203,
+            "height": 35.6875
+          }
+        },
+        {
+          "x": 20,
+          "y": 703.640625,
+          "width": 350,
+          "height": 124.5,
+          "title": {
+            "x": 120,
+            "y": 720.640625,
+            "width": 203,
+            "height": 46.8125
+          },
+          "description": {
+            "x": 120,
+            "y": 775.453125,
+            "width": 203,
+            "height": 35.6875
+          }
+        }
+      ],
+      "controls": [
+        {
+          "label": "Diploma or another qualification? Choose here",
+          "x": 20,
+          "y": 844.140625,
+          "width": 350,
+          "height": 44
+        },
+        {
+          "label": "Continue",
+          "x": 230.265625,
+          "y": 896.140625,
+          "width": 139.734375,
+          "height": 48
+        }
+      ],
+      "overflowText": []
+    },
+    {
+      "width": 320,
+      "section": {
+        "x": 0,
+        "y": 81.09375,
+        "width": 320,
+        "height": 1101.96875
+      },
+      "layout": {
+        "x": 0,
+        "y": 113.09375,
+        "width": 320,
+        "height": 1037.96875
+      },
+      "horizontalOverflow": false,
+      "cards": [
+        {
+          "x": 20,
+          "y": 491.46875,
+          "width": 280,
+          "height": 142.34375,
+          "title": {
+            "x": 120,
+            "y": 508.46875,
+            "width": 133,
+            "height": 46.8125
+          },
+          "description": {
+            "x": 120,
+            "y": 563.28125,
+            "width": 133,
+            "height": 53.53125
+          }
+        },
+        {
+          "x": 20,
+          "y": 645.8125,
+          "width": 280,
+          "height": 142.34375,
+          "title": {
+            "x": 120,
+            "y": 662.8125,
+            "width": 133,
+            "height": 46.8125
+          },
+          "description": {
+            "x": 120,
+            "y": 717.625,
+            "width": 133,
+            "height": 53.53125
+          }
+        },
+        {
+          "x": 20,
+          "y": 800.15625,
+          "width": 280,
+          "height": 147.90625,
+          "title": {
+            "x": 120,
+            "y": 817.15625,
+            "width": 133,
+            "height": 70.21875
+          },
+          "description": {
+            "x": 120,
+            "y": 895.375,
+            "width": 133,
+            "height": 35.6875
+          }
+        }
+      ],
+      "controls": [
+        {
+          "label": "Diploma or another qualification? Choose here",
+          "x": 20,
+          "y": 964.0625,
+          "width": 280,
+          "height": 61.1875
+        },
+        {
+          "label": "Continue",
+          "x": 160.265625,
+          "y": 1033.25,
+          "width": 139.734375,
+          "height": 48
+        }
+      ],
+      "overflowText": []
+    }
+  ],
+  "errors": []
+}

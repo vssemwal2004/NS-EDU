@@ -1,0 +1,837 @@
+{
+  "captureMode": "Isolated section previews; fixed header hidden only during section screenshot, then restored. Actual viewport previews keep the header visible.",
+  "measurements": [
+    {
+      "name": "desktop",
+      "width": 1672,
+      "height": 941,
+      "label": "01-study-stage",
+      "step": "stage",
+      "section": {
+        "x": 0,
+        "y": 288.375,
+        "width": 1672,
+        "height": 652.609375
+      },
+      "horizontalOverflow": false,
+      "cards": [
+        {
+          "width": 301.71875,
+          "height": 336.03125,
+          "titleTop": 653.359375,
+          "descriptionTop": 715.109375
+        },
+        {
+          "width": 301.734375,
+          "height": 336.03125,
+          "titleTop": 653.359375,
+          "descriptionTop": 715.109375
+        },
+        {
+          "width": 301.71875,
+          "height": 336.03125,
+          "titleTop": 653.359375,
+          "descriptionTop": 715.109375
+        }
+      ],
+      "buttons": [
+        {
+          "label": "Diploma or another qualification? Choose here",
+          "width": 339.75,
+          "height": 46
+        },
+        {
+          "label": "Continue",
+          "width": 180.625,
+          "height": 50
+        }
+      ]
+    },
+    {
+      "name": "desktop",
+      "width": 1672,
+      "height": 941,
+      "label": "02-course",
+      "step": "course",
+      "section": {
+        "x": 0,
+        "y": 215.375,
+        "width": 1672,
+        "height": 725.765625
+      },
+      "horizontalOverflow": false,
+      "cards": [],
+      "buttons": [
+        {
+          "label": "Explore all courses",
+          "width": 142.046875,
+          "height": 46
+        },
+        {
+          "label": "Back",
+          "width": 78.203125,
+          "height": 44
+        },
+        {
+          "label": "Continue",
+          "width": 180.625,
+          "height": 50
+        }
+      ]
+    },
+    {
+      "name": "desktop",
+      "width": 1672,
+      "height": 941,
+      "label": "03-year",
+      "step": "year",
+      "section": {
+        "x": 0,
+        "y": 301.375,
+        "width": 1672,
+        "height": 639.96875
+      },
+      "horizontalOverflow": false,
+      "cards": [],
+      "buttons": [
+        {
+          "label": "Back",
+          "width": 78.203125,
+          "height": 44
+        },
+        {
+          "label": "Continue",
+          "width": 180.625,
+          "height": 50
+        }
+      ]
+    },
+    {
+      "name": "desktop",
+      "width": 1672,
+      "height": 941,
+      "label": "04-subjects",
+      "step": "subjects",
+      "section": {
+        "x": 0,
+        "y": 252.375,
+        "width": 1672,
+        "height": 688.3125
+      },
+      "horizontalOverflow": false,
+      "cards": [],
+      "buttons": [
+        {
+          "label": "Back",
+          "width": 78.203125,
+          "height": 44
+        },
+        {
+          "label": "Continue",
+          "width": 180.625,
+          "height": 50
+        }
+      ]
+    },
+    {
+      "name": "desktop",
+      "width": 1672,
+      "height": 941,
+      "label": "05-marks",
+      "step": "marks",
+      "section": {
+        "x": 0,
+        "y": 301.375,
+        "width": 1672,
+        "height": 639.96875
+      },
+      "horizontalOverflow": false,
+      "cards": [],
+      "buttons": [
+        {
+          "label": "Back",
+          "width": 78.203125,
+          "height": 44
+        },
+        {
+          "label": "Continue",
+          "width": 180.625,
+          "height": 50
+        }
+      ]
+    },
+    {
+      "name": "desktop",
+      "width": 1672,
+      "height": 941,
+      "label": "06-entrance",
+      "step": "exam",
+      "section": {
+        "x": 0,
+        "y": 301.375,
+        "width": 1672,
+        "height": 639.984375
+      },
+      "horizontalOverflow": false,
+      "cards": [],
+      "buttons": [
+        {
+          "label": "Back",
+          "width": 78.203125,
+          "height": 44
+        },
+        {
+          "label": "Continue",
+          "width": 180.625,
+          "height": 50
+        }
+      ]
+    },
+    {
+      "name": "desktop",
+      "width": 1672,
+      "height": 941,
+      "label": "07-exam-details",
+      "step": "exam-details",
+      "section": {
+        "x": 0,
+        "y": 301.375,
+        "width": 1672,
+        "height": 639.96875
+      },
+      "horizontalOverflow": false,
+      "cards": [],
+      "buttons": [
+        {
+          "label": "Back",
+          "width": 78.203125,
+          "height": 44
+        },
+        {
+          "label": "Review requirements",
+          "width": 266.265625,
+          "height": 50
+        }
+      ]
+    },
+    {
+      "name": "desktop",
+      "width": 1672,
+      "height": 941,
+      "label": "08-review",
+      "step": "review",
+      "section": {
+        "x": 0,
+        "y": 100.375,
+        "width": 1672,
+        "height": 1049.4375
+      },
+      "horizontalOverflow": false,
+      "cards": [],
+      "buttons": [
+        {
+          "label": "Explore B.Tech colleges",
+          "width": 239.21875,
+          "height": 50
+        },
+        {
+          "label": "Edit answers",
+          "width": 129.234375,
+          "height": 46.140625
+        },
+        {
+          "label": "Save for this visit",
+          "width": 130.71875,
+          "height": 44
+        },
+        {
+          "label": "Start a new check",
+          "width": 136.234375,
+          "height": 46
+        }
+      ]
+    },
+    {
+      "name": "desktop",
+      "width": 1672,
+      "height": 941,
+      "label": "09-other-qualification",
+      "step": "qualification",
+      "section": {
+        "x": 0,
+        "y": 301.375,
+        "width": 1672,
+        "height": 639.96875
+      },
+      "horizontalOverflow": false,
+      "cards": [],
+      "buttons": [
+        {
+          "label": "Back",
+          "width": 78.203125,
+          "height": 44
+        },
+        {
+          "label": "Continue",
+          "width": 180.625,
+          "height": 50
+        }
+      ]
+    },
+    {
+      "name": "tablet",
+      "width": 768,
+      "height": 1024,
+      "label": "01-study-stage",
+      "step": "stage",
+      "section": {
+        "x": 0,
+        "y": 294.890625,
+        "width": 768,
+        "height": 729.53125
+      },
+      "horizontalOverflow": false,
+      "cards": [
+        {
+          "width": 224.84375,
+          "height": 301.09375,
+          "titleTop": 771.734375,
+          "descriptionTop": 829.640625
+        },
+        {
+          "width": 224.859375,
+          "height": 301.09375,
+          "titleTop": 771.734375,
+          "descriptionTop": 829.640625
+        },
+        {
+          "width": 224.859375,
+          "height": 301.09375,
+          "titleTop": 771.734375,
+          "descriptionTop": 829.640625
+        }
+      ],
+      "buttons": [
+        {
+          "label": "Diploma or another qualification? Choose here",
+          "width": 339.75,
+          "height": 46
+        },
+        {
+          "label": "Continue",
+          "width": 156.625,
+          "height": 50
+        }
+      ]
+    },
+    {
+      "name": "tablet",
+      "width": 768,
+      "height": 1024,
+      "label": "02-course",
+      "step": "course",
+      "section": {
+        "x": 0,
+        "y": 185.890625,
+        "width": 768,
+        "height": 837.625
+      },
+      "horizontalOverflow": false,
+      "cards": [],
+      "buttons": [
+        {
+          "label": "Explore all courses",
+          "width": 142.046875,
+          "height": 46
+        },
+        {
+          "label": "Back",
+          "width": 78.203125,
+          "height": 44
+        },
+        {
+          "label": "Continue",
+          "width": 156.625,
+          "height": 50
+        }
+      ]
+    },
+    {
+      "name": "tablet",
+      "width": 768,
+      "height": 1024,
+      "label": "03-year",
+      "step": "year",
+      "section": {
+        "x": 0,
+        "y": 386.890625,
+        "width": 768,
+        "height": 636.828125
+      },
+      "horizontalOverflow": false,
+      "cards": [],
+      "buttons": [
+        {
+          "label": "Back",
+          "width": 78.203125,
+          "height": 44
+        },
+        {
+          "label": "Continue",
+          "width": 156.625,
+          "height": 50
+        }
+      ]
+    },
+    {
+      "name": "tablet",
+      "width": 768,
+      "height": 1024,
+      "label": "04-subjects",
+      "step": "subjects",
+      "section": {
+        "x": 0,
+        "y": 223.890625,
+        "width": 768,
+        "height": 800.171875
+      },
+      "horizontalOverflow": false,
+      "cards": [],
+      "buttons": [
+        {
+          "label": "Back",
+          "width": 78.203125,
+          "height": 44
+        },
+        {
+          "label": "Continue",
+          "width": 156.625,
+          "height": 50
+        }
+      ]
+    },
+    {
+      "name": "tablet",
+      "width": 768,
+      "height": 1024,
+      "label": "05-marks",
+      "step": "marks",
+      "section": {
+        "x": 0,
+        "y": 316.890625,
+        "width": 768,
+        "height": 706.640625
+      },
+      "horizontalOverflow": false,
+      "cards": [],
+      "buttons": [
+        {
+          "label": "Back",
+          "width": 78.203125,
+          "height": 44
+        },
+        {
+          "label": "Continue",
+          "width": 156.625,
+          "height": 50
+        }
+      ]
+    },
+    {
+      "name": "tablet",
+      "width": 768,
+      "height": 1024,
+      "label": "06-entrance",
+      "step": "exam",
+      "section": {
+        "x": 0,
+        "y": 271.890625,
+        "width": 768,
+        "height": 751.84375
+      },
+      "horizontalOverflow": false,
+      "cards": [],
+      "buttons": [
+        {
+          "label": "Back",
+          "width": 78.203125,
+          "height": 44
+        },
+        {
+          "label": "Continue",
+          "width": 156.625,
+          "height": 50
+        }
+      ]
+    },
+    {
+      "name": "tablet",
+      "width": 768,
+      "height": 1024,
+      "label": "07-exam-details",
+      "step": "exam-details",
+      "section": {
+        "x": 0,
+        "y": 310.890625,
+        "width": 768,
+        "height": 713.59375
+      },
+      "horizontalOverflow": false,
+      "cards": [],
+      "buttons": [
+        {
+          "label": "Back",
+          "width": 78.203125,
+          "height": 44
+        },
+        {
+          "label": "Review requirements",
+          "width": 242.265625,
+          "height": 50
+        }
+      ]
+    },
+    {
+      "name": "tablet",
+      "width": 768,
+      "height": 1024,
+      "label": "08-review",
+      "step": "review",
+      "section": {
+        "x": 0,
+        "y": 80.890625,
+        "width": 768,
+        "height": 1181.4375
+      },
+      "horizontalOverflow": false,
+      "cards": [],
+      "buttons": [
+        {
+          "label": "Explore B.Tech colleges",
+          "width": 239.21875,
+          "height": 50
+        },
+        {
+          "label": "Edit answers",
+          "width": 129.234375,
+          "height": 46.140625
+        },
+        {
+          "label": "Save for this visit",
+          "width": 130.71875,
+          "height": 44
+        },
+        {
+          "label": "Start a new check",
+          "width": 136.234375,
+          "height": 46
+        }
+      ]
+    },
+    {
+      "name": "tablet",
+      "width": 768,
+      "height": 1024,
+      "label": "09-other-qualification",
+      "step": "qualification",
+      "section": {
+        "x": 0,
+        "y": 332.890625,
+        "width": 768,
+        "height": 691.3125
+      },
+      "horizontalOverflow": false,
+      "cards": [],
+      "buttons": [
+        {
+          "label": "Back",
+          "width": 78.203125,
+          "height": 44
+        },
+        {
+          "label": "Continue",
+          "width": 156.625,
+          "height": 50
+        }
+      ]
+    },
+    {
+      "name": "mobile",
+      "width": 390,
+      "height": 844,
+      "label": "01-study-stage",
+      "step": "stage",
+      "section": {
+        "x": 0,
+        "y": 80.953125,
+        "width": 390,
+        "height": 947.0625
+      },
+      "horizontalOverflow": false,
+      "cards": [
+        {
+          "width": 350,
+          "height": 110,
+          "titleTop": 481.09375,
+          "descriptionTop": 512.5
+        },
+        {
+          "width": 350,
+          "height": 110,
+          "titleTop": 603.09375,
+          "descriptionTop": 634.5
+        },
+        {
+          "width": 350,
+          "height": 124.5,
+          "titleTop": 720.640625,
+          "descriptionTop": 775.453125
+        }
+      ],
+      "buttons": [
+        {
+          "label": "Diploma or another qualification? Choose here",
+          "width": 350,
+          "height": 44
+        },
+        {
+          "label": "Continue",
+          "width": 139.734375,
+          "height": 48
+        }
+      ]
+    },
+    {
+      "name": "mobile",
+      "width": 390,
+      "height": 844,
+      "label": "02-course",
+      "step": "course",
+      "section": {
+        "x": 0,
+        "y": -103.046875,
+        "width": 390,
+        "height": 1040.84375
+      },
+      "horizontalOverflow": false,
+      "cards": [],
+      "buttons": [
+        {
+          "label": "Explore all courses",
+          "width": 131.265625,
+          "height": 44
+        },
+        {
+          "label": "Back",
+          "width": 78.203125,
+          "height": 44
+        },
+        {
+          "label": "Continue",
+          "width": 139.734375,
+          "height": 48
+        }
+      ]
+    },
+    {
+      "name": "mobile",
+      "width": 390,
+      "height": 844,
+      "label": "03-year",
+      "step": "year",
+      "section": {
+        "x": 0,
+        "y": 3.953125,
+        "width": 390,
+        "height": 839.9375
+      },
+      "horizontalOverflow": false,
+      "cards": [],
+      "buttons": [
+        {
+          "label": "Back",
+          "width": 78.203125,
+          "height": 44
+        },
+        {
+          "label": "Continue",
+          "width": 139.734375,
+          "height": 48
+        }
+      ]
+    },
+    {
+      "name": "mobile",
+      "width": 390,
+      "height": 844,
+      "label": "04-subjects",
+      "step": "subjects",
+      "section": {
+        "x": 0,
+        "y": -172.046875,
+        "width": 390,
+        "height": 1016.484375
+      },
+      "horizontalOverflow": false,
+      "cards": [],
+      "buttons": [
+        {
+          "label": "Back",
+          "width": 78.203125,
+          "height": 44
+        },
+        {
+          "label": "Continue",
+          "width": 139.734375,
+          "height": 48
+        }
+      ]
+    },
+    {
+      "name": "mobile",
+      "width": 390,
+      "height": 844,
+      "label": "05-marks",
+      "step": "marks",
+      "section": {
+        "x": 0,
+        "y": -63.046875,
+        "width": 390,
+        "height": 906.59375
+      },
+      "horizontalOverflow": false,
+      "cards": [],
+      "buttons": [
+        {
+          "label": "Back",
+          "width": 78.203125,
+          "height": 44
+        },
+        {
+          "label": "Continue",
+          "width": 139.734375,
+          "height": 48
+        }
+      ]
+    },
+    {
+      "name": "mobile",
+      "width": 390,
+      "height": 844,
+      "label": "06-entrance",
+      "step": "exam",
+      "section": {
+        "x": 0,
+        "y": -45.046875,
+        "width": 390,
+        "height": 888.875
+      },
+      "horizontalOverflow": false,
+      "cards": [],
+      "buttons": [
+        {
+          "label": "Back",
+          "width": 78.203125,
+          "height": 44
+        },
+        {
+          "label": "Continue",
+          "width": 139.734375,
+          "height": 48
+        }
+      ]
+    },
+    {
+      "name": "mobile",
+      "width": 390,
+      "height": 844,
+      "label": "07-exam-details",
+      "step": "exam-details",
+      "section": {
+        "x": 0,
+        "y": -89.046875,
+        "width": 390,
+        "height": 932.796875
+      },
+      "horizontalOverflow": false,
+      "cards": [],
+      "buttons": [
+        {
+          "label": "Back",
+          "width": 78.203125,
+          "height": 44
+        },
+        {
+          "label": "Review requirements",
+          "width": 213.96875,
+          "height": 48
+        }
+      ]
+    },
+    {
+      "name": "mobile",
+      "width": 390,
+      "height": 844,
+      "label": "08-review",
+      "step": "review",
+      "section": {
+        "x": 0,
+        "y": -89.046875,
+        "width": 390,
+        "height": 1481.734375
+      },
+      "horizontalOverflow": false,
+      "cards": [],
+      "buttons": [
+        {
+          "label": "Explore B.Tech colleges",
+          "width": 350,
+          "height": 48
+        },
+        {
+          "label": "Edit answers",
+          "width": 129.234375,
+          "height": 46.140625
+        },
+        {
+          "label": "Save for this visit",
+          "width": 130.71875,
+          "height": 44
+        },
+        {
+          "label": "Start a new check",
+          "width": 125.90625,
+          "height": 44
+        }
+      ]
+    },
+    {
+      "name": "mobile",
+      "width": 390,
+      "height": 844,
+      "label": "09-other-qualification",
+      "step": "qualification",
+      "section": {
+        "x": 0,
+        "y": -46.046875,
+        "width": 390,
+        "height": 889.71875
+      },
+      "horizontalOverflow": false,
+      "cards": [],
+      "buttons": [
+        {
+          "label": "Back",
+          "width": 78.203125,
+          "height": 44
+        },
+        {
+          "label": "Continue",
+          "width": 139.734375,
+          "height": 48
+        }
+      ]
+    }
+  ],
+  "errors": []
+}

@@ -1,0 +1,74 @@
+.section { position: relative; padding-block: var(--college-section-padding); background: var(--color-page); scroll-margin-top: var(--space-6); }
+.decor { position: absolute; inset: 0 0 auto; width: 100%; height: 160px; fill: none; stroke: var(--color-border); opacity: .55; pointer-events: none; }
+.section > :global(.container) { position: relative; }
+.heading { display: flex; justify-content: space-between; align-items: start; gap: var(--space-4); margin-bottom: var(--space-4); }
+.heading h2 { font-size: var(--college-title-size); letter-spacing: -.025em; }
+.heading p { color: var(--color-muted); margin-top: var(--space-2); font-size: var(--college-description-size); }
+.headingActions { display: flex; flex-direction: column; align-items: end; flex-shrink: 0; }
+.badge { padding: var(--space-1) var(--space-3); background: var(--color-accent-soft); color: var(--color-accent); border: var(--card-border); border-radius: var(--radius-pill); font-size: var(--text-caption); }
+.courseNavigation { display: flex; gap: var(--space-3); padding-bottom: var(--space-3); border-bottom: var(--card-border); }
+.tabs { display: flex; gap: var(--space-2); overflow-x: auto; min-width: 0; padding: 5px; margin: -5px; scrollbar-width: thin; scrollbar-color: var(--color-border) transparent; }
+.tabs button { border: var(--card-border); background: var(--card-background); border-radius: var(--radius-control); padding: var(--space-2) var(--space-5); min-height: 44px; font-size: var(--text-small); flex: 0 0 auto; }
+.tabs button:hover { border-color: var(--color-primary); }
+.tabs button[aria-selected="true"] { background: var(--color-primary); color: var(--color-surface); border-color: var(--color-primary); }
+.more { flex: 0 0 auto; padding-inline: var(--space-4); }
+.toolbar { display: flex; justify-content: space-between; gap: var(--space-3); align-items: center; padding-block: var(--space-3); }
+.resultHeading { display: flex; align-items: center; gap: var(--space-3); flex-shrink: 0; }
+.resultHeading h3 { font-size: var(--college-result-size); }
+.resultHeading > span { color: var(--color-muted); font-size: var(--text-caption); }
+.filters { display: flex; justify-content: end; gap: var(--space-2); flex-wrap: wrap; }
+.filters label { display: flex; align-items: center; gap: var(--space-1); border: var(--card-border); background: var(--card-background); border-radius: var(--radius-control); padding-left: var(--space-3); min-height: 44px; min-width: 0; font-size: var(--text-caption); }
+.filters label > span { color: var(--color-muted); flex-shrink: 0; }
+.filters select { border: 0; background: transparent; color: var(--color-text); min-width: 0; width: 125px; min-height: 44px; padding: var(--space-2); font-size: inherit; }
+.table { width: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 0 var(--college-row-gap); font-size: var(--college-table-size); }
+.table thead th { text-align: left; font-weight: 600; padding: var(--college-row-padding); background: var(--color-accent-soft); border-block: var(--card-border); color: var(--color-text); }
+.table thead small { display: block; font-size: var(--text-caption); color: var(--color-muted); font-weight: 400; }
+.table th:first-child { width: 4%; border-left: var(--card-border); border-radius: var(--radius-control) 0 0 var(--radius-control); }
+.table th:nth-child(2) { width: 33%; }.table th:nth-child(3) { width: 12%; }.table th:nth-child(4) { width: 16%; }.table th:nth-child(5) { width: 9%; }.table th:last-child { width: 26%; border-right: var(--card-border); border-radius: 0 var(--radius-control) var(--radius-control) 0; }
+.table tbody tr { filter: drop-shadow(var(--college-row-shadow)); }
+.table td { padding: var(--college-row-padding); background: var(--card-background); border-block: var(--card-border); vertical-align: middle; }
+.table td + td { border-left: var(--card-border); }
+.table td:first-child { border-left: var(--card-border); border-radius: var(--college-row-radius) 0 0 var(--college-row-radius); }
+.table td:last-child { border-right: var(--card-border); border-radius: 0 var(--college-row-radius) var(--college-row-radius) 0; }
+.table tr[data-selected="true"] td { border-block-color: var(--color-primary); }
+.table tr[data-selected="true"] td:first-child { border-left-color: var(--color-primary); }.table tr[data-selected="true"] td:last-child { border-right-color: var(--color-primary); }
+.number { color: var(--color-accent); text-align: center !important; padding-inline: var(--space-2) !important; }
+.collegeIdentity { display: flex; align-items: center; gap: var(--space-2); min-width: 0; }
+.collegeIdentity > div { min-width: 0; flex: 1; }
+.thumbnail { width: var(--college-thumbnail-width); height: var(--college-thumbnail-height); flex-shrink: 0; border-radius: var(--college-thumbnail-radius); overflow: hidden; background: var(--color-accent-soft); }
+.collegeName { display: block; background: transparent; border: 0; padding: 0; text-align: left; font-family: var(--college-name-font); font-weight: 600; color: var(--color-primary); font-size: var(--college-name-size); line-height: 1.35; }
+.collegeName:hover { text-decoration: underline; text-underline-offset: 3px; }
+.collegeIdentity p { margin-top: var(--space-1); color: var(--color-muted); font-size: var(--text-caption); line-height: 1.4; }
+.courseTag { display: inline; margin-left: var(--space-2); white-space: nowrap; }.courseTag::before { content: '·'; margin-right: var(--space-2); }
+.save { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 44px; width: 44px; height: 44px; padding: 0; border: 0; background: transparent; color: var(--color-primary); }
+.save :global(.icon) { width: 17px; height: 17px; }.save[aria-pressed="true"] :global(.icon) { fill: currentColor; }
+.feeCell > strong { display: block; color: var(--color-primary); font-weight: 600; }.feeCell > small { color: var(--color-muted); font-size: var(--text-caption); }
+.placement { display: flex; flex-wrap: wrap; gap: var(--space-3); }.placement span { display: block; }.placement strong { display: block; color: var(--color-primary); font-weight: 600; white-space: nowrap; }.placement small { display: block; color: var(--color-muted); font-size: var(--text-caption); }
+.rating { display: inline-flex; align-items: center; gap: var(--space-1); color: var(--color-primary); }.rating :global(.icon) { width: 17px; height: 17px; }.rating small { color: var(--color-muted); }
+.rowActions { display: flex; gap: var(--space-2); align-items: center; justify-content: center; }
+.rowActions :global(.button) { padding: var(--space-2); font-size: var(--text-caption); }.rowActions :global(.icon) { width: 18px; height: 18px; }
+.compareCheck { display: flex; align-items: center; gap: var(--space-1); color: var(--color-primary); min-height: 44px; font-size: var(--text-caption); cursor: pointer; flex-shrink: 0; }.compareCheck input { width: 17px; height: 17px; margin: 0; accent-color: var(--color-primary); }
+.apply { justify-content: center; min-height: 44px; font-size: var(--text-caption); padding: var(--space-1) 0; }
+.mobileLabel { display: none; }
+.compareBar { display: flex; justify-content: space-between; align-items: center; gap: var(--space-3); margin-top: var(--space-3); padding: var(--space-2) var(--space-4); background: var(--color-accent-soft); border: var(--card-border); border-radius: var(--college-row-radius); }
+.compareBar > div { display: flex; gap: var(--space-4); align-items: center; min-width: 0; }.compareBar > div > :global(.icon) { color: var(--color-primary); }.compareBar strong { display: block; font-size: var(--text-small); font-weight: 600; }.compareBar small { display: block; color: var(--color-muted); font-size: var(--text-caption); margin-top: var(--space-1); }
+.compareBar :global(.button:disabled) { opacity: .5; cursor: not-allowed; }
+.footnote, .feedback { color: var(--color-muted); font-size: var(--text-caption); margin-top: var(--space-4); }.feedback { color: var(--color-primary); }
+.empty { padding: var(--space-10) var(--space-5); display: grid; justify-items: center; gap: var(--space-4); text-align: center; border: var(--card-border); border-radius: var(--college-row-radius); background: var(--card-background); }.empty > :global(.icon) { color: var(--color-accent); }.empty p { color: var(--color-muted); }
+.notice { padding: var(--space-4); background: var(--color-accent-soft); border-radius: var(--radius-control); font-size: var(--text-small); margin-bottom: var(--space-5); }
+.note { color: var(--color-muted); font-size: var(--text-small); margin-block: var(--space-3); }
+.facts { margin: var(--space-5) 0; display: grid; gap: var(--space-4); }.facts > div { padding-bottom: var(--space-3); border-bottom: var(--card-border); }.facts dt { font-size: var(--text-caption); color: var(--color-muted); }.facts dd { margin: var(--space-1) 0 0; font-size: var(--text-small); font-weight: 600; }
+.modalActions, .moreCourses { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+.checklist { padding-left: var(--space-6); margin-block: var(--space-5); font-size: var(--text-small); }.checklist li { margin-block: var(--space-3); }
+.comparisonGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: var(--space-4); margin-top: var(--space-5); }.comparisonGrid article { padding: var(--space-5); }.comparisonGrid h3 { font-size: var(--college-name-size); min-height: 3.6em; }
+.directorySearch { display: block; margin-block: var(--space-4); }.directoryGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); }.directoryGrid article { padding: var(--space-4); display: flex; align-items: start; gap: var(--space-4); min-width: 0; }.directoryGrid h3 { font-size: var(--college-name-size); }.directoryGrid p { color: var(--color-muted); font-size: var(--text-small); margin-top: var(--space-2); }.directoryThumbnail { width: 80px; height: 65px; flex-shrink: 0; border-radius: var(--radius-control); }
+@media (min-width: 1101px) and (max-width: 1400px) { .table td, .table thead th { padding-inline: var(--space-2); }.rowActions { gap: var(--space-1); }.rowActions :global(.icon) { display: none; }.toolbar { align-items: start; }.resultHeading { flex-direction: column; align-items: start; gap: var(--space-1); } }
+@media (max-width: 1100px) {
+  .table, .table tbody { display: block; }.table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }.table tbody { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); }
+  .table tbody tr { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border: var(--card-border); border-radius: var(--college-row-radius); background: var(--card-background); padding: var(--college-card-padding); gap: var(--space-2) var(--space-3); min-width: 0; filter: none; box-shadow: var(--college-row-shadow); }.table tbody tr[data-selected="true"] { border-color: var(--color-primary); }
+  .table td, .table td + td, .table td:first-child, .table td:last-child { display: block; border: 0; padding: 0 !important; border-radius: 0; background: transparent; }.table tbody .number { display: none; }.collegeCell, .actionsCell { grid-column: 1 / -1; }.collegeName { font-size: var(--college-mobile-name-size); }.mobileLabel { display: block; color: var(--color-muted); font-size: var(--text-caption); margin-bottom: var(--space-1); }.ratingCell { grid-column: 1 / -1; }.ratingCell .mobileLabel { display: inline; margin-right: var(--space-2); }.rowActions { flex-wrap: wrap; justify-content: space-between; border-top: var(--card-border); padding-top: var(--space-2); gap: var(--space-1); }.rowActions :global(.icon) { display: none; }.placement { gap: var(--space-2); }.placement span { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: var(--space-1); }.placement strong { font-size: var(--text-caption); }
+  .toolbar { flex-direction: column; align-items: stretch; }.resultHeading { flex-direction: row; align-items: center; }.filters { width: 100%; justify-content: start; }.filters label { flex: 1 1 170px; }.filters select { width: 100%; }
+}
+@media (max-width: 700px) {
+  .heading { flex-direction: column; gap: var(--space-2); }.headingActions { width: 100%; flex-direction: row; align-items: center; justify-content: space-between; }.heading h2 { font-size: var(--college-mobile-title-size); }.heading p { font-size: var(--text-small); }.table tbody { grid-template-columns: minmax(0, 1fr); gap: var(--space-2); }.thumbnail { width: var(--college-thumbnail-mobile-size); height: var(--college-thumbnail-mobile-size); }.filters label { flex-basis: 100%; }.compareBar { padding: var(--space-3); flex-direction: column; align-items: stretch; }.compareBar > div:last-child { justify-content: space-between; }.compareBar :global(.button) { padding-inline: var(--space-4); }.directoryGrid { grid-template-columns: minmax(0, 1fr); }.directoryGrid article { flex-direction: column; }.comparisonGrid h3 { min-height: 0; }.courseNavigation { gap: var(--space-2); }.more { padding-inline: var(--space-2); }.tabs button { padding-inline: var(--space-4); }
+}

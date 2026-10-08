@@ -1,0 +1,19 @@
+{
+  "name": "@nsedu/backend",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch --env-file-if-exists=.env src/server.js",
+    "start": "node --env-file-if-exists=.env src/server.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "fast-xml-parser": "^5.11.2",
+    "mongodb": "^6.20.0"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  }
+}

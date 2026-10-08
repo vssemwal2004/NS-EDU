@@ -1,0 +1,38 @@
+[
+  {
+    "name": "shiksha",
+    "url": "https://www.shiksha.com/news",
+    "fetchedAt": "2026-10-07T12:05:31.773Z",
+    "status": 403,
+    "title": "Access Denied",
+    "screenshot": "shiksha.png",
+    "error": null
+  },
+  {
+    "name": "collegedekho",
+    "url": "https://www.collegedekho.com/news/",
+    "fetchedAt": "2026-10-07T12:05:33.842Z",
+    "status": 200,
+    "title": "Education News : Latest News on Courses, Colleges and Exams - CollegeDekho",
+    "screenshot": "collegedekho.png",
+    "error": null
+  },
+  {
+    "name": "careers360",
+    "url": "https://news.careers360.com/",
+    "fetchedAt": "2026-10-07T12:05:39.335Z",
+    "status": 200,
+    "title": "Latest Education News: Admission, Board Exams, Result, Admit Card, Events and New Regulations",
+    "screenshot": "careers360.png",
+    "error": null
+  },
+  {
+    "name": "collegedunia",
+    "url": "https://collegedunia.com/news",
+    "fetchedAt": "2026-10-07T12:05:48.865Z",
+    "status": 403,
+    "title": "ERROR: The request could not be satisfied",
+    "screenshot": "collegedunia.png",
+    "error": null
+  }
+]

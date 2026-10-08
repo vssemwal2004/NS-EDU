@@ -1,0 +1,68 @@
+{
+  "finalizedDate": "2026-10-08",
+  "timezone": "Asia/Kolkata",
+  "backend": {
+    "command": "npm run test:backend",
+    "exitCode": 0,
+    "passed": 8,
+    "failed": 0
+  },
+  "frontend": {
+    "command": "node node_modules/@playwright/test/cli.js test --config frontend/playwright.config.mjs --workers 1 --timeout 120000 education-news.spec.js header-scroll.spec.js",
+    "exitCode": 0,
+    "passed": 16,
+    "failed": 0,
+    "durationSeconds": 57.3,
+    "newsScenarios": 9,
+    "existingHeaderScenarios": 7
+  },
+  "lint": { "command": "npm run lint", "exitCode": 0 },
+  "productionBuild": {
+    "command": "npm run build",
+    "exitCode": 0,
+    "nextVersion": "16.3.8",
+    "homepage": "Statically prerendered; education updates fetched by the client through Express"
+  },
+  "liveVerification": {
+    "frontendHttpStatus": 200,
+    "sameOriginNewsHttpStatus": 200,
+    "feedStatus": "ready",
+    "articles": 90,
+    "recordsWithImageUrls": 90,
+    "freshPublishers": 3,
+    "evidence": "live-api-evidence.json"
+  },
+  "responsive": {
+    "widths": [320, 390, 768, 1366, 1672],
+    "horizontalOverflow": false,
+    "visibleControlsBelow44pxHeight": [],
+    "mobileEditableInputFontSize": "16px",
+    "capturedBrowserErrors": [],
+    "headerContext": "news",
+    "evidence": "browser-evidence.json",
+    "captureCommand": "node design/section-6-news-articles/implementation/capture.mjs"
+  },
+  "imagePolicy": {
+    "mode": "reviewed",
+    "default": "Only visually reviewed neutral publisher images; native education graphics otherwise",
+    "automatedPersonDetection": false,
+    "reviewedUrls": 3,
+    "latestOverviewPhotos": 0,
+    "latestOverviewNativeCovers": 6,
+    "reviewedCampusImageLoaded": true,
+    "reviewedImageEvidence": "reviewed-photo-evidence.json",
+    "rejectedReviewDownloads": ["review-odisha.jpg", "review-kerala.jpg", "review-careers.jpg"],
+    "rejectionReason": "People visible; review downloads are not website assets"
+  },
+  "earlierRuns": [
+    "An earlier header run had a transient 320px scroll-context failure; its isolated rerun passed and the final full header run passed.",
+    "The first compact-mobile run counted a hidden third preview control as a zero-height target. The measurement now excludes hidden elements and also checks that all article-view records remain visible; the final run passed."
+  ],
+  "limits": [
+    "Publisher-provided education coverage, not every board or examination notice.",
+    "Ten-minute cache/polling, not streaming real-time updates.",
+    "Category and article-type classification is heuristic.",
+    "Bookmarks persist on this device, not in a synced student account.",
+    "No public-network performance score or production deployment is claimed."
+  ]
+}

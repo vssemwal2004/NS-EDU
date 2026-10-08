@@ -1,0 +1,58 @@
+.backdrop { position: absolute; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; color: var(--section-visual-ink); }
+.sweep { position: absolute; top: -110px; left: -150px; width: 560px; height: 640px; border-radius: 46% 54% 62% 38%; background: var(--section-visual-wash); transform: rotate(-18deg); }
+.grid { position: absolute; right: 0; top: 0; width: 30%; height: 210px; background-image: radial-gradient(var(--section-visual-line) .8px, transparent .8px); background-size: 16px 16px; mask-image: linear-gradient(145deg, transparent 5%, black 65%, transparent); opacity: .55; }
+.orbit { position: absolute; width: 290px; height: 290px; border: 1px solid var(--section-visual-line); border-radius: 50%; top: -170px; right: -30px; box-shadow: 0 0 0 16px var(--section-visual-paper), 0 0 0 17px var(--section-visual-line); }
+.stamp { position: absolute; display: grid; place-items: center; width: 60px; height: 60px; border: 1px solid var(--section-visual-line); border-radius: 18px; background: var(--section-visual-paper); opacity: var(--section-visual-opacity); }
+.stamp :global(.icon) { width: 30px; height: 30px; stroke-width: 1.25; }
+.first { left: 22px; bottom: 70px; transform: rotate(-12deg); }
+.second { right: 22px; top: 18px; transform: rotate(12deg); }
+.third { right: 42px; bottom: 60px; width: 46px; height: 46px; border-radius: 50%; transform: rotate(-8deg); }
+.third :global(.icon) { width: 23px; height: 23px; }
+.sketch { position: absolute; left: -20px; bottom: -45px; width: min(300px, 38%); opacity: .22; }
+.study .sweep { background: var(--eligibility-paper-gradient); }
+.budget .sweep { left: auto; right: -160px; top: -260px; width: 640px; height: 580px; }
+.budget .grid { right: auto; left: 0; top: 10px; width: 24%; height: 140px; opacity: .35; }
+.budget .orbit { right: auto; left: -220px; top: 160px; width: 310px; height: 310px; }
+.budget .first { bottom: 32px; left: -12px; }
+.budget .second { right: 16px; top: 130px; }
+.budget .third { right: 12px; bottom: 30px; }
+.budget .sketch { left: auto; right: -50px; bottom: -55px; width: min(360px, 45%); }
+.studyPath { display: block; width: min(100%, 285px); height: 76px; margin-top: var(--space-3); color: var(--color-art); }
+.budgetArt { position: relative; width: 150px; height: 90px; flex-shrink: 0; pointer-events: none; }
+.artOrbit { position: absolute; inset: 0 22px; border: 1px dashed var(--section-visual-line); border-radius: 50%; background: var(--section-visual-wash); transform: rotate(-16deg); }
+.notebook { position: absolute; top: -6px; left: 24px; width: var(--budget-desk-size); height: var(--budget-desk-size); object-fit: contain; transform: rotate(-8deg); }
+.wallet, .coin { position: absolute; display: grid; place-items: center; border: 1px solid var(--section-visual-line); border-radius: var(--radius-control); }
+.wallet { width: 37px; height: 37px; bottom: -4px; right: 3px; color: var(--color-primary); background: var(--section-visual-rose); transform: rotate(8deg); }
+.wallet :global(.icon) { width: 23px; height: 23px; }
+.coin { width: 28px; height: 28px; left: 8px; top: 6px; border-radius: 50%; background: var(--section-visual-paper); color: var(--color-accent); font: 600 15px var(--font-body); }
+.spark { position: absolute; top: -2px; right: 0; color: var(--color-accent); }
+.spark :global(.icon) { width: 19px; height: 19px; }
+.resultArt { position: relative; display: grid; place-items: center; width: 54px; height: 54px; border-radius: 50%; border: 1px solid var(--section-visual-line); color: var(--color-primary); background: var(--section-visual-paper); transform: rotate(-8deg); }
+.resultArt > :global(.icon) { width: 29px; height: 29px; stroke-width: 1.2; }
+.resultArt > span { position: absolute; top: -5px; right: -3px; width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; background: var(--section-visual-rose); border: 1px solid var(--section-visual-line); font: 600 11px var(--font-body); }
+@media (max-width: 1100px) {
+  .stamp { width: 42px; height: 42px; border-radius: 12px; }
+  .stamp :global(.icon) { width: 23px; height: 23px; }
+  .first { left: -18px; }
+  .second { right: -14px; }
+  .third { right: -20px; }
+}
+@media (max-width: 900px) {
+  .studyPath { display: none; }
+  .sweep { height: 460px; width: 520px; left: -260px; top: -210px; }
+}
+@media (max-width: 760px) {
+  .budgetArt { width: 68px; height: 66px; }
+  .notebook { width: 62px; height: 62px; top: 0; left: 0; }
+  .artOrbit { inset: 5px; }
+  .wallet { width: 24px; height: 24px; right: -1px; bottom: -1px; border-radius: 7px; }
+  .wallet :global(.icon) { width: 16px; height: 16px; }
+  .coin, .spark { display: none; }
+  .resultArt { width: 42px; height: 42px; }
+  .resultArt > :global(.icon) { width: 24px; height: 24px; }
+  .grid { width: 50%; opacity: .3; }
+  .stamp { opacity: .22; }
+  .sketch { display: none; }
+  .budget .second { top: 205px; }
+  .orbit { right: -200px; }
+}

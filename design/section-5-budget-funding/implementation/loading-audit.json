@@ -1,0 +1,38 @@
+[
+  {
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "requestsBeforeScroll": 0,
+    "imageResponses": [
+      {
+        "url": "http://127.0.0.1:3001/_next/image?url=%2Fimages%2Fbudget%2Fdesk.webp&w=256&q=75",
+        "status": 200,
+        "bytes": 9536,
+        "type": "image/webp"
+      }
+    ],
+    "errors": [],
+    "resultAfterEdit": "₹3,75,000",
+    "note": "Local production build, fresh browser context; verifies loading behavior, not a public-network speed guarantee."
+  },
+  {
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "requestsBeforeScroll": 0,
+    "imageResponses": [
+      {
+        "url": "http://127.0.0.1:3001/_next/image?url=%2Fimages%2Fbudget%2Fdesk.webp&w=96&q=75",
+        "status": 200,
+        "bytes": 2456,
+        "type": "image/webp"
+      }
+    ],
+    "errors": [],
+    "resultAfterEdit": "₹3,75,000",
+    "note": "Local production build, fresh browser context; verifies loading behavior, not a public-network speed guarantee."
+  }
+]

@@ -1,0 +1,26 @@
+.browseTypes { display: flex; gap: var(--space-2); margin-bottom: var(--space-4); }
+.browseTypes > button { flex: 1; }
+.cityNote { display: flex; gap: var(--space-2); align-items: center; color: var(--color-accent); font-size: var(--text-small); margin-top: var(--space-3); }
+.cityNote svg { width: 16px; height: 16px; }
+.resultCount { margin-block: var(--space-4); color: var(--color-muted); font-size: var(--text-small); }
+.results { display: grid; gap: var(--space-4); }
+.result { padding: var(--space-5); box-shadow: none; }
+.resultTitle { display: flex; gap: var(--space-4); align-items: center; margin-bottom: var(--space-3); }
+.resultTitle h3 { font-size: 1.4rem; }
+.resultTitle :global(.eyebrow) { font-size: .65rem; }
+.resultIcon { background: var(--color-accent-soft); color: var(--color-accent); width: 44px; height: 44px; flex-shrink: 0; display: grid; place-items: center; border-radius: var(--radius-control); }
+.result > p { color: var(--color-muted); font-size: var(--text-small); }
+.fullName { font-size: .75rem; color: var(--color-muted); }
+.result .courseNote { font-size: .7rem; margin-top: var(--space-3); padding-top: var(--space-3); border-top: 1px solid var(--color-border); }
+.notice { padding: var(--space-6) 0; display: grid; justify-items: start; gap: var(--space-4); }
+.notice > svg { width: 32px; height: 32px; color: var(--color-accent); }
+.notice h3 { font-size: 1.5rem; }
+.notice p { color: var(--color-muted); }
+.guide { display: grid; justify-items: start; gap: var(--space-5); }
+.guide ol { padding-left: var(--space-6); margin: 0; display: grid; gap: var(--space-4); }
+.guide li::marker { color: var(--color-primary); font-weight: 600; }
+.infoNote { background: var(--color-accent-soft); padding: var(--space-4); border-radius: var(--radius-control); font-size: var(--text-small); color: var(--color-text); width: 100%; }
+.scholarshipLinks { display: grid; gap: var(--space-4); }
+.scholarshipLinks > div { padding: var(--space-3) var(--space-4); background: var(--color-surface); border: var(--card-border); border-radius: var(--radius-control); }
+.scholarshipLinks :global(.text-link) { white-space: normal; }
+.scholarshipLinks p { color: var(--color-muted); font-size: var(--text-small); }

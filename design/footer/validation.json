@@ -1,0 +1,55 @@
+{
+  "date": "2026-10-08",
+  "timezone": "Asia/Kolkata",
+  "feature": "Shared dark-maroon footer and supporting pages",
+  "browserAudit": {
+    "command": "node design/footer/capture.mjs",
+    "exitCode": 0,
+    "widths": [320, 390, 650, 768, 1100, 1440, 1920],
+    "footerLinks": 34,
+    "groupedNavigationLinks": 23,
+    "uniqueGroupDestinations": 21,
+    "supportingPages": 15,
+    "supportingPageHttpStatus": 200,
+    "unknownRouteHttpStatus": 404,
+    "horizontalOverflow": false,
+    "outOfBoundsLinks": [],
+    "visibleLinkTargetsBelow44px": [],
+    "missingAnchors": [],
+    "capturedPageErrors": [],
+    "mobileBackToTop": "passed",
+    "evidence": "browser-evidence.json"
+  },
+  "lint": { "command": "npm run lint", "exitCode": 0 },
+  "build": {
+    "command": "npm run build",
+    "exitCode": 0,
+    "staticPaths": "Homepage, not-found and 15 supporting pages; 18 generated entries reported by Next"
+  },
+  "existingBehaviorSmokeChecks": {
+    "fixedHeader": "passed",
+    "newsLazyActivation": "isolated rerun passed",
+    "initialNewsAttempt": "Timed out waiting for the mocked ready feed during the first mixed run; the same unchanged test passed in isolation",
+    "scope": "Two relevant existing scenarios; the full earlier 16-test news/header suite was not repeated for this footer change"
+  },
+  "postBuildHttpChecks": {
+    "homepage": { "status": 200, "footerPresent": true },
+    "privacyPolicy": { "status": 200, "policyPreviewPresent": true, "noindexPresent": true }
+  },
+  "temporaryContent": {
+    "authorizedByUser": "use temp yet",
+    "supportEmail": "support@nsedu.example",
+    "liveEmailChannel": false,
+    "socialIcons": ["Instagram", "LinkedIn", "YouTube", "Facebook", "X"],
+    "socialDestinations": "Contact-page profile status until real URLs are configured",
+    "draftLegalPages": 5,
+    "draftMetadata": "noindex, follow",
+    "publicDomain": "not configured"
+  },
+  "notes": [
+    "The initial capture used an old production server without the new footer. Its project-specific process was replaced with a development preview.",
+    "Capture now waits for homepage hydration and keeps caret styles unchanged; initial screenshot caret mutation warnings were artifacts of capture timing.",
+    "Footer colours and recipes are centralized in frontend/src/styles/index.css; contacts and links in frontend/src/data/site.js.",
+    "No production deployment, verified social ownership, approved legal policy or search-ranking result is claimed."
+  ]
+}

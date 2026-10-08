@@ -1,0 +1,19 @@
+{
+  "generatedWith": "built-in image_gen",
+  "referenceImage": "design/section-4-eligibility/redesign-v2/E4.png",
+  "transparentBackground": true,
+  "assets": [
+    {
+      "id": "notebook",
+      "prompt": "Use case: product-mockup. Generate a standalone transparent-background academic illustration for NSEDU's approved eligibility choice cards. Reference image is ONLY a style reference for the open notebook object, not an image to edit; DO NOT include any UI, card background or text. Subject: a warm ivory open exercise notebook with two gently curved pages and delicate faint unlettered ruled lines; a sharpened deep wine #72243B wooden pencil rests diagonally along the lower-right page. Show the complete notebook and pencil, three-quarter overhead view, a carefully crafted tactile paper product illustration, realistic soft studio lighting, clean quiet premium editorial feeling, matching the referenced notebook. Restrained ivory #FFFAF8 and warm taupe #806C60 with the small wine pencil detail. Centered object fills approximately 75 percent of square canvas, generous transparent margins; naturally subtle contact shadow kept close to object, absolutely no solid background, no text, typography, logos, watermarks, browser elements, frame or selection marks. High quality asset usable at 200px width."
+    },
+    {
+      "id": "certificate",
+      "prompt": "Use case: product-mockup. Standalone transparent academic illustration for NSEDU eligibility card. The reference is ONLY a style reference for its middle certificate/books illustration; do not edit or reproduce the interface. A beautiful warm ivory higher-secondary completion certificate, no readable text, just a few subtle taupe horizontal lines, a modest wine #72243B circular wax seal near its bottom, standing slightly leaning behind a closed small deep-wine hardcover book resting horizontally at an angle. Fully contained, complete objects, three-quarter front/top view, premium softly lit tactile paper stationery illustration, natural modest shadows immediately near the objects, no background or card, genuine transparency. Matching warm ivory #FFFAF8, taupe #806C60 and wine palette. Objects centered, fill about75 percent of square canvas, generous transparent margins. No lettering, headings, UI, frame, watermarks, logos, check marks or extra objects. Usable at200px rendered width."
+    },
+    {
+      "id": "graduation",
+      "prompt": "Use case: product-mockup. Generate a standalone transparent academic illustration for NSEDU's eligibility card. Reference image is ONLY a style reference for the rightmost cap/books object, not an edit target; do not include interface. Subject: a dark warm-taupe graduation mortarboard resting atop two neatly stacked small hardback textbooks, upper book ivory #FFFAF8 with light taupe cover and lower book muted wine #72243B. A delicate deep-wine tassel drops from the cap at the right. Complete objects, three-quarter front/top view, premium softly lit tactile paper stationery illustration with realistic cloth cap texture and softly rounded book edges, understated professional. Natural subtle contact shadow close to objects. Centered fills75percent of a square transparent canvas, transparent margins. No solid background, frames, text, logos, watermarks, UI, check marks, sparkles, blue, extra props. Match the clean quiet object in the reference; highquality asset rendered at200px."
+    }
+  ]
+}

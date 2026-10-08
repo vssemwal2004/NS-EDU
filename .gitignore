@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.angular/
+.next/
+out/
+coverage/
+.env
+.env.*
+!.env.example
+*.log
+test-results/
+playwright-report/

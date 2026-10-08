@@ -1,0 +1,71 @@
+{
+  "measurements": [
+    {
+      "name": "desktop",
+      "section": "intro",
+      "header": {
+        "x": 0,
+        "y": 0,
+        "width": 1440,
+        "height": 114.75
+      },
+      "horizontalOverflow": false
+    },
+    {
+      "name": "desktop",
+      "section": "locations",
+      "header": {
+        "x": 0,
+        "y": 0,
+        "width": 1440,
+        "height": 81
+      },
+      "horizontalOverflow": false
+    },
+    {
+      "name": "desktop",
+      "section": "colleges",
+      "header": {
+        "x": 0,
+        "y": 0,
+        "width": 1440,
+        "height": 81
+      },
+      "horizontalOverflow": false
+    },
+    {
+      "name": "mobile",
+      "section": "intro",
+      "header": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 77
+      },
+      "horizontalOverflow": false
+    },
+    {
+      "name": "mobile",
+      "section": "locations",
+      "header": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 65
+      },
+      "horizontalOverflow": false
+    },
+    {
+      "name": "mobile",
+      "section": "colleges",
+      "header": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 65
+      },
+      "horizontalOverflow": false
+    }
+  ],
+  "errors": []
+}

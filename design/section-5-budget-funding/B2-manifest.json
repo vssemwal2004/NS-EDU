@@ -1,0 +1,50 @@
+{
+  "generatedWith": "built-in image_gen",
+  "date": "2026-10-07 (IST)",
+  "status": "B2 revised design proposal; not implemented or user approved",
+  "previews": [
+    {
+      "file": "B2-desktop.png",
+      "width": 1774,
+      "height": 887,
+      "bytes": 1569099,
+      "sha256": "1E07036F378B01792FC6833B4EE27649970B6ED2E0B59B28C3863A45AD6D225E"
+    },
+    {
+      "file": "B2-mobile.png",
+      "width": 882,
+      "height": 1783,
+      "bytes": 1404219,
+      "sha256": "C4A7458E7ACB9C19FA9263B54AA9D3DBCC6A53A7A1CF3CBE8F2CEA074A001481"
+    }
+  ],
+  "originalFiles": [
+    "C:/Users/422se/.codex/generated_images/01a10d7b-9010-7a01-9daa-701856239cc4/exec-83c1ae7a-acb1-4aba-b59f-328377ba22d7.png",
+    "C:/Users/422se/.codex/generated_images/01a10d7b-9010-7a01-9daa-701856239cc4/exec-b7f39f84-5444-42f0-8909-dfb0b22db058.png"
+  ],
+  "editTargets": [
+    "B1-desktop.png",
+    "B2-desktop.png"
+  ],
+  "promptSet": "B2-prompts.json",
+  "designBrief": "B2-design-brief.md",
+  "review": [
+    "Desktop and mobile raster output visually inspected",
+    "All three group amounts correct: INR 240000 + 96000 + 39000 = 375000",
+    "Budget INR 400000; remainder INR 25000; INR 5000 refundable deposit identified",
+    "Programme/city/year context, labeled controls and primary outcome legible",
+    "Mobile puts result before group breakdown; detailed costs initially closed",
+    "Scholarship support is separate; no scholarship award or eligibility claimed",
+    "Decorative notebook, campus and paper details stay outside control text",
+    "Generated artwork includes small decorative handwriting; implementation may omit it",
+    "Raster design does not establish working interaction, measured performance or accessibility"
+  ],
+  "applicationSourceChanged": false,
+  "applicationTests": "Not rerun: only documentation and raster design previews changed",
+  "priorVersionsPreserved": [
+    "B1-desktop.png",
+    "B1-mobile.png",
+    "prompts.json",
+    "manifest.json"
+  ]
+}

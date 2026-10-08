@@ -1,0 +1,81 @@
+{
+  "date": "2026-10-07 (IST)",
+  "status": "passed",
+  "frontendTests": {
+    "command": "npm run test:frontend",
+    "passed": 74,
+    "failed": 0,
+    "budgetTests": 12,
+    "duration": "7.8 minutes"
+  },
+  "lint": {
+    "command": "npm run lint",
+    "exitCode": 0
+  },
+  "productionBuild": {
+    "command": "npm run build",
+    "exitCode": 0,
+    "route": "/ — statically prerendered"
+  },
+  "responsive": {
+    "widths": [
+      320,
+      360,
+      390,
+      414,
+      600,
+      760,
+      768,
+      900,
+      1100,
+      1101,
+      1280,
+      1440,
+      1672,
+      1920
+    ],
+    "states": [
+      "collapsed",
+      "expanded"
+    ],
+    "checks": 28,
+    "horizontalOverflow": 0,
+    "outsideControls": 0,
+    "measurements": "measurements.json"
+  },
+  "visualReview": {
+    "sizes": [
+      "desktop 1672",
+      "tablet 768",
+      "mobile 390"
+    ],
+    "previewsPerSize": 6,
+    "reviewed": [
+      "Default summary",
+      "Expanded editable costs",
+      "Over-budget state",
+      "Sample full-cost matches",
+      "Scholarship resources",
+      "Actual fixed-header viewport"
+    ],
+    "notes": "Isolated section captures extend height at the same width and temporarily hide header; regular viewport captures keep actual sizing."
+  },
+  "artwork": {
+    "asset": "frontend/public/images/budget/desk.webp",
+    "bytes": 19478,
+    "width": 400,
+    "height": 400,
+    "generatedWith": "built-in image_gen",
+    "prompts": "assets/prompts.json"
+  },
+  "productionLoadingAudit": {
+    "record": "loading-audit.json",
+    "deviceScaleFactor": 1,
+    "requestsBeforeScroll": 0,
+    "desktopDeliveredBytes": 9536,
+    "mobileDeliveredBytes": 2456,
+    "browserAndConsoleErrors": 0,
+    "note": "Fresh local production contexts; not a field performance benchmark. Temporary port 3001 audit server stopped; existing port 3000 dev server retained."
+  },
+  "dataScope": "Static illustrative college and living costs; no backend, automatic scholarship award, or verified fee source connected."
+}

@@ -1,0 +1,128 @@
+{
+  "version": "N2",
+  "mode": "research-snapshot",
+  "snapshotDate": "2026-10-07",
+  "timezone": "Asia/Kolkata",
+  "apiConnected": false,
+  "listingReferences": [
+    "https://www.shiksha.com/news",
+    "https://www.shiksha.com/articles-all"
+  ],
+  "dateBasis": "Dates displayed in Shiksha news/articles listings accessed on 7 October 2026. Listing dates may represent updates; not treated as independently verified publication times.",
+  "imagery": "AI-generated illustrative documents, laptop, books and campus detail. Not official notices, actual scorecards or authenticated campus photography.",
+  "stories": [
+    {
+      "id": "news-jee",
+      "type": "news",
+      "title": "JEE Main 2027: registration updates and application guide",
+      "topic": "JEE Main",
+      "sourceName": "Shiksha",
+      "sourceUrl": "https://www.shiksha.com/news/engineering-jee-mains-registration-date-2027-live-updates-session-1-form-link-jeemain-nta-nic-in-blogId-243663",
+      "displayDate": "7 Oct 2026",
+      "sourceListingDate": "2026-10-07",
+      "publishedAt": null,
+      "officialNoticeVerified": false,
+      "isParaphrased": true
+    },
+    {
+      "id": "news-cbse",
+      "type": "news",
+      "title": "CBSE 2027: tentative Class 10 & 12 exam schedule",
+      "topic": "CBSE",
+      "sourceName": "Shiksha",
+      "sourceUrl": "https://www.shiksha.com/news/boards-cbse-date-sheet-2027-live-updates-check-class-10-12-cbse-2027-tentative-exam-schedule-blogId-243829",
+      "displayDate": "7 Oct 2026",
+      "sourceListingDate": "2026-10-07",
+      "publishedAt": null,
+      "officialNoticeVerified": false,
+      "isParaphrased": true
+    },
+    {
+      "id": "news-nios",
+      "type": "news",
+      "title": "NIOS October exams: Class 10 & 12 date-sheet coverage",
+      "topic": "NIOS",
+      "sourceName": "Shiksha",
+      "sourceUrl": "https://www.shiksha.com/news/boards-nios-date-sheet-2026-live-updates-check-nios-october-exam-date-2026-class-10-12-nios-ac-in-blogId-243749",
+      "displayDate": "7 Oct 2026",
+      "sourceListingDate": "2026-10-07",
+      "publishedAt": null,
+      "officialNoticeVerified": false,
+      "isParaphrased": true
+    },
+    {
+      "id": "news-iit",
+      "type": "news",
+      "title": "IIT Gandhinagar: visiting-student research applications",
+      "topic": "Admissions",
+      "sourceName": "Shiksha",
+      "sourceUrl": "https://www.shiksha.com/news/college-iit-gandhinagar-visiting-students-research-engagement-programme-2026-27-application-open-check-details-blogId-243871",
+      "displayDate": "7 Oct 2026",
+      "sourceListingDate": "2026-10-07",
+      "publishedAt": null,
+      "officialNoticeVerified": false,
+      "isParaphrased": true
+    },
+    {
+      "id": "article-nit",
+      "type": "article",
+      "title": "NITs: compare courses, fees and admission routes",
+      "topic": "College guide",
+      "sourceName": "Shiksha",
+      "sourceUrl": "https://www.shiksha.com/engineering/articles/nits-in-india-blogId-20003",
+      "displayDate": "7 Oct 2026",
+      "sourceListingDate": "2026-10-07",
+      "publishedAt": null,
+      "officialNoticeVerified": false,
+      "isParaphrased": true
+    },
+    {
+      "id": "article-cuet",
+      "type": "article",
+      "title": "B.Sc. subject combinations: what to check",
+      "topic": "CUET UG",
+      "sourceName": "Shiksha",
+      "sourceUrl": "https://www.shiksha.com/science/articles/cuet-subject-mapping-for-b-sc-blogId-178265",
+      "displayDate": "7 Oct 2026",
+      "sourceListingDate": "2026-10-07",
+      "publishedAt": null,
+      "officialNoticeVerified": false,
+      "isParaphrased": true
+    },
+    {
+      "id": "article-uceed",
+      "type": "article",
+      "title": "UCEED 2027: Part A and Part B topic guide",
+      "topic": "Design entrance",
+      "sourceName": "Shiksha",
+      "sourceUrl": "https://www.shiksha.com/design/articles/uceed-subjects-blogId-243863",
+      "displayDate": "7 Oct 2026",
+      "sourceListingDate": "2026-10-07",
+      "publishedAt": null,
+      "officialNoticeVerified": false,
+      "isParaphrased": true
+    }
+  ],
+  "controls": {
+    "tabs": [
+      "News",
+      "Articles",
+      "Saved"
+    ],
+    "topics": [
+      "All",
+      "CBSE",
+      "ICSE / ISC",
+      "State boards",
+      "CUET UG",
+      "JEE Main",
+      "NEET UG",
+      "NCERT"
+    ],
+    "search": true,
+    "sort": "Newest first",
+    "bookmarks": true,
+    "interests": true,
+    "implemented": false
+  }
+}

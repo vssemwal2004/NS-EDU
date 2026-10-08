@@ -1,0 +1,132 @@
+{
+  "version": 1,
+  "status": "design-proposal",
+  "isDemo": true,
+  "updatedAt": "2026-10-07",
+  "heading": "Education updates, made clear.",
+  "description": "Board results, exam notices and guides for your next step.",
+  "topics": [
+    "All updates",
+    "CBSE",
+    "ICSE / ISC",
+    "State boards",
+    "CUET UG",
+    "JEE Main",
+    "NEET UG",
+    "NCERT"
+  ],
+  "featuredGuide": {
+    "id": "class-12-next-step",
+    "type": "guide",
+    "topic": "After Class 12",
+    "title": "After Class 12: your next-step checklist",
+    "excerpt": "Compare courses, understand requirements and organise your admission documents.",
+    "sourceName": "NSEDU Guide",
+    "isDemo": true,
+    "publishedAt": null,
+    "sourceUrl": null
+  },
+  "updates": [
+    {
+      "id": "cbse-results",
+      "type": "news",
+      "topic": "CBSE",
+      "title": "Class 10 & 12: result and scorecard updates",
+      "category": "Board results",
+      "isDemo": true,
+      "publishedAt": null,
+      "sourceName": null,
+      "sourceUrl": null,
+      "officialNoticeUrl": null,
+      "verification": "demo"
+    },
+    {
+      "id": "cisce-boards",
+      "type": "news",
+      "topic": "ICSE / ISC",
+      "title": "Board notices, timetables and result updates",
+      "category": "Board exams",
+      "isDemo": true,
+      "publishedAt": null,
+      "sourceName": null,
+      "sourceUrl": null,
+      "officialNoticeUrl": null,
+      "verification": "demo"
+    },
+    {
+      "id": "cuet-updates",
+      "type": "news",
+      "topic": "CUET UG",
+      "title": "Application, admit card and counselling updates",
+      "category": "Entrance exams",
+      "isDemo": true,
+      "publishedAt": null,
+      "sourceName": null,
+      "sourceUrl": null,
+      "officialNoticeUrl": null,
+      "verification": "demo"
+    },
+    {
+      "id": "jee-main-updates",
+      "type": "news",
+      "topic": "JEE Main",
+      "title": "Registration, exam-day and answer-key updates",
+      "category": "Entrance exams",
+      "isDemo": true,
+      "publishedAt": null,
+      "sourceName": null,
+      "sourceUrl": null,
+      "officialNoticeUrl": null,
+      "verification": "demo"
+    },
+    {
+      "id": "ncert-resources",
+      "type": "news",
+      "topic": "NCERT",
+      "title": "Textbook and learning-resource updates",
+      "category": "Study resources",
+      "isDemo": true,
+      "publishedAt": null,
+      "sourceName": null,
+      "sourceUrl": null,
+      "officialNoticeUrl": null,
+      "verification": "demo"
+    }
+  ],
+  "guides": [
+    {
+      "id": "cuet-subjects",
+      "type": "guide",
+      "title": "CUET subjects: choose for your course",
+      "category": "Course choices",
+      "isDemo": true,
+      "publishedAt": null,
+      "sourceUrl": null
+    },
+    {
+      "id": "jee-documents",
+      "type": "guide",
+      "title": "JEE Main: your document checklist",
+      "category": "Exam preparation",
+      "isDemo": true,
+      "publishedAt": null,
+      "sourceUrl": null
+    },
+    {
+      "id": "ncert-revision",
+      "type": "guide",
+      "title": "NCERT revision: build a weekly plan",
+      "category": "Study skills",
+      "isDemo": true,
+      "publishedAt": null,
+      "sourceUrl": null
+    }
+  ],
+  "preferenceAction": {
+    "title": "Make updates relevant to you",
+    "description": "Choose the boards and exams you care about.",
+    "label": "Choose interests",
+    "implemented": false
+  },
+  "fixtureNote": "Topic-shaped sample headlines, not actual announcements or a live feed. Articles and action flows are design proposals."
+}

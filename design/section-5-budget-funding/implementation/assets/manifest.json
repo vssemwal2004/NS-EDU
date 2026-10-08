@@ -1,0 +1,12 @@
+{
+  "generatedWith": "built-in image_gen",
+  "original": "C:/Users/422se/.codex/generated_images/01a10d7b-9010-7a01-9daa-701856239cc4/exec-66488ee1-4f6d-4404-90ac-2e26cd483eb9.png",
+  "preserved": "design\\section-5-budget-funding\\implementation\\assets\\desk-source.png",
+  "asset": "frontend/public/images/budget/desk.webp",
+  "sourceHasAlpha": true,
+  "width": 400,
+  "height": 400,
+  "bytes": 19478,
+  "promptSet": "prompts.json",
+  "note": "Only this small asset ships; full mockup PNGs remain design references."
+}

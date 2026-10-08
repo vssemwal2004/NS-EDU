@@ -1,0 +1,44 @@
+{
+  "measurements": [
+    {
+      "name": "desktop",
+      "width": 1672,
+      "height": 941,
+      "section": {
+        "x": 0,
+        "y": 66.984375,
+        "width": 1672,
+        "height": 873.640625
+      },
+      "horizontalOverflow": false
+    },
+    {
+      "name": "tablet",
+      "width": 768,
+      "height": 1024,
+      "section": {
+        "x": 0,
+        "y": 5.140625,
+        "width": 768,
+        "height": 1261.625
+      },
+      "horizontalOverflow": false
+    },
+    {
+      "name": "mobile",
+      "width": 390,
+      "height": 844,
+      "section": {
+        "x": 0,
+        "y": 0.25,
+        "width": 390,
+        "height": 1571.59375
+      },
+      "horizontalOverflow": false
+    }
+  ],
+  "artwork": {
+    "contentType": "image/webp",
+    "bytes": 144810
+  }
+}

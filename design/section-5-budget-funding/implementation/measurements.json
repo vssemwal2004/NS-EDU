@@ -1,0 +1,255 @@
+{
+  "previews": [
+    {
+      "name": "desktop",
+      "width": 1672,
+      "height": 941,
+      "browserErrors": [],
+      "consoleErrors": [],
+      "note": "Section-only screenshots temporarily hide header and extend viewport height for full paint; width is preserved. Viewport screenshots retain actual size and fixed header."
+    },
+    {
+      "name": "tablet",
+      "width": 768,
+      "height": 1024,
+      "browserErrors": [],
+      "consoleErrors": [],
+      "note": "Section-only screenshots temporarily hide header and extend viewport height for full paint; width is preserved. Viewport screenshots retain actual size and fixed header."
+    },
+    {
+      "name": "mobile",
+      "width": 390,
+      "height": 844,
+      "browserErrors": [],
+      "consoleErrors": [],
+      "note": "Section-only screenshots temporarily hide header and extend viewport height for full paint; width is preserved. Viewport screenshots retain actual size and fixed header."
+    }
+  ],
+  "widths": [
+    {
+      "width": 320,
+      "expanded": false,
+      "sectionHeight": 1641.5,
+      "horizontalOverflow": false,
+      "outside": [],
+      "artworkLoading": "lazy"
+    },
+    {
+      "width": 320,
+      "expanded": true,
+      "sectionHeight": 2233.73,
+      "horizontalOverflow": false,
+      "outside": [],
+      "artworkLoading": "lazy"
+    },
+    {
+      "width": 360,
+      "expanded": false,
+      "sectionHeight": 1519.95,
+      "horizontalOverflow": false,
+      "outside": [],
+      "artworkLoading": "lazy"
+    },
+    {
+      "width": 360,
+      "expanded": true,
+      "sectionHeight": 2083.98,
+      "horizontalOverflow": false,
+      "outside": [],
+      "artworkLoading": "lazy"
+    },
+    {
+      "width": 390,
+      "expanded": false,
+      "sectionHeight": 1480.27,
+      "horizontalOverflow": false,
+      "outside": [],
+      "artworkLoading": "lazy"
+    },
+    {
+      "width": 390,
+      "expanded": true,
+      "sectionHeight": 2044.3,
+      "horizontalOverflow": false,
+      "outside": [],
+      "artworkLoading": "lazy"
+    },
+    {
+      "width": 414,
+      "expanded": false,
+      "sectionHeight": 1457.02,
+      "horizontalOverflow": false,
+      "outside": [],
+      "artworkLoading": "lazy"
+    },
+    {
+      "width": 414,
+      "expanded": true,
+      "sectionHeight": 2003.69,
+      "horizontalOverflow": false,
+      "outside": [],
+      "artworkLoading": "lazy"
+    },
+    {
+      "width": 600,
+      "expanded": false,
+      "sectionHeight": 1467.53,
+      "horizontalOverflow": false,
+      "outside": [],
+      "artworkLoading": "lazy"
+    },
+    {
+      "width": 600,
+      "expanded": true,
+      "sectionHeight": 1995.61,
+      "horizontalOverflow": false,
+      "outside": [],
+      "artworkLoading": "lazy"
+    },
+    {
+      "width": 760,
+      "expanded": false,
+      "sectionHeight": 1476.98,
+      "horizontalOverflow": false,
+      "outside": [],
+      "artworkLoading": "lazy"
+    },
+    {
+      "width": 760,
+      "expanded": true,
+      "sectionHeight": 2005.06,
+      "horizontalOverflow": false,
+      "outside": [],
+      "artworkLoading": "lazy"
+    },
+    {
+      "width": 768,
+      "expanded": false,
+      "sectionHeight": 994.5,
+      "horizontalOverflow": false,
+      "outside": [],
+      "artworkLoading": "lazy"
+    },
+    {
+      "width": 768,
+      "expanded": true,
+      "sectionHeight": 1479.36,
+      "horizontalOverflow": false,
+      "outside": [],
+      "artworkLoading": "lazy"
+    },
+    {
+      "width": 900,
+      "expanded": false,
+      "sectionHeight": 935.83,
+      "horizontalOverflow": false,
+      "outside": [],
+      "artworkLoading": "lazy"
+    },
+    {
+      "width": 900,
+      "expanded": true,
+      "sectionHeight": 1459.22,
+      "horizontalOverflow": false,
+      "outside": [],
+      "artworkLoading": "lazy"
+    },
+    {
+      "width": 1100,
+      "expanded": false,
+      "sectionHeight": 939.83,
+      "horizontalOverflow": false,
+      "outside": [],
+      "artworkLoading": "lazy"
+    },
+    {
+      "width": 1100,
+      "expanded": true,
+      "sectionHeight": 1444.63,
+      "horizontalOverflow": false,
+      "outside": [],
+      "artworkLoading": "lazy"
+    },
+    {
+      "width": 1101,
+      "expanded": false,
+      "sectionHeight": 850.27,
+      "horizontalOverflow": false,
+      "outside": [],
+      "artworkLoading": "lazy"
+    },
+    {
+      "width": 1101,
+      "expanded": true,
+      "sectionHeight": 1355.06,
+      "horizontalOverflow": false,
+      "outside": [],
+      "artworkLoading": "lazy"
+    },
+    {
+      "width": 1280,
+      "expanded": false,
+      "sectionHeight": 867.64,
+      "horizontalOverflow": false,
+      "outside": [],
+      "artworkLoading": "lazy"
+    },
+    {
+      "width": 1280,
+      "expanded": true,
+      "sectionHeight": 1364.13,
+      "horizontalOverflow": false,
+      "outside": [],
+      "artworkLoading": "lazy"
+    },
+    {
+      "width": 1440,
+      "expanded": false,
+      "sectionHeight": 896.63,
+      "horizontalOverflow": false,
+      "outside": [],
+      "artworkLoading": "lazy"
+    },
+    {
+      "width": 1440,
+      "expanded": true,
+      "sectionHeight": 1383.55,
+      "horizontalOverflow": false,
+      "outside": [],
+      "artworkLoading": "lazy"
+    },
+    {
+      "width": 1672,
+      "expanded": false,
+      "sectionHeight": 940.89,
+      "horizontalOverflow": false,
+      "outside": [],
+      "artworkLoading": "lazy"
+    },
+    {
+      "width": 1672,
+      "expanded": true,
+      "sectionHeight": 1415.13,
+      "horizontalOverflow": false,
+      "outside": [],
+      "artworkLoading": "lazy"
+    },
+    {
+      "width": 1920,
+      "expanded": false,
+      "sectionHeight": 954.8,
+      "horizontalOverflow": false,
+      "outside": [],
+      "artworkLoading": "lazy"
+    },
+    {
+      "width": 1920,
+      "expanded": true,
+      "sectionHeight": 1423.89,
+      "horizontalOverflow": false,
+      "outside": [],
+      "artworkLoading": "lazy"
+    }
+  ],
+  "browserErrors": []
+}

@@ -1,0 +1,371 @@
+{
+  "phase": "before",
+  "captureMode": "Same responsive width; isolated captures hide header and extend viewport height for full paint. Viewport captures retain fixed header.",
+  "measurements": [
+    {
+      "id": "course-eligibility",
+      "width": 320,
+      "height": 1101.97,
+      "titleSize": "32.8px",
+      "imageHeights": [
+        76,
+        76,
+        76
+      ],
+      "outside": [],
+      "horizontalOverflow": false,
+      "smallButtons": []
+    },
+    {
+      "id": "college-budget",
+      "width": 320,
+      "height": 1641.5,
+      "titleSize": "30.4px",
+      "imageHeights": [
+        66
+      ],
+      "outside": [],
+      "horizontalOverflow": false,
+      "smallButtons": []
+    },
+    {
+      "id": "course-eligibility",
+      "width": 360,
+      "height": 978.75,
+      "titleSize": "32.8px",
+      "imageHeights": [
+        76,
+        76,
+        76
+      ],
+      "outside": [],
+      "horizontalOverflow": false,
+      "smallButtons": []
+    },
+    {
+      "id": "college-budget",
+      "width": 360,
+      "height": 1519.95,
+      "titleSize": "30.4px",
+      "imageHeights": [
+        66
+      ],
+      "outside": [],
+      "horizontalOverflow": false,
+      "smallButtons": []
+    },
+    {
+      "id": "course-eligibility",
+      "width": 390,
+      "height": 947.06,
+      "titleSize": "32.8px",
+      "imageHeights": [
+        76,
+        76,
+        76
+      ],
+      "outside": [],
+      "horizontalOverflow": false,
+      "smallButtons": []
+    },
+    {
+      "id": "college-budget",
+      "width": 390,
+      "height": 1480.27,
+      "titleSize": "30.4px",
+      "imageHeights": [
+        85
+      ],
+      "outside": [],
+      "horizontalOverflow": false,
+      "smallButtons": []
+    },
+    {
+      "id": "course-eligibility",
+      "width": 600,
+      "height": 908.05,
+      "titleSize": "42px",
+      "imageHeights": [
+        76,
+        76,
+        76
+      ],
+      "outside": [],
+      "horizontalOverflow": false,
+      "smallButtons": []
+    },
+    {
+      "id": "college-budget",
+      "width": 600,
+      "height": 1467.53,
+      "titleSize": "40.8px",
+      "imageHeights": [
+        85
+      ],
+      "outside": [],
+      "horizontalOverflow": false,
+      "smallButtons": []
+    },
+    {
+      "id": "course-eligibility",
+      "width": 640,
+      "height": 909.3,
+      "titleSize": "43.2px",
+      "imageHeights": [
+        76,
+        76,
+        76
+      ],
+      "outside": [],
+      "horizontalOverflow": false,
+      "smallButtons": []
+    },
+    {
+      "id": "college-budget",
+      "width": 640,
+      "height": 1475.92,
+      "titleSize": "43.52px",
+      "imageHeights": [
+        85
+      ],
+      "outside": [],
+      "horizontalOverflow": false,
+      "smallButtons": []
+    },
+    {
+      "id": "course-eligibility",
+      "width": 768,
+      "height": 729.53,
+      "titleSize": "36.8px",
+      "imageHeights": [
+        140,
+        140,
+        140
+      ],
+      "outside": [],
+      "horizontalOverflow": false,
+      "smallButtons": []
+    },
+    {
+      "id": "college-budget",
+      "width": 768,
+      "height": 994.5,
+      "titleSize": "32px",
+      "imageHeights": [
+        139
+      ],
+      "outside": [],
+      "horizontalOverflow": false,
+      "smallButtons": []
+    },
+    {
+      "id": "course-eligibility",
+      "width": 900,
+      "height": 729.53,
+      "titleSize": "36.8px",
+      "imageHeights": [
+        140,
+        140,
+        140
+      ],
+      "outside": [],
+      "horizontalOverflow": false,
+      "smallButtons": []
+    },
+    {
+      "id": "college-budget",
+      "width": 900,
+      "height": 935.83,
+      "titleSize": "32px",
+      "imageHeights": [
+        139
+      ],
+      "outside": [],
+      "horizontalOverflow": false,
+      "smallButtons": []
+    },
+    {
+      "id": "course-eligibility",
+      "width": 901,
+      "height": 565.53,
+      "titleSize": "48px",
+      "imageHeights": [
+        130,
+        130,
+        130
+      ],
+      "outside": [],
+      "horizontalOverflow": false,
+      "smallButtons": []
+    },
+    {
+      "id": "college-budget",
+      "width": 901,
+      "height": 935.83,
+      "titleSize": "32px",
+      "imageHeights": [
+        139
+      ],
+      "outside": [],
+      "horizontalOverflow": false,
+      "smallButtons": []
+    },
+    {
+      "id": "course-eligibility",
+      "width": 1100,
+      "height": 576.31,
+      "titleSize": "48px",
+      "imageHeights": [
+        130,
+        130,
+        130
+      ],
+      "outside": [],
+      "horizontalOverflow": false,
+      "smallButtons": []
+    },
+    {
+      "id": "college-budget",
+      "width": 1100,
+      "height": 939.83,
+      "titleSize": "35.2px",
+      "imageHeights": [
+        139
+      ],
+      "outside": [],
+      "horizontalOverflow": false,
+      "smallButtons": []
+    },
+    {
+      "id": "course-eligibility",
+      "width": 1101,
+      "height": 577.92,
+      "titleSize": "44.04px",
+      "imageHeights": [
+        130,
+        130,
+        130
+      ],
+      "outside": [],
+      "horizontalOverflow": false,
+      "smallButtons": []
+    },
+    {
+      "id": "college-budget",
+      "width": 1101,
+      "height": 850.27,
+      "titleSize": "35.232px",
+      "imageHeights": [
+        160
+      ],
+      "outside": [],
+      "horizontalOverflow": false,
+      "smallButtons": []
+    },
+    {
+      "id": "course-eligibility",
+      "width": 1280,
+      "height": 592.97,
+      "titleSize": "51.2px",
+      "imageHeights": [
+        130,
+        130,
+        130
+      ],
+      "outside": [],
+      "horizontalOverflow": false,
+      "smallButtons": []
+    },
+    {
+      "id": "college-budget",
+      "width": 1280,
+      "height": 867.64,
+      "titleSize": "40.96px",
+      "imageHeights": [
+        160
+      ],
+      "outside": [],
+      "horizontalOverflow": false,
+      "smallButtons": []
+    },
+    {
+      "id": "course-eligibility",
+      "width": 1440,
+      "height": 612.28,
+      "titleSize": "57.6px",
+      "imageHeights": [
+        144,
+        144,
+        144
+      ],
+      "outside": [],
+      "horizontalOverflow": false,
+      "smallButtons": []
+    },
+    {
+      "id": "college-budget",
+      "width": 1440,
+      "height": 896.63,
+      "titleSize": "46.08px",
+      "imageHeights": [
+        160
+      ],
+      "outside": [],
+      "horizontalOverflow": false,
+      "smallButtons": []
+    },
+    {
+      "id": "course-eligibility",
+      "width": 1672,
+      "height": 652.61,
+      "titleSize": "64px",
+      "imageHeights": [
+        160,
+        160,
+        160
+      ],
+      "outside": [],
+      "horizontalOverflow": false,
+      "smallButtons": []
+    },
+    {
+      "id": "college-budget",
+      "width": 1672,
+      "height": 940.89,
+      "titleSize": "53.504px",
+      "imageHeights": [
+        160
+      ],
+      "outside": [],
+      "horizontalOverflow": false,
+      "smallButtons": []
+    },
+    {
+      "id": "course-eligibility",
+      "width": 1920,
+      "height": 652.61,
+      "titleSize": "64px",
+      "imageHeights": [
+        160,
+        160,
+        160
+      ],
+      "outside": [],
+      "horizontalOverflow": false,
+      "smallButtons": []
+    },
+    {
+      "id": "college-budget",
+      "width": 1920,
+      "height": 954.8,
+      "titleSize": "54.4px",
+      "imageHeights": [
+        160
+      ],
+      "outside": [],
+      "horizontalOverflow": false,
+      "smallButtons": []
+    }
+  ],
+  "errors": []
+}

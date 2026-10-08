@@ -1,0 +1,29 @@
+{
+  "version": "N2",
+  "date": "2026-10-07",
+  "generatedWith": "built-in image_gen",
+  "useCase": "ui-mockup",
+  "status": "Current design proposal; image only; application source unchanged",
+  "supersedes": "N1 desktop/mobile were rejected by user as too static and repetitive; retained as history.",
+  "prompts": "N2-prompts.json",
+  "content": "N2-content.json",
+  "assets": [
+    {
+      "id": "N2-desktop",
+      "file": "N2-desktop.png",
+      "original": "C:/Users/422se/.codex/generated_images/01a10d7b-9010-7a01-9daa-701856239cc4/exec-18c32929-1ef0-47d7-b194-73179eac24e4.png",
+      "inspected": true
+    },
+    {
+      "id": "N2-mobile",
+      "file": "N2-mobile.png",
+      "original": "C:/Users/422se/.codex/generated_images/01a10d7b-9010-7a01-9daa-701856239cc4/exec-4507a3ec-ddab-4c49-a014-fbab4826efd2.png",
+      "inspected": true
+    }
+  ],
+  "inspection": {
+    "desktop": "No humans. Contemporary sans newsroom heading, four dated news rows, three sourced article links, tabs, search, sort, bookmarks and topic preferences. Thin rules and restrained ivory surface.",
+    "mobile": "Single-column feed with legible headlines, source dates, topic overflow affordance and articles following news. No humans.",
+    "limitations": "Raster proposals cannot validate responsive layout, tap targets or performance. Control behavior is not implemented. Generated thumbnails are illustrative. Minor generated warm accent rules should use central brand tokens in implementation."
+  }
+}

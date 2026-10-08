@@ -1,0 +1,536 @@
+{
+  "date": "2026-10-07 (IST)",
+  "status": "passed",
+  "changes": [
+    {
+      "section": "course-eligibility",
+      "width": 320,
+      "beforeHeight": 1101.97,
+      "afterHeight": 857.47,
+      "reductionPercent": 22.2,
+      "beforeTitleSize": "32.8px",
+      "afterTitleSize": "25.6px",
+      "beforeImageHeights": [
+        76,
+        76,
+        76
+      ],
+      "afterImageHeights": [
+        60,
+        60,
+        60
+      ]
+    },
+    {
+      "section": "college-budget",
+      "width": 320,
+      "beforeHeight": 1641.5,
+      "afterHeight": 1455.16,
+      "reductionPercent": 11.4,
+      "beforeTitleSize": "30.4px",
+      "afterTitleSize": "24px",
+      "beforeImageHeights": [
+        66
+      ],
+      "afterImageHeights": [
+        56
+      ]
+    },
+    {
+      "section": "course-eligibility",
+      "width": 360,
+      "beforeHeight": 978.75,
+      "afterHeight": 794.7,
+      "reductionPercent": 18.8,
+      "beforeTitleSize": "32.8px",
+      "afterTitleSize": "25.6px",
+      "beforeImageHeights": [
+        76,
+        76,
+        76
+      ],
+      "afterImageHeights": [
+        60,
+        60,
+        60
+      ]
+    },
+    {
+      "section": "college-budget",
+      "width": 360,
+      "beforeHeight": 1519.95,
+      "afterHeight": 1346.92,
+      "reductionPercent": 11.4,
+      "beforeTitleSize": "30.4px",
+      "afterTitleSize": "24px",
+      "beforeImageHeights": [
+        66
+      ],
+      "afterImageHeights": [
+        56
+      ]
+    },
+    {
+      "section": "course-eligibility",
+      "width": 390,
+      "beforeHeight": 947.06,
+      "afterHeight": 778.23,
+      "reductionPercent": 17.8,
+      "beforeTitleSize": "32.8px",
+      "afterTitleSize": "25.6px",
+      "beforeImageHeights": [
+        76,
+        76,
+        76
+      ],
+      "afterImageHeights": [
+        60,
+        60,
+        60
+      ]
+    },
+    {
+      "section": "college-budget",
+      "width": 390,
+      "beforeHeight": 1480.27,
+      "afterHeight": 1311.66,
+      "reductionPercent": 11.4,
+      "beforeTitleSize": "30.4px",
+      "afterTitleSize": "24px",
+      "beforeImageHeights": [
+        85
+      ],
+      "afterImageHeights": [
+        66
+      ]
+    },
+    {
+      "section": "course-eligibility",
+      "width": 600,
+      "beforeHeight": 908.05,
+      "afterHeight": 785.14,
+      "reductionPercent": 13.5,
+      "beforeTitleSize": "42px",
+      "afterTitleSize": "32px",
+      "beforeImageHeights": [
+        76,
+        76,
+        76
+      ],
+      "afterImageHeights": [
+        60,
+        60,
+        60
+      ]
+    },
+    {
+      "section": "college-budget",
+      "width": 600,
+      "beforeHeight": 1467.53,
+      "afterHeight": 1267.55,
+      "reductionPercent": 13.6,
+      "beforeTitleSize": "40.8px",
+      "afterTitleSize": "29.6px",
+      "beforeImageHeights": [
+        85
+      ],
+      "afterImageHeights": [
+        66
+      ]
+    },
+    {
+      "section": "course-eligibility",
+      "width": 640,
+      "beforeHeight": 909.3,
+      "afterHeight": 785.14,
+      "reductionPercent": 13.7,
+      "beforeTitleSize": "43.2px",
+      "afterTitleSize": "32px",
+      "beforeImageHeights": [
+        76,
+        76,
+        76
+      ],
+      "afterImageHeights": [
+        60,
+        60,
+        60
+      ]
+    },
+    {
+      "section": "college-budget",
+      "width": 640,
+      "beforeHeight": 1475.92,
+      "afterHeight": 1267.55,
+      "reductionPercent": 14.1,
+      "beforeTitleSize": "43.52px",
+      "afterTitleSize": "29.6px",
+      "beforeImageHeights": [
+        85
+      ],
+      "afterImageHeights": [
+        66
+      ]
+    },
+    {
+      "section": "course-eligibility",
+      "width": 768,
+      "beforeHeight": 729.53,
+      "afterHeight": 605.94,
+      "reductionPercent": 16.9,
+      "beforeTitleSize": "36.8px",
+      "afterTitleSize": "32px",
+      "beforeImageHeights": [
+        140,
+        140,
+        140
+      ],
+      "afterImageHeights": [
+        90,
+        90,
+        90
+      ]
+    },
+    {
+      "section": "college-budget",
+      "width": 768,
+      "beforeHeight": 994.5,
+      "afterHeight": 808.94,
+      "reductionPercent": 18.7,
+      "beforeTitleSize": "32px",
+      "afterTitleSize": "25.6px",
+      "beforeImageHeights": [
+        139
+      ],
+      "afterImageHeights": [
+        107
+      ]
+    },
+    {
+      "section": "course-eligibility",
+      "width": 900,
+      "beforeHeight": 729.53,
+      "afterHeight": 605.94,
+      "reductionPercent": 16.9,
+      "beforeTitleSize": "36.8px",
+      "afterTitleSize": "32px",
+      "beforeImageHeights": [
+        140,
+        140,
+        140
+      ],
+      "afterImageHeights": [
+        90,
+        90,
+        90
+      ]
+    },
+    {
+      "section": "college-budget",
+      "width": 900,
+      "beforeHeight": 935.83,
+      "afterHeight": 808.94,
+      "reductionPercent": 13.6,
+      "beforeTitleSize": "32px",
+      "afterTitleSize": "25.6px",
+      "beforeImageHeights": [
+        139
+      ],
+      "afterImageHeights": [
+        107
+      ]
+    },
+    {
+      "section": "course-eligibility",
+      "width": 901,
+      "beforeHeight": 565.53,
+      "afterHeight": 448.75,
+      "reductionPercent": 20.6,
+      "beforeTitleSize": "48px",
+      "afterTitleSize": "32px",
+      "beforeImageHeights": [
+        130,
+        130,
+        130
+      ],
+      "afterImageHeights": [
+        90,
+        90,
+        90
+      ]
+    },
+    {
+      "section": "college-budget",
+      "width": 901,
+      "beforeHeight": 935.83,
+      "afterHeight": 808.94,
+      "reductionPercent": 13.6,
+      "beforeTitleSize": "32px",
+      "afterTitleSize": "25.6px",
+      "beforeImageHeights": [
+        139
+      ],
+      "afterImageHeights": [
+        107
+      ]
+    },
+    {
+      "section": "course-eligibility",
+      "width": 1100,
+      "beforeHeight": 576.31,
+      "afterHeight": 448.75,
+      "reductionPercent": 22.1,
+      "beforeTitleSize": "48px",
+      "afterTitleSize": "32px",
+      "beforeImageHeights": [
+        130,
+        130,
+        130
+      ],
+      "afterImageHeights": [
+        90,
+        90,
+        90
+      ]
+    },
+    {
+      "section": "college-budget",
+      "width": 1100,
+      "beforeHeight": 939.83,
+      "afterHeight": 808.94,
+      "reductionPercent": 13.9,
+      "beforeTitleSize": "35.2px",
+      "afterTitleSize": "25.6px",
+      "beforeImageHeights": [
+        139
+      ],
+      "afterImageHeights": [
+        107
+      ]
+    },
+    {
+      "section": "course-eligibility",
+      "width": 1101,
+      "beforeHeight": 577.92,
+      "afterHeight": 447.19,
+      "reductionPercent": 22.6,
+      "beforeTitleSize": "44.04px",
+      "afterTitleSize": "32px",
+      "beforeImageHeights": [
+        130,
+        130,
+        130
+      ],
+      "afterImageHeights": [
+        90,
+        90,
+        90
+      ]
+    },
+    {
+      "section": "college-budget",
+      "width": 1101,
+      "beforeHeight": 850.27,
+      "afterHeight": 724.34,
+      "reductionPercent": 14.8,
+      "beforeTitleSize": "35.232px",
+      "afterTitleSize": "25.6px",
+      "beforeImageHeights": [
+        160
+      ],
+      "afterImageHeights": [
+        107
+      ]
+    },
+    {
+      "section": "course-eligibility",
+      "width": 1280,
+      "beforeHeight": 592.97,
+      "afterHeight": 452.13,
+      "reductionPercent": 23.8,
+      "beforeTitleSize": "51.2px",
+      "afterTitleSize": "35.2px",
+      "beforeImageHeights": [
+        130,
+        130,
+        130
+      ],
+      "afterImageHeights": [
+        90,
+        90,
+        90
+      ]
+    },
+    {
+      "section": "college-budget",
+      "width": 1280,
+      "beforeHeight": 867.64,
+      "afterHeight": 732.78,
+      "reductionPercent": 15.5,
+      "beforeTitleSize": "40.96px",
+      "afterTitleSize": "26.88px",
+      "beforeImageHeights": [
+        160
+      ],
+      "afterImageHeights": [
+        107
+      ]
+    },
+    {
+      "section": "course-eligibility",
+      "width": 1440,
+      "beforeHeight": 612.28,
+      "afterHeight": 461.97,
+      "reductionPercent": 24.5,
+      "beforeTitleSize": "57.6px",
+      "afterTitleSize": "39.6px",
+      "beforeImageHeights": [
+        144,
+        144,
+        144
+      ],
+      "afterImageHeights": [
+        101,
+        101,
+        101
+      ]
+    },
+    {
+      "section": "college-budget",
+      "width": 1440,
+      "beforeHeight": 896.63,
+      "afterHeight": 749.05,
+      "reductionPercent": 16.5,
+      "beforeTitleSize": "46.08px",
+      "afterTitleSize": "30.24px",
+      "beforeImageHeights": [
+        160
+      ],
+      "afterImageHeights": [
+        107
+      ]
+    },
+    {
+      "section": "course-eligibility",
+      "width": 1672,
+      "beforeHeight": 652.61,
+      "afterHeight": 473.34,
+      "reductionPercent": 27.5,
+      "beforeTitleSize": "64px",
+      "afterTitleSize": "42px",
+      "beforeImageHeights": [
+        160,
+        160,
+        160
+      ],
+      "afterImageHeights": [
+        108,
+        108,
+        108
+      ]
+    },
+    {
+      "section": "college-budget",
+      "width": 1672,
+      "beforeHeight": 940.89,
+      "afterHeight": 760.31,
+      "reductionPercent": 19.2,
+      "beforeTitleSize": "53.504px",
+      "afterTitleSize": "32px",
+      "beforeImageHeights": [
+        160
+      ],
+      "afterImageHeights": [
+        107
+      ]
+    },
+    {
+      "section": "course-eligibility",
+      "width": 1920,
+      "beforeHeight": 652.61,
+      "afterHeight": 473.34,
+      "reductionPercent": 27.5,
+      "beforeTitleSize": "64px",
+      "afterTitleSize": "42px",
+      "beforeImageHeights": [
+        160,
+        160,
+        160
+      ],
+      "afterImageHeights": [
+        108,
+        108,
+        108
+      ]
+    },
+    {
+      "section": "college-budget",
+      "width": 1920,
+      "beforeHeight": 954.8,
+      "afterHeight": 760.31,
+      "reductionPercent": 20.4,
+      "beforeTitleSize": "54.4px",
+      "afterTitleSize": "32px",
+      "beforeImageHeights": [
+        160
+      ],
+      "afterImageHeights": [
+        107
+      ]
+    }
+  ],
+  "responsive": {
+    "widths": [
+      320,
+      360,
+      390,
+      600,
+      640,
+      768,
+      900,
+      901,
+      1100,
+      1101,
+      1280,
+      1440,
+      1672,
+      1920
+    ],
+    "entryChecks": 28,
+    "failures": [],
+    "browserErrors": []
+  },
+  "screenshots": {
+    "entryAndViewport": "after/",
+    "additionalStates": "Eligibility courses, marks, review and budget detailed costs at desktop/tablet/mobile widths",
+    "captureNote": "Same responsive width; isolated captures hide header and extend viewport height for full paint. Viewport captures retain fixed header."
+  },
+  "checks": {
+    "tests": {
+      "command": "npm test --workspace frontend -- budget.spec.js eligibility.spec.js header-scroll.spec.js",
+      "passed": 34,
+      "failed": 0
+    },
+    "lint": {
+      "command": "npm run lint",
+      "exitCode": 0
+    },
+    "build": {
+      "command": "npm run build",
+      "exitCode": 0
+    }
+  },
+  "implementation": {
+    "sizingTokens": "frontend/src/styles/index.css",
+    "css": [
+      "frontend/src/features/landing/EligibilityChecker.module.css",
+      "frontend/src/features/landing/BudgetPlanner.module.css"
+    ],
+    "responsiveImageSizing": [
+      "frontend/src/features/landing/EligibilityChecker.js",
+      "frontend/src/features/landing/BudgetArtwork.js"
+    ],
+    "featureLogicChanged": false,
+    "assetsAdded": false
+  }
+}

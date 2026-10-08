@@ -1,0 +1,169 @@
+.hero { position: relative; overflow: hidden; background: var(--color-hero); }
+.heroInner { position: relative; min-height: clamp(480px, 34vw, 580px); padding-block: var(--space-12) var(--space-8); }
+.heroContent { position: relative; width: 53%; z-index: 2; }
+.heroContent h1 { font-size: var(--text-title); max-width: 790px; }
+.heroDescription { margin-top: var(--space-5); margin-bottom: var(--space-6); font-size: clamp(1rem, 1.43vw, 1.4rem); line-height: 1.5; }
+.heroVisual { position: absolute; top: 34px; right: 4.5%; bottom: 0; width: 43%; overflow: hidden; border-radius: 86px 142px 0 0; animation: reveal var(--motion-reveal) var(--ease-out) both; }
+.heroImage { display: block; width: 100%; height: 100%; }
+.artwork { display: none; position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.centerQuote, .leftQuote, .rightQuote { position: absolute; font-family: var(--hero-quote-font); color: var(--color-accent); opacity: .8; font-size: 1.05rem; line-height: 1.18; z-index: 1; }
+.centerQuote { left: 49%; top: 46px; width: 78px; }
+.centerQuote span, .rightQuote span { display: block; width: 24px; height: 1px; background: var(--color-primary); margin-top: var(--space-4); }
+.leftQuote { left: 18px; bottom: 24px; font-size: .88rem; }
+.rightQuote { right: 12px; top: 38px; font-size: .88rem; width: 68px; }
+.searchBox { max-width: 720px; position: relative; margin-top: var(--space-6); }
+.tabs { display: flex; gap: var(--space-2); padding-inline: var(--space-1); }
+.tabs button { min-width: 124px; min-height: 44px; border: 1px solid var(--color-border); border-bottom: 0; border-radius: var(--radius-control) var(--radius-control) 0 0; padding: var(--space-3) var(--space-6); background: var(--color-page); color: var(--color-text); font-weight: 600; font-size: var(--text-small); }
+.tabs button[aria-selected="true"] { background: var(--color-primary); color: var(--color-surface); border-color: var(--color-primary); }
+.tabs button:not([aria-selected="true"]):hover { background: var(--color-accent-soft); }
+.heroSearch { padding: var(--space-2); display: flex; gap: var(--space-2); background: var(--color-surface); border: 1px solid var(--color-input-border); border-radius: var(--radius-search); box-shadow: var(--shadow-search); }
+.searchInput { display: flex; align-items: center; flex: 1; min-width: 0; gap: var(--space-3); padding-inline: var(--space-4); border: 1px solid var(--color-input-border); border-radius: var(--radius-control); }
+.searchInput svg { color: var(--color-primary); }
+.searchInput input { min-width: 0; width: 100%; min-height: 52px; border: 0; background: transparent; color: var(--color-text); padding-block: var(--space-3); font-size: var(--text-small); }
+.searchInput input::placeholder { color: var(--color-muted); }
+.heroSearch > button { min-width: 145px; border-radius: var(--radius-search); font-size: var(--text-body); }
+.heroSearch > button svg { display: none; }
+.fields { display: flex; gap: var(--space-3); margin-top: var(--space-5); justify-content: space-around; max-width: 660px; padding-left: 64px; }
+.fields button { display: flex; flex-direction: column; align-items: center; gap: var(--space-2); min-width: 66px; padding: var(--space-1); border: 0; background: transparent; font-size: .72rem; color: var(--color-text); }
+.fieldIcon { display: grid; place-items: center; border-radius: var(--radius-pill); background: var(--color-accent-soft); width: 52px; height: 52px; color: var(--color-accent); transition: background var(--motion-fast), transform var(--motion-fast); }
+.fieldIcon svg { width: 26px; height: 26px; }
+.fields button:hover .fieldIcon { background: var(--color-surface); transform: translateY(-2px); }
+.discovery { padding-block: var(--space-6) var(--space-5); }
+.courseRow { display: flex; align-items: center; gap: var(--space-6); padding-bottom: var(--space-6); }
+.courseIntro { min-width: 275px; }
+.courseIntro h2 { font-size: var(--text-section); }
+.courseIntro p { color: var(--color-muted); font-size: var(--text-small); margin-top: var(--space-1); }
+.courseLinks { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--space-3); flex: 1; min-width: 0; }
+.courseLinks :global(.chip) { padding-inline: var(--space-4); }
+.allCourses { flex-shrink: 0; }
+.shortcuts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 1px solid var(--color-border); padding-top: var(--space-5); }
+.shortcut { display: flex; align-items: center; gap: var(--space-5); padding: var(--space-2) var(--space-5); background: transparent; border: 0; border-right: 1px solid var(--color-border); text-align: left; min-height: 72px; }
+.shortcut:first-child { padding-left: 0; }
+.shortcut:last-child { border-right: 0; padding-right: 0; }
+.shortcut > svg:first-child { width: 30px; height: 30px; color: var(--color-accent); }
+.shortcut > span { flex: 1; min-width: 0; }
+.shortcut h3 { font-size: clamp(1.05rem, 1.3vw, 1.35rem); }
+.shortcutDescription { display: block; font-size: .75rem; color: var(--color-muted); margin-top: var(--space-1); }
+.shortcut > svg:last-child { width: 18px; height: 18px; color: var(--color-primary); transition: transform var(--motion-fast); }
+.shortcut:hover h3 { text-decoration: underline; text-underline-offset: 4px; }
+.shortcut:hover > svg:last-child { transform: translateX(3px); }
+@media (max-width: 1500px) {
+  .centerQuote { display: none; }
+  .courseIntro { min-width: 240px; }
+  .courseRow { gap: var(--space-5); }
+  .courseLinks { gap: var(--space-2); }
+  .courseLinks :global(.chip) { padding-inline: var(--space-3); gap: var(--space-2); }
+  .shortcut { gap: var(--space-3); padding-inline: var(--space-4); }
+}
+@media (max-width: 1200px) {
+  .heroInner { min-height: 485px; padding-block: var(--space-10) var(--space-6); }
+  .heroContent { width: 55%; }
+  .heroVisual { right: 0; width: 42%; border-radius: 72px 110px 0 0; }
+  .leftQuote, .rightQuote { display: none; }
+  .heroContent h1 { font-size: clamp(2.6rem, 4.9vw, 3.7rem); }
+  .desktopBreak { display: none; }
+  .fields { gap: var(--space-3); padding-left: 0; justify-content: flex-start; overflow-x: auto; scrollbar-width: thin; padding-bottom: var(--space-2); }
+  .fields button { flex: 0 0 70px; }
+  .fieldIcon { width: 46px; height: 46px; }
+  .searchInput { padding-inline: var(--space-3); gap: var(--space-2); }
+  .searchInput input { font-size: .75rem; }
+  .heroSearch > button { min-width: 100px; padding-inline: var(--space-4); }
+  .courseRow { flex-wrap: wrap; gap: var(--space-4); }
+  .courseIntro { flex: 1; }
+  .allCourses { order: 1; }
+  .courseLinks { order: 2; flex: 1 0 100%; }
+  .shortcuts { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: var(--space-5); }
+  .shortcut:nth-child(2) { border-right: 0; }
+  .shortcut:nth-child(3) { padding-left: 0; }
+}
+@media (max-width: 767px) {
+  .heroInner { display: flex; flex-direction: column; min-height: 0; padding-top: var(--space-8); padding-bottom: 0; }
+  .heroContent { width: 100%; }
+  .heroContent h1 { font-size: clamp(2.5rem, 7.4vw, 4.2rem); max-width: 660px; }
+  .heroDescription { font-size: .9375rem; margin-top: var(--space-4); margin-bottom: var(--space-5); max-width: 520px; }
+  .searchBox { margin-top: var(--space-5); }
+  .tabs button { min-width: 0; flex: 1; padding-inline: var(--space-4); }
+  .heroSearch { gap: var(--space-2); padding: var(--space-2); }
+  .searchInput { padding-inline: var(--space-2); gap: var(--space-2); }
+  .searchInput input { min-height: 44px; font-size: .73rem; }
+  .searchInput > svg { width: 18px; }
+  .heroSearch > button { min-width: 78px; font-size: .8rem; padding-inline: var(--space-3); border-radius: var(--radius-control); }
+  .fields { justify-content: flex-start; overflow-x: auto; overscroll-behavior-inline: contain; scrollbar-width: thin; padding-block: var(--space-2); margin-top: var(--space-4); gap: var(--space-3); }
+  .fields button { flex: 1 0 64px; font-size: .68rem; min-height: 74px; }
+  .fieldIcon { width: 44px; height: 44px; }
+  .fieldIcon svg { width: 23px; height: 23px; }
+  .heroVisual { position: relative; inset: auto; width: 100%; aspect-ratio: var(--hero-mobile-photo-ratio); margin-top: var(--space-5); border-radius: 32px 56px 0 0; }
+  .artwork { display: none; }
+  .discovery { padding-top: var(--space-5); }
+  .courseIntro h2 { font-size: 1.35rem; }
+  .courseIntro p { font-size: .73rem; }
+  .courseRow { gap: var(--space-3); padding-bottom: var(--space-5); }
+  .courseLinks { display: flex; overflow-x: auto; padding-block: var(--space-1) var(--space-2); overscroll-behavior-inline: contain; scrollbar-width: thin; }
+  .courseLinks :global(.chip) { flex: 0 0 auto; min-width: 99px; padding-inline: var(--space-3); font-size: .75rem; }
+  .allCourses { font-size: .72rem; gap: var(--space-2); }
+  .allCourses > svg { width: 17px; }
+  .shortcuts { gap: var(--space-4) 0; }
+  .shortcut { gap: var(--space-2); padding: var(--space-1) var(--space-3); min-height: 72px; align-items: flex-start; }
+  .shortcut > svg:first-child { width: 24px; height: 24px; margin-top: var(--space-1); }
+  .shortcut > svg:last-child { width: 14px; height: 14px; margin-top: var(--space-2); }
+  .shortcut h3 { font-size: 1rem; }
+  .shortcutDescription { font-size: .67rem; line-height: 1.5; }
+}
+@media (max-width: 370px) {
+  .heroContent h1 { font-size: 2.2rem; }
+  .heroSearch { flex-wrap: wrap; }
+  .searchInput { flex-basis: 100%; }
+  .heroSearch > button { flex: 1; }
+  .heroSearch > button svg { display: block; width: 16px; }
+  .courseIntro { min-width: 0; }
+  .shortcuts { grid-template-columns: 1fr; gap: 0; }
+  .shortcut { border-right: 0; border-bottom: 1px solid var(--color-border); padding: var(--space-3) 0; }
+  .shortcut:last-child { border-bottom: 0; }
+}
+/* The approved desktop composition occupies one viewport. Both rows remain
+   visible: their sizes adapt to height instead of clipping the page. */
+@media (min-width: 1101px) {
+  .artwork { display: block; }
+  .compactPhoto { display: none; }
+  .hero { container-type: size; }
+  .shell { min-height: 100dvh; display: flex; flex-direction: column; }
+  .main { min-height: 0; }
+  .firstScreen { height: calc(100dvh - var(--desktop-header-height)); display: grid; grid-template-rows: minmax(0, 1fr) var(--desktop-discovery-height); }
+  .heroInner { height: 100%; min-height: 0; padding: 8cqh var(--hero-gutter) 3cqh; }
+  .heroContent { width: 53%; }
+  .heroContent h1 { font-size: min(var(--text-title), 15cqh); line-height: .97; }
+  .desktopBreak { display: inline; }
+  .heroDescription { font-size: min(1.44vw, 4.3cqh); line-height: 1.35; margin: 2cqh 0 0; }
+  .heroVisual { top: 0; right: 0; width: 50.6%; border-radius: 0; }
+  .searchBox { max-width: none; width: 96.5%; margin-top: 4.5cqh; }
+  .tabs { gap: .6vw; }
+  .tabs button { min-width: 0; width: 9.4vw; min-height: 0; height: clamp(30px, 7.8cqh, 46px); padding: 0 var(--space-4); font-size: var(--text-control); }
+  .heroSearch { height: clamp(52px, 13cqh, 76px); padding: clamp(6px, 1.8cqh, 10px); gap: var(--space-3); }
+  .searchInput { padding-inline: var(--space-4); }
+  .searchInput input { min-height: 0; height: 100%; font-size: var(--text-control); padding-block: 0; }
+  .heroSearch > button { min-height: 0; min-width: 22%; font-size: min(1.2vw, 3.7cqh); }
+  .fields { margin-top: 3cqh; max-width: 690px; padding: 0 0 0 3vw; gap: .8vw; justify-content: space-between; overflow: visible; }
+  .fields button { flex: 1; min-width: 0; font-size: min(.9vw, 2.7cqh); padding: 0; gap: 1cqh; }
+  .fieldIcon { width: clamp(30px, 11cqh, 64px); height: clamp(30px, 11cqh, 64px); }
+  .fieldIcon svg { width: 50%; height: 50%; }
+  .centerQuote { display: block; left: 49.3%; top: 7%; font-size: min(1.3vw, 4cqh); width: 5.5vw; }
+  .leftQuote { display: block; left: 1.6%; bottom: 4.5%; font-size: min(.98vw, 3cqh); }
+  .rightQuote { display: block; right: 1.25%; top: 6.5%; width: 6vw; font-size: min(.98vw, 3cqh); }
+  .discovery { padding: 3.25dvh var(--discovery-gutter) 3.5dvh; display: grid; grid-template-rows: minmax(0, .48fr) minmax(0, .52fr); }
+  .courseRow { flex-wrap: nowrap; gap: 1.3vw; padding-bottom: 3dvh; }
+  .courseIntro { flex: none; min-width: 22.5vw; }
+  .courseIntro h2 { font-size: min(var(--text-section), 3.1dvh); }
+  .courseIntro p { font-size: var(--text-control); }
+  .courseLinks { order: 0; flex: 1; gap: 1.3vw; }
+  .courseLinks :global(.chip) { min-height: 0; height: clamp(40px, 6dvh, 56px); padding: 0 var(--space-2); gap: 1vw; font-size: var(--text-control); }
+  .courseLinks :global(.chip .icon) { width: clamp(18px, 1.65vw, 26px); height: clamp(18px, 1.65vw, 26px); }
+  .allCourses { order: 0; font-size: var(--text-control); padding-left: 1.7vw; }
+  .shortcuts { grid-template-columns: repeat(4, minmax(0, 1fr)); padding-top: 2.4dvh; gap: 0; }
+  .shortcut { min-height: 0; gap: 1.8vw; padding: 0 2.5vw; }
+  .shortcut:nth-child(2) { border-right: 1px solid var(--color-border); }
+  .shortcut:nth-child(3) { padding-left: 2.5vw; }
+  .shortcut > svg:first-child { width: clamp(26px, 2.5vw, 42px); height: clamp(26px, 2.5vw, 42px); }
+  .shortcut h3 { font-size: min(1.35vw, 2.9dvh); white-space: nowrap; }
+  .shortcutDescription { font-size: min(.93vw, 1.9dvh); margin-top: .4dvh; white-space: nowrap; }
+  .shortcut > svg:last-child { width: 22px; height: 22px; }
+}

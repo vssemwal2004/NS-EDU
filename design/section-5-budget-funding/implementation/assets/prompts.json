@@ -1,0 +1,11 @@
+{
+  "generatedWith": "built-in image_gen",
+  "transparentBackground": true,
+  "assets": [
+    {
+      "id": "desk",
+      "referenceImage": "../../B2-desktop.png",
+      "prompt": "Use case: precise-object-edit. Input image is the NSEDU B2 desktop UI reference. Extract/recreate ONLY the small realistic cream closed notebook, wine #72243B pencil and two subtle taupe metal coins from its upper-right corner as a standalone transparent decorative cutout. No page, no UI, no typography, no extra objects, no handwriting, no campus or background. Premium understated education editorial product illustration, soft natural studio lighting, gentle contact shadows beneath the objects, angled top-down view. Notebook warm ivory linen cover with no text, wine pencil laid diagonally, two small muted coins next to it. Balanced centered composition, objects occupy 80 percent of a square canvas approximately 512x512. True transparent background with alpha. Preserve brand cream/wine/taupe colors. This will display at 140-180px and must read cleanly at small size."
+    }
+  ]
+}

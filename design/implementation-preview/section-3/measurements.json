@@ -1,0 +1,146 @@
+{
+  "measurements": [
+    {
+      "name": "desktop",
+      "width": 1672,
+      "height": 941,
+      "section": {
+        "x": 0,
+        "y": 78.625,
+        "width": 1672,
+        "height": 862.75
+      },
+      "rowHeights": [
+        66,
+        66,
+        66,
+        66,
+        66
+      ],
+      "horizontalOverflow": false
+    },
+    {
+      "name": "tablet",
+      "width": 768,
+      "height": 1024,
+      "section": {
+        "x": 0,
+        "y": 23.765625,
+        "width": 768,
+        "height": 1216.125
+      },
+      "rowHeights": [
+        257.109375,
+        257.109375,
+        257.109375,
+        257.109375,
+        243.8125
+      ],
+      "horizontalOverflow": false
+    },
+    {
+      "name": "mobile",
+      "width": 390,
+      "height": 844,
+      "section": {
+        "x": 0,
+        "y": 23.84375,
+        "width": 390,
+        "height": 1924.109375
+      },
+      "rowHeights": [
+        257.109375,
+        239.8125,
+        239.8125,
+        239.8125,
+        239.8125
+      ],
+      "horizontalOverflow": false
+    },
+    {
+      "name": "additional-width-check",
+      "width": 320,
+      "height": 941,
+      "section": {
+        "x": 0,
+        "y": 24.21875,
+        "width": 320,
+        "height": 2072.875
+      },
+      "rowHeights": [
+        273.90625,
+        273.90625,
+        273.90625,
+        253.65625,
+        257.109375
+      ],
+      "horizontalOverflow": false,
+      "controlsFit": true
+    },
+    {
+      "name": "additional-width-check",
+      "width": 1101,
+      "height": 941,
+      "section": {
+        "x": 0,
+        "y": 39.03125,
+        "width": 1101,
+        "height": 902
+      },
+      "rowHeights": [
+        81.984375,
+        81.984375,
+        81.984375,
+        66,
+        81.984375
+      ],
+      "horizontalOverflow": false,
+      "controlsFit": true
+    },
+    {
+      "name": "additional-width-check",
+      "width": 1250,
+      "height": 941,
+      "section": {
+        "x": 0,
+        "y": 102.09375,
+        "width": 1250,
+        "height": 838.96875
+      },
+      "rowHeights": [
+        66,
+        66,
+        66,
+        66,
+        66
+      ],
+      "horizontalOverflow": false,
+      "controlsFit": true
+    },
+    {
+      "name": "additional-width-check",
+      "width": 1366,
+      "height": 941,
+      "section": {
+        "x": 0,
+        "y": 96.796875,
+        "width": 1366,
+        "height": 844.53125
+      },
+      "rowHeights": [
+        66,
+        66,
+        66,
+        66,
+        66
+      ],
+      "horizontalOverflow": false,
+      "controlsFit": true
+    }
+  ],
+  "artwork": {
+    "contentType": "image/webp",
+    "bytes": 84006
+  },
+  "errors": []
+}

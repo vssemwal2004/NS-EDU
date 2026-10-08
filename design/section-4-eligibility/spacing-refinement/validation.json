@@ -1,0 +1,51 @@
+{
+  "browserTests": {
+    "failed": 0,
+    "suites": [
+      "eligibility.spec.js",
+      "header-scroll.spec.js"
+    ],
+    "passed": 22,
+    "note": "Final narrow-desktop typography refinement subsequently checked at 901px and 1000px in responsive preview."
+  },
+  "lint": "passed",
+  "productionBuild": "passed",
+  "responsiveWidths": [
+    1920,
+    1672,
+    1366,
+    1101,
+    1024,
+    1000,
+    901,
+    900,
+    768,
+    640,
+    390,
+    320
+  ],
+  "responsiveOverflow": false,
+  "browserErrors": [],
+  "sectionPreviews": 27,
+  "viewportPreviews": 6,
+  "entryHeightComparison": [
+    {
+      "device": "desktop",
+      "before": 872.359375,
+      "after": 652.609375,
+      "viewportWidth": 1672
+    },
+    {
+      "device": "tablet",
+      "before": 941.21875,
+      "after": 729.53125,
+      "viewportWidth": 768
+    },
+    {
+      "device": "mobile",
+      "before": 993,
+      "after": 947.0625,
+      "viewportWidth": 390
+    }
+  ]
+}

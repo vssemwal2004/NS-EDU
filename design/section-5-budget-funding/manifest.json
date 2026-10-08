@@ -1,0 +1,36 @@
+{
+  "generatedWith": "built-in image_gen",
+  "status": "Design proposal; user approval not yet received",
+  "date": "2026-10-07 (IST)",
+  "previews": [
+    {
+      "file": "B1-desktop.png",
+      "width": 1858,
+      "height": 846,
+      "bytes": 1366528,
+      "sha256": "682919B317E84E74D8CF8AD5F5FBA61CC3907FA3790E30DD3EFFA9701D30B223"
+    },
+    {
+      "file": "B1-mobile.png",
+      "width": 837,
+      "height": 1879,
+      "bytes": 1362884,
+      "sha256": "B45359ED0E59FFEA73EFF9BAFB0B0A8E75296B4129906955E5DD79E80500294F"
+    }
+  ],
+  "originalFiles": [
+    "C:/Users/422se/.codex/generated_images/01a10d7b-9010-7a01-9daa-701856239cc4/exec-3ea6624e-9046-4fee-8f41-5c88a8db04fd.png",
+    "C:/Users/422se/.codex/generated_images/01a10d7b-9010-7a01-9daa-701856239cc4/exec-d654a8cf-a8dc-48af-b624-48f9ee5d0d46.png"
+  ],
+  "promptSet": "prompts.json",
+  "review": [
+    "Wine/taupe palette and editorial serif/sans typography inspected",
+    "Both previews contain six correct sample fee components totaling INR 375000",
+    "Budget INR 400000; remaining INR 25000; ribbon labels 64/25.6/10.4 percent",
+    "Refundable deposit included; no scholarship deduction or award claim",
+    "Desktop worksheet and mobile single-column reflow shown",
+    "Raster controls and chart geometry are illustrative, not functional"
+  ],
+  "applicationSourceChanged": false,
+  "applicationTests": "Not rerun; this round changes research, documentation and design preview artifacts only"
+}

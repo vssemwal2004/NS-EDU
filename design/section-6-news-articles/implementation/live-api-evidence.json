@@ -1,0 +1,27 @@
+{
+  "checkedAt": "2026-10-07T18:51:29.009Z",
+  "updatedAt": "2026-10-07T18:51:29.009Z",
+  "status": "ready",
+  "articles": 90,
+  "imageUrls": 90,
+  "sources": [
+    {
+      "id": "indian-express",
+      "name": "The Indian Express",
+      "state": "fresh",
+      "updatedAt": "2026-10-07T18:51:29.009Z"
+    },
+    {
+      "id": "hindustan-times",
+      "name": "Hindustan Times",
+      "state": "fresh",
+      "updatedAt": "2026-10-07T18:51:29.009Z"
+    },
+    {
+      "id": "et-education",
+      "name": "ET Education",
+      "state": "fresh",
+      "updatedAt": "2026-10-07T18:51:29.009Z"
+    }
+  ]
+}

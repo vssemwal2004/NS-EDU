@@ -1,0 +1,32 @@
+[
+  {
+    "id": "notebook",
+    "original": "C:\\Users\\422se\\.codex\\generated_images\\01a10d7b-9010-7a01-9daa-701856239cc4\\exec-fa9d959c-8fb4-4db6-9817-3940db9df521.png",
+    "preserved": "design\\section-4-eligibility\\implementation\\assets\\notebook-source.png",
+    "asset": "frontend/public/images/eligibility/notebook.webp",
+    "sourceHasAlpha": true,
+    "width": 480,
+    "height": 480,
+    "bytes": 22948
+  },
+  {
+    "id": "certificate",
+    "original": "C:\\Users\\422se\\.codex\\generated_images\\01a10d7b-9010-7a01-9daa-701856239cc4\\exec-75790922-3d19-4422-889a-c2f8f8604591.png",
+    "preserved": "design\\section-4-eligibility\\implementation\\assets\\certificate-source.png",
+    "asset": "frontend/public/images/eligibility/certificate.webp",
+    "sourceHasAlpha": true,
+    "width": 480,
+    "height": 480,
+    "bytes": 19636
+  },
+  {
+    "id": "graduation",
+    "original": "C:\\Users\\422se\\.codex\\generated_images\\01a10d7b-9010-7a01-9daa-701856239cc4\\exec-5841a35f-3199-4dd7-9edd-5814844633c2.png",
+    "preserved": "design\\section-4-eligibility\\implementation\\assets\\graduation-source.png",
+    "asset": "frontend/public/images/eligibility/graduation.webp",
+    "sourceHasAlpha": true,
+    "width": 480,
+    "height": 480,
+    "bytes": 26424
+  }
+]

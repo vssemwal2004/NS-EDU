@@ -1,0 +1,11 @@
+/* Central styling entry for the next design.
+   No brand palette, custom font, card theme or animation is applied. */
+:root {
+  --color-page: #ffffff;
+  --color-text: #222222;
+  --font-body: system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--color-page); color: var(--color-text); font: 16px/1.5 var(--font-body); }
+button, input, select { font: inherit; }
