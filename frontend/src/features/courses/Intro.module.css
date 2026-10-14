@@ -1,0 +1,15 @@
+.panel { display: grid; gap: var(--space-2); min-width: min(100%, 360px); padding: var(--space-4); border: 1px solid var(--color-border); border-radius: var(--courses-card-radius); background: var(--courses-facts-background); box-shadow: var(--card-shadow); }
+.panel dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2); margin: 0; }
+.panel dl > div { display: flex; flex-direction: column-reverse; gap: 2px; min-width: 0; padding: var(--space-3); border-radius: var(--radius-control); background: var(--courses-stat-background); }
+.panel dt { color: var(--color-muted); font-size: var(--text-caption); font-weight: 600; }
+.panel dd { margin: 0; color: var(--color-primary); font-family: var(--font-heading); font-size: 1.75rem; line-height: 1; }
+.panel p { color: var(--color-muted); font-size: .6875rem; letter-spacing: .02em; }
+/* Mobile: one compact row so the directory starts sooner. */
+@media (max-width: 760px) {
+  .panel { min-width: 0; padding: var(--space-2); gap: 4px; }
+  .panel dl { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
+  .panel dl > div { padding: var(--space-2); }
+  .panel dd { font-size: 1.25rem; }
+  .panel dt { overflow: hidden; font-size: .625rem; text-overflow: ellipsis; white-space: nowrap; }
+  .panel p { padding-inline: 4px; }
+}

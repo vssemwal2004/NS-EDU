@@ -1,0 +1,77 @@
+/* Admin console chrome. The sidebar is a narrow wine rail that slides open on hover/focus
+   over --admin-sidebar-motion (0.8s) and slides closed when the pointer leaves. */
+.shell { min-height: 100dvh; background: var(--admin-workspace); color: var(--color-text); }
+
+.sidebar { position: fixed; inset: 0 auto 0 0; z-index: 40; display: flex; flex-direction: column; width: var(--admin-sidebar-collapsed); height: 100dvh; overflow: hidden; background: var(--admin-sidebar-background); color: var(--color-surface); box-shadow: 4px 0 18px rgb(42 10 20 / 12%); transition: width var(--admin-sidebar-motion) var(--admin-sidebar-ease), box-shadow var(--admin-sidebar-motion) var(--admin-sidebar-ease); }
+.sidebar::after { content: ''; position: absolute; right: -80px; bottom: -80px; width: 220px; height: 220px; border: 32px solid rgb(255 255 255 / 4%); border-radius: 50%; pointer-events: none; }
+.label { display: grid; min-width: 0; white-space: nowrap; opacity: 0; transform: translateX(-12px); transition: opacity 260ms ease, transform 260ms ease; }
+.label strong, .label small { overflow: hidden; text-overflow: ellipsis; }
+
+.sidebarBrand { display: flex; flex-shrink: 0; align-items: center; gap: var(--space-3); height: var(--admin-topbar-height); padding-inline: 16px; border-bottom: 1px solid rgb(255 255 255 / 10%); }
+.brandMark { display: grid; flex-shrink: 0; place-items: center; width: 44px; height: 44px; border: 1px solid rgb(255 255 255 / 26%); border-radius: 14px; background: rgb(255 255 255 / 12%); }
+.brandMark :global(.icon) { width: 22px; height: 22px; }
+.sidebarBrand strong { font-family: var(--font-heading); font-size: 1.35rem; font-weight: 400; line-height: 1; }
+.sidebarBrand small { color: var(--admin-text-on-wine-muted); font-size: .625rem; letter-spacing: .14em; text-transform: uppercase; }
+
+.sidebarNav { flex: 1; padding-block: var(--space-2); overflow: hidden auto; scrollbar-width: none; }
+.sidebarNav::-webkit-scrollbar { display: none; }
+.group ul { margin: 0; padding: 0; list-style: none; }
+.groupLabel { position: relative; height: 22px; margin: var(--space-2) 26px 2px; color: var(--admin-text-on-wine-muted); font-size: .625rem; font-weight: 700; letter-spacing: .14em; line-height: 22px; text-transform: uppercase; }
+.groupLabel::before { content: ''; position: absolute; inset: 50% 0 auto; height: 1px; background: rgb(255 255 255 / 18%); transition: opacity 260ms ease; }
+.item { position: relative; display: flex; align-items: center; gap: var(--space-4); width: calc(100% - 24px); height: 42px; margin: 1px 12px; padding: 0 14px; border: 0; border-radius: 12px; background: transparent; color: var(--color-surface); font-size: var(--text-small); font-weight: 500; text-align: left; text-decoration: none; transition: background var(--motion-fast); }
+.item:hover { background: var(--admin-sidebar-hover); }
+.item[aria-current="page"] { background: var(--admin-sidebar-active); font-weight: 600; box-shadow: inset 0 0 0 1px rgb(255 255 255 / 10%); }
+.item[aria-current="page"]::before { content: ''; position: absolute; left: -12px; top: 10px; bottom: 10px; width: 4px; border-radius: 0 4px 4px 0; background: var(--color-surface); }
+.item:focus-visible { outline: 2px solid var(--color-surface); outline-offset: -2px; }
+.itemIcon { display: grid; flex-shrink: 0; place-items: center; width: 24px; height: 24px; color: var(--color-surface); }
+.itemIcon :global(.icon) { width: 22px; height: 22px; }
+.sidebarFooter { flex-shrink: 0; padding-block: var(--space-2) var(--space-3); border-top: 1px solid rgb(255 255 255 / 10%); }
+.profile { display: flex; align-items: center; gap: var(--space-3); margin: var(--space-2) 12px 0; padding: var(--space-2) 6px; border-radius: 12px; background: rgb(0 0 0 / 12%); }
+.profile strong { font-size: var(--text-small); }
+.profile small { color: var(--admin-text-on-wine-muted); font-size: var(--text-caption); }
+.avatar { display: grid; flex-shrink: 0; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--color-surface); color: var(--color-primary); font-size: .8125rem; font-weight: 700; letter-spacing: .04em; }
+
+/* Desktop: hover or keyboard focus slides the rail open; leaving slides it closed. */
+@media (hover: hover) and (min-width: 901px) {
+  .sidebar:hover, .sidebar:focus-within { width: var(--admin-sidebar-expanded); box-shadow: 24px 0 60px rgb(42 10 20 / 28%); }
+  .sidebar:hover .label, .sidebar:focus-within .label { opacity: 1; transform: none; transition: opacity 420ms ease 220ms, transform 520ms var(--admin-sidebar-ease) 180ms; }
+  .sidebar:hover .groupLabel::before, .sidebar:focus-within .groupLabel::before { opacity: 0; }
+  .shell:has(.sidebar:hover) .scrim { opacity: 1; }
+}
+@media (hover: none) and (min-width: 901px) { .label { opacity: 1; transform: none; } .sidebar { width: var(--admin-sidebar-expanded); } .workspace { margin-left: var(--admin-sidebar-expanded); } .groupLabel::before { opacity: 0; } }
+
+.scrim { position: fixed; inset: 0; z-index: 35; padding: 0; border: 0; background: rgb(42 20 28 / 18%); opacity: 0; pointer-events: none; transition: opacity var(--admin-sidebar-motion) var(--admin-sidebar-ease); }
+.workspace { min-width: 0; margin-left: var(--admin-sidebar-collapsed); }
+.topbar { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: var(--space-4); height: var(--admin-topbar-height); padding-inline: clamp(1rem, 2.4vw, 2rem); border-bottom: 1px solid var(--color-border); background: rgb(255 255 255 / 90%); backdrop-filter: blur(12px); }
+.menuButton { display: none; place-items: center; width: 42px; height: 42px; border: 1px solid var(--color-input-border); border-radius: 12px; background: var(--color-surface); color: var(--color-primary); }
+.pageTitle { flex: 1; min-width: 0; }
+.crumb { display: flex; align-items: center; gap: 6px; color: var(--color-muted); font-size: var(--text-caption); }
+.crumb :global(.icon) { width: 11px; height: 11px; transform: rotate(-90deg); }
+.pageTitle h1 { overflow: hidden; font-size: 1.5rem; line-height: 1.2; text-overflow: ellipsis; white-space: nowrap; }
+.topActions { display: flex; align-items: center; gap: var(--space-3); }
+.siteLink { display: inline-flex; align-items: center; gap: var(--space-2); min-height: 40px; padding: 0 var(--space-4); border: 1px solid var(--color-border); border-radius: var(--radius-pill); color: var(--color-primary); font-size: var(--text-small); font-weight: 600; text-decoration: none; }
+.siteLink:hover { background: var(--header-hover); }
+.siteLink :global(.icon) { width: 16px; }
+.adminChip { display: flex; align-items: center; gap: var(--space-2); padding: 4px 14px 4px 4px; border: 1px solid var(--color-border); border-radius: var(--radius-pill); background: var(--color-surface); }
+.adminChip .avatar { width: 34px; height: 34px; background: var(--header-brand-mark); color: var(--color-surface); font-size: .75rem; }
+.adminChip strong { display: block; color: var(--color-primary); font-size: var(--text-small); line-height: 1.2; }
+.adminChip small { color: var(--color-muted); font-size: .6875rem; }
+.content { padding: clamp(1rem, 2.4vw, 2rem); outline: none; }
+
+.splash { display: grid; place-content: center; justify-items: center; gap: var(--space-4); min-height: 100dvh; padding: var(--space-6); background: var(--admin-workspace); color: var(--color-muted); text-align: center; }
+.splashMark { display: grid; place-items: center; width: 64px; height: 64px; border-radius: 20px; background: var(--admin-sidebar-background); color: var(--color-surface); animation: pulse 1.4s ease-in-out infinite; }
+.splashMark :global(.icon) { width: 30px; height: 30px; }
+@keyframes pulse { 50% { transform: scale(.92); opacity: .8; } }
+
+@media (max-width: 900px) {
+  .sidebar { width: var(--admin-sidebar-expanded); transform: translateX(-100%); transition: transform var(--admin-sidebar-motion) var(--admin-sidebar-ease); }
+  .sidebar[data-open="true"] { transform: none; box-shadow: 24px 0 60px rgb(42 10 20 / 28%); }
+  .label { opacity: 1; transform: none; }
+  .groupLabel::before { opacity: 0; }
+  .scrim[data-open="true"] { opacity: 1; pointer-events: auto; }
+  .workspace { margin-left: 0; }
+  .menuButton { display: grid; }
+  .adminChip > span:last-child, .siteLink span { display: none; }
+  .adminChip { padding: 3px; }
+  .siteLink { width: 40px; padding: 0; justify-content: center; }
+}

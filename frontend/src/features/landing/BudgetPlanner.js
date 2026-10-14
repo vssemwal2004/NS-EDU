@@ -2,7 +2,7 @@
 import { useRef, useState } from 'react';
 import Icon from '@/components/ui/Icon';
 import Dialog from '@/components/ui/Dialog';
-import { courses } from '@/data/landing';
+import { useCatalog } from '@/providers/CatalogProvider';
 import { budgetCostFields, budgetDefaults, livingOptions } from '@/data/budget';
 import { calculateBudgetEstimate, findAffordableColleges, formatBudgetCurrency as money, formatBudgetInput, getBudgetAssumptions, parseBudgetAmount } from '@/lib/budget';
 import { SectionBackdrop, BudgetHeaderGraphic, BudgetResultGraphic } from './SectionVisuals';
@@ -12,6 +12,7 @@ const costLabel = (value) => value === null ? 'Not available' : money(value);
 const amountHelp = 'Enter whole rupees from 0 to 10,00,00,000.';
 
 export default function BudgetPlanner({ records, course, onCourseChange, onScholarships }) {
+  const { courses } = useCatalog();
   const [selectedId, setSelectedId] = useState(budgetDefaults.collegeId);
   const [livingId, setLivingId] = useState(budgetDefaults.livingId);
   const [budget, setBudget] = useState(formatBudgetInput(budgetDefaults.budgetInr));

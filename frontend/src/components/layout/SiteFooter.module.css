@@ -16,7 +16,8 @@
 .secondary { border: 1px solid var(--footer-border-strong); background: var(--footer-control-background); }
 .secondary:hover { background: var(--footer-hover); }
 .actions :global(.icon) { width: 18px; height: 18px; }
-.directory { display: grid; grid-template-columns: 1.45fr repeat(4,minmax(0,1fr)); gap: clamp(1rem, 2.2vw, 2.5rem); padding-block: 2.25rem 1.75rem; }
+
+.directory { display: grid; grid-template-columns: minmax(230px, 290px) minmax(0, 1fr); gap: clamp(1.5rem, 3vw, 3.5rem); padding-block: 2.25rem 1.75rem; }
 .brand { max-width: 290px; }
 .wordmark { display: inline-flex; align-items: center; min-height: 44px; font: 400 2.65rem/1 var(--font-heading); letter-spacing: -.055em; }
 .tagline { font-size: .625rem; color: var(--footer-muted); letter-spacing: .05em; margin-top: .375rem; }
@@ -31,11 +32,25 @@
 .socials a { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: var(--footer-control-radius); border: 1px solid var(--footer-border); background: var(--footer-control-background); }
 .socials a:hover { background: var(--footer-hover); border-color: var(--footer-border-strong); }
 .socials :global(.icon) { width: 18px; height: 18px; }
+
+/* Link columns: catalogue directory row, a rule, then the site groups. */
+.columns { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0 clamp(1rem, 2.2vw, 2.5rem); align-content: start; min-width: 0; }
+.columnsHead { grid-column: 1 / -1; display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: .25rem 1rem; margin-bottom: 1rem; }
+.columnsHead p { color: var(--footer-label); font-size: .625rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
+.columnsHead span { color: var(--footer-muted); font-size: .625rem; }
+.columnsRule { grid-column: 1 / -1; height: 1px; margin-block: 1.25rem 1.5rem; background: var(--footer-directory-rule); }
+.group { min-width: 0; }
 .group h3 { font: 600 .8125rem/1.5 var(--font-body); color: var(--footer-text); padding-bottom: .875rem; margin-bottom: .5rem; position: relative; }
 .group h3::after { content: ''; width: 24px; height: 2px; background: var(--footer-heading-rule); position: absolute; left: 0; bottom: 0; }
 .group ul { list-style: none; padding: 0; margin: 0; }
-.group a { font-size: .75rem; color: var(--footer-muted); display: flex; align-items: center; min-height: 44px; padding-block: .5rem; line-height: 1.5; width: fit-content; }
-.group a:hover, .contact:hover strong { color: var(--footer-text); text-decoration: underline; text-underline-offset: 4px; }
+.group a { display: flex; align-items: center; gap: .5rem; min-height: 44px; padding-block: .375rem; color: var(--footer-muted); font-size: .75rem; line-height: 1.45; width: fit-content; max-width: 100%; }
+.group a:hover { color: var(--footer-text); }
+.group a:hover span, .contact:hover strong { text-decoration: underline; text-underline-offset: 4px; }
+.group em { display: inline-grid; place-items: center; min-width: 22px; height: 19px; padding: 0 6px; border-radius: 999px; background: var(--footer-count-background); color: var(--footer-text); font-size: .625rem; font-style: normal; font-weight: 700; }
+.groupToggle { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 48px; padding: 0; border: 0; background: transparent; color: inherit; font: inherit; text-align: left; }
+.groupToggle :global(.icon) { width: 16px; height: 16px; transition: transform var(--motion-fast); }
+.groupToggle[aria-expanded="true"] :global(.icon) { transform: rotate(180deg); }
+
 .trust { display: flex; align-items: center; gap: .875rem; padding: 1rem 1.125rem; border: 1px solid var(--footer-border); border-radius: var(--footer-panel-radius); background: var(--footer-control-background); }
 .trust > :global(.icon) { width: 23px; height: 23px; color: var(--footer-highlight); }
 .trust p { font-size: .75rem; font-weight: 600; }
@@ -48,9 +63,10 @@
 .backTop { display: flex; align-items: center; gap: .625rem; min-height: 44px; }
 .backTop :global(.icon) { width: 15px; height: 15px; }
 .backTop:hover { color: var(--footer-text); }
+
 @media (max-width: 1100px) {
-  .directory { grid-template-columns: repeat(4,minmax(0,1fr)); gap: 2rem 1.5rem; }
-  .brand { grid-column: 1 / -1; max-width: none; display: grid; grid-template-columns: 1.1fr 1fr; column-gap: 2rem; }
+  .directory { grid-template-columns: minmax(0, 1fr); gap: 2rem; }
+  .brand { max-width: none; display: grid; grid-template-columns: 1.1fr 1fr; column-gap: 2rem; }
   .brand .wordmark { grid-column: 1; grid-row: 1; }
   .brand .tagline { grid-column: 1; grid-row: 2; }
   .brand .intro { grid-column: 1; grid-row: 3 / 6; max-width: 360px; }
@@ -66,16 +82,21 @@
   .invitation { flex-direction: column; gap: 1.25rem; padding-bottom: 1.5rem; }
   .invitation h2 { max-width: 320px; font-size: var(--footer-mobile-title-size); }
   .invitation > div > p:last-child { font-size: .75rem; max-width: 330px; }
-  .actions { flex-direction: row; flex-wrap: wrap; width: 100%; }
-  .primary, .secondary { font-size: .75rem; padding-inline: .875rem; }
-  .directory { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 1.5rem 1.125rem; padding-block: 1.75rem; }
+  .actions { flex-direction: column; width: 100%; }
+  .primary, .secondary { width: 100%; font-size: .8125rem; }
+  .directory { gap: 1.5rem; padding-block: 1.75rem; }
   .brand { display: block; padding-bottom: .5rem; }
-  .intro { max-width: 330px; }
   .brand .intro { max-width: 330px; }
   .brand .contact { margin-top: .75rem; }
   .brand .socials { margin: .875rem 0 .5rem; }
-  .group h3 { font-size: .75rem; }
-  .group a { font-size: .6875rem; }
+  .columns { grid-template-columns: minmax(0, 1fr); }
+  .columnsHead { margin-bottom: .25rem; }
+  .columnsRule { margin-block: 1rem .25rem; }
+  .group { border-bottom: 1px solid var(--footer-border); }
+  .group h3 { padding-bottom: 0; margin-bottom: 0; font-size: .8125rem; }
+  .group h3::after { display: none; }
+  .group ul { padding-bottom: .75rem; }
+  .group a { min-height: 44px; font-size: .8125rem; }
   .trust { display: grid; grid-template-columns: 24px minmax(0,1fr); padding: .875rem; gap: .5rem .625rem; }
   .trust p { min-width: 0; }
   .trust a { grid-column: 2; margin-left: 0; white-space: normal; }

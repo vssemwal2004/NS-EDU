@@ -1,0 +1,71 @@
+'use client';
+import { useState } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import Icon from '@/components/ui/Icon';
+import { adminNavigation, findAdminPage } from '@/data/admin-navigation';
+import { AdminSessionProvider, useAdminSession } from './AdminSession';
+import styles from './AdminShell.module.css';
+
+const initials = (admin) => (admin?.name || admin?.email || 'A').split(/[\s@.]+/).filter(Boolean).slice(0, 2).map((part) => part[0].toUpperCase()).join('');
+
+function Sidebar({ open, onNavigate }) {
+  const pathname = usePathname();
+  const { admin, logout } = useAdminSession();
+  return <aside className={styles.sidebar} data-open={open} aria-label="Admin navigation">
+    <div className={styles.sidebarBrand}>
+      <span className={styles.brandMark}><Icon name="cap" /></span>
+      <span className={styles.label}><strong>NSEDU</strong><small>Admin console</small></span>
+    </div>
+    <nav className={styles.sidebarNav}>
+      {adminNavigation.map((group) => <div key={group.label} className={styles.group}>
+        <p className={styles.groupLabel}><span className={styles.label}>{group.label}</span></p>
+        <ul>{group.items.map((item) => {
+          const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+          return <li key={item.href}><Link href={item.href} className={styles.item} aria-current={active ? 'page' : undefined} onClick={onNavigate} title={item.label}>
+            <span className={styles.itemIcon}><Icon name={item.icon} /></span><span className={styles.label}>{item.label}</span>
+          </Link></li>;
+        })}</ul>
+      </div>)}
+    </nav>
+    <div className={styles.sidebarFooter}>
+      <button type="button" className={styles.item} onClick={logout} title="Log out"><span className={styles.itemIcon}><Icon name="logout" /></span><span className={styles.label}>Log out</span></button>
+      <div className={styles.profile}>
+        <span className={styles.avatar}>{initials(admin)}</span>
+        <span className={styles.label}><strong>{admin?.name || 'Administrator'}</strong><small>{admin?.email}</small></span>
+      </div>
+    </div>
+  </aside>;
+}
+
+function Workspace({ children }) {
+  const pathname = usePathname();
+  const { admin, status } = useAdminSession();
+  const [open, setOpen] = useState(false);
+  const page = findAdminPage(pathname);
+  if (status === 'loading') return <div className={styles.splash} role="status"><span className={styles.splashMark}><Icon name="cap" /></span><p>Opening the admin console…</p></div>;
+  if (status === 'unavailable') return <div className={styles.splash} role="alert"><span className={styles.splashMark}><Icon name="shield" /></span><p>The NSEDU API is not reachable. Start the backend and reload this page.</p><button type="button" className="button button--primary" onClick={() => window.location.reload()}>Reload</button></div>;
+  if (!admin) return null;
+  return <div className={styles.shell}>
+    <Sidebar open={open} onNavigate={() => setOpen(false)} />
+    <button type="button" className={styles.scrim} data-open={open} aria-label="Close navigation" tabIndex={open ? 0 : -1} onClick={() => setOpen(false)} />
+    <div className={styles.workspace}>
+      <header className={styles.topbar}>
+        <button type="button" className={styles.menuButton} aria-label="Open navigation" aria-expanded={open} onClick={() => setOpen(true)}><Icon name="menu" /></button>
+        <div className={styles.pageTitle}>
+          <p className={styles.crumb}>Admin<Icon name="chevron" />{page?.group || 'Console'}</p>
+          <h1>{page?.label || 'Admin console'}</h1>
+        </div>
+        <div className={styles.topActions}>
+          <a className={styles.siteLink} href="/" target="_blank" rel="noopener noreferrer"><Icon name="external" /><span>View site</span></a>
+          <span className={styles.adminChip}><span className={styles.avatar}>{initials(admin)}</span><span><strong>{admin.name || 'Administrator'}</strong><small>Administrator</small></span></span>
+        </div>
+      </header>
+      <main id="main" className={styles.content} tabIndex={-1}>{children}</main>
+    </div>
+  </div>;
+}
+
+export default function AdminShell({ children }) {
+  return <AdminSessionProvider><Workspace>{children}</Workspace></AdminSessionProvider>;
+}

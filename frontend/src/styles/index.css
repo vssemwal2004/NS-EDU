@@ -1,5 +1,13 @@
 /* Single NSEDU theme entry. Change colors, fonts, spacing and reusable component recipes here.
-   Component CSS modules only define layout and consume these variables. */
+   Component CSS modules only define layout and consume these variables.
+   Area-specific tokens live in ./themes/*.css (imported here, so this stays the single entry). */
+@import './themes/landing.css';
+@import './themes/header.css';
+@import './themes/login.css';
+@import './themes/colleges.css';
+@import './themes/compare.css';
+@import './themes/courses.css';
+@import './themes/guides.css';
 @font-face { font-family: 'DM Serif Display'; src: url('/fonts/dm-serif-display-latin.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
 @font-face { font-family: 'Plus Jakarta Sans'; src: url('/fonts/plus-jakarta-sans-latin.woff2') format('woff2'); font-weight: 400 700; font-style: normal; font-display: swap; }
 :root {
@@ -28,16 +36,76 @@
   --text-caption: 0.75rem;
   --text-title: clamp(2.5rem, 5.05vw, 5.5rem);
   --text-control: clamp(.75rem, .95vw, 1rem);
-  --desktop-header-height: 12.75dvh;
-  --header-mobile-height: 76px;
-  --header-tablet-height: 78px;
-  --header-compact-height: clamp(72px, 9dvh, 88px);
-  --header-compact-mobile-height: 64px;
-  --header-compact-brand-size: 2rem;
-  --header-compact-control-height: 40px;
-  --header-compact-nav-height: 32px;
-  --header-scroll-shadow: 0 4px 18px rgb(72 37 46 / 8%);
-  --header-scroll-transition: 180ms;
+  /* Site header: wine utility strip + sticky glass bar with mega menus. */
+  --header-utility-height: 36px;
+  --header-bar-height: 72px;
+  --header-bar-mobile-height: 64px;
+  --desktop-header-height: calc(var(--header-utility-height) + var(--header-bar-height));
+  --header-utility-background: linear-gradient(90deg, #5E1B30, #72243B 55%, #5E1B30);
+  --header-utility-text: #FFFFFF;
+  --header-utility-muted: #EBD3DA;
+  --header-utility-border: rgb(255 255 255 / 25%);
+  --header-background: rgb(255 250 248 / 88%);
+  --header-background-scrolled: rgb(255 255 255 / 94%);
+  --header-border: #EFE2E5;
+  --header-hover: #F7ECEE;
+  --header-icon-background: #F6E9EC;
+  --header-brand-mark: linear-gradient(140deg, #8A2E49, #5E1B30);
+  --header-feature-background: radial-gradient(circle at 85% 10%, #8E3753, transparent 55%), linear-gradient(150deg, #72243B, #4E1528);
+  --header-feature-muted: #F1DCE2;
+  --header-feature-eyebrow: #F0C9D4;
+  --header-wordmark-size: 1.85rem;
+  --header-nav-padding: clamp(.55rem, .8vw, .9rem);
+  --header-mega-width: 620px;
+  --header-panel-radius: 16px;
+  --header-scroll-shadow: 0 8px 24px rgb(72 37 46 / 8%);
+  /* Feature page intro band. */
+  --page-intro-background: radial-gradient(ellipse at 90% 0%, #F3E2E6, transparent 55%), linear-gradient(115deg, #FCF6F2, #FFFAF8 55%, #F8EEEF);
+  --page-intro-line: #E2CBC6;
+  --page-intro-padding: clamp(1.5rem, 3vw, 2.75rem);
+  --page-intro-title-size: clamp(2rem, 3.6vw, 3.25rem);
+  --page-intro-description-size: clamp(.9375rem, 1.1vw, 1.0625rem);
+  --compare-best-background: #F6E9EC;
+  --features-background: linear-gradient(180deg, #FFFAF8, #FBF3F0);
+  --features-padding: clamp(2.5rem, 4.5vw, 4.5rem);
+  --features-title-size: clamp(1.9rem, 3vw, 2.75rem);
+  --features-ring: #F6ECEE;
+  /* Admin console: wine sidebar (collapsed rail, slides open on hover) and light workspace. */
+  --admin-showcase-background: radial-gradient(circle at 85% 10%, #8E3753, transparent 50%), radial-gradient(circle at 0% 100%, #5E1B30, transparent 55%), linear-gradient(150deg, #72243B, #4A1426);
+  --admin-form-background: radial-gradient(ellipse at 100% 0%, #F7E9EC, transparent 50%), #FFFAF8;
+  --admin-text-on-wine-muted: #EBD3DA;
+  --admin-accent-on-wine: #F4C6D3;
+  --admin-sidebar-background: linear-gradient(180deg, #72243B, #5E1B30 55%, #4A1426);
+  --admin-sidebar-collapsed: 76px;
+  --admin-sidebar-expanded: 264px;
+  --admin-sidebar-motion: 800ms;
+  --admin-sidebar-ease: cubic-bezier(.22, .8, .24, 1);
+  --admin-sidebar-hover: rgb(255 255 255 / 10%);
+  --admin-sidebar-active: rgb(255 255 255 / 16%);
+  --admin-workspace: #F8F4F2;
+  --admin-topbar-height: 68px;
+  --admin-success: #1D7A4E;
+  --admin-success-background: #E8F5EE;
+  --admin-warning-background: #FFF4E5;
+  /* Student login drawer. */
+  --login-width: 940px;
+  --login-radius: 28px;
+  --login-motion: 380ms;
+  --login-backdrop: rgb(42 20 28 / 46%);
+  --login-border: #EBDDE1;
+  --login-shadow: 0 30px 80px rgb(42 20 28 / 28%);
+  --login-visual-background: radial-gradient(circle at 20% 0%, #9A3A58, transparent 60%), linear-gradient(145deg, #72243B, #4E1528);
+  --login-visual-accent: #F4C6D3;
+  --login-linework: #FFFFFF;
+  --login-tab-background: #F6ECEE;
+  --login-focus-ring: rgb(114 36 59 / 12%);
+  --login-error: #B42335;
+  --login-button-background: linear-gradient(135deg, #8A2E49, #72243B 50%, #5E1B30);
+  --login-note-background: #FBF4F1;
+  --login-note-border: #E2C8C0;
+  --login-dev-background: #FFF7E6;
+  --login-dev-border: #F0D7A1;
+  --login-dev-text: #6F4A06;
   --desktop-discovery-height: 27.5dvh;
   --header-gutter: clamp(1.5rem, 4.4vw, 5rem);
   --hero-gutter: clamp(2rem, 5.65vw, 6rem);
@@ -234,7 +302,7 @@
   --ease-out: cubic-bezier(.2,.7,.2,1);
 }
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; scroll-padding-top: calc(var(--header-scroll-offset, var(--header-tablet-height)) + var(--space-4)); }
+html { scroll-behavior: smooth; scroll-padding-top: calc(var(--header-bar-height) + var(--space-4)); }
 body { margin: 0; background: var(--color-page); color: var(--color-text); font-family: var(--font-body); font-size: var(--text-body); line-height: 1.55; -webkit-font-smoothing: antialiased; }
 body:has(dialog[open]) { overflow: hidden; }
 button, input, select { font: inherit; }

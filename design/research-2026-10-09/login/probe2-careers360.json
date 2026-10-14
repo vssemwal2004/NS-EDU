@@ -1,0 +1,106 @@
+[
+  {
+    "site": "careers360",
+    "device": "desktop",
+    "url": "https://www.careers360.com/",
+    "status": 200,
+    "title": "Careers360: Explore Exams, Colleges, Courses and Latest News about Education",
+    "nudge": [],
+    "skip": null,
+    "open": "text=/^\\s*Login\\s*$/ (force)",
+    "afterUrl": "https://www.careers360.com/",
+    "dialog": [
+      {
+        "tag": "DIV",
+        "cls": "react-responsive-modal-root custom-modal-right-popup",
+        "role": null,
+        "text": "Sign In/Sign Up\n\nWe endeavor to keep you informed and help you choose the right Career path. Sign in and access our resources on Exams, Study Material, Counseling, Colleges etc.\n\nEnter Mobile\nSkipSign In"
+      }
+    ],
+    "inputs": [
+      {
+        "tag": "INPUT",
+        "type": "text",
+        "name": "",
+        "placeholder": "",
+        "maxLength": -1,
+        "inputMode": "",
+        "autocomplete": "",
+        "ariaLabel": null
+      }
+    ]
+  },
+  {
+    "site": "careers360",
+    "device": "mobile",
+    "url": "https://www.careers360.com/",
+    "status": 200,
+    "title": "Careers360: Explore Exams, Colleges, Courses and Latest News about Education",
+    "nudge": [
+      {
+        "tag": "DIV",
+        "cls": "react-responsive-modal-root custom-modal-right-popup",
+        "role": null,
+        "text": "Sign In/Sign Up\n\nWe endeavor to keep you informed and help you choose the right Career path. Sign in and access our resources on Exams, Study Material, Counseling, Colleges etc.\n\nEnter Mobile\nSkipSign In"
+      }
+    ],
+    "skip": "text=/^\\s*Skip\\s*$/",
+    "open": "img[alt*=\"user\" i]",
+    "afterUrl": "https://www.careers360.com/user/register?destination=https://www.careers360.com/?&click_location=header",
+    "dialog": [],
+    "inputs": [
+      {
+        "tag": "INPUT",
+        "type": "text",
+        "name": "studentname",
+        "placeholder": "",
+        "maxLength": -1,
+        "inputMode": "",
+        "autocomplete": "",
+        "ariaLabel": null
+      },
+      {
+        "tag": "INPUT",
+        "type": "text",
+        "name": "email",
+        "placeholder": "",
+        "maxLength": -1,
+        "inputMode": "",
+        "autocomplete": "",
+        "ariaLabel": null
+      },
+      {
+        "tag": "INPUT",
+        "type": "text",
+        "name": "mobile",
+        "placeholder": "",
+        "maxLength": 10,
+        "inputMode": "numeric",
+        "autocomplete": "",
+        "ariaLabel": null
+      },
+      {
+        "tag": "INPUT",
+        "type": "text",
+        "name": "education_level",
+        "placeholder": "",
+        "maxLength": -1,
+        "inputMode": "",
+        "autocomplete": "",
+        "ariaLabel": null
+      },
+      {
+        "tag": "INPUT",
+        "type": "checkbox",
+        "name": "terms",
+        "placeholder": "",
+        "maxLength": -1,
+        "inputMode": "",
+        "autocomplete": "",
+        "ariaLabel": null,
+        "checked": true
+      }
+    ],
+    "invalid": []
+  }
+]

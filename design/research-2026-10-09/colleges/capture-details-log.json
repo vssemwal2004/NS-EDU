@@ -1,0 +1,296 @@
+[
+  {
+    "name": "collegedunia-profile-desktop-scrolled",
+    "ok": true,
+    "result": {
+      "status": 200,
+      "sticky": [
+        {
+          "pos": "fixed",
+          "top": 0,
+          "h": 105,
+          "text": "Select Goal & City Select Goal Search for Colleges, Exams, Courses and More.. Write a Review Explore All Courses B.Tech MBA M.Tech MBBS B.Co"
+        },
+        {
+          "pos": "sticky",
+          "top": 105,
+          "h": 49,
+          "text": "Info Courses & Fees Distance Education Admission 2026 Reviews Department CutOff Placement Ranking Gallery Scholarship Faculty News & Article"
+        },
+        {
+          "pos": "sticky",
+          "top": 1962,
+          "h": 65,
+          "text": "ME/M.Tech BS M.Sc MBA/PGDM M.Phil/Ph.D In Engineering M.Phil/Ph.D In Arts M.Phil/Ph.D In Management Executive MBA M.Phil/Ph.D In Design M.Ph"
+        }
+      ]
+    }
+  },
+  {
+    "name": "collegedunia-profile-mobile-scrolled",
+    "ok": true,
+    "result": {
+      "status": 200,
+      "sticky": [
+        {
+          "pos": "sticky",
+          "top": 53,
+          "h": 40,
+          "text": "Info Courses & Fees Distance Education Admission 2026 Reviews Department CutOff Placement Ranking Gallery Scholarship Faculty News & Article"
+        },
+        {
+          "pos": "fixed",
+          "top": 784,
+          "h": 60,
+          "text": "Brochure Apply Now"
+        }
+      ]
+    }
+  },
+  {
+    "name": "shiksha-profile-desktop-scrolled",
+    "ok": true,
+    "result": {
+      "status": 200,
+      "sticky": [
+        {
+          "pos": "sticky",
+          "top": 0,
+          "h": 137,
+          "text": "Indian Institute of Technology Madras (IITM) Save Compare Brochure"
+        },
+        {
+          "pos": "sticky",
+          "top": 96,
+          "h": 56,
+          "text": "College Info Courses Fees Reviews Admissions Placements Cut-Offs Rankings Gallery Hostel & Campus Faculty Compare Q&A Scholarships JEE Advan"
+        },
+        {
+          "pos": "sticky",
+          "top": 449,
+          "h": 38,
+          "text": "Course Name"
+        },
+        {
+          "pos": "sticky",
+          "top": 487,
+          "h": 55,
+          "text": "BTech"
+        },
+        {
+          "pos": "sticky",
+          "top": 542,
+          "h": 55,
+          "text": "MBA"
+        },
+        {
+          "pos": "sticky",
+          "top": 597,
+          "h": 55,
+          "text": "MTech"
+        }
+      ]
+    }
+  },
+  {
+    "name": "shiksha-profile-mobile-scrolled",
+    "ok": true,
+    "result": {
+      "status": 200,
+      "sticky": [
+        {
+          "pos": "sticky",
+          "top": 0,
+          "h": 56,
+          "text": "College Info Courses Fees Reviews Admissions Placements Cut-Offs Rankings Gallery Hostel & Campus Faculty Compare Q&A Scholarships JEE Advan"
+        },
+        {
+          "pos": "sticky",
+          "top": 612,
+          "h": 38,
+          "text": "Course Name"
+        },
+        {
+          "pos": "sticky",
+          "top": 650,
+          "h": 55,
+          "text": "BTech"
+        },
+        {
+          "pos": "sticky",
+          "top": 705,
+          "h": 55,
+          "text": "MBA"
+        },
+        {
+          "pos": "sticky",
+          "top": 760,
+          "h": 55,
+          "text": "MTech"
+        },
+        {
+          "pos": "sticky",
+          "top": 1036,
+          "h": 38,
+          "text": "Component"
+        }
+      ]
+    }
+  },
+  {
+    "name": "careers360-profile-desktop-scrolled",
+    "ok": true,
+    "result": {
+      "status": 200,
+      "sticky": [
+        {
+          "pos": "fixed",
+          "top": 840,
+          "h": 60,
+          "text": "Interested in this College? Get updates on Eligibility, Admission, Placements Fees Structure Enquire Brochure Compare"
+        },
+        {
+          "pos": "sticky",
+          "top": 0,
+          "h": 71,
+          "text": "Overview Courses Fees Cut-offs Admissions Placements Reviews Facilities Ques. & Ans Notable Alumni Colleges and Departments Compare"
+        },
+        {
+          "pos": "fixed",
+          "top": 676,
+          "h": 44,
+          "text": "Ask Question"
+        }
+      ]
+    }
+  },
+  {
+    "name": "careers360-profile-mobile-scrolled",
+    "ok": true,
+    "result": {
+      "status": 200,
+      "sticky": [
+        {
+          "pos": "fixed",
+          "top": 0,
+          "h": 54,
+          "text": "Welcome to Careers360.com Get personalized guidance dashboard based on your profile. Login / Signup Colleges University Popular Colleges by "
+        },
+        {
+          "pos": "fixed",
+          "top": 794,
+          "h": 50,
+          "text": "Enquire Compare"
+        }
+      ]
+    }
+  },
+  {
+    "name": "shiksha-listing-mobile-filters",
+    "ok": true
+  },
+  {
+    "name": "careers360-listing-mobile-filters",
+    "ok": true
+  },
+  {
+    "name": "collegedekho-listing-mobile-filters",
+    "ok": false,
+    "error": "TimeoutError: locator.click: Timeout 8000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByText('Filters', { exact: true }).first()\u001b[22m\n\u001b[2m    - locator resolved to <h4 class=\"modal-title\">…</h4>\u001b[22m"
+  },
+  {
+    "href": "https://www.collegedekho.com/colleges/iitm",
+    "vp": "desktop",
+    "status": 200,
+    "title": "IIT Madras - Admission 2026, Fees, Courses, Placement, Ranking"
+  },
+  {
+    "href": "https://www.collegedekho.com/colleges/iitm",
+    "vp": "mobile",
+    "status": 200,
+    "title": "IIT Madras - Admission 2026, Fees, Courses, Placement, Ranking"
+  },
+  {
+    "name": "collegedekho-profile",
+    "ok": true,
+    "result": "https://www.collegedekho.com/colleges/iitm"
+  },
+  {
+    "name": "careers360-profile-sections",
+    "ok": true,
+    "result": [
+      {
+        "pattern": "Courses Offered",
+        "text": "Courses offered by IIT Madras (IITM)",
+        "file": "careers360-profile-section-courses-offered.png"
+      },
+      {
+        "pattern": "Placements",
+        "text": "IIT Madras Placements 2025",
+        "file": "careers360-profile-section-placements.png"
+      },
+      {
+        "pattern": "Popular College Comparisons",
+        "text": "Popular College Comparisons",
+        "file": "careers360-profile-section-popular-college-comparisons.png"
+      },
+      {
+        "pattern": "Highlights",
+        "text": "IIT Madras QS World Ranking Highlights 2027",
+        "file": "careers360-profile-section-highlights.png"
+      }
+    ]
+  },
+  {
+    "name": "collegedunia-profile-sections",
+    "ok": true,
+    "result": [
+      {
+        "pattern": "Courses",
+        "text": "IIT Madras Courses and Fees",
+        "file": "collegedunia-profile-section-courses.png"
+      },
+      {
+        "pattern": "Placement",
+        "text": "IIT Madras Placements",
+        "file": "collegedunia-profile-section-placement.png"
+      },
+      {
+        "pattern": "Fees",
+        "text": "IIT Madras Courses and Fees",
+        "file": "collegedunia-profile-section-fees.png"
+      }
+    ]
+  },
+  {
+    "name": "shiksha-profile-sections",
+    "ok": true,
+    "result": [
+      {
+        "pattern": "Courses",
+        "text": "IIT Madras Courses & Fees 2026",
+        "file": "shiksha-profile-section-courses.png"
+      },
+      {
+        "pattern": "Placement",
+        "text": "IIT Madras Placements 2025",
+        "file": "shiksha-profile-section-placement.png"
+      },
+      {
+        "pattern": "Similar",
+        "text": "Explore popular similar colleges",
+        "file": "shiksha-profile-section-similar.png"
+      },
+      {
+        "pattern": "Compare",
+        "text": "Compare IIT Madras with other similar colleges",
+        "file": "shiksha-profile-section-compare.png"
+      },
+      {
+        "pattern": "Fees",
+        "text": "IIT Madras Courses & Fees 2026",
+        "file": "shiksha-profile-section-fees.png"
+      }
+    ]
+  }
+]

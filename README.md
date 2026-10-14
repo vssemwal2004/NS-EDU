@@ -1,6 +1,75 @@
 # NSEDU — Student Platform
 
-Last updated: 8 October 2026 (IST)
+Last updated: 9 October 2026 (IST)
+
+## Platform architecture — separate routes, student login and admin console
+
+NSEDU is now a multi-page platform with a separate admin console. Catalogue data lives in MongoDB and is managed from the admin console. The public site reads it through the Express API.
+
+### Run it
+
+```bash
+npm install
+npm run seed     # creates indexes, inserts catalogue seed data and the initial admin (idempotent)
+npm run dev      # Next.js on :3000, Express on :4100
+```
+
+Copy [backend/.env.example](backend/.env.example) to `backend/.env` and set `MONGODB_URI`, `JWT_SECRET`, `ADMIN_EMAIL` and `ADMIN_PASSWORD`. The seed only creates the admin if missing; `npm run seed --workspace backend -- --reset-admin` resets the password.
+
+### Public routes — `frontend/src/app/(site)/`
+
+| Route | Feature |
+| --- | --- |
+| `/` | All six original sections in order (hero + popular courses, study destinations, course-wise colleges, eligibility, budget, news) plus stats, explore-by-stream and exam bands |
+| `/colleges` | Filterable college listing: stream, course, location, fee, rating, sort; URL-synced (`?course=mba&location=Pune`); compare tray |
+| `/colleges/<id>` | College profile: quick facts, courses & fees, placement bars, location, similar colleges |
+| `/courses`, `/courses/<id>` | Course directory by field and level; course page with fee/salary spread, colleges offering it, related exams |
+| `/exams`, `/exams/<id>` | Exam guides with official links, related courses and colleges (no invented dates) |
+| `/locations` | Featured city/state tiles and a searchable directory with sample-programme counts |
+| `/compare` | Up to three colleges for one course, side by side; shareable `?course=&c=` links; suggested comparisons |
+| `/eligibility`, `/budget` | Eligibility checker and first-year budget check |
+| `/scholarships`, `/career-guidance`, `/admission-checklist` | Guides with contents rail and a tick-list saved on this device |
+| `/news`, `/search`, `/account` | Education news, tabbed catalogue search, student dashboard |
+
+The redesigned header has the same content as before in a new layout: a wine utility strip (tagline, preferred city, news and help), then a sticky bar with mega menus, a live search panel (`/` shortcut) and **Log in**. Course and city choices carry across pages (browser storage plus the `?course=` URL).
+
+### Portal redesign (9 October 2026)
+
+The public pages were redesigned using patterns from Shiksha, Collegedunia, CollegeDekho and Careers360: stream-based mega menus, filter sidebars, profile pages with in-page tabs, comparison tables with best-value markers and a split-panel login. NSEDU's wine/ivory identity was kept, and no branding, text or images were copied. Research notes, the access status of each URL (some sites blocked automation) and screenshots are in [design/research-2026-10-09/](design/research-2026-10-09/).
+
+- **Honest data:** every figure comes from the catalogue: counts, fee and salary ranges, and "demo rating". Fictional institutions stay labelled "Illustrative data". Rankings, cut-offs, reviews, exam dates and social login were deliberately not added.
+- **Code organisation:** each area lives in its own feature folder (`features/home`, `colleges`, `compare`, `courses`, `guides`, `auth`, `components/layout/header`). Area theme tokens are in `styles/themes/<area>.css`, imported by `index.css`, and extra icons are in `components/ui/icons/<area>.js`.
+- **Checks:** 60 routes were crawled, covering every college, course, exam and info page. None had page errors or horizontal overflow, and none of the 211 internal links were broken. Lint is clean.
+
+### Student login — no separate sign-up
+
+The **Log in** drawer offers **Email** or **Mobile number** (+91). Students receive a 6-digit one-time code. The first successful verification creates the account, so there is no "Create account" option. Codes expire after 5 minutes and allow 5 attempts. Sends are rate-limited. The session is a 7-day JWT in an http-only `nsedu_student` cookie.
+
+**Development limitation:** no email/SMS provider is connected. With `OTP_DELIVERY=console` the code is printed in the API log and shown in the drawer as "Development mode". It is never returned when `NODE_ENV=production`. Plug a provider into `deliverOtp()` in [otp.js](backend/src/modules/student-auth/otp.js).
+
+### Admin console — `/admin`
+
+- **Separate from student login:** a separate route tree (`frontend/src/app/admin/`), cookie (`nsedu_admin`, 8-hour JWT, SameSite=Strict) and role check. A student token is rejected by every admin endpoint.
+- **`/admin`:** a split-screen sign-in with a platform overview, live catalogue counts and imagery on the left, and the form on the right. [proxy.js](frontend/src/proxy.js) sends cookieless visitors on `/admin/*` back to sign-in; Express verifies the JWT on every `/api/admin` request.
+- **Sidebar:** a narrow wine rail with white icons. It slides open over 0.8 s on hover or keyboard focus and closes when the pointer leaves. On mobile it is an off-canvas drawer.
+- **Screens:** Dashboard (key figures, 14-day sign-ups, programmes by course, recent students), Colleges, Programmes, Courses, Exams, Cities, States, Students (search, block/restore), Scholarships and Settings.
+- **One generic editor:** forms are generated from the backend's field registry ([resources.js](backend/src/modules/admin/resources.js)). Adding a field there adds it to validation and the admin form. Edits publish immediately (`Cache-Control: no-store`).
+
+**Initial admin:** the requested demo credentials `a@gmail.com` / `123456` are in the local, gitignored `backend/.env`. This password is weak; change it before any shared or public deployment.
+
+### Code layout
+
+- `backend/src/modules/` — `catalog` (public read API), `student-auth`, `admin-auth`, `admin` (CRUD registry, dashboard, students). Shared `lib/` covers JWT, scrypt password hashing, validation, rate limiting and cookies.
+- `frontend/src/lib/api/` — `catalog.js` (server loader, deduplicated per request; falls back to the bundled seed files only if the API is unreachable) and `client.js` (browser fetch with typed errors).
+- `frontend/src/providers/` — catalogue, preferences and student-session contexts.
+- `frontend/src/features/site|auth|admin/` — page features. All colours, sizes and motion remain in [index.css](frontend/src/styles/index.css) (`--header-*`, `--login-*`, `--admin-*`, `--page-intro-*` tokens).
+
+### Known limitations
+
+- Rate limits are in memory per API process; they reset on restart and aren't shared across instances.
+- JWT sessions are stateless. Blocking a student takes effect on their next request; a copied token stays valid until it expires.
+- College records remain illustrative (fictional institutions); the admin console is where verified data would be entered.
+- Eligibility rules, budget living-cost defaults and site page copy are still static files. They are candidates for the next round of making data dynamic.
 
 ## Final footer — dark maroon navigation and support
 

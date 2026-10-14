@@ -1,0 +1,251 @@
+[
+  {
+    "site": "collegedunia",
+    "device": "desktop",
+    "url": "https://collegedunia.com/",
+    "status": 200,
+    "title": "Collegedunia: Top Colleges, Universities & Institutes in India | Admission, Fees, Rankings of Top Management, Engineering, Medical Colleges",
+    "open": "[class*=\"menu\" i] >> nth=-1 (force)",
+    "step1": [],
+    "open2": null,
+    "afterUrl": "https://collegedunia.com/exams/cbse-class-xii/syllabus",
+    "dialog": [],
+    "inputs": [
+      {
+        "tag": "INPUT",
+        "type": "radio",
+        "name": "rating",
+        "placeholder": "",
+        "maxLength": -1,
+        "inputMode": "",
+        "autocomplete": "",
+        "ariaLabel": null
+      },
+      {
+        "tag": "INPUT",
+        "type": "radio",
+        "name": "rating",
+        "placeholder": "",
+        "maxLength": -1,
+        "inputMode": "",
+        "autocomplete": "",
+        "ariaLabel": null
+      },
+      {
+        "tag": "INPUT",
+        "type": "radio",
+        "name": "rating",
+        "placeholder": "",
+        "maxLength": -1,
+        "inputMode": "",
+        "autocomplete": "",
+        "ariaLabel": null
+      },
+      {
+        "tag": "INPUT",
+        "type": "radio",
+        "name": "rating",
+        "placeholder": "",
+        "maxLength": -1,
+        "inputMode": "",
+        "autocomplete": "",
+        "ariaLabel": null
+      },
+      {
+        "tag": "INPUT",
+        "type": "radio",
+        "name": "rating",
+        "placeholder": "",
+        "maxLength": -1,
+        "inputMode": "",
+        "autocomplete": "",
+        "ariaLabel": null
+      },
+      {
+        "tag": "INPUT",
+        "type": "radio",
+        "name": "rating",
+        "placeholder": "",
+        "maxLength": -1,
+        "inputMode": "",
+        "autocomplete": "",
+        "ariaLabel": null
+      },
+      {
+        "tag": "INPUT",
+        "type": "radio",
+        "name": "rating",
+        "placeholder": "",
+        "maxLength": -1,
+        "inputMode": "",
+        "autocomplete": "",
+        "ariaLabel": null
+      },
+      {
+        "tag": "INPUT",
+        "type": "radio",
+        "name": "rating",
+        "placeholder": "",
+        "maxLength": -1,
+        "inputMode": "",
+        "autocomplete": "",
+        "ariaLabel": null
+      },
+      {
+        "tag": "INPUT",
+        "type": "radio",
+        "name": "rating",
+        "placeholder": "",
+        "maxLength": -1,
+        "inputMode": "",
+        "autocomplete": "",
+        "ariaLabel": null
+      },
+      {
+        "tag": "INPUT",
+        "type": "radio",
+        "name": "rating",
+        "placeholder": "",
+        "maxLength": -1,
+        "inputMode": "",
+        "autocomplete": "",
+        "ariaLabel": null
+      },
+      {
+        "tag": "INPUT",
+        "type": "email",
+        "name": "email",
+        "placeholder": "ENTER YOUR EMAIL ID",
+        "maxLength": -1,
+        "inputMode": "",
+        "autocomplete": "",
+        "ariaLabel": null
+      },
+      {
+        "tag": "INPUT",
+        "type": "text",
+        "name": "mobileno",
+        "placeholder": "ENTER YOUR MOBILE NO",
+        "maxLength": 10,
+        "inputMode": "",
+        "autocomplete": "",
+        "ariaLabel": null
+      },
+      {
+        "tag": "SELECT",
+        "type": "select-one",
+        "name": "course_tag",
+        "inputMode": "",
+        "autocomplete": "",
+        "ariaLabel": "course_tag"
+      }
+    ],
+    "invalid": [
+      {
+        "tag": "DIV",
+        "cls": "jsx-1037925836 jsx-587609838 jsx-2423684928 modal fade show d-block",
+        "role": "dialog",
+        "text": "Access To Latest Fees, Eligibility & More\nNever Miss A College Update\nGet Latest Updates From Top Colleges\nAccess Syllabus, Mock tests & More\nRegister\nLogin\nMobile Number*\n\nBy submitting this form, you accept and agree to our Terms of Use\n\nDon’t have a Collegedunia account yet? Register now\n\nGet OTP"
+      }
+    ]
+  },
+  {
+    "site": "collegedunia",
+    "device": "mobile",
+    "url": "https://collegedunia.com/",
+    "status": 200,
+    "title": "Collegedunia: Top Colleges, Universities & Institutes in India | Admission, Fees, Rankings of Top Management, Engineering, Medical Colleges",
+    "open": "[class*=\"menu\" i] >> nth=-1",
+    "step1": [],
+    "open2": null,
+    "afterUrl": "https://collegedunia.com/",
+    "dialog": [],
+    "inputs": [
+      {
+        "tag": "INPUT",
+        "type": "text",
+        "name": "",
+        "placeholder": "Search Courses By Name",
+        "maxLength": -1,
+        "inputMode": "",
+        "autocomplete": "",
+        "ariaLabel": null
+      },
+      {
+        "tag": "SELECT",
+        "type": "select-one",
+        "name": "",
+        "inputMode": "",
+        "autocomplete": "",
+        "ariaLabel": null
+      }
+    ]
+  },
+  {
+    "site": "shiksha",
+    "device": "desktop",
+    "url": "https://www.shiksha.com/",
+    "status": 200,
+    "title": "Discover Colleges, Courses & Exams for Higher Education in India",
+    "open": "text=/^\\s*(Login|Log In|Sign In|Login\\s*\\/\\s*Sign\\s*Up)\\s*$/i",
+    "step1": [],
+    "open2": "text=/^\\s*(Login|Log In|Sign In|Login\\s*\\/\\s*Sign\\s*Up)\\s*$/i (force)",
+    "afterUrl": "https://www.shiksha.com/",
+    "dialog": [],
+    "inputs": [
+      {
+        "tag": "INPUT",
+        "type": "radio",
+        "name": "radio-group",
+        "placeholder": "",
+        "maxLength": -1,
+        "inputMode": "",
+        "autocomplete": "",
+        "ariaLabel": null
+      },
+      {
+        "tag": "INPUT",
+        "type": "radio",
+        "name": "radio-group",
+        "placeholder": "",
+        "maxLength": -1,
+        "inputMode": "",
+        "autocomplete": "",
+        "ariaLabel": null
+      },
+      {
+        "tag": "INPUT",
+        "type": "text",
+        "name": "",
+        "placeholder": "IND +91",
+        "maxLength": -1,
+        "inputMode": "",
+        "autocomplete": "",
+        "ariaLabel": null
+      },
+      {
+        "tag": "INPUT",
+        "type": "tel",
+        "name": "phone",
+        "placeholder": "Mobile number",
+        "maxLength": 10,
+        "inputMode": "",
+        "autocomplete": "",
+        "ariaLabel": null
+      }
+    ]
+  },
+  {
+    "site": "shiksha",
+    "device": "mobile",
+    "url": "https://www.shiksha.com/",
+    "status": 200,
+    "title": "Discover Colleges, Courses & Exams for Higher Education in India",
+    "open": null,
+    "step1": [],
+    "open2": null,
+    "afterUrl": "https://www.shiksha.com/",
+    "dialog": [],
+    "inputs": []
+  }
+]

@@ -1,0 +1,282 @@
+/* /colleges/[id] profile. Colours and sizes come from styles/themes/colleges.css and index.css. */
+.page { padding-bottom: var(--space-12); }
+
+/* Hero */
+.hero { position: relative; overflow: hidden; padding-block: var(--page-intro-padding) clamp(1.75rem, 3vw, 2.75rem); border-bottom: 1px solid var(--color-border); background: var(--colleges-hero-background); }
+.heroLines { position: absolute; left: -60px; bottom: -30px; width: min(640px, 60vw); stroke: var(--page-intro-line); stroke-width: 1.2; pointer-events: none; }
+.heroInner { position: relative; display: grid; gap: var(--space-5); }
+.breadcrumb { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2); color: var(--color-muted); font-size: var(--text-caption); }
+.breadcrumb a { color: var(--color-muted); text-decoration: none; }
+.breadcrumb a:hover { color: var(--color-primary); text-decoration: underline; }
+.breadcrumb :global(.icon) { width: 12px; height: 12px; transform: rotate(-90deg); }
+.breadcrumb [aria-current] { color: var(--color-primary); font-weight: 600; }
+.heroGrid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(300px, .9fr); gap: clamp(1.5rem, 4vw, 3.5rem); align-items: center; }
+.heroCopy { display: grid; gap: var(--space-4); min-width: 0; }
+.eyebrow { display: inline-flex; align-items: center; gap: var(--space-2); color: var(--color-accent); font-size: .6875rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+.eyebrow > span { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; background: var(--color-primary); color: var(--color-surface); }
+.eyebrow :global(.icon) { width: 16px; height: 16px; }
+.heroCopy h1 { font-size: var(--colleges-hero-title-size); line-height: 1.06; letter-spacing: -.025em; color: var(--color-text); text-wrap: balance; }
+.heroMeta { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2) var(--space-3); font-size: var(--text-small); }
+.heroMeta > a { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; color: var(--color-text); font-weight: 600; text-decoration: none; }
+.heroMeta > a:hover { color: var(--color-primary); text-decoration: underline; text-underline-offset: 3px; }
+.heroMeta :global(.icon) { width: 16px; height: 16px; color: var(--color-accent); }
+.ratingBadge, .illustrative { display: inline-flex; align-items: center; gap: 5px; padding: 4px var(--space-3); border-radius: var(--radius-pill); font-size: var(--text-caption); }
+.ratingBadge { background: var(--colleges-rating-background); color: var(--colleges-rating-text); }
+.ratingBadge :global(.icon) { width: 14px; height: 14px; fill: var(--colleges-rating-star); stroke: var(--colleges-rating-star); }
+.illustrative { border: var(--card-border); background: var(--color-accent-soft); color: var(--color-accent); font-weight: 600; }
+.illustrative :global(.icon) { width: 14px; height: 14px; color: inherit; }
+.facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: var(--space-1) 0 0; border: var(--card-border); border-radius: 16px; background: rgb(255 255 255 / 82%); box-shadow: var(--colleges-card-shadow); overflow: hidden; }
+.facts > div { display: grid; align-content: start; gap: 2px; min-width: 0; padding: var(--space-3) var(--space-4); }
+.facts > div + div { border-left: var(--card-border); }
+.facts dt { color: var(--color-muted); font-size: .6875rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.facts dd { margin: 0; color: var(--color-primary); font: 400 1.45rem / 1.2 var(--font-heading); }
+.facts dd[data-missing] { color: var(--colleges-muted-italic); font: italic 500 var(--text-body) / 1.5 var(--font-body); }
+.facts small { color: var(--color-muted); font-size: .6875rem; line-height: 1.35; }
+.heroActions { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2) var(--space-3); }
+.heroActions :global(.icon) { width: 17px; height: 17px; }
+.heroArt { position: relative; display: grid; place-items: center; aspect-ratio: 16 / 11; margin: 0; border-radius: var(--colleges-section-radius); background: var(--colleges-hero-art-background); box-shadow: var(--colleges-card-shadow-hover); overflow: hidden; isolation: isolate; }
+.heroArtLines { position: absolute; inset: 0; z-index: -1; width: 100%; height: 100%; stroke: var(--colleges-hero-linework); stroke-width: 1.2; }
+.print { width: 56%; padding: 8px 8px 26px; border-radius: 6px; background: var(--colleges-print-border); box-shadow: var(--colleges-print-shadow); transform: rotate(-2.5deg); transition: transform var(--motion-reveal) var(--ease-out); }
+.heroArt:hover .print { transform: rotate(0deg) scale(1.02); }
+.printArt { display: block; width: 100%; aspect-ratio: 130 / 69; border-radius: 3px; background: var(--color-accent-soft); }
+.heroArt figcaption { position: absolute; left: var(--space-4); bottom: var(--space-3); display: inline-flex; align-items: center; gap: 6px; color: rgb(255 255 255 / 85%); font-size: .6875rem; letter-spacing: .02em; }
+.heroArt figcaption :global(.icon) { width: 13px; height: 13px; }
+
+/* Sticky "On this page" bar */
+.nav { position: sticky; top: var(--colleges-sticky-offset); z-index: 15; border-bottom: var(--card-border); background: var(--colleges-dock-background); backdrop-filter: blur(12px); }
+.navInner { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); min-height: var(--colleges-profile-nav-height); }
+.navLinks { position: relative; display: flex; gap: var(--space-1); min-width: 0; margin: 0; padding: 0; list-style: none; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none; }
+.navLinks li { flex: 0 0 auto; scroll-snap-align: start; }
+.navLinks a { position: relative; display: inline-flex; align-items: center; min-height: var(--colleges-profile-nav-height); padding: 0 var(--space-4); color: var(--color-muted); font-size: var(--text-small); font-weight: 600; text-decoration: none; white-space: nowrap; transition: color var(--motion-fast); }
+.navLinks a::after { content: ''; position: absolute; left: var(--space-3); right: var(--space-3); bottom: 0; height: 3px; border-radius: 3px 3px 0 0; background: var(--color-primary); transform: scaleX(0); transition: transform var(--motion-fast) var(--ease-out); }
+.navLinks a:hover { color: var(--color-primary); }
+.navLinks a[aria-current] { color: var(--color-primary); }
+.navLinks a[aria-current]::after { transform: scaleX(1); }
+.navLinks a:focus-visible { outline-offset: -3px; }
+.navAside { display: flex; align-items: center; gap: var(--space-3); flex: 0 0 auto; opacity: 0; visibility: hidden; transform: translateY(4px); transition: opacity var(--motion-fast), transform var(--motion-fast), visibility var(--motion-fast); }
+.nav[data-compact] .navAside { opacity: 1; visibility: visible; transform: none; }
+.navAside strong { max-width: 22ch; overflow: hidden; color: var(--color-primary); font: 400 1.1rem / 1.2 var(--font-heading); text-overflow: ellipsis; white-space: nowrap; }
+.navAside :global(.button) { min-height: 40px; padding: var(--space-2) var(--space-4); font-size: var(--text-caption); }
+.navAside :global(.icon) { width: 16px; height: 16px; }
+
+/* Body */
+.body { display: grid; grid-template-columns: minmax(0, 1fr) var(--colleges-rail-width); gap: var(--colleges-layout-gap); align-items: start; padding-top: var(--space-6); }
+.main { display: grid; gap: var(--space-5); min-width: 0; }
+.section { min-width: 0; padding: clamp(1.25rem, 2.2vw, 1.75rem); border: var(--card-border); border-radius: var(--colleges-section-radius); background: var(--card-background); box-shadow: var(--colleges-card-shadow); scroll-margin-top: calc(var(--colleges-profile-nav-height) + var(--space-3)); }
+.sectionHead { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: var(--space-2) var(--space-4); margin-bottom: var(--space-4); padding-bottom: var(--space-3); border-bottom: var(--card-border); }
+.sectionHead h2 { font-size: var(--colleges-section-title-size); letter-spacing: -.02em; }
+.yearTag { color: var(--color-muted); font-size: var(--text-caption); font-weight: 600; }
+.sectionIntro { max-width: 70ch; color: var(--color-muted); font-size: var(--text-small); }
+.sectionIntro strong { color: var(--color-text); }
+.sectionIntro a, .caption a { color: var(--color-primary); font-weight: 600; }
+.caption { margin-top: var(--space-3); color: var(--color-muted); font-size: var(--text-caption); }
+
+/* Overview */
+.overviewGrid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(240px, 300px); gap: var(--space-6); }
+.overviewCopy { display: grid; align-content: start; gap: var(--space-3); color: var(--color-muted); font-size: var(--text-small); }
+.lede { color: var(--color-text); font-size: var(--text-body); line-height: 1.65; }
+.courseChips { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: var(--space-2) 0 0; padding: 0; list-style: none; }
+.courseChips a { display: inline-flex; align-items: center; gap: var(--space-2); min-height: 44px; padding: 0 var(--space-3); border: 1px solid var(--colleges-chip-border); border-radius: var(--radius-pill); background: var(--colleges-chip-background); color: var(--color-primary); font-size: var(--text-caption); font-weight: 700; text-decoration: none; transition: border-color var(--motion-fast), background var(--motion-fast); }
+.courseChips a:hover { border-color: var(--color-primary); background: var(--color-surface); }
+.courseChips a span { color: var(--color-muted); font-weight: 500; }
+.courseChips :global(.icon) { width: 16px; height: 16px; color: var(--color-accent); }
+.verify { padding: var(--space-4); border-radius: 14px; background: var(--colleges-insight-background); border: var(--card-border); }
+.verify h3 { display: flex; align-items: center; gap: var(--space-2); font: 700 var(--text-small) / 1.3 var(--font-body); color: var(--color-primary); }
+.verify h3 :global(.icon) { width: 18px; height: 18px; }
+.verify ul { display: grid; gap: var(--space-2); margin: var(--space-3) 0 var(--space-1); padding: 0; list-style: none; font-size: var(--text-caption); }
+.verify li { display: flex; gap: var(--space-2); }
+.verify li :global(.icon) { flex: 0 0 auto; width: 15px; height: 15px; color: var(--colleges-bar-median); }
+.verify :global(.text-link) { gap: var(--space-2); font-size: var(--text-caption); }
+.verify :global(.text-link .icon) { width: 15px; height: 15px; }
+
+/* Courses table */
+.table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: var(--text-small); }
+.table caption { margin-bottom: var(--space-3); color: var(--color-muted); font-size: var(--text-caption); text-align: left; caption-side: top; }
+.table thead th { padding: var(--space-2) var(--space-3); border-block: var(--card-border); background: var(--color-accent-soft); color: var(--color-text); font-size: var(--text-caption); font-weight: 700; text-align: left; white-space: nowrap; }
+.table thead th:first-child { border-left: var(--card-border); border-radius: 10px 0 0 10px; }
+.table thead th:last-child { border-right: var(--card-border); border-radius: 0 10px 10px 0; }
+.table thead small { display: block; color: var(--color-muted); font-weight: 500; }
+.table tbody th, .table tbody td { padding: var(--space-3); border-bottom: var(--card-border); vertical-align: middle; }
+.table tbody tr { scroll-margin-top: calc(var(--colleges-profile-nav-height) + var(--space-6)); transition: background var(--motion-fast); }
+.table tbody tr:hover, .table tbody tr:target { background: var(--colleges-rail-background); }
+.table tbody th { min-width: 170px; text-align: left; font-weight: 400; }
+.courseCell { display: flex; align-items: center; gap: var(--space-3); }
+.table tbody th strong { display: block; color: var(--color-primary); font-size: var(--text-body); }
+.table tbody th small { display: block; color: var(--color-muted); font-size: var(--text-caption); line-height: 1.35; }
+.courseIcon { display: grid; place-items: center; flex: 0 0 auto; width: 38px; height: 38px; border-radius: 11px; background: var(--colleges-chip-background); color: var(--color-primary); }
+.courseIcon :global(.icon) { width: 19px; height: 19px; }
+.table td strong { color: var(--color-text); font-weight: 700; }
+.table td[data-missing] { color: var(--colleges-muted-italic); font-style: italic; white-space: nowrap; }
+.actionsCell { width: 1%; }
+.rowActions { display: flex; align-items: center; gap: var(--space-3); }
+.rowLinks { display: grid; justify-items: start; }
+.rowLinks a { display: inline-flex; align-items: center; min-height: 28px; white-space: nowrap; color: var(--color-primary); font-size: var(--text-caption); font-weight: 600; text-decoration: none; }
+.rowLinks a:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+/* Compare toggle */
+.toggle { display: grid; gap: var(--space-1); justify-items: start; }
+.toggle :global(.button) { padding: var(--space-2) var(--space-4); }
+.toggle :global(.button .icon) { width: 16px; height: 16px; }
+.toggleNote { max-width: 34ch; color: var(--color-muted); font-size: .6875rem; line-height: 1.4; }
+.toggleNote[data-full] { color: var(--colleges-rating-text); font-weight: 600; }
+.toggleNote a { color: var(--color-primary); font-weight: 700; }
+
+/* Placement chart */
+.legend { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-5); margin: var(--space-4) 0 var(--space-2); padding: 0; list-style: none; color: var(--color-muted); font-size: var(--text-caption); }
+.legend li { display: inline-flex; align-items: center; gap: var(--space-2); }
+.swatchMedian, .swatchHighest, .swatchMarker { display: inline-block; width: 14px; height: 10px; border-radius: 2px; }
+.swatchMedian { background: var(--colleges-bar-median); }
+.swatchHighest { background: var(--colleges-bar-highest); }
+.swatchMarker { width: 2px; height: 14px; border-radius: 0; background: var(--colleges-bar-marker); }
+.chart { display: grid; gap: var(--space-1); }
+.chartAxis, .chartRow { display: grid; grid-template-columns: minmax(120px, 190px) minmax(0, 1fr); gap: var(--space-4); align-items: center; }
+.chartAxis > div { position: relative; height: 20px; margin-right: 6.5rem; }
+.chartAxis > div span { position: absolute; top: 0; color: var(--color-muted); font-size: .6875rem; white-space: nowrap; transform: translateX(-50%); }
+.chartAxis > div span:first-child { transform: none; }
+.chartRow { padding-block: var(--space-2); border-top: 1px dashed var(--colleges-bar-grid); }
+.chartLabel { display: grid; gap: 2px; min-width: 0; }
+.chartLabel strong { color: var(--color-text); font-size: var(--text-small); }
+.chartLabel small { color: var(--color-muted); font-size: .6875rem; line-height: 1.35; }
+.chartPlot { position: relative; height: 48px; margin-right: 6.5rem; }
+.chartPlot svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.chartGrid line { stroke: var(--colleges-bar-grid); stroke-width: 1; }
+.barMedian { fill: var(--colleges-bar-median); }
+.barHighest { fill: var(--colleges-bar-highest); }
+.chartMarker { stroke: var(--colleges-bar-marker); stroke-width: 2; }
+.chartEmpty { fill: var(--colleges-bar-track); stroke: var(--colleges-bar-grid); stroke-width: 1; stroke-dasharray: 4 3; }
+.valueMedian, .valueHighest { position: absolute; padding-left: 8px; color: var(--color-text); font-size: var(--text-caption); font-weight: 700; line-height: 1; white-space: nowrap; }
+.valueMedian { top: calc(4 / 40 * 100% + 1px); }
+.valueHighest { top: calc(22 / 40 * 100% + 1px); color: var(--color-muted); font-weight: 600; }
+.chartMissing { position: absolute; left: var(--space-3); top: 50%; transform: translateY(-50%); color: var(--colleges-muted-italic); font-size: var(--text-caption); font-style: italic; }
+
+/* Location */
+.locationGrid { display: grid; gap: var(--space-5); }
+.locationGrid[data-art] { grid-template-columns: minmax(180px, 260px) minmax(0, 1fr); align-items: center; }
+.locationArt { display: block; width: 100%; aspect-ratio: 4 / 3; border-radius: 14px; background: var(--color-accent-soft); }
+.locationCopy { display: grid; gap: var(--space-3); color: var(--color-muted); font-size: var(--text-small); }
+.locationPlace { display: flex; align-items: center; gap: var(--space-2); color: var(--color-text); font-size: 1.1rem; }
+.locationPlace strong { font: 400 1.5rem / 1.2 var(--font-heading); color: var(--color-primary); }
+.locationPlace :global(.icon) { width: 20px; height: 20px; color: var(--color-accent); }
+.locationLinks { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); }
+.locationLinks :global(.button) { padding-inline: var(--space-4); }
+.locationLinks :global(.icon) { width: 16px; height: 16px; }
+
+/* Similar colleges */
+.similarGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); margin: 0; padding: 0; list-style: none; }
+.mini { display: grid; grid-template-columns: 92px minmax(0, 1fr); grid-template-rows: 1fr auto; gap: var(--space-3); padding: var(--space-3); border: var(--card-border); border-radius: 14px; background: var(--color-surface); transition: border-color var(--motion-fast), box-shadow var(--motion-fast); }
+.mini:hover { border-color: var(--colleges-chip-border); box-shadow: var(--colleges-card-shadow); }
+.miniArt { width: 92px; height: 68px; border-radius: 10px; background: var(--color-accent-soft); }
+.mini > div { display: grid; align-content: start; gap: 4px; min-width: 0; }
+.mini h3 { font-size: 1.05rem; line-height: 1.25; }
+.mini h3 a { color: var(--color-primary); text-decoration: none; }
+.mini h3 a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.miniMeta { display: flex; flex-wrap: wrap; align-items: center; gap: 2px var(--space-2); color: var(--color-muted); font-size: var(--text-caption); }
+.miniMeta :global(.icon) { width: 13px; height: 13px; color: var(--color-accent); }
+.miniMeta span { display: inline-flex; align-items: center; gap: 3px; color: var(--colleges-rating-text); }
+.miniMeta span :global(.icon) { fill: var(--colleges-rating-star); stroke: var(--colleges-rating-star); }
+.miniShared { display: flex; flex-wrap: wrap; gap: 4px; }
+.miniShared span { padding: 1px 8px; border-radius: var(--radius-pill); background: var(--colleges-chip-background); color: var(--color-primary); font-size: .6875rem; font-weight: 700; }
+.miniWhy { color: var(--color-muted); font-size: .6875rem; font-style: italic; }
+.miniFee { color: var(--color-muted); font-size: var(--text-caption); }
+.miniFee strong { color: var(--color-text); }
+.mini > :global(.button) { grid-column: 1 / -1; justify-content: space-between; min-height: 44px; padding: var(--space-2) var(--space-4); font-size: var(--text-caption); }
+.mini > :global(.button .icon) { width: 16px; height: 16px; }
+.pairs { margin-top: var(--space-6); }
+.pairs h3 { display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-3); font: 700 var(--text-body) / 1.3 var(--font-body); color: var(--color-text); }
+.pairs h3 :global(.icon) { width: 20px; height: 20px; color: var(--color-primary); }
+.pairs ul { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr)); gap: var(--space-3); margin: 0; padding: 0; list-style: none; }
+.pair { display: grid; align-content: start; gap: var(--space-3); padding: var(--space-4); border: 1px dashed var(--colleges-chip-border); border-radius: 14px; background: var(--colleges-rail-background); }
+.pairCourse { justify-self: start; padding: 2px 10px; border-radius: var(--radius-pill); background: var(--color-primary); color: var(--color-surface); font-size: .6875rem; font-weight: 700; letter-spacing: .04em; }
+.pairSides { display: grid; grid-template-columns: 1fr 1fr; }
+.pairSide { position: relative; display: grid; align-content: start; gap: 2px; min-width: 0; padding-right: var(--space-4); font-size: .6875rem; color: var(--color-muted); }
+.pairSide + .pairSide { padding: 0 0 0 var(--space-5); border-left: 1px dashed var(--colleges-chip-border); }
+.pairSide strong { overflow-wrap: anywhere; color: var(--color-primary); font: 400 1.05rem / 1.25 var(--font-heading); }
+.pairSide em { position: absolute; left: 0; top: 50%; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--color-surface); border: var(--card-border); color: var(--color-accent); font-size: .6875rem; font-style: italic; font-weight: 700; transform: translate(-50%, -50%); }
+.pairAction { display: grid; gap: var(--space-1); }
+.pairAction :global(.button) { width: 100%; padding-inline: var(--space-3); }
+.pairAction :global(.icon) { width: 16px; height: 16px; }
+.pairAction p { color: var(--colleges-rating-text); font-size: .6875rem; font-weight: 600; }
+.pairAction p:empty { display: none; }
+.pairAction a { color: var(--color-primary); }
+
+/* CTA rail + mobile dock */
+.rail { position: sticky; top: calc(var(--colleges-sticky-offset) + var(--colleges-profile-nav-height) + var(--space-4)); display: grid; gap: var(--space-3); }
+.railCard { position: relative; display: grid; gap: var(--space-3); padding: var(--space-5); border: var(--card-border); border-radius: var(--colleges-section-radius); background: var(--card-background); box-shadow: var(--colleges-card-shadow); overflow: hidden; }
+.railCard::before { content: ''; position: absolute; inset: 0 0 auto; height: 4px; background: var(--colleges-tray-rule); }
+.railEyebrow { color: var(--color-accent); font-size: .6875rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.railCard h2 { margin-top: -6px; font-size: 1.35rem; }
+.railCourse { display: flex; flex-wrap: wrap; align-items: center; gap: 4px var(--space-2); color: var(--color-primary); font-weight: 700; }
+.railCourse :global(.icon) { width: 18px; height: 18px; }
+.railCourse small { flex-basis: 100%; color: var(--color-muted); font-size: var(--text-caption); font-weight: 500; }
+.railSelect { display: grid; gap: 4px; color: var(--color-muted); font-size: var(--text-caption); font-weight: 600; }
+.railSelect select { min-height: 44px; padding: 0 var(--space-3); border: 1px solid var(--color-input-border); border-radius: var(--radius-control); background: var(--color-surface); color: var(--color-text); font-size: var(--text-small); font-weight: 600; }
+.railFacts { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); margin: 0; }
+.railFacts > div { padding: var(--space-2) var(--space-3); border: var(--card-border); border-radius: 12px; background: var(--colleges-stat-background); }
+.railFacts dt { color: var(--color-muted); font-size: .6875rem; font-weight: 600; }
+.railFacts dt small { display: block; font-weight: 500; }
+.railFacts dd { margin: 2px 0 0; color: var(--color-text); font-weight: 700; }
+.railFacts dd[data-missing] { color: var(--colleges-muted-italic); font-style: italic; font-weight: 500; font-size: var(--text-small); }
+.railToggle, .railToggle :global(.button) { width: 100%; }
+.railLinks { display: grid; margin: 0; padding: 0; list-style: none; border-top: var(--card-border); }
+.railLinks a { display: flex; align-items: center; gap: var(--space-3); min-height: 48px; border-bottom: var(--card-border); color: var(--color-text); font-size: var(--text-small); font-weight: 600; text-decoration: none; }
+.railLinks a span { flex: 1; min-width: 0; }
+.railLinks a:hover { color: var(--color-primary); }
+.railLinks :global(.icon) { width: 18px; height: 18px; color: var(--color-accent); }
+.railLinks :global(.icon:last-child) { width: 15px; height: 15px; transition: transform var(--motion-fast); }
+.railLinks a:hover :global(.icon:last-child) { transform: translateX(3px); color: var(--color-primary); }
+.railNote { display: flex; gap: var(--space-2); padding-inline: var(--space-2); color: var(--color-muted); font-size: .6875rem; line-height: 1.45; }
+.railNote :global(.icon) { flex: 0 0 auto; width: 14px; height: 14px; margin-top: 1px; color: var(--color-accent); }
+.dock { display: none; }
+
+@media (max-width: 1279px) {
+  .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .facts > div:nth-child(3) { border-left: 0; }
+  .facts > div:nth-child(n + 3) { border-top: var(--card-border); }
+  .overviewGrid { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 1099px) {
+  .nav { top: var(--colleges-sticky-offset-mobile); }
+  .body { grid-template-columns: minmax(0, 1fr); }
+  .rail { display: none; }
+  .navAside { display: none; }
+  .dock { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); height: calc(var(--colleges-dock-height) + env(safe-area-inset-bottom)); padding: var(--space-2) var(--page-gutter) calc(var(--space-2) + env(safe-area-inset-bottom)); border-top: var(--card-border); background: var(--colleges-dock-background); backdrop-filter: blur(12px); box-shadow: 0 -8px 24px rgb(72 37 46 / 8%); }
+  .dock > a, .dockToggle :global(.button) { display: flex; align-items: center; justify-content: center; gap: var(--space-2); width: 100%; min-height: 46px; border-radius: var(--radius-control); font-size: var(--text-small); font-weight: 700; text-decoration: none; }
+  .dock > a:first-child { background: var(--color-primary); color: var(--color-surface); }
+  .dock > a:last-child { border: 1px solid var(--color-primary); color: var(--color-primary); background: var(--color-surface); }
+  .dock :global(.icon) { width: 18px; height: 18px; }
+  .dockToggle { display: block; }
+  :global(body:has([data-colleges-profile-dock])) { padding-bottom: calc(var(--colleges-dock-height) + env(safe-area-inset-bottom)); }
+  .section { scroll-margin-top: calc(var(--colleges-profile-nav-height) + var(--space-2)); }
+}
+@media (max-width: 899px) {
+  .heroGrid { grid-template-columns: minmax(0, 1fr); }
+  .heroArt { order: -1; aspect-ratio: 16 / 9; }
+  .print { width: min(58%, 340px); }
+}
+@media (max-width: 719px) {
+  .table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .table, .table caption, .table tbody, .table tr, .table tbody th, .table td { display: block; }
+  .table tbody { display: grid; gap: var(--space-3); }
+  .table tbody tr { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2) var(--space-3); padding: var(--space-4); border: var(--card-border); border-radius: 14px; }
+  .table tbody th, .table tbody td { padding: 0; border: 0; }
+  .table tbody th { display: flex; grid-column: 1 / -1; min-width: 0; }
+  .table td[data-label]::before { content: attr(data-label); display: block; color: var(--color-muted); font-size: .6875rem; font-style: normal; font-weight: 600; }
+  .table tbody .actionsCell { grid-column: 1 / -1; width: auto; padding-top: var(--space-3); border-top: var(--card-border); }
+  .rowActions { flex-wrap: wrap; }
+  .rowActions { justify-content: space-between; gap: var(--space-1) var(--space-3); }
+  .rowLinks { display: flex; gap: var(--space-3); }
+  .rowLinks a { min-height: 44px; }
+  .chartAxis, .chartRow { grid-template-columns: minmax(0, 1fr); gap: var(--space-1); }
+  .chartAxis > span { display: none; }
+  .chartAxis > div, .chartPlot { margin-right: 5.5rem; }
+  .locationGrid[data-art] { grid-template-columns: minmax(0, 1fr); }
+  .locationArt { aspect-ratio: 16 / 8; }
+  .similarGrid { grid-template-columns: minmax(0, 1fr); }
+  .facts dd { font-size: 1.25rem; }
+}
+@media (pointer: coarse) { .rowLinks a { min-height: 44px; } }
+@media (max-width: 420px) {
+  .heroActions :global(.button) { flex: 1 1 100%; }
+  .locationLinks :global(.button) { flex: 1 1 100%; }
+  .facts > div { padding: var(--space-3); }
+}

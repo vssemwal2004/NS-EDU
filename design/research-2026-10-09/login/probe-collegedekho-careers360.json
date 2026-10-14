@@ -1,0 +1,151 @@
+[
+  {
+    "site": "collegedekho",
+    "device": "desktop",
+    "url": "https://www.collegedekho.com/",
+    "status": 200,
+    "title": "Find Top Colleges & Universities in India | Explore Courses, Exams, Admissions & Latest News",
+    "triggers": 0,
+    "afterUrl": "https://www.collegedekho.com/",
+    "dialog": [],
+    "inputs": [
+      {
+        "type": "text",
+        "name": "name",
+        "placeholder": "",
+        "maxLength": -1,
+        "inputMode": "",
+        "autocomplete": ""
+      },
+      {
+        "type": "text",
+        "name": "phone",
+        "placeholder": "",
+        "maxLength": 10,
+        "inputMode": "",
+        "autocomplete": ""
+      },
+      {
+        "type": "email",
+        "name": "email",
+        "placeholder": "",
+        "maxLength": -1,
+        "inputMode": "",
+        "autocomplete": ""
+      },
+      {
+        "type": "submit",
+        "name": "submit",
+        "placeholder": "",
+        "maxLength": -1,
+        "inputMode": "",
+        "autocomplete": ""
+      }
+    ]
+  },
+  {
+    "site": "collegedekho",
+    "device": "mobile",
+    "url": "https://www.collegedekho.com/",
+    "status": 200,
+    "title": "Find Top Colleges & Universities in India | Explore Courses, Exams, Admissions & Latest News",
+    "triggers": 0,
+    "afterUrl": "https://www.collegedekho.com/",
+    "dialog": [],
+    "inputs": [
+      {
+        "type": "text",
+        "name": "name",
+        "placeholder": "",
+        "maxLength": -1,
+        "inputMode": "",
+        "autocomplete": ""
+      },
+      {
+        "type": "text",
+        "name": "phone",
+        "placeholder": "",
+        "maxLength": 10,
+        "inputMode": "",
+        "autocomplete": ""
+      },
+      {
+        "type": "email",
+        "name": "email",
+        "placeholder": "",
+        "maxLength": -1,
+        "inputMode": "",
+        "autocomplete": ""
+      },
+      {
+        "type": "submit",
+        "name": "submit",
+        "placeholder": "",
+        "maxLength": -1,
+        "inputMode": "",
+        "autocomplete": ""
+      }
+    ]
+  },
+  {
+    "site": "careers360",
+    "device": "desktop",
+    "url": "https://www.careers360.com/",
+    "status": 200,
+    "title": "Careers360: Explore Exams, Colleges, Courses and Latest News about Education",
+    "triggers": 3,
+    "trigger": "Login",
+    "clickError": "locator.click: Timeout 5000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('a, button, span, div, li').filter({ hasTe",
+    "afterUrl": "https://www.careers360.com/",
+    "dialog": [
+      {
+        "cls": "react-responsive-modal-root custom-modal-right-popup",
+        "text": "Sign In/Sign Up\n\nWe endeavor to keep you informed and help you choose the right Career path. Sign in and access our resources on Exams, Study Material, Counseling, Colleges etc.\n\nEnter Mobile\nSkipSign In"
+      },
+      {
+        "cls": "react-responsive-modal-container react-responsive-modal-containerCenter",
+        "text": "Sign In/Sign Up\n\nWe endeavor to keep you informed and help you choose the right Career path. Sign in and access our resources on Exams, Study Material, Counseling, Colleges etc.\n\nEnter Mobile\nSkipSign In"
+      }
+    ],
+    "inputs": [
+      {
+        "type": "text",
+        "name": "",
+        "placeholder": "",
+        "maxLength": -1,
+        "inputMode": "",
+        "autocomplete": ""
+      }
+    ]
+  },
+  {
+    "site": "careers360",
+    "device": "mobile",
+    "url": "https://www.careers360.com/",
+    "status": 200,
+    "title": "Careers360: Explore Exams, Colleges, Courses and Latest News about Education",
+    "triggers": 1,
+    "trigger": "Sign In",
+    "afterUrl": "https://www.careers360.com/",
+    "dialog": [
+      {
+        "cls": "react-responsive-modal-root custom-modal-right-popup",
+        "text": "Sign In/Sign Up\n\nWe endeavor to keep you informed and help you choose the right Career path. Sign in and access our resources on Exams, Study Material, Counseling, Colleges etc.\n\nEnter Mobile\nPlease enter your mobile number\nSkipSign In"
+      },
+      {
+        "cls": "react-responsive-modal-container react-responsive-modal-containerCenter",
+        "text": "Sign In/Sign Up\n\nWe endeavor to keep you informed and help you choose the right Career path. Sign in and access our resources on Exams, Study Material, Counseling, Colleges etc.\n\nEnter Mobile\nPlease enter your mobile number\nSkipSign In"
+      }
+    ],
+    "inputs": [
+      {
+        "type": "text",
+        "name": "",
+        "placeholder": "",
+        "maxLength": -1,
+        "inputMode": "",
+        "autocomplete": ""
+      }
+    ]
+  }
+]

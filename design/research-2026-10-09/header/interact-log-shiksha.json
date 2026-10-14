@@ -1,0 +1,34 @@
+[
+  {
+    "site": "shiksha desktop",
+    "status": 200
+  },
+  {
+    "shot": "shiksha-desktop-mega-1-engineering.png",
+    "note": "hover ENGINEERING"
+  },
+  {
+    "shot": "shiksha-desktop-mega-2-more.png",
+    "note": "hover MORE"
+  },
+  {
+    "shot": "shiksha-desktop-mega-3-counseling.png",
+    "note": "hover COUNSELING"
+  },
+  {
+    "shot": "shiksha-desktop-search-focus.png",
+    "note": "click header search (empty)"
+  },
+  {
+    "shot": "shiksha-desktop-search-typed.png",
+    "note": "typed mba"
+  },
+  {
+    "site": "shiksha mobile",
+    "status": 200
+  },
+  {
+    "shot": "shiksha-mobile-drawer.png",
+    "note": "tap hamburger"
+  }
+]

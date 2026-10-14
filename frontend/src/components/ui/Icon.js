@@ -1,4 +1,12 @@
-const paths = {
+import landingIcons from './icons/landing';
+import headerIcons from './icons/header';
+import loginIcons from './icons/login';
+import collegesIcons from './icons/colleges';
+import compareIcons from './icons/compare';
+import coursesIcons from './icons/courses';
+import guidesIcons from './icons/guides';
+
+const basePaths = {
   mail: 'M3 5h18v14H3ZM3 5l9 7 9-7',
   support: 'M4 14v-3a8 8 0 0 1 16 0v3M4 12H2v7h4v-7H4Zm16 0h2v7h-4v-7h2Zm0 7q0 3-7 3',
   arrowUp: 'M12 20V4m-6 6 6-6 6 6',
@@ -40,7 +48,30 @@ const paths = {
   commerce: 'M4 6c0-2 16-2 16 0s-16 2-16 0Zm0 0v4c0 3 16 3 16 0V6M4 10v4c0 3 16 3 16 0v-4M4 14v4c0 3 16 3 16 0v-4',
   eligibility: 'M9 3H5v18h14v-9M9 2h6v4H9ZM9 10h4m-4 4h2m5 2 2 2 4-5',
   gear: 'm9 3-1 3-3 1-2-1-1 4 2 2-2 2 1 4 2-1 3 1 1 3h4l1-3 3-1 2 1 1-4-2-2 2-2-1-4-2 1-3-1-1-3H9ZM12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8',
+  user: 'M20 21a8 8 0 0 0-16 0M12 13a5 5 0 1 0 0-10 5 5 0 0 0 0 10',
+  phone: 'M8 2h8a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Zm3 16h2',
+  lock: 'M5 11h14v10H5ZM8 11V7a4 4 0 0 1 8 0v4m-4 4v2',
+  eye: 'M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Zm10 3a3 3 0 1 0 0-6 3 3 0 0 0 0 6',
+  eyeOff: 'M3 3l18 18M10.6 5.1Q11.3 5 12 5c6 0 10 7 10 7a17 17 0 0 1-2.9 3.7M6.6 6.6C3.8 8.4 2 12 2 12s4 7 10 7q2.6 0 4.6-1.1M9.9 9.9a3 3 0 0 0 4.2 4.2',
+  logout: 'M15 4h4v16h-4M10 8l-4 4 4 4M6 12h11',
+  shield: 'M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5l-8-3Zm-3 10 2 2 4-4',
+  dashboard: 'M3 3h8v10H3ZM13 3h8v6h-8ZM13 11h8v10h-8ZM3 15h8v6H3Z',
+  building: 'M3 21h18M5 21V7l7-4 7 4v14M9 21v-5h6v5M9 9h.01M12 9h.01M15 9h.01M9 12h.01M12 12h.01M15 12h.01',
+  map: 'm9 4-6 2v14l6-2 6 2 6-2V4l-6 2-6-2Zm0 0v14m6-12v14',
+  layers: 'm12 2 10 5-10 5L2 7l10-5Zm-10 10 10 5 10-5M2 17l10 5 10-5',
+  plus: 'M12 5v14M5 12h14',
+  edit: 'M4 20h4L19 9l-4-4L4 16v4Zm9-13 4 4',
+  trash: 'M4 7h16M9 7V4h6v3m-9 0 1 14h10l1-14M10 11v6m4-6v6',
+  settings: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm7.4-1.5 1.6 1.2-2 3.4-1.9-.7a7 7 0 0 1-2 1.2L15 21h-4l-.3-2a7 7 0 0 1-2-1.2l-1.9.7-2-3.4 1.6-1.2a7 7 0 0 1 0-2.4L3.8 10.3l2-3.4 1.9.7a7 7 0 0 1 2-1.2L11 3h4l.3 2.4a7 7 0 0 1 2 1.2l1.9-.7 2 3.4-1.6 1.2a7 7 0 0 1 0 2.4',
+  bell: 'M6 16V11a6 6 0 0 1 12 0v5l2 2H4l2-2Zm4 4h4',
+  trend: 'm3 17 6-6 4 4 8-8M15 7h6v6',
+  calendar: 'M4 5h16v16H4ZM4 10h16M8 3v4m8-4v4',
+  filter: 'M3 5h18l-7 8v6l-4 2v-8L3 5Z',
+  sparkleUser: 'M16 21a6 6 0 0 0-12 0M10 13a4 4 0 1 0 0-8 4 4 0 0 0 0 8m8-10 .8 2.2L21 6l-2.2.8L18 9l-.8-2.2L15 6l2.2-.8L18 3Z',
 };
+// Area icon files extend (never override) the base set.
+const paths = { ...landingIcons, ...headerIcons, ...loginIcons, ...collegesIcons, ...compareIcons, ...coursesIcons, ...guidesIcons, ...basePaths };
+
 export default function Icon({ name = 'arrow', className = '' }) {
   return <svg className={`icon ${className}`} viewBox="0 0 24 24" fill={name === 'bars' || name === 'bookmarkFilled' ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={paths[name] || paths.arrow} /></svg>;
 }

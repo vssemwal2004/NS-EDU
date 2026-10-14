@@ -8,7 +8,7 @@ export default defineConfig([
     files: ['**/*.js', '**/*.mjs'],
     languageOptions: {
       parserOptions: { ecmaFeatures: { jsx: true } },
-      globals: { document: 'readonly', window: 'readonly', process: 'readonly', console: 'readonly', URL: 'readonly' },
+      globals: { document: 'readonly', window: 'readonly', process: 'readonly', console: 'readonly', URL: 'readonly', URLSearchParams: 'readonly', fetch: 'readonly', AbortController: 'readonly', AbortSignal: 'readonly', FormData: 'readonly', Response: 'readonly' },
     },
     rules: { 'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z]' }] },
   },

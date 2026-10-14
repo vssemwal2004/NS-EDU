@@ -1,0 +1,652 @@
+[
+  {
+    "name": "nsedu-search-btech",
+    "url": "http://127.0.0.1:3001/search?q=btech",
+    "vp": "d",
+    "status": 200,
+    "finalUrl": "http://127.0.0.1:3001/search?q=btech",
+    "title": "Search | NSEDU",
+    "heads": [
+      "H2: NSEDU",
+      "H1: Results for “btech”",
+      "H2: Courses",
+      "H2: A clearer path to your future.",
+      "H3: Explore",
+      "H3: Student tools",
+      "H3: NSEDU & support",
+      "H3: Legal & privacy",
+      "H2: Log in to NSEDU"
+    ],
+    "crumbs": [
+      "Home Search"
+    ],
+    "toc": [],
+    "tabs": [
+      "Email",
+      "Mobile number"
+    ],
+    "faq": [],
+    "bodyStart": "Skip to main content Discover · Learn · Belong Admissions 2026–27 · confirm fees and eligibility with each institution Preferred city Select",
+    "overflow": false,
+    "height": 1436,
+    "shots": "D:\\CP\\NS-EDU\\design\\research-2026-10-09\\guides\\nsedu-current\\nsedu-search-btech-1440",
+    "errors": [
+      "console: Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    ]
+  },
+  {
+    "name": "nsedu-search-btech",
+    "url": "http://127.0.0.1:3001/search?q=btech",
+    "vp": "m",
+    "status": 200,
+    "finalUrl": "http://127.0.0.1:3001/search?q=btech",
+    "title": "Search | NSEDU",
+    "heads": [
+      "H2: NSEDU",
+      "H1: Results for “btech”",
+      "H2: Courses",
+      "H2: A clearer path to your future.",
+      "H3: Explore",
+      "H3: Student tools",
+      "H3: NSEDU & support",
+      "H3: Legal & privacy",
+      "H2: Log in to NSEDU"
+    ],
+    "crumbs": [
+      "Home Search"
+    ],
+    "toc": [],
+    "tabs": [
+      "Email",
+      "Mobile number"
+    ],
+    "faq": [],
+    "bodyStart": "Skip to main content NSEDU Log in Home Search SEARCH Results for “btech” Courses, colleges and entrance exams in one place. Search NSEDU Sea",
+    "overflow": false,
+    "height": 2192,
+    "shots": "D:\\CP\\NS-EDU\\design\\research-2026-10-09\\guides\\nsedu-current\\nsedu-search-btech-390",
+    "errors": [
+      "console: Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+      "console: Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    ]
+  },
+  {
+    "name": "nsedu-search-pune",
+    "url": "http://127.0.0.1:3001/search?q=pune",
+    "vp": "d",
+    "status": 200,
+    "finalUrl": "http://127.0.0.1:3001/search?q=pune",
+    "title": "Search | NSEDU",
+    "heads": [
+      "H2: NSEDU",
+      "H1: Results for “pune”",
+      "H2: Colleges",
+      "H2: A clearer path to your future.",
+      "H3: Explore",
+      "H3: Student tools",
+      "H3: NSEDU & support",
+      "H3: Legal & privacy",
+      "H2: Log in to NSEDU"
+    ],
+    "crumbs": [
+      "Home Search"
+    ],
+    "toc": [],
+    "tabs": [
+      "Email",
+      "Mobile number"
+    ],
+    "faq": [],
+    "bodyStart": "Skip to main content Discover · Learn · Belong Admissions 2026–27 · confirm fees and eligibility with each institution Preferred city Select",
+    "overflow": false,
+    "height": 1467,
+    "shots": "D:\\CP\\NS-EDU\\design\\research-2026-10-09\\guides\\nsedu-current\\nsedu-search-pune-1440",
+    "errors": [
+      "console: Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    ]
+  },
+  {
+    "name": "nsedu-search-pune",
+    "url": "http://127.0.0.1:3001/search?q=pune",
+    "vp": "m",
+    "status": 200,
+    "finalUrl": "http://127.0.0.1:3001/search?q=pune",
+    "title": "Search | NSEDU",
+    "heads": [
+      "H2: NSEDU",
+      "H1: Results for “pune”",
+      "H2: Colleges",
+      "H2: A clearer path to your future.",
+      "H3: Explore",
+      "H3: Student tools",
+      "H3: NSEDU & support",
+      "H3: Legal & privacy",
+      "H2: Log in to NSEDU"
+    ],
+    "crumbs": [
+      "Home Search"
+    ],
+    "toc": [],
+    "tabs": [
+      "Email",
+      "Mobile number"
+    ],
+    "faq": [],
+    "bodyStart": "Skip to main content NSEDU Log in Home Search SEARCH Results for “pune” Courses, colleges and entrance exams in one place. Search NSEDU Sear",
+    "overflow": false,
+    "height": 2468,
+    "shots": "D:\\CP\\NS-EDU\\design\\research-2026-10-09\\guides\\nsedu-current\\nsedu-search-pune-390",
+    "errors": [
+      "console: Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    ]
+  },
+  {
+    "name": "nsedu-search-zero",
+    "url": "http://127.0.0.1:3001/search?q=zzqx",
+    "vp": "d",
+    "status": 200,
+    "finalUrl": "http://127.0.0.1:3001/search?q=zzqx",
+    "title": "Search | NSEDU",
+    "heads": [
+      "H2: NSEDU",
+      "H1: Results for “zzqx”",
+      "H2: No matches found",
+      "H2: A clearer path to your future.",
+      "H3: Explore",
+      "H3: Student tools",
+      "H3: NSEDU & support",
+      "H3: Legal & privacy",
+      "H2: Log in to NSEDU"
+    ],
+    "crumbs": [
+      "Home Search"
+    ],
+    "toc": [],
+    "tabs": [
+      "Email",
+      "Mobile number"
+    ],
+    "faq": [],
+    "bodyStart": "Skip to main content Discover · Learn · Belong Admissions 2026–27 · confirm fees and eligibility with each institution Preferred city Select",
+    "overflow": false,
+    "height": 1555,
+    "shots": "D:\\CP\\NS-EDU\\design\\research-2026-10-09\\guides\\nsedu-current\\nsedu-search-zero-1440",
+    "errors": [
+      "console: Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    ]
+  },
+  {
+    "name": "nsedu-search-zero",
+    "url": "http://127.0.0.1:3001/search?q=zzqx",
+    "vp": "m",
+    "status": 200,
+    "finalUrl": "http://127.0.0.1:3001/search?q=zzqx",
+    "title": "Search | NSEDU",
+    "heads": [
+      "H2: NSEDU",
+      "H1: Results for “zzqx”",
+      "H2: No matches found",
+      "H2: A clearer path to your future.",
+      "H3: Explore",
+      "H3: Student tools",
+      "H3: NSEDU & support",
+      "H3: Legal & privacy",
+      "H2: Log in to NSEDU"
+    ],
+    "crumbs": [
+      "Home Search"
+    ],
+    "toc": [],
+    "tabs": [
+      "Email",
+      "Mobile number"
+    ],
+    "faq": [],
+    "bodyStart": "Skip to main content NSEDU Log in Home Search SEARCH Results for “zzqx” Courses, colleges and entrance exams in one place. Search NSEDU Sear",
+    "overflow": false,
+    "height": 2334,
+    "shots": "D:\\CP\\NS-EDU\\design\\research-2026-10-09\\guides\\nsedu-current\\nsedu-search-zero-390",
+    "errors": [
+      "console: Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    ]
+  },
+  {
+    "name": "nsedu-search-empty",
+    "url": "http://127.0.0.1:3001/search",
+    "vp": "d",
+    "status": 200,
+    "finalUrl": "http://127.0.0.1:3001/search",
+    "title": "Search | NSEDU",
+    "heads": [
+      "H2: NSEDU",
+      "H1: Search NSEDU",
+      "H2: A clearer path to your future.",
+      "H3: Explore",
+      "H3: Student tools",
+      "H3: NSEDU & support",
+      "H3: Legal & privacy",
+      "H2: Log in to NSEDU"
+    ],
+    "crumbs": [
+      "Home Search"
+    ],
+    "toc": [],
+    "tabs": [
+      "Email",
+      "Mobile number"
+    ],
+    "faq": [],
+    "bodyStart": "Skip to main content Discover · Learn · Belong Admissions 2026–27 · confirm fees and eligibility with each institution Preferred city Select",
+    "overflow": false,
+    "height": 1275,
+    "shots": "D:\\CP\\NS-EDU\\design\\research-2026-10-09\\guides\\nsedu-current\\nsedu-search-empty-1440",
+    "errors": [
+      "console: Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    ]
+  },
+  {
+    "name": "nsedu-search-empty",
+    "url": "http://127.0.0.1:3001/search",
+    "vp": "m",
+    "status": 200,
+    "finalUrl": "http://127.0.0.1:3001/search",
+    "title": "Search | NSEDU",
+    "heads": [
+      "H2: NSEDU",
+      "H1: Search NSEDU",
+      "H2: A clearer path to your future.",
+      "H3: Explore",
+      "H3: Student tools",
+      "H3: NSEDU & support",
+      "H3: Legal & privacy",
+      "H2: Log in to NSEDU"
+    ],
+    "crumbs": [
+      "Home Search"
+    ],
+    "toc": [],
+    "tabs": [
+      "Email",
+      "Mobile number"
+    ],
+    "faq": [],
+    "bodyStart": "Skip to main content NSEDU Log in Home Search SEARCH Search NSEDU Courses, colleges and entrance exams in one place. Search NSEDU Search Typ",
+    "overflow": false,
+    "height": 2031,
+    "shots": "D:\\CP\\NS-EDU\\design\\research-2026-10-09\\guides\\nsedu-current\\nsedu-search-empty-390",
+    "errors": [
+      "console: Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    ]
+  },
+  {
+    "name": "nsedu-about",
+    "url": "http://127.0.0.1:3001/about",
+    "vp": "d",
+    "status": 200,
+    "finalUrl": "http://127.0.0.1:3001/about",
+    "title": "About NSEDU | NSEDU",
+    "heads": [
+      "H2: NSEDU",
+      "H1: About NSEDU",
+      "H2: Start with what matters to you",
+      "H2: Understand the details",
+      "H2: Stay informed",
+      "H2: A clearer path to your future.",
+      "H3: Explore",
+      "H3: Student tools",
+      "H3: NSEDU & support",
+      "H3: Legal & privacy",
+      "H2: Log in to NSEDU"
+    ],
+    "crumbs": [
+      "Home / About NSEDU"
+    ],
+    "toc": [],
+    "tabs": [
+      "Email",
+      "Mobile number"
+    ],
+    "faq": [],
+    "bodyStart": "Skip to main content Discover · Learn · Belong Admissions 2026–27 · confirm fees and eligibility with each institution Preferred city Select",
+    "overflow": false,
+    "height": 1709,
+    "shots": "D:\\CP\\NS-EDU\\design\\research-2026-10-09\\guides\\nsedu-current\\nsedu-about-1440",
+    "errors": [
+      "console: Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    ]
+  },
+  {
+    "name": "nsedu-about",
+    "url": "http://127.0.0.1:3001/about",
+    "vp": "m",
+    "status": 200,
+    "finalUrl": "http://127.0.0.1:3001/about",
+    "title": "About NSEDU | NSEDU",
+    "heads": [
+      "H2: NSEDU",
+      "H1: About NSEDU",
+      "H2: Start with what matters to you",
+      "H2: Understand the details",
+      "H2: Stay informed",
+      "H2: A clearer path to your future.",
+      "H3: Explore",
+      "H3: Student tools",
+      "H3: NSEDU & support",
+      "H3: Legal & privacy",
+      "H2: Log in to NSEDU"
+    ],
+    "crumbs": [
+      "Home / About NSEDU"
+    ],
+    "toc": [],
+    "tabs": [
+      "Email",
+      "Mobile number"
+    ],
+    "faq": [],
+    "bodyStart": "Skip to main content NSEDU Log in Home / About NSEDU OUR PURPOSE About NSEDU Clearer information for a thoughtful college choice. Start with",
+    "overflow": false,
+    "height": 2626,
+    "shots": "D:\\CP\\NS-EDU\\design\\research-2026-10-09\\guides\\nsedu-current\\nsedu-about-390",
+    "errors": [
+      "console: Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    ]
+  },
+  {
+    "name": "nsedu-contact",
+    "url": "http://127.0.0.1:3001/contact",
+    "vp": "d",
+    "status": 200,
+    "finalUrl": "http://127.0.0.1:3001/contact",
+    "title": "Contact & support | NSEDU",
+    "heads": [
+      "H2: NSEDU",
+      "H1: Contact & support",
+      "H2: Student questions",
+      "H2: Corrections & collaborations",
+      "H2: Email support",
+      "H2: Official social profiles",
+      "H2: A clearer path to your future.",
+      "H3: Explore",
+      "H3: Student tools",
+      "H3: NSEDU & support",
+      "H3: Legal & privacy",
+      "H2: Log in to NSEDU"
+    ],
+    "crumbs": [
+      "Home / Contact & support"
+    ],
+    "toc": [],
+    "tabs": [
+      "Email",
+      "Mobile number"
+    ],
+    "faq": [],
+    "bodyStart": "Skip to main content Discover · Learn · Belong Admissions 2026–27 · confirm fees and eligibility with each institution Preferred city Select",
+    "overflow": false,
+    "height": 1940,
+    "shots": "D:\\CP\\NS-EDU\\design\\research-2026-10-09\\guides\\nsedu-current\\nsedu-contact-1440",
+    "errors": [
+      "console: Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    ]
+  },
+  {
+    "name": "nsedu-contact",
+    "url": "http://127.0.0.1:3001/contact",
+    "vp": "m",
+    "status": 200,
+    "finalUrl": "http://127.0.0.1:3001/contact",
+    "title": "Contact & support | NSEDU",
+    "heads": [
+      "H2: NSEDU",
+      "H1: Contact & support",
+      "H2: Student questions",
+      "H2: Corrections & collaborations",
+      "H2: Email support",
+      "H2: Official social profiles",
+      "H2: A clearer path to your future.",
+      "H3: Explore",
+      "H3: Student tools",
+      "H3: NSEDU & support",
+      "H3: Legal & privacy",
+      "H2: Log in to NSEDU"
+    ],
+    "crumbs": [
+      "Home / Contact & support"
+    ],
+    "toc": [],
+    "tabs": [
+      "Email",
+      "Mobile number"
+    ],
+    "faq": [],
+    "bodyStart": "Skip to main content NSEDU Log in Home / Contact & support HERE TO HELP Contact & support Find the right next step for a question, correctio",
+    "overflow": false,
+    "height": 2917,
+    "shots": "D:\\CP\\NS-EDU\\design\\research-2026-10-09\\guides\\nsedu-current\\nsedu-contact-390",
+    "errors": [
+      "console: Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    ]
+  },
+  {
+    "name": "nsedu-help",
+    "url": "http://127.0.0.1:3001/help",
+    "vp": "d",
+    "status": 200,
+    "finalUrl": "http://127.0.0.1:3001/help",
+    "title": "Help centre & FAQs | NSEDU",
+    "heads": [
+      "H2: NSEDU",
+      "H1: Help centre & FAQs",
+      "H2: How do I compare colleges?",
+      "H2: Does the eligibility checker guarantee admission?",
+      "H2: Can I save an education article?",
+      "H2: Can I apply through NSEDU?",
+      "H2: A clearer path to your future.",
+      "H3: Explore",
+      "H3: Student tools",
+      "H3: NSEDU & support",
+      "H3: Legal & privacy",
+      "H2: Log in to NSEDU"
+    ],
+    "crumbs": [
+      "Home / Help centre & FAQs"
+    ],
+    "toc": [],
+    "tabs": [
+      "Email",
+      "Mobile number"
+    ],
+    "faq": [],
+    "bodyStart": "Skip to main content Discover · Learn · Belong Admissions 2026–27 · confirm fees and eligibility with each institution Preferred city Select",
+    "overflow": false,
+    "height": 1959,
+    "shots": "D:\\CP\\NS-EDU\\design\\research-2026-10-09\\guides\\nsedu-current\\nsedu-help-1440",
+    "errors": [
+      "console: Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    ]
+  },
+  {
+    "name": "nsedu-help",
+    "url": "http://127.0.0.1:3001/help",
+    "vp": "m",
+    "status": 200,
+    "finalUrl": "http://127.0.0.1:3001/help",
+    "title": "Help centre & FAQs | NSEDU",
+    "heads": [
+      "H2: NSEDU",
+      "H1: Help centre & FAQs",
+      "H2: How do I compare colleges?",
+      "H2: Does the eligibility checker guarantee admission?",
+      "H2: Can I save an education article?",
+      "H2: Can I apply through NSEDU?",
+      "H2: A clearer path to your future.",
+      "H3: Explore",
+      "H3: Student tools",
+      "H3: NSEDU & support",
+      "H3: Legal & privacy",
+      "H2: Log in to NSEDU"
+    ],
+    "crumbs": [
+      "Home / Help centre & FAQs"
+    ],
+    "toc": [],
+    "tabs": [
+      "Email",
+      "Mobile number"
+    ],
+    "faq": [],
+    "bodyStart": "Skip to main content NSEDU Log in Home / Help centre & FAQs STUDENT SUPPORT Help centre & FAQs Practical answers to help you explore NSEDU. ",
+    "overflow": false,
+    "height": 2917,
+    "shots": "D:\\CP\\NS-EDU\\design\\research-2026-10-09\\guides\\nsedu-current\\nsedu-help-390",
+    "errors": [
+      "console: Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    ]
+  },
+  {
+    "name": "nsedu-privacy",
+    "url": "http://127.0.0.1:3001/privacy-policy",
+    "vp": "d",
+    "status": 200,
+    "finalUrl": "http://127.0.0.1:3001/privacy-policy",
+    "title": "Privacy policy | NSEDU",
+    "heads": [
+      "H2: NSEDU",
+      "H1: Privacy policy",
+      "H2: Saved stories on this device",
+      "H2: Browsing and external requests",
+      "H2: Before public launch",
+      "H2: A clearer path to your future.",
+      "H3: Explore",
+      "H3: Student tools",
+      "H3: NSEDU & support",
+      "H3: Legal & privacy",
+      "H2: Log in to NSEDU"
+    ],
+    "crumbs": [
+      "Home / Privacy policy"
+    ],
+    "toc": [],
+    "tabs": [
+      "Email",
+      "Mobile number"
+    ],
+    "faq": [],
+    "bodyStart": "Skip to main content Discover · Learn · Belong Admissions 2026–27 · confirm fees and eligibility with each institution Preferred city Select",
+    "overflow": false,
+    "height": 1812,
+    "shots": "D:\\CP\\NS-EDU\\design\\research-2026-10-09\\guides\\nsedu-current\\nsedu-privacy-1440",
+    "errors": [
+      "console: Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    ]
+  },
+  {
+    "name": "nsedu-privacy",
+    "url": "http://127.0.0.1:3001/privacy-policy",
+    "vp": "m",
+    "status": 200,
+    "finalUrl": "http://127.0.0.1:3001/privacy-policy",
+    "title": "Privacy policy | NSEDU",
+    "heads": [
+      "H2: NSEDU",
+      "H1: Privacy policy",
+      "H2: Saved stories on this device",
+      "H2: Browsing and external requests",
+      "H2: Before public launch",
+      "H2: A clearer path to your future.",
+      "H3: Explore",
+      "H3: Student tools",
+      "H3: NSEDU & support",
+      "H3: Legal & privacy",
+      "H2: Log in to NSEDU"
+    ],
+    "crumbs": [
+      "Home / Privacy policy"
+    ],
+    "toc": [],
+    "tabs": [
+      "Email",
+      "Mobile number"
+    ],
+    "faq": [],
+    "bodyStart": "Skip to main content NSEDU Log in Home / Privacy policy LEGAL & PRIVACY Privacy policy What the current preview does with browser data. Poli",
+    "overflow": false,
+    "height": 2752,
+    "shots": "D:\\CP\\NS-EDU\\design\\research-2026-10-09\\guides\\nsedu-current\\nsedu-privacy-390",
+    "errors": [
+      "console: Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    ]
+  },
+  {
+    "name": "nsedu-news",
+    "url": "http://127.0.0.1:3001/news",
+    "vp": "d",
+    "status": 200,
+    "finalUrl": "http://127.0.0.1:3001/news",
+    "title": "Education news & articles | NSEDU",
+    "heads": [
+      "H2: NSEDU",
+      "H1: Education news & articles",
+      "H2: Education, in focus.",
+      "H3: The latest in education",
+      "H3: Read & understand",
+      "H2: A clearer path to your future.",
+      "H3: Explore",
+      "H3: Student tools",
+      "H3: NSEDU & support",
+      "H3: Legal & privacy",
+      "H2: Log in to NSEDU"
+    ],
+    "crumbs": [
+      "Home Education news"
+    ],
+    "toc": [],
+    "tabs": [
+      "Email",
+      "Mobile number"
+    ],
+    "faq": [],
+    "bodyStart": "Skip to main content Discover · Learn · Belong Admissions 2026–27 · confirm fees and eligibility with each institution Preferred city Select",
+    "overflow": false,
+    "height": 2142,
+    "shots": "D:\\CP\\NS-EDU\\design\\research-2026-10-09\\guides\\nsedu-current\\nsedu-news-1440",
+    "errors": [
+      "console: Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+      "console: ./frontend/src/components/layout/header/MobileNav.js:11:1\nError: Module not found: Can't resolve './Drawer.module.css'\n   9 | import { PreferenceFields } from './PreferenceChip';\n  10 | import { useCa",
+      "console: ./frontend/src/components/layout/header/MegaColleges.js:10:1\nError: Module not found: Can't resolve './Mega.module.css'\n   8 | import { collegesHref, compactRupees, plural, withCourse } from './catalo",
+      "console: ./frontend/src/components/layout/header/MegaCourses.js:7:1\nError: Module not found: Can't resolve './Mega.module.css'\n   5 | import { collegesHref, plural, withCourse } from './catalog-nav';\n   6 | im",
+      "console: ./frontend/src/components/layout/header/MegaExams.js:7:1\nError: Module not found: Can't resolve './Mega.module.css'\n   5 | import { collegesHref } from './catalog-nav';\n   6 | import { useCatalogNav }",
+      "console: ./frontend/src/components/layout/header/MegaResources.js:4:1\nError: Module not found: Can't resolve './Mega.module.css'\n  2 | import Link from 'next/link';\n  3 | import Icon from '@/components/ui/Icon",
+      "console: ./frontend/src/components/layout/header/PreferenceChip.js:10:1\nError: Module not found: Can't resolve './Preferences.module.css'\n   8 | import { collegesHref, plural } from './catalog-nav';\n   9 | imp",
+      "console: ./frontend/src/components/layout/header/SearchPanel.js:13:1\nError: Module not found: Can't resolve './Search.module.css'\n  11 | import { collegesHref, plural, withCourse } from './catalog-nav';\n  12 |"
+    ]
+  },
+  {
+    "name": "nsedu-news",
+    "url": "http://127.0.0.1:3001/news",
+    "vp": "m",
+    "status": 500,
+    "finalUrl": "http://127.0.0.1:3001/news",
+    "title": "",
+    "heads": [],
+    "crumbs": [],
+    "toc": [],
+    "tabs": [],
+    "faq": [],
+    "bodyStart": "",
+    "overflow": false,
+    "height": 844,
+    "shots": "D:\\CP\\NS-EDU\\design\\research-2026-10-09\\guides\\nsedu-current\\nsedu-news-390",
+    "errors": [
+      "console: Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+      "pageerror: ./frontend/src/components/layout/header/MobileNav.js:11:1\nError: Module not found: Can't resolve './Drawer.module.css'\n   9 | import { PreferenceFields } from './PreferenceChip';\n  10 | import { useCatalogNav, useCompareSummary } from './useCatalogNav';\n> 11 | import styles from './Drawer.module.css';\n     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  12 |\n  13 | const examGroup = primaryNavigation.find((group) => group.panel === 'exams');\n  14 |\n\n\n\nImport traces:\n  Client Component Browser:\n    ./frontend/src/components/layout/header/MobileNav.js [Client Component Browser]\n    ./frontend/src/components/layout/Header.js [Client Component Browser]\n    ./frontend/src/components/layout/Header.js [Server Component]\n    ./frontend/src/app/(site)/layout.js [Server Component]\n\n  Client Component SSR:\n    ./frontend/src/components/layout/header/MobileNav.js [Client Component SSR]\n    ./frontend/src/components/layout/Header.js [Client Component SSR]\n    ./frontend/src/components/layout/Header.js [Server Component]\n    ./frontend/src/app/(site)/layout.js [Server Component]\n\nhttps://nextjs.org/docs/messages/module-not-found\n\n",
+      "console: ./frontend/src/components/layout/header/MobileNav.js:11:1\nError: Module not found: Can't resolve './Drawer.module.css'\n   9 | import { PreferenceFields } from './PreferenceChip';\n  10 | import { useCa",
+      "console: ./frontend/src/components/layout/header/MegaColleges.js:10:1\nError: Module not found: Can't resolve './Mega.module.css'\n   8 | import { collegesHref, compactRupees, plural, withCourse } from './catalo",
+      "console: ./frontend/src/components/layout/header/MegaCourses.js:7:1\nError: Module not found: Can't resolve './Mega.module.css'\n   5 | import { collegesHref, plural, withCourse } from './catalog-nav';\n   6 | im",
+      "console: ./frontend/src/components/layout/header/MegaExams.js:7:1\nError: Module not found: Can't resolve './Mega.module.css'\n   5 | import { collegesHref } from './catalog-nav';\n   6 | import { useCatalogNav }",
+      "console: ./frontend/src/components/layout/header/MegaResources.js:4:1\nError: Module not found: Can't resolve './Mega.module.css'\n  2 | import Link from 'next/link';\n  3 | import Icon from '@/components/ui/Icon",
+      "console: ./frontend/src/components/layout/header/PreferenceChip.js:10:1\nError: Module not found: Can't resolve './Preferences.module.css'\n   8 | import { collegesHref, plural } from './catalog-nav';\n   9 | imp"
+    ]
+  }
+]

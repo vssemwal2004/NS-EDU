@@ -1,0 +1,53 @@
+[
+  {
+    "site": "shiksha",
+    "device": "desktop",
+    "url": "https://www.shiksha.com/",
+    "error": "page.goto: net::ERR_NETWORK_CHANGED at https://www.shiksha.com/\nCall log:\n\u001b[2m  - navigating to \"https://www.shiksha.com/\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "site": "shiksha",
+    "device": "mobile",
+    "url": "https://www.shiksha.com/",
+    "error": "page.goto: net::ERR_NETWORK_CHANGED at https://www.shiksha.com/\nCall log:\n\u001b[2m  - navigating to \"https://www.shiksha.com/\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "site": "collegedunia",
+    "device": "desktop",
+    "url": "https://collegedunia.com/",
+    "status": 200,
+    "title": "Collegedunia: Top Colleges, Universities & Institutes in India | Admission, Fees, Rankings of Top Management, Engineering, Medical Colleges",
+    "triggers": 0,
+    "afterUrl": "https://collegedunia.com/",
+    "dialog": [],
+    "inputs": [
+      {
+        "type": "email",
+        "name": "email",
+        "placeholder": "Enter your email id",
+        "maxLength": -1,
+        "inputMode": "",
+        "autocomplete": ""
+      },
+      {
+        "type": "text",
+        "name": "mobileno",
+        "placeholder": "Enter your mobile no",
+        "maxLength": 10,
+        "inputMode": "",
+        "autocomplete": ""
+      }
+    ]
+  },
+  {
+    "site": "collegedunia",
+    "device": "mobile",
+    "url": "https://collegedunia.com/",
+    "status": 200,
+    "title": "Collegedunia: Top Colleges, Universities & Institutes in India | Admission, Fees, Rankings of Top Management, Engineering, Medical Colleges",
+    "triggers": 0,
+    "afterUrl": "https://collegedunia.com/",
+    "dialog": [],
+    "inputs": []
+  }
+]

@@ -1,0 +1,40 @@
+/* Course + city preference: utility-strip chip, popover and shared fields. */
+.chipWrap { position: relative; display: flex; align-items: center; height: 100%; }
+.chip { display: inline-flex; align-items: center; gap: 6px; max-width: 260px; height: 28px; padding: 0 10px 0 9px; border: 1px solid var(--header-chip-border); border-radius: var(--radius-pill); background: var(--header-chip-background); color: var(--header-utility-text); font-size: var(--text-caption); font-weight: 600; transition: background var(--motion-fast); }
+.chip::before { content: ''; position: absolute; inset: 0; } /* full-height hit area inside the 36px strip */
+.chip:hover, .chip[aria-expanded="true"] { background: var(--header-chip-hover); }
+.chip :global(.icon) { width: 14px; height: 14px; }
+.chip > :global(.icon):last-child { width: 12px; height: 12px; transition: transform var(--motion-fast); }
+.chip[aria-expanded="true"] > :global(.icon):last-child { transform: rotate(180deg); }
+.chipLabel { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.popover { position: absolute; top: calc(100% + 6px); right: 0; z-index: 5; width: var(--header-popover-width); padding: var(--space-5); border: 1px solid var(--header-panel-border); border-radius: var(--header-panel-radius); background: var(--color-surface); color: var(--color-text); font-size: var(--text-small); box-shadow: var(--header-panel-shadow); animation: pop-in var(--motion-fast) var(--ease-out) both; }
+.popover[hidden] { display: none; }
+.popover::before { content: ''; position: absolute; top: -7px; right: 36px; width: 12px; height: 12px; border-top: 1px solid var(--header-panel-border); border-left: 1px solid var(--header-panel-border); background: var(--color-surface); transform: rotate(45deg); }
+.popover :focus-visible { outline-color: var(--color-primary); }
+.popoverTitle { color: var(--color-primary); font: 400 1.3rem/1.2 var(--font-heading); }
+.popoverText { margin: 4px 0 var(--space-4); color: var(--color-muted); font-size: var(--text-caption); line-height: 1.5; }
+
+.fields { display: grid; gap: var(--space-3); }
+.field { display: grid; gap: 4px; }
+.field > span:first-child { color: var(--header-label-color); font-size: .6875rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+.select { position: relative; display: flex; align-items: center; }
+.select > :global(.icon) { position: absolute; left: 12px; width: 17px; height: 17px; color: var(--color-accent); pointer-events: none; }
+.select > :global(.icon):last-child { left: auto; right: 12px; width: 14px; height: 14px; }
+.select select { width: 100%; min-height: 46px; padding: 0 36px 0 38px; border: 1px solid var(--color-input-border); border-radius: var(--radius-control); background: var(--color-surface); color: var(--color-text); font-size: .875rem; font-weight: 500; appearance: none; cursor: pointer; transition: border-color var(--motion-fast); }
+.select select:hover { border-color: var(--color-accent); }
+.select select:focus-visible { outline: 3px solid var(--color-primary); outline-offset: 1px; }
+.status { display: flex; align-items: flex-start; gap: var(--space-2); padding: var(--space-3); border-radius: 10px; background: var(--header-stat-background); color: var(--color-primary); font-size: var(--text-small); font-weight: 600; line-height: 1.4; }
+.status[data-empty="true"] { color: var(--color-text); font-weight: 500; }
+.status > :global(.icon) { width: 17px; height: 17px; margin-top: 1px; color: var(--color-accent); }
+.status small { display: block; margin-top: 2px; color: var(--color-muted); font-size: .6875rem; font-weight: 500; }
+.fieldActions { display: flex; gap: var(--space-2); }
+.fieldActions :global(.button--primary) { flex: 1; }
+.fieldActions :global(.button) { padding-inline: var(--space-4); }
+
+.fields[data-variant="drawer"] { grid-template-columns: 1fr 1fr; }
+.fields[data-variant="drawer"] .status, .fields[data-variant="drawer"] .fieldActions { grid-column: 1 / -1; }
+.fields[data-variant="drawer"] .select select { padding-left: 36px; font-size: 1rem; }
+
+@keyframes pop-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+@media (max-width: 480px) { .fields[data-variant="drawer"] { grid-template-columns: 1fr; } }

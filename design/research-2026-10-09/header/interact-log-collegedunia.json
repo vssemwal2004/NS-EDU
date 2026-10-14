@@ -1,0 +1,34 @@
+[
+  {
+    "site": "collegedunia desktop",
+    "status": 200
+  },
+  {
+    "shot": "collegedunia-desktop-mega-explore.png",
+    "note": "hover Explore"
+  },
+  {
+    "shot": "collegedunia-desktop-mega-btech.png",
+    "note": "hover B.Tech in course strip"
+  },
+  {
+    "shot": "collegedunia-desktop-mega-allcourses.png",
+    "note": "hover All Courses"
+  },
+  {
+    "shot": "collegedunia-desktop-goal-city.png",
+    "note": "click Select Goal & City"
+  },
+  {
+    "step": "cd search",
+    "error": "TimeoutError: locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('input[placeholder*=\"Search for Colleges\"]').first()\u001b[22m\n"
+  },
+  {
+    "site": "collegedunia mobile",
+    "status": 200
+  },
+  {
+    "shot": "collegedunia-mobile-drawer.png",
+    "note": "tap hamburger"
+  }
+]

@@ -33,7 +33,7 @@ async function complete(page, { marks = '78', grading = 'percentage', exam = 'no
 test.beforeEach(async ({ page }) => {
   page.browserErrors = [];
   page.on('pageerror', (error) => page.browserErrors.push(error.message));
-  await page.goto('/');
+  await page.goto('/eligibility');
   await section(page).evaluate((node) => node.scrollIntoView({ block: 'start', behavior: 'instant' }));
 });
 test.afterEach(async ({ page }) => { expect(page.browserErrors).toEqual([]); });
@@ -67,7 +67,30 @@ test('matching fictional B.Tech rules gives an explained academic review, not an
   await check.getByRole('button', { name: 'Save for this visit', exact: true }).click();
   await expect(check.getByRole('status')).toContainText('while this page stays open');
   await check.getByRole('button', { name: 'Explore B.Tech colleges', exact: true }).click();
-  await expect(page.locator('#college-tab-btech')).toHaveAttribute('aria-selected', 'true');
+  await expect(page).toHaveURL(/\/colleges\?course=btech$/);
+  await expect(page.getByRole('group', { name: 'Choose a course' }).getByRole('button', { name: 'B.Tech', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#results-title')).toHaveText('B.Tech colleges in India');
+});
+
+test('eligibility route marks Resources active and shares the chosen course with other pages', async ({ page }) => {
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Check your eligibility');
+  await expect(page.getByRole('navigation', { name: 'Breadcrumb' }).locator('[aria-current="page"]')).toHaveText('Eligibility');
+  await expect(page.getByRole('navigation', { name: 'Main navigation' }).locator('[data-group="Resources"]')).toHaveAttribute('data-active', 'true');
+  await expect(page.getByRole('navigation', { name: 'Main navigation' }).locator('[data-group="Colleges"]')).toHaveAttribute('data-active', 'false');
+  await begin(page, { stage: 'college', qualification: 'degree', course: 'mba' });
+  await expect(page).toHaveURL(/[?&]course=mba\b/);
+  await page.goto('/');
+  await expect(page.locator('#destination-course')).toHaveValue('mba');
+});
+
+test('a course in the URL is used when the student reaches the course step', async ({ page }) => {
+  await page.goto('/eligibility?course=mba');
+  const check = section(page);
+  await choose(check.locator('input[name="study-stage"][value="college"]')); await next(page);
+  await check.getByLabel('Highest qualification').selectOption('degree');
+  await check.getByLabel('Completion status').selectOption('completed');
+  await next(page);
+  await expect(check.locator('input[name="eligibility-course"][value="mba"]')).toBeChecked();
 });
 
 test('subjects missing and percentage below the sample minimum remain distinct unmet requirements', async ({ page }) => {
@@ -146,12 +169,15 @@ test('editing preserves answers, while changing courses clears the old subject a
 });
 
 for (const width of [320, 390, 768, 1101, 1672]) {
-  test(`eligibility flow and fixed header fit ${width}px with reduced motion`, async ({ page }) => {
+  test(`eligibility flow and header fit ${width}px with reduced motion`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await section(page).evaluate((node) => node.scrollIntoView({ block: 'start', behavior: 'instant' }));
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
-    await expect(page.getByRole('banner')).toHaveAttribute('data-section', 'eligibility');
+    const header = page.getByRole('banner');
+    expect((await header.boundingBox()).y).toBe(0);
+    if (width > 1100) await expect(header.locator('[data-group="Resources"]')).toHaveAttribute('data-active', 'true');
+    else await expect(header.getByRole('button', { name: 'Open navigation' })).toBeVisible();
     await begin(page); await subjects(page);
     if (width <= 640) expect(await section(page).locator('#eligibility-marks').evaluate((node) => parseFloat(window.getComputedStyle(node).fontSize))).toBeGreaterThanOrEqual(16);
     await complete(page);

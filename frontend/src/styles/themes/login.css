@@ -1,0 +1,53 @@
+/* Theme tokens for the login area. Owned by the login redesign; keep colours, sizes and motion here.
+   Base --login-* tokens (width, radius, wine panel, dev notice) live in the "Student login drawer" block of index.css. */
+:root {
+  /* Login dialog */
+  --login-height: 680px;
+  --login-sheet-radius: 24px;
+  --login-sheet-height: 94dvh;
+  --login-panel-padding: clamp(1.5rem, 2.4vw, 2rem);
+  --login-brand-text: #FFFFFF;
+  --login-brand-muted: #F1DCE2;
+  --login-brand-line: rgb(255 255 255 / 16%);
+  --login-brand-chip: rgb(255 255 255 / 11%);
+  --login-brand-chip-border: rgb(255 255 255 / 24%);
+  --login-brand-title-size: clamp(1.6rem, 2.3vw, 2rem);
+  --login-arch-ring: rgb(244 198 211 / 45%);
+  --login-sticker-background: rgb(255 255 255 / 94%);
+  --login-sticker-text: #4E1528;
+  --login-sticker-shadow: 0 12px 26px rgb(30 6 14 / 30%);
+  --login-heading-size: clamp(1.5rem, 2.1vw, 1.85rem);
+  --login-input-height: 54px;
+  --login-input-background: #FFFAF8;
+  --login-otp-height: 58px;
+  --login-otp-filled: #FBF1F3;
+  --login-step-track: #EFE3E6;
+  --login-step-fill: linear-gradient(90deg, #8A2E49, #72243B);
+  --login-success: #1D7A4E;
+  --login-success-background: #E8F5EE;
+  --login-success-border: #BFE3CF;
+  --login-error-background: #FDF1F2;
+  --login-suggest-background: #F6ECEE;
+  --login-flag: linear-gradient(#FF9933 0 33.3%, #FFFFFF 0 66.6%, #138808 0);
+  --login-flag-border: #E5DFE3;
+  --login-trust-background: #FBF6F3;
+  /* /account student space */
+  --account-hero-background: radial-gradient(ellipse at 88% -10%, #F0DCE2, transparent 55%), radial-gradient(ellipse at 0% 120%, #F3E6DF, transparent 50%), linear-gradient(115deg, #FCF6F2, #FFFAF8 52%, #F8EEEF);
+  --account-hero-line: #E2CBC6;
+  --account-hero-padding: clamp(1.5rem, 3vw, 2.75rem);
+  --account-title-size: clamp(2rem, 3.4vw, 3rem);
+  --account-avatar-size: clamp(64px, 6vw, 84px);
+  --account-avatar-background: linear-gradient(140deg, #8A2E49, #72243B 55%, #4E1528);
+  --account-avatar-ring: #F0D9DF;
+  --account-card-radius: 1.1rem;
+  --account-card-padding: clamp(1.1rem, 1.8vw, 1.5rem);
+  --account-card-shadow: 0 6px 22px rgb(72 37 46 / 5%);
+  --account-tile-background: linear-gradient(155deg, #FFFFFF, #FBF4F1);
+  --account-tile-hover: #F7ECEE;
+  --account-icon-background: #F6E9EC;
+  --account-tag-background: #F4EEE9;
+  --account-tag-text: #6A5A50;
+  --account-skeleton: linear-gradient(90deg, #F2E8E9 25%, #FBF5F4 50%, #F2E8E9 75%);
+  --account-section-gap: clamp(1rem, 1.8vw, 1.5rem);
+  --account-heading-size: clamp(1.3rem, 1.7vw, 1.6rem);
+}

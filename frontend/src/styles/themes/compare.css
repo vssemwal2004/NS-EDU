@@ -1,0 +1,35 @@
+/* Theme tokens for the compare area. Owned by the compare redesign; keep colours, sizes and motion here.
+   --compare-best-background lives in index.css and is reused, not redeclared. */
+:root {
+  --compare-label-col: 200px;
+  --compare-label-col-tablet: 150px;
+  --compare-label-col-mobile: 104px;
+  --compare-label-col-xs: 88px;
+  /* 120px lets two colleges fit beside the label column at 390px; a third is reached by swiping. */
+  --compare-col-min-mobile: 120px;
+  /* The site header is sticky at top: 0 with a 1px bottom border. */
+  --compare-sticky-top: calc(var(--header-bar-height) + 1px);
+  --compare-sticky-top-mobile: calc(var(--header-bar-mobile-height) + 1px);
+  --compare-sticky-z: 20;
+  --compare-jump-offset: 84px;
+  --compare-slot-dash: #D9C3BC;
+  --compare-slot-empty-bg: #FBF5F2;
+  --compare-bar-track: #F1E7E3;
+  --compare-bar-fee: #806C60;
+  --compare-bar-salary: #72243B;
+  --compare-bar-best: #581A2D;
+  --compare-bar-height: 8px;
+  --compare-diff-accent: #72243B;
+  --compare-section-bg: #F7EEEC;
+  --compare-section-icon-bg: #FFFFFF;
+  --compare-vs-disc: #72243B;
+  --compare-thumb-radius: .65rem;
+  --compare-hatch: repeating-linear-gradient(135deg, #FBF5F2 0 12px, #F4EAE6 12px 13px);
+  --compare-panel-background: radial-gradient(ellipse at 100% 0%, #F6E6EA, transparent 55%), linear-gradient(130deg, #FFFFFF, #FCF6F3);
+  --compare-strip-background: rgb(255 255 255 / 96%);
+  --compare-strip-shadow: 0 10px 24px rgb(72 37 46 / 9%);
+  --compare-fade: linear-gradient(90deg, rgb(255 255 255 / 0%), #FFFFFF 85%);
+  --compare-badge-background: #72243B;
+  --compare-badge-text: #FFFFFF;
+  --compare-note-background: linear-gradient(110deg, #F7EDEB, #FFFAF8 70%);
+}

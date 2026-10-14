@@ -1,0 +1,30 @@
+/* Theme tokens for the guides area. Owned by the guides redesign; keep colours, sizes and motion here. */
+:root {
+  --guides-tint: #F7ECEE;
+  --guides-tint-strong: #EFD9DE;
+  --guides-ivory: #FFFAF8;
+  --guides-stat-background: linear-gradient(160deg, #FBF4F2, #F7ECEE);
+  --guides-panel-background: rgb(255 255 255 / 82%);
+  --guides-card-radius: 1rem;
+  --guides-card-hover-shadow: 0 16px 36px rgb(72 37 46 / 9%);
+  --guides-feature-background: radial-gradient(circle at 90% 0%, #8E3753, transparent 55%), linear-gradient(150deg, #72243B, #4E1528);
+  --guides-feature-text: #F1DCE2;
+  --guides-feature-eyebrow: #F0C9D4;
+  --guides-callout-background: linear-gradient(110deg, #FBF1EE, #FFFAF8 60%, #F7ECEE);
+  --guides-callout-border: #E7CFC8;
+  --guides-timeline: #E6D3D8;
+  --guides-progress-track: rgb(255 255 255 / 22%);
+  --guides-progress-fill: #FFFFFF;
+  --guides-check-border: #CDB7BE;
+  --guides-mark: #F3DCE2;
+  --guides-status-background: #F1ECE8;
+  --guides-status-text: #5E4E45;
+  --guides-section-title-size: clamp(1.4rem, 2vw, 1.85rem);
+  --guides-intro-compact-padding: clamp(1.25rem, 2.2vw, 2rem);
+  --guides-intro-compact-title-size: clamp(1.85rem, 3vw, 2.75rem);
+  --guides-toc-width: 220px;
+  --guides-aside-width: 320px;
+  --guides-sticky-top: calc(var(--header-bar-height) + var(--space-6));
+  --guides-sticky-top-mobile: calc(var(--header-bar-mobile-height) + var(--space-4));
+  --guides-scroll-margin: calc(var(--header-bar-height) + var(--space-6));
+}

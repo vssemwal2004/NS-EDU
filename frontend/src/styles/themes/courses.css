@@ -1,0 +1,30 @@
+/* Theme tokens for the courses area. Owned by the courses redesign; keep colours, sizes and motion here. */
+:root {
+  --courses-tint: #F7ECEE;
+  --courses-tint-strong: #EFD9DE;
+  --courses-chip-count: #F1E3E6;
+  --courses-chip-count-active: rgb(255 255 255 / 20%);
+  --courses-stat-background: linear-gradient(160deg, #FBF4F2, #F7ECEE);
+  --courses-card-hover-shadow: 0 16px 36px rgb(72 37 46 / 9%);
+  --courses-card-radius: 1rem;
+  --courses-bar-fill: linear-gradient(90deg, #8A2E49, #72243B);
+  --courses-bar-solid: #72243B;
+  --courses-bar-salary: #806C60;
+  --courses-bar-track: #F1ECE8;
+  --courses-median-rule: #806C60;
+  --courses-sticky-background: rgb(255 250 248 / 92%);
+  --courses-sticky-border: #EBDDE0;
+  --courses-hero-background: radial-gradient(ellipse at 88% 0%, #F1DDE2, transparent 52%), radial-gradient(ellipse at 0% 100%, #F6EAE3, transparent 50%), linear-gradient(115deg, #FCF6F2, #FFFAF8 55%, #F8EEEF);
+  --courses-hero-line: #E2CBC6;
+  --courses-facts-background: rgb(255 255 255 / 82%);
+  --courses-feature-background: radial-gradient(circle at 90% 0%, #8E3753, transparent 55%), linear-gradient(150deg, #72243B, #4E1528);
+  --courses-feature-text: #F1DCE2;
+  --courses-callout-background: linear-gradient(110deg, #FBF1EE, #FFFAF8 60%, #F7ECEE);
+  --courses-callout-border: #E7CFC8;
+  --courses-title-size: clamp(2.2rem, 4vw, 3.5rem);
+  --courses-section-title-size: clamp(1.5rem, 2.1vw, 2rem);
+  --courses-section-gap: clamp(2.25rem, 4vw, 3.5rem);
+  --courses-nav-height: 52px;
+  --courses-sticky-top: var(--header-bar-height);
+  --courses-sticky-top-mobile: var(--header-bar-mobile-height);
+}

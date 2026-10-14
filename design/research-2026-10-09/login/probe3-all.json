@@ -1,0 +1,151 @@
+[
+  {
+    "site": "shiksha",
+    "device": "mobile",
+    "start": "https://www.shiksha.com/",
+    "status": 200,
+    "a": "header svg >> nth=-1",
+    "t1": [],
+    "b": null,
+    "url": "https://www.shiksha.com/searchLayer",
+    "t2": []
+  },
+  {
+    "site": "shiksha",
+    "device": "desktop",
+    "start": "https://www.shiksha.com/",
+    "status": 200,
+    "a": "text=/^\\s*Login\\s*$/",
+    "b": "label:has-text(\"Email\")",
+    "t1": [],
+    "c": "text=/^\\s*Sign Up\\s*$/ (force)",
+    "url": "https://www.shiksha.com/",
+    "t2": []
+  },
+  {
+    "site": "collegedunia",
+    "device": "mobile",
+    "start": "https://collegedunia.com/exams/cbse-class-xii/syllabus",
+    "status": 200,
+    "a": null,
+    "url": "https://collegedunia.com/exams/cbse-class-xii/syllabus",
+    "t1": [],
+    "b": null,
+    "t2": []
+  },
+  {
+    "site": "collegedunia",
+    "device": "desktop",
+    "start": "https://collegedunia.com/exams/cbse-class-xii/syllabus",
+    "status": 200,
+    "a": null,
+    "b": null,
+    "t1": [
+      {
+        "tag": "MAIN",
+        "cls": "jsx-2003293268 jsx-584421698 jsx-1741447278 jsx-2359184846 jsx-2357538501 main mb-4  ",
+        "role": null,
+        "text": "Bhaskar Das\n\nArts and Board Exam Specialist | Updated on - Sep 2, 2026\n\nCBSE CLASS XII Latest Updates\n\n08 Oct, 2026 CBSE Datesheet Class 12 2027 Out Soon; Check Live Updates Here.\n\n24 Sep, 2026 CBSE Sample Question Papers and Marking Schemes for Class 12 Released, Check Here.\n\nThe CBSE Class 12 syllabus 2027 is released by the Central Board of Secondary Education (CBSE). The CBSE 12th syllabus 2027 consists of Mathematics, Physics, Chemistry, Biology, Biotechnology, Physical Education, and many more subjects. The CBSE Class 12 syllabus 2027 PDF download link is available at cbseacademic.nic.in.\n\nThe CBSE 12th syllabus 2027 consists of 5 main subjects as compulsory papers and 1 optional subject.\nThe CBSE Class 12 syllabus 2027 topics for Maths cover Sets & Functions, Algebra, Coordinate Geometry, Calculus, and Statistics & Probability.\nThe CBSE Physics syllabus 2027 important topics are Electromagnetic Waves, Electromagnetic Induction, Alternating Current, and Current Electricity.\nSome of the CBSE Class 12 syllabus 2027 important topics for Chemistry are Electrochemistry, Aldehydes, Ketones, and Carboxylic Acids.\nThe Mathematics, English, Hindi, Accountancy, Business Studies, Economics, and Political Science theory paper carries 80 marks, whereas the practical carries 20 marks each.\nThe Physics, Chemistry, Biology, Computer Science, and Information Practices theory paper carries 70 marks, and the practical carries 30 marks each.\n\nAs per the CBSE Class 12 syllabus, the exam is conducted in a single term. No changes have been announced yet for the CBSE Class 12 syllabus 2027.\n\nDirect Link to Check and Download CBSE Class 12 Syllabus PDF 2027\n\nRelated Links:\n\nCBSE Class 12 Exam Pattern 2027: Check Marking Scheme, Minimum Qualifying Marks, and Topic Weightage\nCBSE Class 12 Board Exam Date 2027: Official Datesheet, Events List\nCBSE Class 12 Guidelines 2027: Check Latest Instructions\n\nKey Summary\nThe CBSE Class 12 study material includes NCERT. The syllabus is important for JEE Main, CUET, NEET, and CLAT exams also.\nThe CBSE Class 12 exam 2027 will take place in offline mode for 3 hours.\nThe CBSE Class 12 2027 exam contains 50% competency-based questions, 20% select-response types, and 30% constructed response.\nThe CBSE Class 12 exam preparation tips include: learning basic concepts of the topics, focusing on high-weightage topics, preparing notes, solving previous year papers, appearing for mock tests, analysing your performance, and learning time management.\n\nT"
+      }
+    ],
+    "c": null,
+    "t2": [
+      {
+        "tag": "MAIN",
+        "cls": "jsx-2003293268 jsx-584421698 jsx-1741447278 jsx-2359184846 jsx-2357538501 main mb-4  ",
+        "role": null,
+        "text": "Bhaskar Das\n\nArts and Board Exam Specialist | Updated on - Sep 2, 2026\n\nCBSE CLASS XII Latest Updates\n\n08 Oct, 2026 CBSE Datesheet Class 12 2027 Out Soon; Check Live Updates Here.\n\n24 Sep, 2026 CBSE Sample Question Papers and Marking Schemes for Class 12 Released, Check Here.\n\nThe CBSE Class 12 syllabus 2027 is released by the Central Board of Secondary Education (CBSE). The CBSE 12th syllabus 2027 consists of Mathematics, Physics, Chemistry, Biology, Biotechnology, Physical Education, and many more subjects. The CBSE Class 12 syllabus 2027 PDF download link is available at cbseacademic.nic.in.\n\nThe CBSE 12th syllabus 2027 consists of 5 main subjects as compulsory papers and 1 optional subject.\nThe CBSE Class 12 syllabus 2027 topics for Maths cover Sets & Functions, Algebra, Coordinate Geometry, Calculus, and Statistics & Probability.\nThe CBSE Physics syllabus 2027 important topics are Electromagnetic Waves, Electromagnetic Induction, Alternating Current, and Current Electricity.\nSome of the CBSE Class 12 syllabus 2027 important topics for Chemistry are Electrochemistry, Aldehydes, Ketones, and Carboxylic Acids.\nThe Mathematics, English, Hindi, Accountancy, Business Studies, Economics, and Political Science theory paper carries 80 marks, whereas the practical carries 20 marks each.\nThe Physics, Chemistry, Biology, Computer Science, and Information Practices theory paper carries 70 marks, and the practical carries 30 marks each.\n\nAs per the CBSE Class 12 syllabus, the exam is conducted in a single term. No changes have been announced yet for the CBSE Class 12 syllabus 2027.\n\nDirect Link to Check and Download CBSE Class 12 Syllabus PDF 2027\n\nRelated Links:\n\nCBSE Class 12 Exam Pattern 2027: Check Marking Scheme, Minimum Qualifying Marks, and Topic Weightage\nCBSE Class 12 Board Exam Date 2027: Official Datesheet, Events List\nCBSE Class 12 Guidelines 2027: Check Latest Instructions\n\nKey Summary\nThe CBSE Class 12 study material includes NCERT. The syllabus is important for JEE Main, CUET, NEET, and CLAT exams also.\nThe CBSE Class 12 exam 2027 will take place in offline mode for 3 hours.\nThe CBSE Class 12 2027 exam contains 50% competency-based questions, 20% select-response types, and 30% constructed response.\nThe CBSE Class 12 exam preparation tips include: learning basic concepts of the topics, focusing on high-weightage topics, preparing notes, solving previous year papers, appearing for mock tests, analysing your performance, and learning time management.\n\nT"
+      }
+    ]
+  },
+  {
+    "site": "careers360",
+    "device": "desktop",
+    "start": "https://www.careers360.com/user/login",
+    "status": 200,
+    "url": "https://www.careers360.com/user/login",
+    "t1": [],
+    "t2": []
+  },
+  {
+    "site": "careers360",
+    "device": "desktop",
+    "start": "https://www.careers360.com/user/register",
+    "status": 200,
+    "url": "https://www.careers360.com/user/register",
+    "t1": [
+      {
+        "tag": "FORM",
+        "cls": "",
+        "role": null,
+        "text": "Full Name\nEmail\nMobile Number\nStudying In\nCity You Live In\nI agree to Careers360’s Privacy Policy and Terms & Conditions and provide consent to be contacted for promotion via mail, sms, whatsapp, rcs etc.\nGet OTP\n\nAlready have a Careers360 account? Login to continue"
+      }
+    ]
+  },
+  {
+    "site": "careers360",
+    "device": "mobile",
+    "start": "https://www.careers360.com/user/login",
+    "status": 200,
+    "url": "https://www.careers360.com/user/login",
+    "t1": []
+  },
+  {
+    "site": "collegedekho",
+    "device": "mobile",
+    "start": "https://www.collegedekho.com/",
+    "status": 200,
+    "a": "[class*=\"profile\" i]",
+    "b": "text=/^\\s*Login \\/ Register\\s*$/",
+    "url": "https://www.collegedekho.com/",
+    "t1": [
+      {
+        "tag": "FORM",
+        "cls": "",
+        "role": null,
+        "text": "Name\nMobile\nEmail\nYour Stream\nCommerce and Banking\nDesign\nEngineering\nManagement\nHotel Management\nInformation Technology\nMedia and Mass Communication\nMedical\nRetail\nArts and Humanities\nLaw\nScience\nVocational\nOthers\nPhysical Education\nEducation\nParamedical\nAgriculture\nNursing\nPharmacy\nDental\nPerforming Arts"
+      }
+    ],
+    "c": "text=/Sign ?up/i",
+    "t2": [
+      {
+        "tag": "FORM",
+        "cls": "",
+        "role": null,
+        "text": "Name\nMobile\nEmail\nYour Stream\nCommerce and Banking\nDesign\nEngineering\nManagement\nHotel Management\nInformation Technology\nMedia and Mass Communication\nMedical\nRetail\nArts and Humanities\nLaw\nScience\nVocational\nOthers\nPhysical Education\nEducation\nParamedical\nAgriculture\nNursing\nPharmacy\nDental\nPerforming Arts"
+      }
+    ]
+  },
+  {
+    "site": "collegedekho",
+    "device": "desktop",
+    "start": "https://www.collegedekho.com/",
+    "status": 200,
+    "a": "text=/^\\s*Login to your account\\s*$/",
+    "t1": [
+      {
+        "tag": "FORM",
+        "cls": "",
+        "role": null,
+        "text": "+91\nGenerate OTP\nLogin via Password\nNew to Collegedekho? Signup"
+      }
+    ],
+    "t2": [
+      {
+        "tag": "FORM",
+        "cls": "",
+        "role": null,
+        "text": "+91\n\nMobile number is not a registered user\n\nGenerate OTP\nLogin via Password\nNew to Collegedekho? Signup"
+      }
+    ],
+    "c": "text=/^\\s*Signup\\s*$/",
+    "t3": [
+      {
+        "tag": "FORM",
+        "cls": "",
+        "role": null,
+        "text": "Name\nMobile\nEmail\nYour Stream\nCommerce and Banking\nDesign\nEngineering\nManagement\nHotel Management\nInformation Technology\nMedia and Mass Communication\nMedical\nRetail\nArts and Humanities\nLaw\nScience\nVocational\nOthers\nPhysical Education\nEducation\nParamedical\nAgriculture\nNursing\nPharmacy\nDental\nPerforming Arts"
+      }
+    ]
+  }
+]

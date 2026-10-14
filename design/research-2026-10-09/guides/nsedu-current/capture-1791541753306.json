@@ -1,0 +1,737 @@
+[
+  {
+    "name": "nsedu-scholarships",
+    "url": "http://127.0.0.1:3001/scholarships",
+    "vp": "d",
+    "status": 200,
+    "finalUrl": "http://127.0.0.1:3001/scholarships",
+    "title": "Scholarships & funding | NSEDU",
+    "heads": [
+      "H2: NSEDU",
+      "H1: Scholarships & funding",
+      "H2: Check the right conditions",
+      "H2: Keep awards separate from estimated costs",
+      "H2: Funding resources",
+      "H2: A clearer path to your future.",
+      "H3: Explore",
+      "H3: Student tools",
+      "H3: NSEDU & support",
+      "H3: Legal & privacy",
+      "H2: Log in to NSEDU"
+    ],
+    "crumbs": [
+      "Home Scholarships"
+    ],
+    "toc": [],
+    "tabs": [
+      "Email",
+      "Mobile number"
+    ],
+    "faq": [],
+    "bodyStart": "Skip to main content Discover · Learn · Belong Admissions 2026–27 · confirm fees and eligibility with each institution Preferred city Select",
+    "overflow": false,
+    "height": 1778,
+    "shots": "D:\\CP\\NS-EDU\\design\\research-2026-10-09\\guides\\nsedu-current\\nsedu-scholarships-1440",
+    "errors": [
+      "console: Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    ]
+  },
+  {
+    "name": "nsedu-scholarships",
+    "url": "http://127.0.0.1:3001/scholarships",
+    "vp": "m",
+    "status": 200,
+    "finalUrl": "http://127.0.0.1:3001/scholarships",
+    "title": "Scholarships & funding | NSEDU",
+    "heads": [
+      "H2: NSEDU",
+      "H1: Scholarships & funding",
+      "H2: Check the right conditions",
+      "H2: Keep awards separate from estimated costs",
+      "H2: Funding resources",
+      "H2: A clearer path to your future.",
+      "H3: Explore",
+      "H3: Student tools",
+      "H3: NSEDU & support",
+      "H3: Legal & privacy",
+      "H2: Log in to NSEDU"
+    ],
+    "crumbs": [
+      "Home Scholarships"
+    ],
+    "toc": [],
+    "tabs": [
+      "Email",
+      "Mobile number"
+    ],
+    "faq": [],
+    "bodyStart": "Skip to main content NSEDU Log in Home Scholarships SCHOLARSHIPS Scholarships & funding Explore funding without losing sight of the actual c",
+    "overflow": false,
+    "height": 3197,
+    "shots": "D:\\CP\\NS-EDU\\design\\research-2026-10-09\\guides\\nsedu-current\\nsedu-scholarships-390",
+    "errors": [
+      "console: Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    ]
+  },
+  {
+    "name": "nsedu-career-guidance",
+    "url": "http://127.0.0.1:3001/career-guidance",
+    "vp": "d",
+    "status": 200,
+    "finalUrl": "http://127.0.0.1:3001/career-guidance",
+    "title": "Career guidance | NSEDU",
+    "heads": [
+      "H2: NSEDU",
+      "H1: Find your direction",
+      "H2: What do you enjoy doing?",
+      "H2: Which course opens that path?",
+      "H2: What fits your circumstances?",
+      "H2: A clearer path to your future.",
+      "H3: Explore",
+      "H3: Student tools",
+      "H3: NSEDU & support",
+      "H3: Legal & privacy",
+      "H2: Log in to NSEDU"
+    ],
+    "crumbs": [
+      "Home Career guidance"
+    ],
+    "toc": [],
+    "tabs": [
+      "Email",
+      "Mobile number"
+    ],
+    "faq": [],
+    "bodyStart": "Skip to main content Discover · Learn · Belong Admissions 2026–27 · confirm fees and eligibility with each institution Preferred city Select",
+    "overflow": false,
+    "height": 1779,
+    "shots": "D:\\CP\\NS-EDU\\design\\research-2026-10-09\\guides\\nsedu-current\\nsedu-career-guidance-1440",
+    "errors": [
+      "console: Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    ]
+  },
+  {
+    "name": "nsedu-career-guidance",
+    "url": "http://127.0.0.1:3001/career-guidance",
+    "vp": "m",
+    "status": 200,
+    "finalUrl": "http://127.0.0.1:3001/career-guidance",
+    "title": "Career guidance | NSEDU",
+    "heads": [
+      "H2: NSEDU",
+      "H1: Find your direction",
+      "H2: What do you enjoy doing?",
+      "H2: Which course opens that path?",
+      "H2: What fits your circumstances?",
+      "H2: A clearer path to your future.",
+      "H3: Explore",
+      "H3: Student tools",
+      "H3: NSEDU & support",
+      "H3: Legal & privacy",
+      "H2: Log in to NSEDU"
+    ],
+    "crumbs": [
+      "Home Career guidance"
+    ],
+    "toc": [],
+    "tabs": [
+      "Email",
+      "Mobile number"
+    ],
+    "faq": [],
+    "bodyStart": "Skip to main content NSEDU Log in Home Career guidance CAREER GUIDANCE Find your direction Start with a few useful questions rather than a r",
+    "overflow": false,
+    "height": 3322,
+    "shots": "D:\\CP\\NS-EDU\\design\\research-2026-10-09\\guides\\nsedu-current\\nsedu-career-guidance-390",
+    "errors": [
+      "console: Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    ]
+  },
+  {
+    "name": "nsedu-admission-checklist",
+    "url": "http://127.0.0.1:3001/admission-checklist",
+    "vp": "d",
+    "status": 200,
+    "finalUrl": "http://127.0.0.1:3001/admission-checklist",
+    "title": "Admission checklist | NSEDU",
+    "heads": [
+      "H2: NSEDU",
+      "H1: Before you apply",
+      "H2: Confirm the programme and admission year",
+      "H2: Track dates and documents",
+      "H2: Review costs and the application channel",
+      "H2: A clearer path to your future.",
+      "H3: Explore",
+      "H3: Student tools",
+      "H3: NSEDU & support",
+      "H3: Legal & privacy",
+      "H2: Log in to NSEDU"
+    ],
+    "crumbs": [
+      "Home Admission checklist"
+    ],
+    "toc": [],
+    "tabs": [
+      "Email",
+      "Mobile number"
+    ],
+    "faq": [],
+    "bodyStart": "Skip to main content Discover · Learn · Belong Admissions 2026–27 · confirm fees and eligibility with each institution Preferred city Select",
+    "overflow": false,
+    "height": 1750,
+    "shots": "D:\\CP\\NS-EDU\\design\\research-2026-10-09\\guides\\nsedu-current\\nsedu-admission-checklist-1440",
+    "errors": [
+      "console: Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    ]
+  },
+  {
+    "name": "nsedu-admission-checklist",
+    "url": "http://127.0.0.1:3001/admission-checklist",
+    "vp": "m",
+    "status": 200,
+    "finalUrl": "http://127.0.0.1:3001/admission-checklist",
+    "title": "Admission checklist | NSEDU",
+    "heads": [
+      "H2: NSEDU",
+      "H1: Before you apply",
+      "H2: Confirm the programme and admission year",
+      "H2: Track dates and documents",
+      "H2: Review costs and the application channel",
+      "H2: A clearer path to your future.",
+      "H3: Explore",
+      "H3: Student tools",
+      "H3: NSEDU & support",
+      "H3: Legal & privacy",
+      "H2: Log in to NSEDU"
+    ],
+    "crumbs": [
+      "Home Admission checklist"
+    ],
+    "toc": [],
+    "tabs": [
+      "Email",
+      "Mobile number"
+    ],
+    "faq": [],
+    "bodyStart": "Skip to main content NSEDU Log in Home Admission checklist ADMISSION CHECKLIST Before you apply Keep the important details together before a",
+    "overflow": false,
+    "height": 3202,
+    "shots": "D:\\CP\\NS-EDU\\design\\research-2026-10-09\\guides\\nsedu-current\\nsedu-admission-checklist-390",
+    "errors": [
+      "console: Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    ]
+  },
+  {
+    "name": "nsedu-search-btech",
+    "url": "http://127.0.0.1:3001/search?q=btech",
+    "vp": "d",
+    "status": 500,
+    "finalUrl": "http://127.0.0.1:3001/search?q=btech",
+    "title": "",
+    "heads": [],
+    "crumbs": [],
+    "toc": [],
+    "tabs": [],
+    "faq": [],
+    "bodyStart": "",
+    "overflow": false,
+    "height": 900,
+    "shots": "D:\\CP\\NS-EDU\\design\\research-2026-10-09\\guides\\nsedu-current\\nsedu-search-btech-1440",
+    "errors": [
+      "console: Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+      "pageerror: ./frontend/src/features/home/ComparePromo.js:6:1\nError: Module not found: Can't resolve './Home.module.css'\n  4 | import Icon from '@/components/ui/Icon';\n  5 | import { useCatalog } from '@/providers/CatalogProvider';\n> 6 | import styles from './Home.module.css';\n    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  7 |\n  8 | // Read-only view of the comparison picks saved by /compare: { [courseId]: [programmeId, …] }.\n  9 | const storageKey = 'nsedu:compare';\n\n\n\nImport traces:\n  Client Component Browser:\n    ./frontend/src/features/home/ComparePromo.js [Client Component Browser]\n    ./frontend/src/features/home/HomePage.js [Client Component Browser]\n    ./frontend/src/features/home/HomePage.js [Server Component]\n    ./frontend/src/app/(site)/page.js [Server Component]\n\n  Client Component SSR:\n    ./frontend/src/features/home/ComparePromo.js [Client Component SSR]\n    ./frontend/src/features/home/HomePage.js [Client Component SSR]\n    ./frontend/src/features/home/HomePage.js [Server Component]\n    ./frontend/src/app/(site)/page.js [Server Component]\n\nhttps://nextjs.org/docs/messages/module-not-found\n\n",
+      "console: ./frontend/src/features/home/ComparePromo.js:6:1\nError: Module not found: Can't resolve './Home.module.css'\n  4 | import Icon from '@/components/ui/Icon';\n  5 | import { useCatalog } from '@/providers",
+      "console: ./frontend/src/features/home/ExamsBand.js:7:1\nError: Module not found: Can't resolve './Home.module.css'\n   5 | import { usePreferences } from '@/providers/PreferencesProvider';\n   6 | import { BandHe",
+      "console: ./frontend/src/features/home/HomeParts.js:3:1\nError: Module not found: Can't resolve './Home.module.css'\n  1 | import Link from 'next/link';\n  2 | import Icon from '@/components/ui/Icon';\n> 3 | import",
+      "console: ./frontend/src/features/home/StatStrip.js:5:1\nError: Module not found: Can't resolve './Home.module.css'\n  3 | import Icon from '@/components/ui/Icon';\n  4 | import { useCatalog } from '@/providers/Ca",
+      "console: ./frontend/src/features/home/StreamBand.js:10:1\nError: Module not found: Can't resolve './Home.module.css'\n   8 | import { BandHeading } from './HomeParts';\n   9 | import { plural } from './placeCount",
+      "console: ./frontend/src/features/home/ComparePromo.js:6:1\nError: Module not found: Can't resolve './Home.module.css'\n  4 | import Icon from '@/components/ui/Icon';\n  5 | import { useCatalog } from '@/providers"
+    ]
+  },
+  {
+    "name": "nsedu-search-btech",
+    "url": "http://127.0.0.1:3001/search?q=btech",
+    "vp": "m",
+    "status": 500,
+    "finalUrl": "http://127.0.0.1:3001/search?q=btech",
+    "title": "",
+    "heads": [],
+    "crumbs": [],
+    "toc": [],
+    "tabs": [],
+    "faq": [],
+    "bodyStart": "",
+    "overflow": false,
+    "height": 844,
+    "shots": "D:\\CP\\NS-EDU\\design\\research-2026-10-09\\guides\\nsedu-current\\nsedu-search-btech-390",
+    "errors": [
+      "console: Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+      "pageerror: ./frontend/src/features/home/ComparePromo.js:6:1\nError: Module not found: Can't resolve './Home.module.css'\n  4 | import Icon from '@/components/ui/Icon';\n  5 | import { useCatalog } from '@/providers/CatalogProvider';\n> 6 | import styles from './Home.module.css';\n    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  7 |\n  8 | // Read-only view of the comparison picks saved by /compare: { [courseId]: [programmeId, …] }.\n  9 | const storageKey = 'nsedu:compare';\n\n\n\nImport traces:\n  Client Component Browser:\n    ./frontend/src/features/home/ComparePromo.js [Client Component Browser]\n    ./frontend/src/features/home/HomePage.js [Client Component Browser]\n    ./frontend/src/features/home/HomePage.js [Server Component]\n    ./frontend/src/app/(site)/page.js [Server Component]\n\n  Client Component SSR:\n    ./frontend/src/features/home/ComparePromo.js [Client Component SSR]\n    ./frontend/src/features/home/HomePage.js [Client Component SSR]\n    ./frontend/src/features/home/HomePage.js [Server Component]\n    ./frontend/src/app/(site)/page.js [Server Component]\n\nhttps://nextjs.org/docs/messages/module-not-found\n\n",
+      "console: ./frontend/src/features/home/ComparePromo.js:6:1\nError: Module not found: Can't resolve './Home.module.css'\n  4 | import Icon from '@/components/ui/Icon';\n  5 | import { useCatalog } from '@/providers",
+      "console: ./frontend/src/features/home/ExamsBand.js:7:1\nError: Module not found: Can't resolve './Home.module.css'\n   5 | import { usePreferences } from '@/providers/PreferencesProvider';\n   6 | import { BandHe",
+      "console: ./frontend/src/features/home/HomeParts.js:3:1\nError: Module not found: Can't resolve './Home.module.css'\n  1 | import Link from 'next/link';\n  2 | import Icon from '@/components/ui/Icon';\n> 3 | import",
+      "console: ./frontend/src/features/home/StatStrip.js:5:1\nError: Module not found: Can't resolve './Home.module.css'\n  3 | import Icon from '@/components/ui/Icon';\n  4 | import { useCatalog } from '@/providers/Ca",
+      "console: ./frontend/src/features/home/StreamBand.js:10:1\nError: Module not found: Can't resolve './Home.module.css'\n   8 | import { BandHeading } from './HomeParts';\n   9 | import { plural } from './placeCount",
+      "console: Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+    ]
+  },
+  {
+    "name": "nsedu-search-pune",
+    "url": "http://127.0.0.1:3001/search?q=pune",
+    "vp": "d",
+    "status": 500,
+    "finalUrl": "http://127.0.0.1:3001/search?q=pune",
+    "title": "",
+    "heads": [],
+    "crumbs": [],
+    "toc": [],
+    "tabs": [],
+    "faq": [],
+    "bodyStart": "",
+    "overflow": false,
+    "height": 900,
+    "shots": "D:\\CP\\NS-EDU\\design\\research-2026-10-09\\guides\\nsedu-current\\nsedu-search-pune-1440",
+    "errors": [
+      "console: Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+      "pageerror: ./frontend/src/features/home/ComparePromo.js:6:1\nError: Module not found: Can't resolve './Home.module.css'\n  4 | import Icon from '@/components/ui/Icon';\n  5 | import { useCatalog } from '@/providers/CatalogProvider';\n> 6 | import styles from './Home.module.css';\n    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  7 |\n  8 | // Read-only view of the comparison picks saved by /compare: { [courseId]: [programmeId, …] }.\n  9 | const storageKey = 'nsedu:compare';\n\n\n\nImport traces:\n  Client Component Browser:\n    ./frontend/src/features/home/ComparePromo.js [Client Component Browser]\n    ./frontend/src/features/home/HomePage.js [Client Component Browser]\n    ./frontend/src/features/home/HomePage.js [Server Component]\n    ./frontend/src/app/(site)/page.js [Server Component]\n\n  Client Component SSR:\n    ./frontend/src/features/home/ComparePromo.js [Client Component SSR]\n    ./frontend/src/features/home/HomePage.js [Client Component SSR]\n    ./frontend/src/features/home/HomePage.js [Server Component]\n    ./frontend/src/app/(site)/page.js [Server Component]\n\nhttps://nextjs.org/docs/messages/module-not-found\n\n",
+      "console: ./frontend/src/features/home/ComparePromo.js:6:1\nError: Module not found: Can't resolve './Home.module.css'\n  4 | import Icon from '@/components/ui/Icon';\n  5 | import { useCatalog } from '@/providers",
+      "console: ./frontend/src/features/home/ExamsBand.js:7:1\nError: Module not found: Can't resolve './Home.module.css'\n   5 | import { usePreferences } from '@/providers/PreferencesProvider';\n   6 | import { BandHe",
+      "console: ./frontend/src/features/home/HomeParts.js:3:1\nError: Module not found: Can't resolve './Home.module.css'\n  1 | import Link from 'next/link';\n  2 | import Icon from '@/components/ui/Icon';\n> 3 | import",
+      "console: ./frontend/src/features/home/StatStrip.js:5:1\nError: Module not found: Can't resolve './Home.module.css'\n  3 | import Icon from '@/components/ui/Icon';\n  4 | import { useCatalog } from '@/providers/Ca",
+      "console: ./frontend/src/features/home/StreamBand.js:10:1\nError: Module not found: Can't resolve './Home.module.css'\n   8 | import { BandHeading } from './HomeParts';\n   9 | import { plural } from './placeCount",
+      "console: Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+    ]
+  },
+  {
+    "name": "nsedu-search-pune",
+    "url": "http://127.0.0.1:3001/search?q=pune",
+    "vp": "m",
+    "status": 500,
+    "finalUrl": "http://127.0.0.1:3001/search?q=pune",
+    "title": "",
+    "heads": [],
+    "crumbs": [],
+    "toc": [],
+    "tabs": [],
+    "faq": [],
+    "bodyStart": "",
+    "overflow": false,
+    "height": 844,
+    "shots": "D:\\CP\\NS-EDU\\design\\research-2026-10-09\\guides\\nsedu-current\\nsedu-search-pune-390",
+    "errors": [
+      "console: Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+      "pageerror: ./frontend/src/features/home/ComparePromo.js:6:1\nError: Module not found: Can't resolve './Home.module.css'\n  4 | import Icon from '@/components/ui/Icon';\n  5 | import { useCatalog } from '@/providers/CatalogProvider';\n> 6 | import styles from './Home.module.css';\n    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  7 |\n  8 | // Read-only view of the comparison picks saved by /compare: { [courseId]: [programmeId, …] }.\n  9 | const storageKey = 'nsedu:compare';\n\n\n\nImport traces:\n  Client Component Browser:\n    ./frontend/src/features/home/ComparePromo.js [Client Component Browser]\n    ./frontend/src/features/home/HomePage.js [Client Component Browser]\n    ./frontend/src/features/home/HomePage.js [Server Component]\n    ./frontend/src/app/(site)/page.js [Server Component]\n\n  Client Component SSR:\n    ./frontend/src/features/home/ComparePromo.js [Client Component SSR]\n    ./frontend/src/features/home/HomePage.js [Client Component SSR]\n    ./frontend/src/features/home/HomePage.js [Server Component]\n    ./frontend/src/app/(site)/page.js [Server Component]\n\nhttps://nextjs.org/docs/messages/module-not-found\n\n",
+      "console: ./frontend/src/features/home/ComparePromo.js:6:1\nError: Module not found: Can't resolve './Home.module.css'\n  4 | import Icon from '@/components/ui/Icon';\n  5 | import { useCatalog } from '@/providers",
+      "console: ./frontend/src/features/home/ExamsBand.js:7:1\nError: Module not found: Can't resolve './Home.module.css'\n   5 | import { usePreferences } from '@/providers/PreferencesProvider';\n   6 | import { BandHe",
+      "console: ./frontend/src/features/home/HomeParts.js:3:1\nError: Module not found: Can't resolve './Home.module.css'\n  1 | import Link from 'next/link';\n  2 | import Icon from '@/components/ui/Icon';\n> 3 | import",
+      "console: ./frontend/src/features/home/StatStrip.js:5:1\nError: Module not found: Can't resolve './Home.module.css'\n  3 | import Icon from '@/components/ui/Icon';\n  4 | import { useCatalog } from '@/providers/Ca",
+      "console: ./frontend/src/features/home/StreamBand.js:10:1\nError: Module not found: Can't resolve './Home.module.css'\n   8 | import { BandHeading } from './HomeParts';\n   9 | import { plural } from './placeCount",
+      "console: Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+    ]
+  },
+  {
+    "name": "nsedu-search-zero",
+    "url": "http://127.0.0.1:3001/search?q=zzqx",
+    "vp": "d",
+    "status": 500,
+    "finalUrl": "http://127.0.0.1:3001/search?q=zzqx",
+    "title": "",
+    "heads": [],
+    "crumbs": [],
+    "toc": [],
+    "tabs": [],
+    "faq": [],
+    "bodyStart": "",
+    "overflow": false,
+    "height": 900,
+    "shots": "D:\\CP\\NS-EDU\\design\\research-2026-10-09\\guides\\nsedu-current\\nsedu-search-zero-1440",
+    "errors": [
+      "console: Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+      "pageerror: ./frontend/src/features/home/ComparePromo.js:6:1\nError: Module not found: Can't resolve './Home.module.css'\n  4 | import Icon from '@/components/ui/Icon';\n  5 | import { useCatalog } from '@/providers/CatalogProvider';\n> 6 | import styles from './Home.module.css';\n    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  7 |\n  8 | // Read-only view of the comparison picks saved by /compare: { [courseId]: [programmeId, …] }.\n  9 | const storageKey = 'nsedu:compare';\n\n\n\nImport traces:\n  Client Component Browser:\n    ./frontend/src/features/home/ComparePromo.js [Client Component Browser]\n    ./frontend/src/features/home/HomePage.js [Client Component Browser]\n    ./frontend/src/features/home/HomePage.js [Server Component]\n    ./frontend/src/app/(site)/page.js [Server Component]\n\n  Client Component SSR:\n    ./frontend/src/features/home/ComparePromo.js [Client Component SSR]\n    ./frontend/src/features/home/HomePage.js [Client Component SSR]\n    ./frontend/src/features/home/HomePage.js [Server Component]\n    ./frontend/src/app/(site)/page.js [Server Component]\n\nhttps://nextjs.org/docs/messages/module-not-found\n\n",
+      "console: ./frontend/src/features/home/ComparePromo.js:6:1\nError: Module not found: Can't resolve './Home.module.css'\n  4 | import Icon from '@/components/ui/Icon';\n  5 | import { useCatalog } from '@/providers",
+      "console: ./frontend/src/features/home/ExamsBand.js:7:1\nError: Module not found: Can't resolve './Home.module.css'\n   5 | import { usePreferences } from '@/providers/PreferencesProvider';\n   6 | import { BandHe",
+      "console: ./frontend/src/features/home/HomeParts.js:3:1\nError: Module not found: Can't resolve './Home.module.css'\n  1 | import Link from 'next/link';\n  2 | import Icon from '@/components/ui/Icon';\n> 3 | import",
+      "console: ./frontend/src/features/home/StatStrip.js:5:1\nError: Module not found: Can't resolve './Home.module.css'\n  3 | import Icon from '@/components/ui/Icon';\n  4 | import { useCatalog } from '@/providers/Ca",
+      "console: ./frontend/src/features/home/StreamBand.js:10:1\nError: Module not found: Can't resolve './Home.module.css'\n   8 | import { BandHeading } from './HomeParts';\n   9 | import { plural } from './placeCount",
+      "console: Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+    ]
+  },
+  {
+    "name": "nsedu-search-zero",
+    "url": "http://127.0.0.1:3001/search?q=zzqx",
+    "vp": "m",
+    "status": 500,
+    "finalUrl": "http://127.0.0.1:3001/search?q=zzqx",
+    "title": "",
+    "heads": [],
+    "crumbs": [],
+    "toc": [],
+    "tabs": [],
+    "faq": [],
+    "bodyStart": "",
+    "overflow": false,
+    "height": 844,
+    "shots": "D:\\CP\\NS-EDU\\design\\research-2026-10-09\\guides\\nsedu-current\\nsedu-search-zero-390",
+    "errors": [
+      "console: Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+      "pageerror: ./frontend/src/features/home/ComparePromo.js:6:1\nError: Module not found: Can't resolve './Home.module.css'\n  4 | import Icon from '@/components/ui/Icon';\n  5 | import { useCatalog } from '@/providers/CatalogProvider';\n> 6 | import styles from './Home.module.css';\n    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  7 |\n  8 | // Read-only view of the comparison picks saved by /compare: { [courseId]: [programmeId, …] }.\n  9 | const storageKey = 'nsedu:compare';\n\n\n\nImport traces:\n  Client Component Browser:\n    ./frontend/src/features/home/ComparePromo.js [Client Component Browser]\n    ./frontend/src/features/home/HomePage.js [Client Component Browser]\n    ./frontend/src/features/home/HomePage.js [Server Component]\n    ./frontend/src/app/(site)/page.js [Server Component]\n\n  Client Component SSR:\n    ./frontend/src/features/home/ComparePromo.js [Client Component SSR]\n    ./frontend/src/features/home/HomePage.js [Client Component SSR]\n    ./frontend/src/features/home/HomePage.js [Server Component]\n    ./frontend/src/app/(site)/page.js [Server Component]\n\nhttps://nextjs.org/docs/messages/module-not-found\n\n",
+      "console: ./frontend/src/features/home/ComparePromo.js:6:1\nError: Module not found: Can't resolve './Home.module.css'\n  4 | import Icon from '@/components/ui/Icon';\n  5 | import { useCatalog } from '@/providers",
+      "console: ./frontend/src/features/home/ExamsBand.js:7:1\nError: Module not found: Can't resolve './Home.module.css'\n   5 | import { usePreferences } from '@/providers/PreferencesProvider';\n   6 | import { BandHe",
+      "console: ./frontend/src/features/home/HomeParts.js:3:1\nError: Module not found: Can't resolve './Home.module.css'\n  1 | import Link from 'next/link';\n  2 | import Icon from '@/components/ui/Icon';\n> 3 | import",
+      "console: ./frontend/src/features/home/StatStrip.js:5:1\nError: Module not found: Can't resolve './Home.module.css'\n  3 | import Icon from '@/components/ui/Icon';\n  4 | import { useCatalog } from '@/providers/Ca",
+      "console: ./frontend/src/features/home/StreamBand.js:10:1\nError: Module not found: Can't resolve './Home.module.css'\n   8 | import { BandHeading } from './HomeParts';\n   9 | import { plural } from './placeCount",
+      "console: Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+    ]
+  },
+  {
+    "name": "nsedu-search-empty",
+    "url": "http://127.0.0.1:3001/search",
+    "vp": "d",
+    "status": 500,
+    "finalUrl": "http://127.0.0.1:3001/search",
+    "title": "",
+    "heads": [],
+    "crumbs": [],
+    "toc": [],
+    "tabs": [],
+    "faq": [],
+    "bodyStart": "",
+    "overflow": false,
+    "height": 900,
+    "shots": "D:\\CP\\NS-EDU\\design\\research-2026-10-09\\guides\\nsedu-current\\nsedu-search-empty-1440",
+    "errors": [
+      "console: Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+      "pageerror: ./frontend/src/features/home/ComparePromo.js:6:1\nError: Module not found: Can't resolve './Home.module.css'\n  4 | import Icon from '@/components/ui/Icon';\n  5 | import { useCatalog } from '@/providers/CatalogProvider';\n> 6 | import styles from './Home.module.css';\n    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  7 |\n  8 | // Read-only view of the comparison picks saved by /compare: { [courseId]: [programmeId, …] }.\n  9 | const storageKey = 'nsedu:compare';\n\n\n\nImport traces:\n  Client Component Browser:\n    ./frontend/src/features/home/ComparePromo.js [Client Component Browser]\n    ./frontend/src/features/home/HomePage.js [Client Component Browser]\n    ./frontend/src/features/home/HomePage.js [Server Component]\n    ./frontend/src/app/(site)/page.js [Server Component]\n\n  Client Component SSR:\n    ./frontend/src/features/home/ComparePromo.js [Client Component SSR]\n    ./frontend/src/features/home/HomePage.js [Client Component SSR]\n    ./frontend/src/features/home/HomePage.js [Server Component]\n    ./frontend/src/app/(site)/page.js [Server Component]\n\nhttps://nextjs.org/docs/messages/module-not-found\n\n",
+      "console: ./frontend/src/features/home/ComparePromo.js:6:1\nError: Module not found: Can't resolve './Home.module.css'\n  4 | import Icon from '@/components/ui/Icon';\n  5 | import { useCatalog } from '@/providers",
+      "console: ./frontend/src/features/home/ExamsBand.js:7:1\nError: Module not found: Can't resolve './Home.module.css'\n   5 | import { usePreferences } from '@/providers/PreferencesProvider';\n   6 | import { BandHe",
+      "console: ./frontend/src/features/home/HomeParts.js:3:1\nError: Module not found: Can't resolve './Home.module.css'\n  1 | import Link from 'next/link';\n  2 | import Icon from '@/components/ui/Icon';\n> 3 | import",
+      "console: ./frontend/src/features/home/StatStrip.js:5:1\nError: Module not found: Can't resolve './Home.module.css'\n  3 | import Icon from '@/components/ui/Icon';\n  4 | import { useCatalog } from '@/providers/Ca",
+      "console: ./frontend/src/features/home/StreamBand.js:10:1\nError: Module not found: Can't resolve './Home.module.css'\n   8 | import { BandHeading } from './HomeParts';\n   9 | import { plural } from './placeCount",
+      "console: Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+    ]
+  },
+  {
+    "name": "nsedu-search-empty",
+    "url": "http://127.0.0.1:3001/search",
+    "vp": "m",
+    "status": 500,
+    "finalUrl": "http://127.0.0.1:3001/search",
+    "title": "",
+    "heads": [],
+    "crumbs": [],
+    "toc": [],
+    "tabs": [],
+    "faq": [],
+    "bodyStart": "",
+    "overflow": false,
+    "height": 844,
+    "shots": "D:\\CP\\NS-EDU\\design\\research-2026-10-09\\guides\\nsedu-current\\nsedu-search-empty-390",
+    "errors": [
+      "console: Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+      "pageerror: ./frontend/src/features/home/ComparePromo.js:6:1\nError: Module not found: Can't resolve './Home.module.css'\n  4 | import Icon from '@/components/ui/Icon';\n  5 | import { useCatalog } from '@/providers/CatalogProvider';\n> 6 | import styles from './Home.module.css';\n    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  7 |\n  8 | // Read-only view of the comparison picks saved by /compare: { [courseId]: [programmeId, …] }.\n  9 | const storageKey = 'nsedu:compare';\n\n\n\nImport traces:\n  Client Component Browser:\n    ./frontend/src/features/home/ComparePromo.js [Client Component Browser]\n    ./frontend/src/features/home/HomePage.js [Client Component Browser]\n    ./frontend/src/features/home/HomePage.js [Server Component]\n    ./frontend/src/app/(site)/page.js [Server Component]\n\n  Client Component SSR:\n    ./frontend/src/features/home/ComparePromo.js [Client Component SSR]\n    ./frontend/src/features/home/HomePage.js [Client Component SSR]\n    ./frontend/src/features/home/HomePage.js [Server Component]\n    ./frontend/src/app/(site)/page.js [Server Component]\n\nhttps://nextjs.org/docs/messages/module-not-found\n\n",
+      "console: ./frontend/src/features/home/ComparePromo.js:49:1\nError: Unexpected token. Did you mean `{'}'}` or `&rbrace;`?\n  47 |     </div>\n  48 |   </section>;\n> 49 | }\n     | ^\n  50 |\n\nParsing ecmascript sourc",
+      "console: ./frontend/src/features/home/ComparePromo.js:6:1\nError: Module not found: Can't resolve './Home.module.css'\n  4 | import Icon from '@/components/ui/Icon';\n  5 | import { useCatalog } from '@/providers",
+      "console: ./frontend/src/features/home/ExamsBand.js:7:1\nError: Module not found: Can't resolve './Home.module.css'\n   5 | import { usePreferences } from '@/providers/PreferencesProvider';\n   6 | import { BandHe",
+      "console: ./frontend/src/features/home/HomeParts.js:3:1\nError: Module not found: Can't resolve './Home.module.css'\n  1 | import Link from 'next/link';\n  2 | import Icon from '@/components/ui/Icon';\n> 3 | import",
+      "console: ./frontend/src/features/home/StatStrip.js:5:1\nError: Module not found: Can't resolve './Home.module.css'\n  3 | import Icon from '@/components/ui/Icon';\n  4 | import { useCatalog } from '@/providers/Ca",
+      "console: ./frontend/src/features/home/StreamBand.js:10:1\nError: Module not found: Can't resolve './Home.module.css'\n   8 | import { BandHeading } from './HomeParts';\n   9 | import { plural } from './placeCount"
+    ]
+  },
+  {
+    "name": "nsedu-about",
+    "url": "http://127.0.0.1:3001/about",
+    "vp": "d",
+    "status": 500,
+    "finalUrl": "http://127.0.0.1:3001/about",
+    "title": "",
+    "heads": [],
+    "crumbs": [],
+    "toc": [],
+    "tabs": [],
+    "faq": [],
+    "bodyStart": "",
+    "overflow": false,
+    "height": 900,
+    "shots": "D:\\CP\\NS-EDU\\design\\research-2026-10-09\\guides\\nsedu-current\\nsedu-about-1440",
+    "errors": [
+      "console: Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+      "pageerror: ./frontend/src/features/home/ComparePromo.js:6:1\nError: Module not found: Can't resolve './Home.module.css'\n  4 | import Icon from '@/components/ui/Icon';\n  5 | import { useCatalog } from '@/providers/CatalogProvider';\n> 6 | import styles from './Home.module.css';\n    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  7 |\n  8 | // Read-only view of the comparison picks saved by /compare: { [courseId]: [programmeId, …] }.\n  9 | const storageKey = 'nsedu:compare';\n\n\n\nImport traces:\n  Client Component Browser:\n    ./frontend/src/features/home/ComparePromo.js [Client Component Browser]\n    ./frontend/src/features/home/HomePage.js [Client Component Browser]\n    ./frontend/src/features/home/HomePage.js [Server Component]\n    ./frontend/src/app/(site)/page.js [Server Component]\n\n  Client Component SSR:\n    ./frontend/src/features/home/ComparePromo.js [Client Component SSR]\n    ./frontend/src/features/home/HomePage.js [Client Component SSR]\n    ./frontend/src/features/home/HomePage.js [Server Component]\n    ./frontend/src/app/(site)/page.js [Server Component]\n\nhttps://nextjs.org/docs/messages/module-not-found\n\n",
+      "console: ./frontend/src/features/home/ComparePromo.js:6:1\nError: Module not found: Can't resolve './Home.module.css'\n  4 | import Icon from '@/components/ui/Icon';\n  5 | import { useCatalog } from '@/providers",
+      "console: ./frontend/src/features/home/ExamsBand.js:7:1\nError: Module not found: Can't resolve './Home.module.css'\n   5 | import { usePreferences } from '@/providers/PreferencesProvider';\n   6 | import { BandHe",
+      "console: ./frontend/src/features/home/HomeParts.js:3:1\nError: Module not found: Can't resolve './Home.module.css'\n  1 | import Link from 'next/link';\n  2 | import Icon from '@/components/ui/Icon';\n> 3 | import",
+      "console: ./frontend/src/features/home/StatStrip.js:5:1\nError: Module not found: Can't resolve './Home.module.css'\n  3 | import Icon from '@/components/ui/Icon';\n  4 | import { useCatalog } from '@/providers/Ca",
+      "console: ./frontend/src/features/home/StreamBand.js:10:1\nError: Module not found: Can't resolve './Home.module.css'\n   8 | import { BandHeading } from './HomeParts';\n   9 | import { plural } from './placeCount",
+      "console: ./frontend/src/features/home/ComparePromo.js:6:1\nError: Module not found: Can't resolve './Home.module.css'\n  4 | import Icon from '@/components/ui/Icon';\n  5 | import { useCatalog } from '@/providers"
+    ]
+  },
+  {
+    "name": "nsedu-about",
+    "url": "http://127.0.0.1:3001/about",
+    "vp": "m",
+    "status": 500,
+    "finalUrl": "http://127.0.0.1:3001/about",
+    "title": "",
+    "heads": [],
+    "crumbs": [],
+    "toc": [],
+    "tabs": [],
+    "faq": [],
+    "bodyStart": "",
+    "overflow": false,
+    "height": 844,
+    "shots": "D:\\CP\\NS-EDU\\design\\research-2026-10-09\\guides\\nsedu-current\\nsedu-about-390",
+    "errors": [
+      "console: Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+      "pageerror: ./frontend/src/features/home/ComparePromo.js:6:1\nError: Module not found: Can't resolve './Home.module.css'\n  4 | import Icon from '@/components/ui/Icon';\n  5 | import { useCatalog } from '@/providers/CatalogProvider';\n> 6 | import styles from './Home.module.css';\n    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  7 |\n  8 | // Read-only view of the comparison picks saved by /compare: { [courseId]: [programmeId, …] }.\n  9 | const storageKey = 'nsedu:compare';\n\n\n\nImport traces:\n  Client Component Browser:\n    ./frontend/src/features/home/ComparePromo.js [Client Component Browser]\n    ./frontend/src/features/home/HomePage.js [Client Component Browser]\n    ./frontend/src/features/home/HomePage.js [Server Component]\n    ./frontend/src/app/(site)/page.js [Server Component]\n\n  Client Component SSR:\n    ./frontend/src/features/home/ComparePromo.js [Client Component SSR]\n    ./frontend/src/features/home/HomePage.js [Client Component SSR]\n    ./frontend/src/features/home/HomePage.js [Server Component]\n    ./frontend/src/app/(site)/page.js [Server Component]\n\nhttps://nextjs.org/docs/messages/module-not-found\n\n",
+      "console: ./frontend/src/features/home/ComparePromo.js:6:1\nError: Module not found: Can't resolve './Home.module.css'\n  4 | import Icon from '@/components/ui/Icon';\n  5 | import { useCatalog } from '@/providers",
+      "console: ./frontend/src/features/home/ExamsBand.js:7:1\nError: Module not found: Can't resolve './Home.module.css'\n   5 | import { usePreferences } from '@/providers/PreferencesProvider';\n   6 | import { BandHe",
+      "console: ./frontend/src/features/home/HomeParts.js:3:1\nError: Module not found: Can't resolve './Home.module.css'\n  1 | import Link from 'next/link';\n  2 | import Icon from '@/components/ui/Icon';\n> 3 | import",
+      "console: ./frontend/src/features/home/StatStrip.js:5:1\nError: Module not found: Can't resolve './Home.module.css'\n  3 | import Icon from '@/components/ui/Icon';\n  4 | import { useCatalog } from '@/providers/Ca",
+      "console: ./frontend/src/features/home/StreamBand.js:10:1\nError: Module not found: Can't resolve './Home.module.css'\n   8 | import { BandHeading } from './HomeParts';\n   9 | import { plural } from './placeCount",
+      "console: ./frontend/src/features/home/ComparePromo.js:6:1\nError: Module not found: Can't resolve './Home.module.css'\n  4 | import Icon from '@/components/ui/Icon';\n  5 | import { useCatalog } from '@/providers"
+    ]
+  },
+  {
+    "name": "nsedu-contact",
+    "url": "http://127.0.0.1:3001/contact",
+    "vp": "d",
+    "status": 500,
+    "finalUrl": "http://127.0.0.1:3001/contact",
+    "title": "",
+    "heads": [],
+    "crumbs": [],
+    "toc": [],
+    "tabs": [],
+    "faq": [],
+    "bodyStart": "",
+    "overflow": false,
+    "height": 900,
+    "shots": "D:\\CP\\NS-EDU\\design\\research-2026-10-09\\guides\\nsedu-current\\nsedu-contact-1440",
+    "errors": [
+      "console: Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+      "pageerror: ./frontend/src/features/home/ComparePromo.js:6:1\nError: Module not found: Can't resolve './Home.module.css'\n  4 | import Icon from '@/components/ui/Icon';\n  5 | import { useCatalog } from '@/providers/CatalogProvider';\n> 6 | import styles from './Home.module.css';\n    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  7 |\n  8 | // Read-only view of the comparison picks saved by /compare: { [courseId]: [programmeId, …] }.\n  9 | const storageKey = 'nsedu:compare';\n\n\n\nImport traces:\n  Client Component Browser:\n    ./frontend/src/features/home/ComparePromo.js [Client Component Browser]\n    ./frontend/src/features/home/HomePage.js [Client Component Browser]\n    ./frontend/src/features/home/HomePage.js [Server Component]\n    ./frontend/src/app/(site)/page.js [Server Component]\n\n  Client Component SSR:\n    ./frontend/src/features/home/ComparePromo.js [Client Component SSR]\n    ./frontend/src/features/home/HomePage.js [Client Component SSR]\n    ./frontend/src/features/home/HomePage.js [Server Component]\n    ./frontend/src/app/(site)/page.js [Server Component]\n\nhttps://nextjs.org/docs/messages/module-not-found\n\n",
+      "console: ./frontend/src/features/home/ComparePromo.js:6:1\nError: Module not found: Can't resolve './Home.module.css'\n  4 | import Icon from '@/components/ui/Icon';\n  5 | import { useCatalog } from '@/providers",
+      "console: ./frontend/src/features/home/ExamsBand.js:7:1\nError: Module not found: Can't resolve './Home.module.css'\n   5 | import { usePreferences } from '@/providers/PreferencesProvider';\n   6 | import { BandHe",
+      "console: ./frontend/src/features/home/HomeParts.js:3:1\nError: Module not found: Can't resolve './Home.module.css'\n  1 | import Link from 'next/link';\n  2 | import Icon from '@/components/ui/Icon';\n> 3 | import",
+      "console: ./frontend/src/features/home/StatStrip.js:5:1\nError: Module not found: Can't resolve './Home.module.css'\n  3 | import Icon from '@/components/ui/Icon';\n  4 | import { useCatalog } from '@/providers/Ca",
+      "console: ./frontend/src/features/home/StreamBand.js:10:1\nError: Module not found: Can't resolve './Home.module.css'\n   8 | import { BandHeading } from './HomeParts';\n   9 | import { plural } from './placeCount",
+      "console: Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+    ]
+  },
+  {
+    "name": "nsedu-contact",
+    "url": "http://127.0.0.1:3001/contact",
+    "vp": "m",
+    "status": 500,
+    "finalUrl": "http://127.0.0.1:3001/contact",
+    "title": "",
+    "heads": [],
+    "crumbs": [],
+    "toc": [],
+    "tabs": [],
+    "faq": [],
+    "bodyStart": "",
+    "overflow": false,
+    "height": 844,
+    "shots": "D:\\CP\\NS-EDU\\design\\research-2026-10-09\\guides\\nsedu-current\\nsedu-contact-390",
+    "errors": [
+      "console: Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+      "pageerror: ./frontend/src/features/home/ComparePromo.js:6:1\nError: Module not found: Can't resolve './Home.module.css'\n  4 | import Icon from '@/components/ui/Icon';\n  5 | import { useCatalog } from '@/providers/CatalogProvider';\n> 6 | import styles from './Home.module.css';\n    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  7 |\n  8 | // Read-only view of the comparison picks saved by /compare: { [courseId]: [programmeId, …] }.\n  9 | const storageKey = 'nsedu:compare';\n\n\n\nImport traces:\n  Client Component Browser:\n    ./frontend/src/features/home/ComparePromo.js [Client Component Browser]\n    ./frontend/src/features/home/HomePage.js [Client Component Browser]\n    ./frontend/src/features/home/HomePage.js [Server Component]\n    ./frontend/src/app/(site)/page.js [Server Component]\n\n  Client Component SSR:\n    ./frontend/src/features/home/ComparePromo.js [Client Component SSR]\n    ./frontend/src/features/home/HomePage.js [Client Component SSR]\n    ./frontend/src/features/home/HomePage.js [Server Component]\n    ./frontend/src/app/(site)/page.js [Server Component]\n\nhttps://nextjs.org/docs/messages/module-not-found\n\n",
+      "console: ./frontend/src/features/home/ComparePromo.js:6:1\nError: Module not found: Can't resolve './Home.module.css'\n  4 | import Icon from '@/components/ui/Icon';\n  5 | import { useCatalog } from '@/providers",
+      "console: ./frontend/src/features/home/ExamsBand.js:7:1\nError: Module not found: Can't resolve './Home.module.css'\n   5 | import { usePreferences } from '@/providers/PreferencesProvider';\n   6 | import { BandHe",
+      "console: ./frontend/src/features/home/HomeParts.js:3:1\nError: Module not found: Can't resolve './Home.module.css'\n  1 | import Link from 'next/link';\n  2 | import Icon from '@/components/ui/Icon';\n> 3 | import",
+      "console: ./frontend/src/features/home/StatStrip.js:5:1\nError: Module not found: Can't resolve './Home.module.css'\n  3 | import Icon from '@/components/ui/Icon';\n  4 | import { useCatalog } from '@/providers/Ca",
+      "console: ./frontend/src/features/home/StreamBand.js:10:1\nError: Module not found: Can't resolve './Home.module.css'\n   8 | import { BandHeading } from './HomeParts';\n   9 | import { plural } from './placeCount",
+      "console: Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+    ]
+  },
+  {
+    "name": "nsedu-help",
+    "url": "http://127.0.0.1:3001/help",
+    "vp": "d",
+    "status": 500,
+    "finalUrl": "http://127.0.0.1:3001/help",
+    "title": "",
+    "heads": [],
+    "crumbs": [],
+    "toc": [],
+    "tabs": [],
+    "faq": [],
+    "bodyStart": "",
+    "overflow": false,
+    "height": 900,
+    "shots": "D:\\CP\\NS-EDU\\design\\research-2026-10-09\\guides\\nsedu-current\\nsedu-help-1440",
+    "errors": [
+      "console: Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+      "pageerror: ./frontend/src/features/home/ComparePromo.js:6:1\nError: Module not found: Can't resolve './Home.module.css'\n  4 | import Icon from '@/components/ui/Icon';\n  5 | import { useCatalog } from '@/providers/CatalogProvider';\n> 6 | import styles from './Home.module.css';\n    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  7 |\n  8 | // Read-only view of the comparison picks saved by /compare: { [courseId]: [programmeId, …] }.\n  9 | const storageKey = 'nsedu:compare';\n\n\n\nImport traces:\n  Client Component Browser:\n    ./frontend/src/features/home/ComparePromo.js [Client Component Browser]\n    ./frontend/src/features/home/HomePage.js [Client Component Browser]\n    ./frontend/src/features/home/HomePage.js [Server Component]\n    ./frontend/src/app/(site)/page.js [Server Component]\n\n  Client Component SSR:\n    ./frontend/src/features/home/ComparePromo.js [Client Component SSR]\n    ./frontend/src/features/home/HomePage.js [Client Component SSR]\n    ./frontend/src/features/home/HomePage.js [Server Component]\n    ./frontend/src/app/(site)/page.js [Server Component]\n\nhttps://nextjs.org/docs/messages/module-not-found\n\n",
+      "console: ./frontend/src/features/home/ComparePromo.js:6:1\nError: Module not found: Can't resolve './Home.module.css'\n  4 | import Icon from '@/components/ui/Icon';\n  5 | import { useCatalog } from '@/providers",
+      "console: ./frontend/src/features/home/ExamsBand.js:7:1\nError: Module not found: Can't resolve './Home.module.css'\n   5 | import { usePreferences } from '@/providers/PreferencesProvider';\n   6 | import { BandHe",
+      "console: ./frontend/src/features/home/HomeParts.js:3:1\nError: Module not found: Can't resolve './Home.module.css'\n  1 | import Link from 'next/link';\n  2 | import Icon from '@/components/ui/Icon';\n> 3 | import",
+      "console: ./frontend/src/features/home/StatStrip.js:5:1\nError: Module not found: Can't resolve './Home.module.css'\n  3 | import Icon from '@/components/ui/Icon';\n  4 | import { useCatalog } from '@/providers/Ca",
+      "console: ./frontend/src/features/home/StreamBand.js:10:1\nError: Module not found: Can't resolve './Home.module.css'\n   8 | import { BandHeading } from './HomeParts';\n   9 | import { plural } from './placeCount",
+      "console: Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+    ]
+  },
+  {
+    "name": "nsedu-help",
+    "url": "http://127.0.0.1:3001/help",
+    "vp": "m",
+    "status": 500,
+    "finalUrl": "http://127.0.0.1:3001/help",
+    "title": "",
+    "heads": [],
+    "crumbs": [],
+    "toc": [],
+    "tabs": [],
+    "faq": [],
+    "bodyStart": "",
+    "overflow": false,
+    "height": 844,
+    "shots": "D:\\CP\\NS-EDU\\design\\research-2026-10-09\\guides\\nsedu-current\\nsedu-help-390",
+    "errors": [
+      "console: Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+      "pageerror: ./frontend/src/features/home/ComparePromo.js:6:1\nError: Module not found: Can't resolve './Home.module.css'\n  4 | import Icon from '@/components/ui/Icon';\n  5 | import { useCatalog } from '@/providers/CatalogProvider';\n> 6 | import styles from './Home.module.css';\n    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  7 |\n  8 | // Read-only view of the comparison picks saved by /compare: { [courseId]: [programmeId, …] }.\n  9 | const storageKey = 'nsedu:compare';\n\n\n\nImport traces:\n  Client Component Browser:\n    ./frontend/src/features/home/ComparePromo.js [Client Component Browser]\n    ./frontend/src/features/home/HomePage.js [Client Component Browser]\n    ./frontend/src/features/home/HomePage.js [Server Component]\n    ./frontend/src/app/(site)/page.js [Server Component]\n\n  Client Component SSR:\n    ./frontend/src/features/home/ComparePromo.js [Client Component SSR]\n    ./frontend/src/features/home/HomePage.js [Client Component SSR]\n    ./frontend/src/features/home/HomePage.js [Server Component]\n    ./frontend/src/app/(site)/page.js [Server Component]\n\nhttps://nextjs.org/docs/messages/module-not-found\n\n",
+      "console: ./frontend/src/features/home/ComparePromo.js:6:1\nError: Module not found: Can't resolve './Home.module.css'\n  4 | import Icon from '@/components/ui/Icon';\n  5 | import { useCatalog } from '@/providers",
+      "console: ./frontend/src/features/home/ExamsBand.js:7:1\nError: Module not found: Can't resolve './Home.module.css'\n   5 | import { usePreferences } from '@/providers/PreferencesProvider';\n   6 | import { BandHe",
+      "console: ./frontend/src/features/home/HomeParts.js:3:1\nError: Module not found: Can't resolve './Home.module.css'\n  1 | import Link from 'next/link';\n  2 | import Icon from '@/components/ui/Icon';\n> 3 | import",
+      "console: ./frontend/src/features/home/StatStrip.js:5:1\nError: Module not found: Can't resolve './Home.module.css'\n  3 | import Icon from '@/components/ui/Icon';\n  4 | import { useCatalog } from '@/providers/Ca",
+      "console: ./frontend/src/features/home/StreamBand.js:10:1\nError: Module not found: Can't resolve './Home.module.css'\n   8 | import { BandHeading } from './HomeParts';\n   9 | import { plural } from './placeCount",
+      "console: Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+    ]
+  },
+  {
+    "name": "nsedu-privacy",
+    "url": "http://127.0.0.1:3001/privacy-policy",
+    "vp": "d",
+    "status": 500,
+    "finalUrl": "http://127.0.0.1:3001/privacy-policy",
+    "title": "",
+    "heads": [],
+    "crumbs": [],
+    "toc": [],
+    "tabs": [],
+    "faq": [],
+    "bodyStart": "",
+    "overflow": false,
+    "height": 900,
+    "shots": "D:\\CP\\NS-EDU\\design\\research-2026-10-09\\guides\\nsedu-current\\nsedu-privacy-1440",
+    "errors": [
+      "console: Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+      "pageerror: ./frontend/src/features/home/ComparePromo.js:6:1\nError: Module not found: Can't resolve './Home.module.css'\n  4 | import Icon from '@/components/ui/Icon';\n  5 | import { useCatalog } from '@/providers/CatalogProvider';\n> 6 | import styles from './Home.module.css';\n    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  7 |\n  8 | // Read-only view of the comparison picks saved by /compare: { [courseId]: [programmeId, …] }.\n  9 | const storageKey = 'nsedu:compare';\n\n\n\nImport traces:\n  Client Component Browser:\n    ./frontend/src/features/home/ComparePromo.js [Client Component Browser]\n    ./frontend/src/features/home/HomePage.js [Client Component Browser]\n    ./frontend/src/features/home/HomePage.js [Server Component]\n    ./frontend/src/app/(site)/page.js [Server Component]\n\n  Client Component SSR:\n    ./frontend/src/features/home/ComparePromo.js [Client Component SSR]\n    ./frontend/src/features/home/HomePage.js [Client Component SSR]\n    ./frontend/src/features/home/HomePage.js [Server Component]\n    ./frontend/src/app/(site)/page.js [Server Component]\n\nhttps://nextjs.org/docs/messages/module-not-found\n\n",
+      "console: ./frontend/src/features/home/ComparePromo.js:6:1\nError: Module not found: Can't resolve './Home.module.css'\n  4 | import Icon from '@/components/ui/Icon';\n  5 | import { useCatalog } from '@/providers",
+      "console: ./frontend/src/features/home/ExamsBand.js:7:1\nError: Module not found: Can't resolve './Home.module.css'\n   5 | import { usePreferences } from '@/providers/PreferencesProvider';\n   6 | import { BandHe",
+      "console: ./frontend/src/features/home/HomeParts.js:3:1\nError: Module not found: Can't resolve './Home.module.css'\n  1 | import Link from 'next/link';\n  2 | import Icon from '@/components/ui/Icon';\n> 3 | import",
+      "console: ./frontend/src/features/home/StatStrip.js:5:1\nError: Module not found: Can't resolve './Home.module.css'\n  3 | import Icon from '@/components/ui/Icon';\n  4 | import { useCatalog } from '@/providers/Ca",
+      "console: ./frontend/src/features/home/StreamBand.js:10:1\nError: Module not found: Can't resolve './Home.module.css'\n   8 | import { BandHeading } from './HomeParts';\n   9 | import { plural } from './placeCount",
+      "console: Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+    ]
+  },
+  {
+    "name": "nsedu-privacy",
+    "url": "http://127.0.0.1:3001/privacy-policy",
+    "vp": "m",
+    "status": 500,
+    "finalUrl": "http://127.0.0.1:3001/privacy-policy",
+    "title": "",
+    "heads": [],
+    "crumbs": [],
+    "toc": [],
+    "tabs": [],
+    "faq": [],
+    "bodyStart": "",
+    "overflow": false,
+    "height": 844,
+    "shots": "D:\\CP\\NS-EDU\\design\\research-2026-10-09\\guides\\nsedu-current\\nsedu-privacy-390",
+    "errors": [
+      "console: Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+      "pageerror: ./frontend/src/features/home/ComparePromo.js:6:1\nError: Module not found: Can't resolve './Home.module.css'\n  4 | import Icon from '@/components/ui/Icon';\n  5 | import { useCatalog } from '@/providers/CatalogProvider';\n> 6 | import styles from './Home.module.css';\n    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  7 |\n  8 | // Read-only view of the comparison picks saved by /compare: { [courseId]: [programmeId, …] }.\n  9 | const storageKey = 'nsedu:compare';\n\n\n\nImport traces:\n  Client Component Browser:\n    ./frontend/src/features/home/ComparePromo.js [Client Component Browser]\n    ./frontend/src/features/home/HomePage.js [Client Component Browser]\n    ./frontend/src/features/home/HomePage.js [Server Component]\n    ./frontend/src/app/(site)/page.js [Server Component]\n\n  Client Component SSR:\n    ./frontend/src/features/home/ComparePromo.js [Client Component SSR]\n    ./frontend/src/features/home/HomePage.js [Client Component SSR]\n    ./frontend/src/features/home/HomePage.js [Server Component]\n    ./frontend/src/app/(site)/page.js [Server Component]\n\nhttps://nextjs.org/docs/messages/module-not-found\n\n",
+      "console: ./frontend/src/features/home/ComparePromo.js:6:1\nError: Module not found: Can't resolve './Home.module.css'\n  4 | import Icon from '@/components/ui/Icon';\n  5 | import { useCatalog } from '@/providers",
+      "console: ./frontend/src/features/home/ExamsBand.js:7:1\nError: Module not found: Can't resolve './Home.module.css'\n   5 | import { usePreferences } from '@/providers/PreferencesProvider';\n   6 | import { BandHe",
+      "console: ./frontend/src/features/home/HomeParts.js:3:1\nError: Module not found: Can't resolve './Home.module.css'\n  1 | import Link from 'next/link';\n  2 | import Icon from '@/components/ui/Icon';\n> 3 | import",
+      "console: ./frontend/src/features/home/StatStrip.js:5:1\nError: Module not found: Can't resolve './Home.module.css'\n  3 | import Icon from '@/components/ui/Icon';\n  4 | import { useCatalog } from '@/providers/Ca",
+      "console: ./frontend/src/features/home/StreamBand.js:10:1\nError: Module not found: Can't resolve './Home.module.css'\n   8 | import { BandHeading } from './HomeParts';\n   9 | import { plural } from './placeCount",
+      "console: Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+    ]
+  },
+  {
+    "name": "nsedu-news",
+    "url": "http://127.0.0.1:3001/news",
+    "vp": "d",
+    "status": 500,
+    "finalUrl": "http://127.0.0.1:3001/news",
+    "title": "Education news & articles | NSEDU",
+    "heads": [
+      "H2: NSEDU",
+      "H1: Education news & articles",
+      "H2: Education, in focus.",
+      "H3: The latest in education",
+      "H3: Read & understand",
+      "H2: A clearer path to your future.",
+      "H3: Explore",
+      "H3: Student tools",
+      "H3: NSEDU & support",
+      "H3: Legal & privacy",
+      "H2: Log in to NSEDU"
+    ],
+    "crumbs": [
+      "Home Education news"
+    ],
+    "toc": [],
+    "tabs": [
+      "Email",
+      "Mobile number"
+    ],
+    "faq": [],
+    "bodyStart": "Skip to main content Discover · Learn · Belong Admissions 2026–27 · confirm fees and eligibility with each institution Preferred city Select",
+    "overflow": false,
+    "height": 1958,
+    "shots": "D:\\CP\\NS-EDU\\design\\research-2026-10-09\\guides\\nsedu-current\\nsedu-news-1440",
+    "errors": [
+      "console: Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+      "pageerror: ./frontend/src/features/home/ComparePromo.js:6:1\nError: Module not found: Can't resolve './Home.module.css'\n  4 | import Icon from '@/components/ui/Icon';\n  5 | import { useCatalog } from '@/providers/CatalogProvider';\n> 6 | import styles from './Home.module.css';\n    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  7 |\n  8 | // Read-only view of the comparison picks saved by /compare: { [courseId]: [programmeId, …] }.\n  9 | const storageKey = 'nsedu:compare';\n\n\n\nImport traces:\n  Client Component Browser:\n    ./frontend/src/features/home/ComparePromo.js [Client Component Browser]\n    ./frontend/src/features/home/HomePage.js [Client Component Browser]\n    ./frontend/src/features/home/HomePage.js [Server Component]\n    ./frontend/src/app/(site)/page.js [Server Component]\n\n  Client Component SSR:\n    ./frontend/src/features/home/ComparePromo.js [Client Component SSR]\n    ./frontend/src/features/home/HomePage.js [Client Component SSR]\n    ./frontend/src/features/home/HomePage.js [Server Component]\n    ./frontend/src/app/(site)/page.js [Server Component]\n\nhttps://nextjs.org/docs/messages/module-not-found\n\n",
+      "console: ./frontend/src/features/home/ComparePromo.js:6:1\nError: Module not found: Can't resolve './Home.module.css'\n  4 | import Icon from '@/components/ui/Icon';\n  5 | import { useCatalog } from '@/providers",
+      "console: ./frontend/src/features/home/ExamsBand.js:7:1\nError: Module not found: Can't resolve './Home.module.css'\n   5 | import { usePreferences } from '@/providers/PreferencesProvider';\n   6 | import { BandHe",
+      "console: ./frontend/src/features/home/HomeParts.js:3:1\nError: Module not found: Can't resolve './Home.module.css'\n  1 | import Link from 'next/link';\n  2 | import Icon from '@/components/ui/Icon';\n> 3 | import",
+      "console: ./frontend/src/features/home/StatStrip.js:5:1\nError: Module not found: Can't resolve './Home.module.css'\n  3 | import Icon from '@/components/ui/Icon';\n  4 | import { useCatalog } from '@/providers/Ca",
+      "console: ./frontend/src/features/home/StreamBand.js:10:1\nError: Module not found: Can't resolve './Home.module.css'\n   8 | import { BandHeading } from './HomeParts';\n   9 | import { plural } from './placeCount",
+      "console: Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+    ]
+  },
+  {
+    "name": "nsedu-news",
+    "url": "http://127.0.0.1:3001/news",
+    "vp": "m",
+    "status": 200,
+    "finalUrl": "http://127.0.0.1:3001/news",
+    "title": "Education news & articles | NSEDU",
+    "heads": [
+      "H2: NSEDU",
+      "H1: Education news & articles",
+      "H2: Education, in focus.",
+      "H3: The latest in education",
+      "H3: Read & understand",
+      "H2: A clearer path to your future.",
+      "H3: Explore",
+      "H3: Student tools",
+      "H3: NSEDU & support",
+      "H3: Legal & privacy",
+      "H2: Log in to NSEDU"
+    ],
+    "crumbs": [
+      "Home Education news"
+    ],
+    "toc": [],
+    "tabs": [
+      "Email",
+      "Mobile number"
+    ],
+    "faq": [],
+    "bodyStart": "Skip to main content NSEDU Log in Home Education news EDUCATION NEWS Education news & articles Admissions, exams, results and policy updates",
+    "overflow": false,
+    "height": 3342,
+    "shots": "D:\\CP\\NS-EDU\\design\\research-2026-10-09\\guides\\nsedu-current\\nsedu-news-390",
+    "errors": [
+      "console: Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    ]
+  }
+]

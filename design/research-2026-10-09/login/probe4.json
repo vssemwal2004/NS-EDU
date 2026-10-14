@@ -1,0 +1,29 @@
+[
+  {
+    "name": "shiksha-mobile",
+    "url": "https://www.shiksha.com/",
+    "status": 200,
+    "menu": [
+      "Client Login"
+    ],
+    "tapped": "Login",
+    "after": "https://www.shiksha.com/",
+    "dialog": null
+  },
+  {
+    "name": "collegedunia-mobile",
+    "url": "https://collegedunia.com/",
+    "status": 200,
+    "buttons": [],
+    "after": "https://collegedunia.com/",
+    "dialog": null
+  },
+  {
+    "name": "collegedunia-desktop-register",
+    "url": "https://collegedunia.com/",
+    "status": 200,
+    "tapped": "Login/Register",
+    "dialog": "Login\nMobile Number\nRequest OTP\nNot a member yet! Join us it's free.\nOR\nLogin as College Admin",
+    "register": "Login\nMobile Number\nRequest OTP\nNot a member yet! Join us it's free.\nOR\nLogin as College Admin"
+  }
+]

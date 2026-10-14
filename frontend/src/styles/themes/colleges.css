@@ -1,0 +1,52 @@
+/* Theme tokens for the colleges area. Owned by the colleges redesign; keep colours, sizes and motion here. */
+:root {
+  /* Listing layout */
+  --colleges-sidebar-width: 288px;
+  --colleges-sidebar-width-compact: 248px;
+  --colleges-layout-gap: clamp(1.25rem, 2vw, 2rem);
+  --colleges-sticky-offset: var(--header-bar-height);
+  --colleges-sticky-offset-mobile: var(--header-bar-mobile-height);
+  --colleges-dock-height: 64px;
+  /* Surfaces */
+  --colleges-panel-radius: 18px;
+  --colleges-card-radius: 18px;
+  --colleges-section-radius: 20px;
+  --colleges-card-shadow: 0 10px 30px rgb(72 37 46 / 7%);
+  --colleges-card-shadow-hover: 0 16px 38px rgb(72 37 46 / 11%);
+  --colleges-card-selected: #8A2E49;
+  --colleges-chip-background: #F6ECEE;
+  --colleges-chip-border: #EBD7DC;
+  --colleges-stat-background: linear-gradient(160deg, #FFFCFB, #FAF3F1);
+  --colleges-insight-background: linear-gradient(100deg, #F8EEEF, #FCF7F3 60%, #F6EEEA);
+  --colleges-rating-background: #FBF1E8;
+  --colleges-rating-text: #7A4A1E;
+  --colleges-rating-star: #C8754F;
+  --colleges-muted-italic: #8A8189;
+  --colleges-count-background: #F4EEEB;
+  --colleges-rail-background: #FAF4F2;
+  --colleges-fade: linear-gradient(90deg, transparent, var(--color-page));
+  /* Compare tray / docks */
+  --colleges-tray-background: rgb(255 255 255 / 97%);
+  --colleges-tray-shadow: 0 18px 50px rgb(42 20 28 / 18%);
+  --colleges-tray-rule: linear-gradient(90deg, #8A2E49, #72243B 55%, #C8754F);
+  --colleges-dock-background: rgb(255 255 255 / 96%);
+  --colleges-badge-background: #72243B;
+  --colleges-badge-text: #FFFFFF;
+  /* Profile */
+  --colleges-profile-nav-height: 52px;
+  --colleges-rail-width: 300px;
+  --colleges-hero-background: radial-gradient(ellipse at 88% 0%, #F1DDE2, transparent 55%), linear-gradient(115deg, #FCF6F2, #FFFAF8 55%, #F8EEEF);
+  --colleges-hero-art-background: radial-gradient(circle at 80% 15%, #9A3A58, transparent 55%), linear-gradient(150deg, #72243B, #4E1528);
+  --colleges-hero-linework: rgb(255 255 255 / 22%);
+  --colleges-hero-title-size: clamp(2rem, 3.4vw, 3.1rem);
+  --colleges-section-title-size: clamp(1.45rem, 2vw, 1.9rem);
+  --colleges-print-border: #FFFFFF;
+  --colleges-print-shadow: 0 14px 34px rgb(30 10 18 / 35%);
+  /* Placement chart (validated pair: #8A2E49 / #C8754F on white, CVD ΔE 21) */
+  --colleges-bar-median: #8A2E49;
+  --colleges-bar-highest: #C8754F;
+  --colleges-bar-track: #F1ECE8;
+  --colleges-bar-grid: #E9DFDB;
+  --colleges-bar-marker: #2A2024;
+  --colleges-bar-height: 12px;
+}

@@ -1,0 +1,138 @@
+[
+  {
+    "site": "collegedekho",
+    "device": "desktop",
+    "url": "https://www.collegedekho.com/",
+    "status": 200,
+    "title": "Find Top Colleges & Universities in India | Explore Courses, Exams, Admissions & Latest News",
+    "open": "[class*=\"login\" i] (force)",
+    "afterUrl": "https://www.collegedekho.com/",
+    "dialog": [
+      {
+        "tag": "DIV",
+        "cls": "mouseHoverLogin_loginpopup__Fifqm",
+        "role": null,
+        "text": "Login to your account\nBy creating an account you can -\nApply to colleges directly\nShortlist colleges for quick access\nGet free counselling\nCreate an account"
+      }
+    ],
+    "inputs": [
+      {
+        "tag": "INPUT",
+        "type": "text",
+        "name": "name",
+        "placeholder": "",
+        "maxLength": -1,
+        "inputMode": "",
+        "autocomplete": "",
+        "ariaLabel": null
+      },
+      {
+        "tag": "INPUT",
+        "type": "text",
+        "name": "phone",
+        "placeholder": "",
+        "maxLength": 10,
+        "inputMode": "",
+        "autocomplete": "",
+        "ariaLabel": null
+      },
+      {
+        "tag": "INPUT",
+        "type": "email",
+        "name": "email",
+        "placeholder": "",
+        "maxLength": -1,
+        "inputMode": "",
+        "autocomplete": "",
+        "ariaLabel": null
+      },
+      {
+        "tag": "SELECT",
+        "type": "select-one",
+        "name": "stream",
+        "inputMode": "",
+        "autocomplete": "",
+        "ariaLabel": null
+      },
+      {
+        "tag": "INPUT",
+        "type": "submit",
+        "name": "submit",
+        "placeholder": "",
+        "maxLength": -1,
+        "inputMode": "",
+        "autocomplete": "",
+        "ariaLabel": null
+      }
+    ],
+    "invalid": [
+      {
+        "tag": "DIV",
+        "cls": "loginForms_commonForm__KazCQ",
+        "role": null,
+        "text": "Log in to Continue\n\nWe will send you an one time password on your mobile number.\n\n+91\nGenerate OTP\nLogin via Password\nNew to Collegedekho? Signup"
+      }
+    ]
+  },
+  {
+    "site": "collegedekho",
+    "device": "mobile",
+    "url": "https://www.collegedekho.com/",
+    "status": 200,
+    "title": "Find Top Colleges & Universities in India | Explore Courses, Exams, Admissions & Latest News",
+    "open": "[class*=\"profile\" i]",
+    "afterUrl": "https://www.collegedekho.com/",
+    "dialog": [],
+    "inputs": [
+      {
+        "tag": "INPUT",
+        "type": "text",
+        "name": "name",
+        "placeholder": "",
+        "maxLength": -1,
+        "inputMode": "",
+        "autocomplete": "",
+        "ariaLabel": null
+      },
+      {
+        "tag": "INPUT",
+        "type": "text",
+        "name": "phone",
+        "placeholder": "",
+        "maxLength": 10,
+        "inputMode": "",
+        "autocomplete": "",
+        "ariaLabel": null
+      },
+      {
+        "tag": "INPUT",
+        "type": "email",
+        "name": "email",
+        "placeholder": "",
+        "maxLength": -1,
+        "inputMode": "",
+        "autocomplete": "",
+        "ariaLabel": null
+      },
+      {
+        "tag": "SELECT",
+        "type": "select-one",
+        "name": "stream",
+        "inputMode": "",
+        "autocomplete": "",
+        "ariaLabel": null
+      },
+      {
+        "tag": "INPUT",
+        "type": "submit",
+        "name": "submit",
+        "placeholder": "",
+        "maxLength": -1,
+        "inputMode": "",
+        "autocomplete": "",
+        "ariaLabel": null
+      }
+    ],
+    "invalid": []
+  }
+]

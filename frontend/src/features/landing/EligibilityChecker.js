@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import Icon from '@/components/ui/Icon';
-import { courses, exams } from '@/data/landing';
+import { useCatalog } from '@/providers/CatalogProvider';
 import { admissionYears, eligibilityDemoProfiles, initialEligibilityAnswers, qualificationOptions, studyStages, subjectOptions } from '@/data/eligibility';
 import { eligibilitySteps, qualificationFor, reviewEligibility, validateEligibilityStep } from '@/lib/eligibility';
 import { SectionBackdrop, StudyPathGraphic } from './SectionVisuals';
@@ -35,6 +35,7 @@ function Choice({ name, value, selected, onChange, children, className = '' }) {
 }
 
 export default function EligibilityChecker({ records = [], course, onCourseChange, onExplore }) {
+  const { courses, exams } = useCatalog();
   const [answers, setAnswers] = useState({ ...initialEligibilityAnswers });
   const [step, setStep] = useState('stage');
   const [error, setError] = useState('');

@@ -29,7 +29,7 @@ test.describe('student budget flow', () => {
   test.beforeEach(async ({ page }) => {
     page.browserErrors = [];
     page.on('pageerror', (error) => page.browserErrors.push(error.message));
-    await page.goto('/');
+    await page.goto('/budget');
     await section(page).evaluate((node) => node.scrollIntoView({ block: 'start', behavior: 'instant' }));
   });
   test.afterEach(async ({ page }) => { expect(page.browserErrors).toEqual([]); });
@@ -80,7 +80,8 @@ test.describe('student budget flow', () => {
     await check.getByLabel('Your college', { exact: true }).selectOption('meadow-management-mba');
     await expect(check.locator('#budget-programme')).toContainText('MBA · Pune');
     await expect(check.locator('[data-budget-total]')).toHaveText('₹3,95,000');
-    await expect(page.locator('#college-tab-mba')).toHaveAttribute('aria-selected', 'true');
+    await expect(page).toHaveURL(/\/budget\?course=mba$/);
+    expect(await page.evaluate(() => JSON.parse(window.localStorage.getItem('nsedu:preferences')).course)).toBe('mba');
     await check.getByRole('button', { name: 'Find colleges in my budget' }).click();
     const dialog = page.getByRole('dialog', { name: 'Colleges in your budget' });
     await expect(dialog.getByRole('article')).toHaveCount(2);
@@ -95,17 +96,25 @@ test.describe('student budget flow', () => {
   });
 
   test('scholarship support opens actual resources without deducting an award', async ({ page }) => {
+    await expect(section(page).locator('[data-budget-total]')).toHaveText('₹3,75,000');
     await section(page).getByRole('button', { name: 'Find scholarships' }).click();
-    const dialog = page.getByRole('dialog', { name: 'Explore scholarships' });
-    await expect(dialog.getByRole('link', { name: /National Scholarship Portal/ })).toHaveAttribute('href', 'https://scholarships.gov.in/');
-    await expect(dialog.getByRole('link', { name: /Buddy4Study/ })).toHaveAttribute('target', '_blank');
-    await dialog.getByRole('button', { name: 'Close dialog' }).click();
+    await expect(page).toHaveURL(/\/scholarships$/);
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Scholarships & funding');
+    await expect(page.getByRole('link', { name: /National Scholarship Portal/ })).toHaveAttribute('href', 'https://scholarships.gov.in/');
+    await expect(page.getByRole('link', { name: /Buddy4Study/ })).toHaveAttribute('target', '_blank');
+    await expect(page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', { name: 'Scholarships', exact: true })).toHaveAttribute('aria-current', 'page');
+    await page.goBack();
     await expect(section(page).locator('[data-budget-total]')).toHaveText('₹3,75,000');
   });
 
   test('budget navigation, keyboard disclosure and small lazy artwork work together', async ({ page }) => {
-    await expect(page.locator('header')).toHaveAttribute('data-section', 'budget');
-    await expect(page.locator('header')).toHaveAttribute('data-mode', 'compact');
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Can this college fit your budget?');
+    await expect(page.getByRole('navigation', { name: 'Breadcrumb' }).locator('[aria-current="page"]')).toHaveText('Budget check');
+    const nav = page.getByRole('navigation', { name: 'Main navigation' });
+    await expect(nav.locator('[data-group="Resources"]')).toHaveAttribute('data-active', 'true');
+    await expect(nav.getByRole('link', { name: 'Compare', exact: true })).not.toHaveAttribute('aria-current', 'page');
+    await expect(page.getByRole('banner')).toBeVisible();
+    expect((await page.getByRole('banner').boundingBox()).y).toBe(0);
     await section(page).locator('summary').focus();
     await page.keyboard.press('Enter');
     await expect(section(page).getByLabel('Accommodation estimate')).toBeVisible();

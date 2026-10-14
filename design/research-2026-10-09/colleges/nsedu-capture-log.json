@@ -1,0 +1,123 @@
+[
+  {
+    "name": "nsedu-colleges",
+    "path": "/colleges",
+    "label": "390",
+    "status": 200,
+    "overflow": 0,
+    "h1": "Find colleges for your course",
+    "errors": [
+      "console: Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+      "console: Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    ]
+  },
+  {
+    "name": "nsedu-colleges",
+    "path": "/colleges",
+    "label": "1024",
+    "status": 200,
+    "overflow": 0,
+    "h1": "Find colleges for your course",
+    "errors": [
+      "console: Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    ]
+  },
+  {
+    "name": "nsedu-colleges",
+    "path": "/colleges",
+    "label": "1440",
+    "status": 200,
+    "overflow": 0,
+    "h1": "Find colleges for your course",
+    "errors": [
+      "console: A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client bran",
+      "console: Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    ]
+  },
+  {
+    "name": "nsedu-colleges-mba-pune",
+    "path": "/colleges?course=mba&location=Pune",
+    "label": "390",
+    "status": 200,
+    "overflow": 0,
+    "h1": "Find colleges for your course",
+    "errors": [
+      "console: Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    ]
+  },
+  {
+    "name": "nsedu-colleges-mba-pune",
+    "path": "/colleges?course=mba&location=Pune",
+    "label": "1440",
+    "status": 200,
+    "overflow": 0,
+    "h1": "Find colleges for your course",
+    "errors": [
+      "console: Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    ]
+  },
+  {
+    "name": "nsedu-home-section",
+    "path": "/",
+    "label": "390",
+    "status": 200,
+    "error": "TimeoutError: locator.scrollIntoViewIfNeeded: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('#course-colleges')\u001b[22m\n",
+    "errors": [
+      "console: Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    ]
+  },
+  {
+    "name": "nsedu-home-section",
+    "path": "/",
+    "label": "1440",
+    "status": 200,
+    "error": "TimeoutError: locator.scrollIntoViewIfNeeded: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('#course-colleges')\u001b[22m\n",
+    "errors": [
+      "console: Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    ]
+  },
+  {
+    "name": "nsedu-compare",
+    "path": "/compare?course=btech",
+    "label": "390",
+    "status": 200,
+    "overflow": 0,
+    "h1": "Compare colleges side by side",
+    "errors": [
+      "console: Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    ]
+  },
+  {
+    "name": "nsedu-compare",
+    "path": "/compare?course=btech",
+    "label": "1440",
+    "status": 200,
+    "overflow": 0,
+    "h1": "Compare colleges side by side",
+    "errors": [
+      "console: Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    ]
+  },
+  {
+    "name": "nsedu-profile-probe",
+    "path": "/colleges/northfield-tech",
+    "label": "390",
+    "status": 404,
+    "overflow": 0,
+    "h1": "Let’s get you back on course.",
+    "errors": [
+      "console: Failed to load resource: the server responded with a status of 404 (Not Found)"
+    ]
+  },
+  {
+    "name": "nsedu-profile-probe",
+    "path": "/colleges/northfield-tech",
+    "label": "1440",
+    "status": 404,
+    "overflow": 0,
+    "h1": "Let’s get you back on course.",
+    "errors": [
+      "console: Failed to load resource: the server responded with a status of 404 (Not Found)"
+    ]
+  }
+]

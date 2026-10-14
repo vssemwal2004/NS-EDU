@@ -1,0 +1,486 @@
+[
+  {
+    "tag": "nsedu-home-1440x900",
+    "errors": [
+      "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    ],
+    "overflow": 0,
+    "height": 3123,
+    "header": {
+      "x": 0,
+      "y": 36,
+      "w": 1440,
+      "h": 73,
+      "r": 1440,
+      "b": 109,
+      "visible": true
+    },
+    "firstScreen": {
+      "x": 0,
+      "y": 109,
+      "w": 1440,
+      "h": 792,
+      "r": 1440,
+      "b": 901,
+      "visible": true
+    },
+    "hero": {
+      "x": 0,
+      "y": 109,
+      "w": 1440,
+      "h": 545,
+      "r": 1440,
+      "b": 654,
+      "visible": true
+    },
+    "centerQuote": {
+      "x": 710,
+      "y": 147,
+      "w": 79,
+      "h": 127,
+      "r": 789,
+      "b": 275,
+      "visible": true
+    },
+    "lastField": {
+      "x": 662,
+      "y": 515,
+      "w": 96,
+      "h": 85,
+      "r": 758,
+      "b": 600,
+      "visible": true
+    },
+    "search": {
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0,
+      "r": 0,
+      "b": 0,
+      "visible": true
+    },
+    "sections": [
+      "hero-title",
+      "Popular courses and student resources",
+      "features-title",
+      "destinations-title"
+    ]
+  },
+  {
+    "tag": "nsedu-home-1366x768",
+    "errors": [
+      "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    ],
+    "overflow": 0,
+    "height": 2953,
+    "header": {
+      "x": 0,
+      "y": 36,
+      "w": 1366,
+      "h": 73,
+      "r": 1366,
+      "b": 109,
+      "visible": true
+    },
+    "firstScreen": {
+      "x": 0,
+      "y": 109,
+      "w": 1366,
+      "h": 660,
+      "r": 1366,
+      "b": 769,
+      "visible": true
+    },
+    "hero": {
+      "x": 0,
+      "y": 109,
+      "w": 1366,
+      "h": 449,
+      "r": 1366,
+      "b": 558,
+      "visible": true
+    },
+    "centerQuote": {
+      "x": 673,
+      "y": 140,
+      "w": 75,
+      "h": 122,
+      "r": 749,
+      "b": 262,
+      "visible": true
+    },
+    "lastField": {
+      "x": 628,
+      "y": 464,
+      "w": 91,
+      "h": 73,
+      "r": 719,
+      "b": 536,
+      "visible": true
+    },
+    "search": {
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0,
+      "r": 0,
+      "b": 0,
+      "visible": true
+    },
+    "sections": [
+      "hero-title",
+      "Popular courses and student resources",
+      "features-title",
+      "destinations-title"
+    ]
+  },
+  {
+    "tag": "nsedu-home-1280x800",
+    "errors": [
+      "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    ],
+    "overflow": 0,
+    "height": 2944,
+    "header": {
+      "x": 0,
+      "y": 36,
+      "w": 1280,
+      "h": 73,
+      "r": 1280,
+      "b": 109,
+      "visible": true
+    },
+    "firstScreen": {
+      "x": 0,
+      "y": 109,
+      "w": 1280,
+      "h": 692,
+      "r": 1280,
+      "b": 801,
+      "visible": true
+    },
+    "hero": {
+      "x": 0,
+      "y": 109,
+      "w": 1280,
+      "h": 472,
+      "r": 1280,
+      "b": 581,
+      "visible": true
+    },
+    "centerQuote": {
+      "x": 631,
+      "y": 142,
+      "w": 70,
+      "h": 115,
+      "r": 701,
+      "b": 257,
+      "visible": true
+    },
+    "lastField": {
+      "x": 589,
+      "y": 465,
+      "w": 85,
+      "h": 74,
+      "r": 674,
+      "b": 539,
+      "visible": true
+    },
+    "search": {
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0,
+      "r": 0,
+      "b": 0,
+      "visible": true
+    },
+    "sections": [
+      "hero-title",
+      "Popular courses and student resources",
+      "features-title",
+      "destinations-title"
+    ]
+  },
+  {
+    "tag": "nsedu-home-1920x1080",
+    "errors": [
+      "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    ],
+    "overflow": 0,
+    "height": 3416,
+    "header": {
+      "x": 0,
+      "y": 36,
+      "w": 1920,
+      "h": 73,
+      "r": 1920,
+      "b": 109,
+      "visible": true
+    },
+    "firstScreen": {
+      "x": 0,
+      "y": 109,
+      "w": 1920,
+      "h": 972,
+      "r": 1920,
+      "b": 1081,
+      "visible": true
+    },
+    "hero": {
+      "x": 0,
+      "y": 109,
+      "w": 1920,
+      "h": 675,
+      "r": 1920,
+      "b": 784,
+      "visible": true
+    },
+    "centerQuote": {
+      "x": 948,
+      "y": 156,
+      "w": 106,
+      "h": 164,
+      "r": 1054,
+      "b": 320,
+      "visible": true
+    },
+    "lastField": {
+      "x": 813,
+      "y": 594,
+      "w": 93,
+      "h": 98,
+      "r": 906,
+      "b": 692,
+      "visible": true
+    },
+    "search": {
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0,
+      "r": 0,
+      "b": 0,
+      "visible": true
+    },
+    "sections": [
+      "hero-title",
+      "Popular courses and student resources",
+      "features-title",
+      "destinations-title"
+    ]
+  },
+  {
+    "tag": "nsedu-home-1101x700",
+    "errors": [
+      "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    ],
+    "overflow": 0,
+    "height": 2740,
+    "header": {
+      "x": 0,
+      "y": 36,
+      "w": 1101,
+      "h": 73,
+      "r": 1101,
+      "b": 109,
+      "visible": true
+    },
+    "firstScreen": {
+      "x": 0,
+      "y": 109,
+      "w": 1101,
+      "h": 592,
+      "r": 1101,
+      "b": 701,
+      "visible": true
+    },
+    "hero": {
+      "x": 0,
+      "y": 109,
+      "w": 1101,
+      "h": 400,
+      "r": 1101,
+      "b": 509,
+      "visible": true
+    },
+    "centerQuote": {
+      "x": 543,
+      "y": 137,
+      "w": 61,
+      "h": 101,
+      "r": 603,
+      "b": 238,
+      "visible": true
+    },
+    "lastField": {
+      "x": 506,
+      "y": 413,
+      "w": 73,
+      "h": 63,
+      "r": 580,
+      "b": 476,
+      "visible": true
+    },
+    "search": {
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0,
+      "r": 0,
+      "b": 0,
+      "visible": true
+    },
+    "sections": [
+      "hero-title",
+      "Popular courses and student resources",
+      "features-title",
+      "destinations-title"
+    ]
+  },
+  {
+    "tag": "nsedu-home-1024x768",
+    "errors": [
+      "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    ],
+    "overflow": 0,
+    "height": 3944,
+    "header": {
+      "x": 0,
+      "y": 0,
+      "w": 1024,
+      "h": 65,
+      "r": 1024,
+      "b": 65,
+      "visible": true
+    },
+    "firstScreen": {
+      "x": 0,
+      "y": 65,
+      "w": 1024,
+      "h": 850,
+      "r": 1024,
+      "b": 915,
+      "visible": true
+    },
+    "hero": {
+      "x": 0,
+      "y": 65,
+      "w": 1024,
+      "h": 485,
+      "r": 1024,
+      "b": 550,
+      "visible": true
+    },
+    "centerQuote": {
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0,
+      "r": 0,
+      "b": 0,
+      "visible": false
+    },
+    "lastField": {
+      "x": 443,
+      "y": 437,
+      "w": 70,
+      "h": 80,
+      "r": 513,
+      "b": 517,
+      "visible": true
+    },
+    "search": {
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0,
+      "r": 0,
+      "b": 0,
+      "visible": true
+    },
+    "sections": [
+      "hero-title",
+      "Popular courses and student resources",
+      "features-title",
+      "destinations-title"
+    ]
+  },
+  {
+    "tag": "nsedu-home-390x844",
+    "errors": [
+      "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    ],
+    "overflow": 0,
+    "height": 5794,
+    "header": {
+      "x": 0,
+      "y": 0,
+      "w": 390,
+      "h": 65,
+      "r": 390,
+      "b": 65,
+      "visible": true
+    },
+    "firstScreen": {
+      "x": 0,
+      "y": 65,
+      "w": 390,
+      "h": 1043,
+      "r": 390,
+      "b": 1108,
+      "visible": true
+    },
+    "hero": {
+      "x": 0,
+      "y": 65,
+      "w": 390,
+      "h": 645,
+      "r": 390,
+      "b": 710,
+      "visible": true
+    },
+    "centerQuote": {
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0,
+      "r": 0,
+      "b": 0,
+      "visible": false
+    },
+    "lastField": {
+      "x": 410,
+      "y": 393,
+      "w": 66,
+      "h": 77,
+      "r": 476,
+      "b": 470,
+      "visible": true
+    },
+    "search": {
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0,
+      "r": 0,
+      "b": 0,
+      "visible": true
+    },
+    "sections": [
+      "hero-title",
+      "Popular courses and student resources",
+      "features-title",
+      "destinations-title"
+    ]
+  },
+  {
+    "tag": "locations-1440",
+    "overflow": 0
+  },
+  {
+    "tag": "locations-390",
+    "overflow": 0
+  }
+]

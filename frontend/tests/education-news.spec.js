@@ -19,7 +19,7 @@ const contentNav = (page) => section(page).getByRole('navigation', { name: 'Educ
 const mainStories = (page) => section(page).locator('[data-news-story]').filter({ has: page.locator('h4') });
 
 async function openNews(page) {
-  await page.goto('/');
+  await page.goto('/news');
   await section(page).evaluate((node) => node.scrollIntoView({ block: 'start', behavior: 'instant' }));
   await expect(section(page).locator('[data-feed-status="ready"]')).toBeVisible();
 }
@@ -44,20 +44,41 @@ test.describe('education feed interactions', () => {
   });
   test.afterEach(async ({ page }) => { expect(page.browserErrors).toEqual([]); });
 
-  test('news waits until near the section, then renders sources and safe original links', async ({ page }) => {
+  test('the homepage requests the feed only when its news section nears the viewport', async ({ page }) => {
     let calls = 0;
     await page.unroute('**/api/education-news');
     await page.route('**/api/education-news', (route) => { calls++; return route.fulfill({ json: feed }); });
+    await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/');
+    await expect(page.locator('#study-destinations')).toBeVisible();
+    await page.waitForTimeout(1000);
     expect(calls).toBe(0);
-    await section(page).evaluate((node) => node.scrollIntoView({ block: 'start', behavior: 'instant' }));
+    await expect(section(page).locator('[data-feed-status="idle"]')).toHaveCount(1);
+    await section(page).scrollIntoViewIfNeeded();
     await expect(section(page).locator('[data-feed-status="ready"]')).toBeVisible();
     expect(calls).toBe(1);
+    await expect(mainStories(page)).toHaveCount(6);
+    await expect(section(page).getByRole('link', { name: /Regional board announces examination scorecard update/ }).first()).toHaveAttribute('href', stories[0].url);
+    await page.getByRole('navigation', { name: 'More education news' }).getByRole('link', { name: 'View all news & articles' }).click();
+    await expect(page).toHaveURL(/\/news$/, { timeout: 30_000 });
+  });
+
+  test('the news page loads the feed once and renders safe original links', async ({ page }) => {
+    let calls = 0;
+    await page.unroute('**/api/education-news');
+    await page.route('**/api/education-news', (route) => { calls++; return route.fulfill({ json: feed }); });
+    await page.goto('/news');
+    await expect(section(page).locator('[data-feed-status="ready"]')).toBeVisible();
+    expect(calls).toBe(1);
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Education news & articles');
+    await expect(page.getByRole('navigation', { name: 'Breadcrumb' }).locator('[aria-current="page"]')).toHaveText('Education news');
+    await expect(page.getByRole('navigation', { name: 'Main navigation' }).locator('[data-group="Resources"]')).toHaveAttribute('data-active', 'true');
     await expect(section(page).getByRole('heading', { name: 'Education, in focus.' })).toBeVisible();
     await expect(section(page).getByRole('link', { name: /Regional board announces examination scorecard update/ }).first()).toHaveAttribute('target', '_blank');
     await expect(section(page).getByRole('navigation', { name: 'Education topics' }).getByRole('button')).toHaveCount(7);
     await expect(section(page).getByRole('heading', { name: 'Read & understand' })).toBeVisible();
-    await expect(page.locator('header[data-section="news"]')).toBeVisible();
+    await page.waitForTimeout(500);
+    expect(calls).toBe(1);
   });
 
   test('broad category filters, arbitrary keyword search and empty states work together', async ({ page }) => {
@@ -100,7 +121,7 @@ test.describe('education feed interactions', () => {
     let failed = true;
     await page.unroute('**/api/education-news');
     await page.route('**/api/education-news', (route) => route.fulfill({ status: failed ? 503 : 200, json: failed ? { status: 'unavailable', articles: [] } : feed }));
-    await page.goto('/');
+    await page.goto('/news');
     await section(page).evaluate((node) => node.scrollIntoView({ block: 'start', behavior: 'instant' }));
     await expect(section(page).getByRole('heading', { name: 'We couldn’t load education updates.' })).toBeVisible();
     await expect(mainStories(page)).toHaveCount(0);

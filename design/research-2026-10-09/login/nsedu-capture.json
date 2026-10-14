@@ -1,0 +1,27 @@
+[
+  {
+    "dev": "desktop",
+    "errors": [],
+    "console": [
+      "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+      "Failed to load resource: the server responded with a status of 400 (Bad Request)"
+    ],
+    "overflowAccount": 0,
+    "dialogOpen": false,
+    "focused": "<button type=\"button\" class=\"LoginDrawer-module__0ba36a__close\" aria-label=\"Close login\"><svg class=\"icon \" viewBox=\"0 0",
+    "phoneError": "Enter a valid 10-digit Indian mobile number",
+    "verifyText": null
+  },
+  {
+    "dev": "mobile",
+    "errors": [],
+    "console": [
+      "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+      "Failed to load resource: the server responded with a status of 400 (Bad Request)"
+    ],
+    "overflowAccount": 0,
+    "dialogOpen": false,
+    "focused": "<button type=\"button\" class=\"LoginDrawer-module__0ba36a__close\" aria-label=\"Close login\"><svg class=\"icon \" viewBox=\"0 0",
+    "phoneError": "Enter a valid 10-digit Indian mobile number"
+  }
+]

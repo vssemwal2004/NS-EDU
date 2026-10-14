@@ -1,3 +1,5 @@
+// Courses, exams and cities are managed in MongoDB through the admin console.
+// These copies are only an offline fallback used by src/lib/api/catalog.js when the API is down.
 export const cities = ['Bengaluru', 'Pune', 'Delhi NCR', 'Mumbai', 'Hyderabad', 'Chennai', 'Ahmedabad', 'Kolkata'];
 export const fields = [
   { label: 'Engineering', icon: 'gear' }, { label: 'Management', icon: 'people' },
@@ -28,21 +30,25 @@ export const exams = [
   { id: 'cuet', name: 'CUET UG', field: 'Undergraduate', icon: 'book', summary: 'Review subject choices alongside each university’s programme requirements.', href: 'https://cuet.nta.nic.in/' },
   { id: 'cat', name: 'CAT', field: 'Management', icon: 'chart', summary: 'Use the official exam information and individual programme requirements.', href: 'https://iimcat.ac.in/' },
 ];
-export const navigation = [
-  { label: 'Colleges', items: [{ label: 'Explore all colleges', type: 'Colleges' }, { label: 'Colleges by city', type: 'Colleges' }, { label: 'Colleges by field', type: 'Courses' }] },
-  { label: 'Courses', items: [{ label: 'Explore all courses', type: 'Courses' }, { label: 'Engineering', type: 'Courses', query: 'Engineering' }, { label: 'Management', type: 'Courses', query: 'Management' }, { label: 'Design', type: 'Courses', query: 'Design' }] },
-  { label: 'Exams', items: exams.map((exam) => ({ label: exam.name, type: 'Exams', query: exam.name })) },
-  { label: 'Compare', tool: 'compare' },
-  { label: 'Scholarships', tool: 'scholarships' },
-  { label: 'Career guidance', tool: 'guidance' },
-  { label: 'Resources', items: [{ label: 'Check eligibility', tool: 'eligibility' }, { label: 'Check college budget', tool: 'budget' }, { label: 'Admission checklist', tool: 'admissions' }, { label: 'Exam guides', type: 'Exams' }] },
-];
 export const shortcuts = [
-  { id: 'compare', title: 'Compare colleges', description: 'Fees, courses and facilities', icon: 'scales' },
-  { id: 'eligibility', title: 'Check eligibility', description: 'Understand admission requirements', icon: 'eligibility' },
-  { id: 'scholarships', title: 'Explore scholarships', description: 'Find funding options', icon: 'cap' },
-  { id: 'guidance', title: 'Career guidance', description: 'Explore suitable career paths', icon: 'compass' },
+  { id: 'compare', title: 'Compare colleges', description: 'Fees, courses and facilities', icon: 'scales', href: '/compare' },
+  { id: 'eligibility', title: 'Check eligibility', description: 'Understand admission requirements', icon: 'eligibility', href: '/eligibility' },
+  { id: 'scholarships', title: 'Explore scholarships', description: 'Find funding options', icon: 'cap', href: '/scholarships' },
+  { id: 'guidance', title: 'Career guidance', description: 'Explore suitable career paths', icon: 'compass', href: '/career-guidance' },
 ];
+// Homepage "View all" rows under the embedded sections (3–6). Meta lines that need
+// catalogue numbers are computed in features/home/HomePage.js.
+export const featureDirectory = [
+  { id: 'colleges', title: 'Course-wise colleges', icon: 'cap', href: '/colleges', label: 'View all colleges' },
+  { id: 'eligibility', title: 'Eligibility check', icon: 'eligibility', href: '/eligibility', label: 'Open full eligibility check' },
+  { id: 'budget', title: 'Budget check', icon: 'wallet', href: '/budget', label: 'Open budget check', meta: 'Tuition, stay and one-time costs together', secondary: { href: '/scholarships', label: 'Scholarships & funding' } },
+  { id: 'news', title: 'Education news', icon: 'news', href: '/news', label: 'View all news & articles', meta: 'Dated updates, linked to the original publisher' },
+];
+// Stream icons for the "Explore by stream" band; unknown fields fall back to their first course's icon.
+export const fieldIcons = {
+  Engineering: 'gear', Management: 'people', Commerce: 'commerce', Computing: 'laptop', Medical: 'medical', Design: 'palette',
+  Law: 'scales', Pharmacy: 'science', Healthcare: 'medical', Arts: 'book', Dentistry: 'tooth', Hospitality: 'cloche',
+};
 export const toolGuides = {
   compare: { title: 'Compare colleges', intro: 'Build a useful comparison around the details that matter to you.', items: ['Compare the same course and admission year.', 'Check tuition, hostel and other costs separately.', 'Review facilities and placement reports with their source and year.'], note: 'Try the sample comparison in the course-wise college section below. Verified college records will be added with the live directory.' },
   eligibility: { title: 'Check eligibility', intro: 'Start with your course, then confirm the requirements with the institution.', items: ['Check required subjects and qualifications.', 'Review entrance exam and admission-route requirements.', 'Read the official prospectus for the year you plan to apply.'], note: 'Final eligibility depends on the course, institution and admission cycle.' },

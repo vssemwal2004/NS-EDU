@@ -2,7 +2,7 @@
 .heroInner { position: relative; min-height: clamp(480px, 34vw, 580px); padding-block: var(--space-12) var(--space-8); }
 .heroContent { position: relative; width: 53%; z-index: 2; }
 .heroContent h1 { font-size: var(--text-title); max-width: 790px; }
-.heroDescription { margin-top: var(--space-5); margin-bottom: var(--space-6); font-size: clamp(1rem, 1.43vw, 1.4rem); line-height: 1.5; }
+.heroDescription { margin-top: var(--space-5); margin-bottom: var(--space-6); font-size: clamp(1rem, 1.43vw, 1.4rem); line-height: 1.5; text-wrap: balance; }
 .heroVisual { position: absolute; top: 34px; right: 4.5%; bottom: 0; width: 43%; overflow: hidden; border-radius: 86px 142px 0 0; animation: reveal var(--motion-reveal) var(--ease-out) both; }
 .heroImage { display: block; width: 100%; height: 100%; }
 .artwork { display: none; position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
@@ -24,10 +24,10 @@
 .heroSearch > button { min-width: 145px; border-radius: var(--radius-search); font-size: var(--text-body); }
 .heroSearch > button svg { display: none; }
 .fields { display: flex; gap: var(--space-3); margin-top: var(--space-5); justify-content: space-around; max-width: 660px; padding-left: 64px; }
-.fields button { display: flex; flex-direction: column; align-items: center; gap: var(--space-2); min-width: 66px; padding: var(--space-1); border: 0; background: transparent; font-size: .72rem; color: var(--color-text); }
+.fields a { text-decoration: none; display: flex; flex-direction: column; align-items: center; gap: var(--space-2); min-width: 66px; padding: var(--space-1); border: 0; background: transparent; font-size: .72rem; color: var(--color-text); }
 .fieldIcon { display: grid; place-items: center; border-radius: var(--radius-pill); background: var(--color-accent-soft); width: 52px; height: 52px; color: var(--color-accent); transition: background var(--motion-fast), transform var(--motion-fast); }
 .fieldIcon svg { width: 26px; height: 26px; }
-.fields button:hover .fieldIcon { background: var(--color-surface); transform: translateY(-2px); }
+.fields a:hover .fieldIcon { background: var(--color-surface); transform: translateY(-2px); }
 .discovery { padding-block: var(--space-6) var(--space-5); }
 .courseRow { display: flex; align-items: center; gap: var(--space-6); padding-bottom: var(--space-6); }
 .courseIntro { min-width: 275px; }
@@ -37,7 +37,7 @@
 .courseLinks :global(.chip) { padding-inline: var(--space-4); }
 .allCourses { flex-shrink: 0; }
 .shortcuts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 1px solid var(--color-border); padding-top: var(--space-5); }
-.shortcut { display: flex; align-items: center; gap: var(--space-5); padding: var(--space-2) var(--space-5); background: transparent; border: 0; border-right: 1px solid var(--color-border); text-align: left; min-height: 72px; }
+.shortcut { color: inherit; text-decoration: none; display: flex; align-items: center; gap: var(--space-5); padding: var(--space-2) var(--space-5); background: transparent; border: 0; border-right: 1px solid var(--color-border); text-align: left; min-height: 72px; }
 .shortcut:first-child { padding-left: 0; }
 .shortcut:last-child { border-right: 0; padding-right: 0; }
 .shortcut > svg:first-child { width: 30px; height: 30px; color: var(--color-accent); }
@@ -63,7 +63,7 @@
   .heroContent h1 { font-size: clamp(2.6rem, 4.9vw, 3.7rem); }
   .desktopBreak { display: none; }
   .fields { gap: var(--space-3); padding-left: 0; justify-content: flex-start; overflow-x: auto; scrollbar-width: thin; padding-bottom: var(--space-2); }
-  .fields button { flex: 0 0 70px; }
+  .fields a { flex: 0 0 70px; }
   .fieldIcon { width: 46px; height: 46px; }
   .searchInput { padding-inline: var(--space-3); gap: var(--space-2); }
   .searchInput input { font-size: .75rem; }
@@ -88,8 +88,9 @@
   .searchInput input { min-height: 44px; font-size: .73rem; }
   .searchInput > svg { width: 18px; }
   .heroSearch > button { min-width: 78px; font-size: .8rem; padding-inline: var(--space-3); border-radius: var(--radius-control); }
-  .fields { justify-content: flex-start; overflow-x: auto; overscroll-behavior-inline: contain; scrollbar-width: thin; padding-block: var(--space-2); margin-top: var(--space-4); gap: var(--space-3); }
-  .fields button { flex: 1 0 64px; font-size: .68rem; min-height: 74px; }
+  /* 3×2 grid so every field (incl. Law and Commerce) is visible without scrolling. */
+  .fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); overflow: visible; padding: var(--space-2) 0 0; margin-top: var(--space-4); gap: var(--space-2) var(--space-3); max-width: 420px; }
+  .fields a { min-width: 0; font-size: .72rem; min-height: 76px; justify-content: flex-start; }
   .fieldIcon { width: 44px; height: 44px; }
   .fieldIcon svg { width: 23px; height: 23px; }
   .heroVisual { position: relative; inset: auto; width: 100%; aspect-ratio: var(--hero-mobile-photo-ratio); margin-top: var(--space-5); border-radius: 32px 56px 0 0; }
@@ -98,8 +99,8 @@
   .courseIntro h2 { font-size: 1.35rem; }
   .courseIntro p { font-size: .73rem; }
   .courseRow { gap: var(--space-3); padding-bottom: var(--space-5); }
-  .courseLinks { display: flex; overflow-x: auto; padding-block: var(--space-1) var(--space-2); overscroll-behavior-inline: contain; scrollbar-width: thin; }
-  .courseLinks :global(.chip) { flex: 0 0 auto; min-width: 99px; padding-inline: var(--space-3); font-size: .75rem; }
+  .courseLinks { display: flex; overflow-x: auto; padding-block: var(--space-1) var(--space-2); overscroll-behavior-inline: contain; scrollbar-width: thin; scroll-snap-type: x proximity; }
+  .courseLinks :global(.chip) { flex: 0 0 auto; min-width: 99px; padding-inline: var(--space-3); font-size: .75rem; scroll-snap-align: start; }
   .allCourses { font-size: .72rem; gap: var(--space-2); }
   .allCourses > svg { width: 17px; }
   .shortcuts { gap: var(--space-4) 0; }
@@ -129,41 +130,60 @@
   .shell { min-height: 100dvh; display: flex; flex-direction: column; }
   .main { min-height: 0; }
   .firstScreen { height: calc(100dvh - var(--desktop-header-height)); display: grid; grid-template-rows: minmax(0, 1fr) var(--desktop-discovery-height); }
+  /* Photo geometry: the campus artwork (1672×564 source window) is scaled to cover the
+     hero but capped on tall/4:3 screens, and anchored bottom-right. The --photo-edge-*
+     values are the photo's left edge (in hero px) at its top, middle and lower bands, so
+     text columns can stop before it. cq units resolve against .hero, hence declared on children. */
+  .artwork, .heroInner {
+    --photo-scale: min(max(100cqw / 1672, 100cqh / 564), 100cqw / 1450);
+    --photo-edge-top: calc(100cqw - 737 * var(--photo-scale));
+    --photo-edge-mid: calc(100cqw - 790 * var(--photo-scale));
+    --photo-edge-low: calc(100cqw - 830 * var(--photo-scale));
+    --hero-inner-left: max(0px, (100cqw - var(--content-width)) / 2);
+    --hero-text-width: calc(var(--photo-edge-mid) - var(--hero-inner-left) - var(--hero-gutter) - 2cqw);
+  }
+  .artwork { inset: auto 0 0 auto; width: calc(1672 * var(--photo-scale)); height: calc(564 * var(--photo-scale)); }
   .heroInner { height: 100%; min-height: 0; padding: 8cqh var(--hero-gutter) 3cqh; }
-  .heroContent { width: 53%; }
-  .heroContent h1 { font-size: min(var(--text-title), 15cqh); line-height: .97; }
+  .heroContent { width: min(53%, var(--hero-text-width)); }
+  /* "Find a college that" is ~7.4em wide: shrink before it can wrap to three lines on tall screens. */
+  .heroContent h1 { font-size: min(var(--text-title), 15cqh, var(--hero-text-width) / 7.6); line-height: .97; }
   .desktopBreak { display: inline; }
-  .heroDescription { font-size: min(1.44vw, 4.3cqh); line-height: 1.35; margin: 2cqh 0 0; }
+  .heroDescription { font-size: min(1.44vw, 4.3cqh, 1.6rem); line-height: 1.35; margin: 2cqh 0 0; }
   .heroVisual { top: 0; right: 0; width: 50.6%; border-radius: 0; }
   .searchBox { max-width: none; width: 96.5%; margin-top: 4.5cqh; }
   .tabs { gap: .6vw; }
-  .tabs button { min-width: 0; width: 9.4vw; min-height: 0; height: clamp(30px, 7.8cqh, 46px); padding: 0 var(--space-4); font-size: var(--text-control); }
+  .tabs button { min-width: 0; width: min(9.4vw, 180px); min-height: 0; height: clamp(30px, 7.8cqh, 46px); padding: 0 var(--space-4); font-size: var(--text-control); }
   .heroSearch { height: clamp(52px, 13cqh, 76px); padding: clamp(6px, 1.8cqh, 10px); gap: var(--space-3); }
   .searchInput { padding-inline: var(--space-4); }
   .searchInput input { min-height: 0; height: 100%; font-size: var(--text-control); padding-block: 0; }
-  .heroSearch > button { min-height: 0; min-width: 22%; font-size: min(1.2vw, 3.7cqh); }
-  .fields { margin-top: 3cqh; max-width: 690px; padding: 0 0 0 3vw; gap: .8vw; justify-content: space-between; overflow: visible; }
-  .fields button { flex: 1; min-width: 0; font-size: min(.9vw, 2.7cqh); padding: 0; gap: 1cqh; }
-  .fieldIcon { width: clamp(30px, 11cqh, 64px); height: clamp(30px, 11cqh, 64px); }
+  .heroSearch > button { min-height: 0; min-width: 22%; font-size: min(1.2vw, 3.7cqh, 1.25rem); }
+  .fields { margin-top: 3cqh; max-width: min(690px, calc(var(--photo-edge-low) - var(--hero-inner-left) - var(--hero-gutter) - 1.5cqw)); padding: 0 0 0 min(3vw, 3.5rem); gap: min(.8vw, 12px); justify-content: space-between; overflow: visible; }
+  /* Items keep their label width (long labels like "Management" never touch neighbours);
+     icon and label sizes are capped so the row stays clear of the photo on tall screens. */
+  .fields a { flex: 1 1 0; min-width: max-content; font-size: min(.9vw, 2.7cqh, .875rem); padding: 0; gap: 1cqh; }
+  .fieldIcon { width: clamp(30px, min(11cqh, 4vw), 64px); height: clamp(30px, min(11cqh, 4vw), 64px); }
   .fieldIcon svg { width: 50%; height: 50%; }
-  .centerQuote { display: block; left: 49.3%; top: 7%; font-size: min(1.3vw, 4cqh); width: 5.5vw; }
-  .leftQuote { display: block; left: 1.6%; bottom: 4.5%; font-size: min(.98vw, 3cqh); }
-  .rightQuote { display: block; right: 1.25%; top: 6.5%; width: 6vw; font-size: min(.98vw, 3cqh); }
-  .discovery { padding: 3.25dvh var(--discovery-gutter) 3.5dvh; display: grid; grid-template-rows: minmax(0, .48fr) minmax(0, .52fr); }
-  .courseRow { flex-wrap: nowrap; gap: 1.3vw; padding-bottom: 3dvh; }
-  .courseIntro { flex: none; min-width: 22.5vw; }
+  .centerQuote { display: block; top: 7%; font-size: min(1.3vw, 4cqh, 1.5rem); width: min(5.5vw, 6rem); left: calc(var(--photo-edge-top) - var(--hero-inner-left) - min(5.5vw, 6rem) - 1.25cqw); }
+  /* On wide-but-short heroes the quote would meet the headline: hide it there. */
+  @container (max-aspect-ratio: 26/10) { .centerQuote { display: none; } }
+  .leftQuote { display: block; left: 1.6%; bottom: 4.5%; font-size: min(.98vw, 3cqh, 1.2rem); }
+  /* Anchored to the hero's right edge (not the capped container) so it stays over the sketch, clear of the photo. */
+  .rightQuote { display: block; right: calc(1.25cqw - var(--hero-inner-left)); top: 6.5%; width: min(6vw, 7rem); font-size: min(.98vw, 3cqh, 1.2rem); }  .discovery { padding: 3.25dvh var(--discovery-gutter) 3.5dvh; display: grid; grid-template-rows: minmax(0, .48fr) minmax(0, .52fr); }
+  /* vw sizes are capped: content width stops at --content-width, the viewport does not. */
+  .courseRow { flex-wrap: nowrap; gap: min(1.3vw, 1.5rem); padding-bottom: 3dvh; }
+  .courseIntro { flex: none; min-width: min(22.5vw, 24rem); }
   .courseIntro h2 { font-size: min(var(--text-section), 3.1dvh); }
   .courseIntro p { font-size: var(--text-control); }
-  .courseLinks { order: 0; flex: 1; gap: 1.3vw; }
-  .courseLinks :global(.chip) { min-height: 0; height: clamp(40px, 6dvh, 56px); padding: 0 var(--space-2); gap: 1vw; font-size: var(--text-control); }
+  .courseLinks { order: 0; flex: 1; gap: min(1.3vw, 1.5rem); }
+  .courseLinks :global(.chip) { min-height: 0; height: clamp(40px, 6dvh, 56px); padding: 0 var(--space-2); gap: min(1vw, .75rem); font-size: var(--text-control); }
   .courseLinks :global(.chip .icon) { width: clamp(18px, 1.65vw, 26px); height: clamp(18px, 1.65vw, 26px); }
   .allCourses { order: 0; font-size: var(--text-control); padding-left: 1.7vw; }
   .shortcuts { grid-template-columns: repeat(4, minmax(0, 1fr)); padding-top: 2.4dvh; gap: 0; }
-  .shortcut { min-height: 0; gap: 1.8vw; padding: 0 2.5vw; }
+  .shortcut { min-height: 0; gap: min(1.8vw, 1.5rem); padding: 0 min(2.5vw, 2.5rem); }
   .shortcut:nth-child(2) { border-right: 1px solid var(--color-border); }
-  .shortcut:nth-child(3) { padding-left: 2.5vw; }
+  .shortcut:nth-child(3) { padding-left: min(2.5vw, 2.5rem); }
   .shortcut > svg:first-child { width: clamp(26px, 2.5vw, 42px); height: clamp(26px, 2.5vw, 42px); }
-  .shortcut h3 { font-size: min(1.35vw, 2.9dvh); white-space: nowrap; }
-  .shortcutDescription { font-size: min(.93vw, 1.9dvh); margin-top: .4dvh; white-space: nowrap; }
+  .shortcut h3 { font-size: min(1.35vw, 2.9dvh, 1.3rem); white-space: nowrap; }
+  .shortcutDescription { font-size: min(.93vw, 1.9dvh, .95rem); margin-top: .4dvh; text-wrap: balance; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
   .shortcut > svg:last-child { width: 22px; height: 22px; }
 }

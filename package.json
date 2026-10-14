@@ -9,6 +9,7 @@
     "dev:backend": "npm run dev --workspace backend",
     "build": "npm run build --workspace frontend",
     "test:backend": "npm test --workspace backend",
+    "seed": "npm run seed --workspace backend",
     "lint": "npm run lint --workspace frontend",
     "test:frontend": "npm test --workspace frontend"
   },

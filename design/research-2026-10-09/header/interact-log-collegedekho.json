@@ -1,0 +1,26 @@
+[
+  {
+    "site": "collegedekho desktop",
+    "status": 200
+  },
+  {
+    "shot": "collegedekho-desktop-mega-colleges-management.png",
+    "note": "Colleges panel, hover Management stream"
+  },
+  {
+    "shot": "collegedekho-desktop-scrolled-clean.png",
+    "note": "scrolled header"
+  },
+  {
+    "site": "collegedekho mobile",
+    "status": 200
+  },
+  {
+    "shot": "collegedekho-mobile-drawer.png",
+    "note": "tap hamburger"
+  },
+  {
+    "shot": "collegedekho-mobile-search.png",
+    "note": "tap search icon"
+  }
+]

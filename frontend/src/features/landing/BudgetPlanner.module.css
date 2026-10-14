@@ -1,4 +1,4 @@
-.section { position: relative; isolation: isolate; overflow: clip; padding-block: var(--budget-section-padding); border-top: var(--card-border); background: var(--budget-background); scroll-margin-top: calc(var(--header-scroll-offset, 88px) + var(--space-4)); }
+.section { position: relative; isolation: isolate; overflow: clip; padding-block: var(--budget-section-padding); border-top: var(--card-border); background: var(--budget-background); scroll-margin-top: calc(var(--header-bar-height) + var(--space-4)); }
 .container { position: relative; max-width: var(--budget-content-width); padding-inline: var(--budget-gutter); }
 .heading { position: relative; display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); margin-bottom: var(--space-4); min-height: var(--budget-heading-height); }
 .heading > div { min-width: 0; }
