@@ -5,6 +5,8 @@ import { ensureIndexes } from './indexes.js';
 export const COLLECTIONS = Object.freeze({
   admins: 'admins',
   students: 'students',
+  referenceStudents: 'reference_students',
+  studentFollowups: 'student_followups',
   otpCodes: 'otp_codes',
   courses: 'courses',
   exams: 'exams',

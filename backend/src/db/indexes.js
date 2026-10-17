@@ -5,7 +5,10 @@ const specs = {
     [{ phone: 1 }, { unique: true, partialFilterExpression: { phone: { $type: 'string' } } }],
     [{ createdAt: -1 }],
     [{ lastLoginAt: -1 }],
+    [{ assignedEmployeeIds: 1, createdAt: -1 }],
   ],
+  reference_students: [[{ createdAt: -1 }], [{ assignedEmployeeIds: 1, createdAt: -1 }], [{ createdById: 1, createdAt: -1 }]],
+  student_followups: [[{ studentId: 1, studentKind: 1, createdAt: -1 }]],
   otp_codes: [
     [{ channel: 1, identifier: 1 }, { unique: true }],
     [{ expiresAt: 1 }, { expireAfterSeconds: 0 }],

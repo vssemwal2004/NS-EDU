@@ -97,6 +97,124 @@ describe('auth, catalog and admin API', { skip }, () => {
     assert.match(logout.setCookies[0], /^nsedu_admin=;/);
   });
 
+  test('only an administrator can create employees and first login requires a password change', async () => {
+    const admin = cookieFrom(await loginAdmin(), 'nsedu_admin');
+    const employee = { email: 'Staff@Example.com', phone: '+919876543210', password: 'Temporary!Pass9' };
+    assert.equal((await api('/api/admin/employees', { method: 'POST', body: employee })).status, 401);
+    const weak = await api('/api/admin/employees', { method: 'POST', cookie: admin, body: { ...employee, password: 'weakpass' } });
+    assert.equal(weak.status, 400);
+    const created = await api('/api/admin/employees', { method: 'POST', cookie: admin, body: employee });
+    assert.equal(created.status, 201);
+    assert.equal(created.body.item.email, 'staff@example.com');
+    assert.equal(created.body.item.mustChangePassword, true);
+    assert.equal((await api('/api/admin/employees', { method: 'POST', cookie: admin, body: employee })).status, 409);
+    const list = await api('/api/admin/employees', { cookie: admin });
+    assert.equal(list.body.items[0].passwordHash, undefined);
+
+    const signedIn = await api('/api/admin/auth/login', { method: 'POST', body: { email: employee.email, password: employee.password } });
+    assert.equal(signedIn.status, 200);
+    assert.equal(signedIn.body.admin.role, 'employee');
+    assert.equal(signedIn.body.admin.mustChangePassword, true);
+    const staffCookie = cookieFrom(signedIn, 'nsedu_admin');
+    assert.equal((await api('/api/admin/dashboard', { cookie: staffCookie })).status, 403);
+    assert.equal((await api('/api/admin/employees', { cookie: staffCookie })).status, 403);
+    assert.equal((await api('/api/admin/auth/change-password', { method: 'POST', cookie: staffCookie, body: { currentPassword: 'wrong', newPassword: 'New!SecurePass9' } })).status, 401);
+    assert.equal((await api('/api/admin/auth/change-password', { method: 'POST', cookie: staffCookie, body: { currentPassword: employee.password, newPassword: 'weakpass' } })).status, 400);
+    const changed = await api('/api/admin/auth/change-password', { method: 'POST', cookie: staffCookie, body: { currentPassword: employee.password, newPassword: 'New!SecurePass9' } });
+    assert.equal(changed.status, 200);
+    assert.equal(changed.body.admin.mustChangePassword, false);
+    assert.equal((await api('/api/admin/dashboard', { cookie: staffCookie })).status, 200);
+    assert.equal((await api('/api/admin/employees', { method: 'POST', cookie: staffCookie, body: { ...employee, email: 'other@example.com' } })).status, 403);
+    assert.equal((await api('/api/admin/auth/login', { method: 'POST', body: { email: employee.email, password: employee.password } })).status, 401);
+    assert.equal((await api('/api/admin/auth/login', { method: 'POST', body: { email: employee.email, password: 'New!SecurePass9' } })).status, 200);
+  });
+
+  test('reference students are isolated from login accounts and employees see only their assigned records', async () => {
+    const owner = cookieFrom(await loginAdmin(), 'nsedu_admin');
+    const makeEmployee = async (email) => {
+      const created = await api('/api/admin/employees', { method: 'POST', cookie: owner, body: { email, phone: '+919876543211', password: 'Temporary!Pass9' } });
+      assert.equal(created.status, 201);
+      const login = await api('/api/admin/auth/login', { method: 'POST', body: { email, password: 'Temporary!Pass9' } });
+      const cookie = cookieFrom(login, 'nsedu_admin');
+      const changed = await api('/api/admin/auth/change-password', { method: 'POST', cookie, body: { currentPassword: 'Temporary!Pass9', newPassword: 'Changed!Pass9' } });
+      assert.equal(changed.status, 200);
+      return { id: created.body.item.id, cookie };
+    };
+    const alice = await makeEmployee('alice@nsedu.test');
+    const bob = await makeEmployee('bob@nsedu.test');
+    const studentsBefore = await db.collection('students').countDocuments();
+
+    for (const path of ['/dashboard', '/students', '/resources', '/courses', '/employees']) {
+      assert.equal((await api(`/api/admin${path}`, { cookie: alice.cookie })).status, 403);
+    }
+    assert.equal((await api('/api/admin/courses', { method: 'POST', cookie: alice.cookie, body: { name: 'Forbidden' } })).status, 403);
+    assert.equal((await api('/api/admin/students/000000000000000000000000', { method: 'PATCH', cookie: alice.cookie, body: { status: 'blocked' } })).status, 403);
+    const lead = await api('/api/admin/reference-students', { method: 'POST', cookie: owner, body: { name: 'Owner Lead', email: 'owner.lead@example.com' } });
+    assert.equal(lead.status, 201);
+    const leadId = lead.body.item.id;
+    assert.equal((await api('/api/admin/reference-students', { cookie: alice.cookie })).body.total, 0);
+    assert.equal((await api(`/api/admin/reference-students/${leadId}`, { cookie: alice.cookie })).status, 404);
+    assert.equal((await api(`/api/admin/reference-students/${leadId}/followups`, { method: 'POST', cookie: alice.cookie, body: { comment: 'Should not appear' } })).status, 404);
+    assert.equal((await api(`/api/admin/reference-students/${leadId}/assignments`, { method: 'PATCH', cookie: alice.cookie, body: { employeeIds: [alice.id] } })).status, 403);
+    assert.equal((await api(`/api/admin/reference-students/${leadId}/assignments`, { method: 'PATCH', cookie: owner, body: { employeeIds: ['invalid'] } })).status, 400);
+    const assigned = await api(`/api/admin/reference-students/${leadId}/assignments`, { method: 'PATCH', cookie: owner, body: { employeeIds: [alice.id, bob.id] } });
+    assert.equal(assigned.status, 200);
+    assert.deepEqual(assigned.body.item.assignedEmployeeIds, [alice.id, bob.id]);
+    assert.equal((await api('/api/admin/reference-students?q=Owner', { cookie: alice.cookie })).body.total, 1);
+    assert.equal((await api('/api/admin/reference-students?q=Unrelated', { cookie: alice.cookie })).body.total, 0);
+    const note = await api(`/api/admin/reference-students/${leadId}/followups`, { method: 'POST', cookie: alice.cookie, body: { comment: 'Called; follow up tomorrow.' } });
+    assert.equal(note.status, 201);
+    assert.equal(note.body.item.authorEmail, 'alice@nsedu.test');
+    assert.equal((await api(`/api/admin/reference-students/${leadId}/followups`, { cookie: bob.cookie })).body.items[0].authorEmail, 'alice@nsedu.test');
+
+    const createdByBob = await api('/api/admin/reference-students', { method: 'POST', cookie: bob.cookie, body: { name: 'Bob Lead', phone: '+919876543212' } });
+    assert.equal(createdByBob.status, 201);
+    assert.deepEqual(createdByBob.body.item.assignedEmployeeIds, [bob.id]);
+    assert.equal((await api(`/api/admin/reference-students/${createdByBob.body.item.id}`, { cookie: alice.cookie })).status, 404);
+    assert.equal((await api('/api/admin/reference-students', { cookie: owner })).body.total, 2);
+    const imported = await api('/api/admin/reference-students/import', { method: 'POST', cookie: alice.cookie, body: { students: [
+      { name: 'Uploaded One', email: 'uploaded.one@example.com' },
+      { name: 'Uploaded Two', phone: '+919876543213' },
+    ] } });
+    assert.deepEqual([imported.status, imported.body.count], [201, 2]);
+    assert.equal((await api('/api/admin/reference-students', { cookie: alice.cookie })).body.total, 3);
+    assert.equal((await api('/api/admin/reference-students', { cookie: bob.cookie })).body.total, 2);
+    assert.equal((await api('/api/admin/reference-students', { cookie: owner })).body.total, 4);
+    assert.equal(await db.collection('students').countDocuments(), studentsBefore);
+
+    const bulkReferences = { studentIds: [leadId, createdByBob.body.item.id], employeeIds: [alice.id] };
+    assert.equal((await api('/api/admin/reference-students/assignments/bulk', { method: 'POST', cookie: alice.cookie, body: bulkReferences })).status, 403);
+    assert.equal((await api('/api/admin/reference-students/assignments/bulk', { method: 'POST', cookie: owner, body: { ...bulkReferences, studentIds: [leadId, 'invalid'] } })).status, 400);
+    assert.deepEqual((await api('/api/admin/reference-students/assignments/bulk', { method: 'POST', cookie: owner, body: bulkReferences })).body, { count: 2 });
+    assert.deepEqual((await api(`/api/admin/reference-students/${createdByBob.body.item.id}`, { cookie: owner })).body.item.assignedEmployeeIds, [bob.id, alice.id]);
+    assert.equal((await api('/api/admin/reference-students', { cookie: alice.cookie })).body.total, 4);
+
+    const { verified: loginStudent } = await signInStudent('email', 'account.followup@example.com');
+    const accountId = loginStudent.body.student.id;
+    assert.equal((await api('/api/admin/account-students', { cookie: alice.cookie })).body.total, 0);
+    assert.equal((await api(`/api/admin/account-students/${accountId}/followups`, { cookie: alice.cookie })).status, 404);
+    assert.equal((await api(`/api/admin/students/${accountId}/assignments`, { method: 'PATCH', cookie: alice.cookie, body: { employeeIds: [alice.id] } })).status, 403);
+    const accountAssignment = await api(`/api/admin/students/${accountId}/assignments`, { method: 'PATCH', cookie: owner, body: { employeeIds: [alice.id, bob.id] } });
+    assert.deepEqual(accountAssignment.body.item.assignedEmployeeIds, [alice.id, bob.id]);
+    assert.equal((await api('/api/admin/account-students?q=followup', { cookie: alice.cookie })).body.total, 1);
+    assert.equal((await api('/api/admin/account-students?q=other', { cookie: alice.cookie })).body.total, 0);
+    assert.equal((await api('/api/admin/account-students', { cookie: bob.cookie })).body.total, 1);
+    const accountNote = await api(`/api/admin/account-students/${accountId}/followups`, { method: 'POST', cookie: bob.cookie, body: { comment: 'Spoke about the application.' } });
+    assert.equal(accountNote.status, 201);
+    assert.equal(accountNote.body.item.authorEmail, 'bob@nsedu.test');
+    assert.equal((await api(`/api/admin/account-students/${accountId}/followups`, { cookie: alice.cookie })).body.items[0].comment, 'Spoke about the application.');
+    assert.equal((await api('/api/auth/me', { cookie: cookieFrom(loginStudent, 'nsedu_student') })).status, 200);
+    await api(`/api/admin/students/${accountId}/assignments`, { method: 'PATCH', cookie: owner, body: { employeeIds: [alice.id] } });
+    assert.equal((await api(`/api/admin/account-students/${accountId}/followups`, { cookie: bob.cookie })).status, 404);
+    const { verified: secondLoginStudent } = await signInStudent('email', 'second.followup@example.com');
+    const bulkAccounts = { studentIds: [accountId, secondLoginStudent.body.student.id], employeeIds: [bob.id] };
+    assert.equal((await api('/api/admin/students/assignments/bulk', { method: 'POST', cookie: bob.cookie, body: bulkAccounts })).status, 403);
+    assert.equal((await api('/api/admin/students/assignments/bulk', { method: 'POST', cookie: owner, body: { ...bulkAccounts, employeeIds: [] } })).status, 400);
+    assert.deepEqual((await api('/api/admin/students/assignments/bulk', { method: 'POST', cookie: owner, body: bulkAccounts })).body, { count: 2 });
+    assert.deepEqual((await api('/api/admin/students?q=account.followup', { cookie: owner })).body.items[0].assignedEmployeeIds, [alice.id, bob.id]);
+    assert.equal((await api('/api/admin/account-students', { cookie: bob.cookie })).body.total, 2);
+  });
+
   test('admin login is rate limited per IP', async () => {
     for (let index = 0; index < 10; index++) {
       const attempt = await api('/api/admin/auth/login', { method: 'POST', body: { email: `user${index}@nsedu.test`, password: 'x' } });

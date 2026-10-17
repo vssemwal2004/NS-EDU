@@ -2,6 +2,7 @@ import { collection, COLLECTIONS, toObjectId } from '../../db/collections.js';
 import { HttpError } from '../../lib/http-error.js';
 import { pagination, queryString } from '../../lib/query.js';
 import { assertValid, escapeRegex } from '../../lib/validation.js';
+import { employeeAssignmentIds } from './employee-assignments.js';
 
 const STATUSES = ['active', 'blocked'];
 const updateFields = [
@@ -18,6 +19,7 @@ export const serializeStudentForAdmin = (student) => ({
   createdAt: student.createdAt ?? null,
   lastLoginAt: student.lastLoginAt ?? null,
   loginCount: student.loginCount ?? 0,
+  assignedEmployeeIds: (student.assignedEmployeeIds ?? []).map(String),
 });
 
 export async function listStudents(query) {
@@ -44,6 +46,16 @@ export async function updateStudent(id, body) {
   const student = _id && (Object.keys(data).length
     ? await students.findOneAndUpdate({ _id }, { $set: data }, { returnDocument: 'after' })
     : await students.findOne({ _id }));
+  if (!student) throw new HttpError(404, 'Student not found');
+  return serializeStudentForAdmin(student);
+}
+
+export async function assignStudent(id, body) {
+  const employeeIds = await employeeAssignmentIds(body?.employeeIds);
+  const _id = toObjectId(id);
+  const student = _id && await (await collection(COLLECTIONS.students)).findOneAndUpdate(
+    { _id }, { $set: { assignedEmployeeIds: employeeIds } }, { returnDocument: 'after' },
+  );
   if (!student) throw new HttpError(404, 'Student not found');
   return serializeStudentForAdmin(student);
 }

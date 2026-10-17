@@ -9,7 +9,7 @@ async function loadAdmin(request) {
   const payload = verifySession(request.cookies?.[ADMIN_COOKIE] ?? bearer(request), 'admin');
   const id = toObjectId(payload?.sub);
   if (!id) return null;
-  return (await collection(COLLECTIONS.admins)).findOne({ _id: id, role: 'admin' }, { projection: { passwordHash: 0 } });
+  return (await collection(COLLECTIONS.admins)).findOne({ _id: id, role: { $in: ['admin', 'employee'] } }, { projection: { passwordHash: 0 } });
 }
 
 async function loadStudent(request) {
@@ -24,6 +24,16 @@ export async function requireAdmin(request, _response, next) {
   const admin = await loadAdmin(request);
   if (!admin) throw new HttpError(401, 'Admin session required');
   request.admin = admin;
+  next();
+}
+
+export function requireReadyStaff(request, _response, next) {
+  if (request.admin.mustChangePassword) throw new HttpError(403, 'Change your password before accessing the console');
+  next();
+}
+
+export function requireOwnerAdmin(request, _response, next) {
+  if (request.admin.role !== 'admin') throw new HttpError(403, 'Administrator access required');
   next();
 }
 

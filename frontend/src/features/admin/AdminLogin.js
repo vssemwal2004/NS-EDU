@@ -13,6 +13,7 @@ const capabilities = [
   { icon: 'people', title: 'Student accounts', text: 'Monitor sign-ups and manage access.' },
   { icon: 'map', title: 'Locations & funding', text: 'Curate destinations and scholarship links.' },
 ];
+const destination = (admin, next) => admin.mustChangePassword ? '/admin/change-password' : admin.role === 'employee' ? '/admin/reference-students' : next;
 
 export default function AdminLogin({ next }) {
   const router = useRouter();
@@ -25,7 +26,7 @@ export default function AdminLogin({ next }) {
   useEffect(() => {
     const controller = new AbortController();
     api('/admin/auth/me', { signal: controller.signal })
-      .then(() => router.replace(next))
+      .then(({ admin }) => router.replace(destination(admin, next)))
       .catch((error) => { if (error.name !== 'AbortError') setState((previous) => ({ ...previous, checking: false })); });
     api('/platform/stats', { signal: controller.signal }).then(setStats).catch(() => {});
     return () => controller.abort();
@@ -37,8 +38,8 @@ export default function AdminLogin({ next }) {
     if (!email || !form.password) { setState({ busy: false, checking: false, error: 'Enter your email and password.' }); return; }
     setState({ busy: true, checking: false, error: '' });
     try {
-      await api('/admin/auth/login', { method: 'POST', body: { email, password: form.password } });
-      router.replace(next);
+      const { admin } = await api('/admin/auth/login', { method: 'POST', body: { email, password: form.password } });
+      router.replace(destination(admin, next));
     } catch (error) {
       setState({ busy: false, checking: false, error: error.status === 429 ? error.message : error.status === 401 ? 'Invalid email or password.' : error.message });
       setForm((previous) => ({ ...previous, password: '' }));

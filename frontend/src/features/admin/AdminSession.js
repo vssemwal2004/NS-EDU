@@ -20,7 +20,10 @@ export function AdminSessionProvider({ children }) {
   useEffect(() => {
     const controller = new AbortController();
     api('/admin/auth/me', { signal: controller.signal })
-      .then((data) => { setAdmin(data.admin); setStatus('ready'); })
+      .then((data) => {
+        if (data.admin.mustChangePassword) { router.replace('/admin/change-password'); return; }
+        setAdmin(data.admin); setStatus('ready');
+      })
       .catch((error) => {
         if (error.name === 'AbortError') return;
         if (error.status === 401) toLogin('expired');
