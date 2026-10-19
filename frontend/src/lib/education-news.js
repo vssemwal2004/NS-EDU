@@ -39,6 +39,14 @@ export function newsDate(value, withTime = false) {
   return new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', year: 'numeric', ...(withTime ? { hour: 'numeric', minute: '2-digit', hour12: true } : {}), timeZone: 'Asia/Kolkata' }).format(new Date(value));
 }
 
+export const SAVED_NEWS_LIMIT = 60;
+
+// A feed payload with only valid stories, or null when the payload is not a usable feed.
+export function usableEducationFeed(payload, config) {
+  if (!payload || !Array.isArray(payload.articles) || !['ready', 'partial'].includes(payload.status)) return null;
+  return { ...payload, articles: payload.articles.filter((record) => validEducationStory(record, config)).map((record) => ({ ...record, imageUrl: safeNewsImage(record.imageUrl) })) };
+}
+
 export function readSavedNews(storage, config) {
   try {
     const records = JSON.parse(storage.getItem(savedNewsKey) || '[]');

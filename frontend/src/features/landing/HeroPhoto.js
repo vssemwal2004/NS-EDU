@@ -8,7 +8,7 @@ export default function HeroPhoto({ className }) {
   const props = getHeroImage(hero ?? null);
   if (!props) return null;
   return <>
-    <link rel="preload" href={props.src} as="image" />
+    <link rel="preload" href={props.src} as="image" fetchPriority="high" />
     <svg className={className} viewBox="945 160 600 524" preserveAspectRatio="xMidYMin slice" role="img" aria-label={props.alt}>
       <image href={props.src} x="0" y="0" width={hero.width} height={hero.height} />
     </svg>

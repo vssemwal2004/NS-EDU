@@ -32,7 +32,7 @@
 @media (max-width: 640px) {
   .dialog { width: 100%; max-height: calc(100dvh - var(--lux-safe-top) - 10px); margin: auto 0 0; border-radius: var(--lux-radius-xl) var(--lux-radius-xl) 0 0; }
   .dialog[open] { animation: qa-sheet var(--lux-dur-3) var(--lux-ease-out) both; }
-  .head { gap: var(--lux-space-3); padding: var(--lux-space-6) calc(var(--lux-space-3) + 52px) var(--lux-space-4) var(--lux-gutter); }
+  .head { gap: var(--lux-space-3); padding: 2.25rem calc(var(--lux-space-3) + 52px) var(--lux-space-4) var(--lux-gutter); }
   .handle { position: absolute; top: 9px; left: 50%; display: block; width: 40px; height: 4px; border-radius: 4px; background: rgb(255 255 255 / 30%); transform: translateX(-50%); }
   .close { right: var(--lux-space-3); }
   .body { --qa-pad: var(--lux-gutter); --qa-pad-bottom: calc(var(--lux-space-3) + var(--lux-safe-bottom)); padding-top: var(--lux-space-4); }

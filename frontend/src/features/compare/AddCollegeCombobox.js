@@ -6,7 +6,7 @@ import { filterCollegeRecords, formatTuition } from '@/lib/college-catalog';
 import styles from './Compare.module.css';
 
 // ARIA 1.2 combobox with a listbox popup, scoped to the programmes of one course.
-export default function AddCollegeCombobox({ id, label, courseName, options, onSelect, inputRef, align = 'start' }) {
+export default function AddCollegeCombobox({ id, label, courseName, options, onSelect, inputRef }) {
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
@@ -34,11 +34,11 @@ export default function AddCollegeCombobox({ id, label, courseName, options, onS
     }
   }
 
-  return <div className={styles.combo} data-align={align}>
+  return <div className={styles.combo}>
     <label className="sr-only" htmlFor={id}>{label}</label>
     <div className={styles.comboField}>
       <Icon name="search" />
-      <input ref={inputRef} id={id} className="field" type="text" role="combobox" autoComplete="off" spellCheck="false"
+      <input ref={inputRef} id={id} className="lux-field" type="text" role="combobox" autoComplete="off" spellCheck="false"
         placeholder={`Search ${courseName} colleges`} value={query}
         aria-autocomplete="list" aria-expanded={expanded} aria-controls={listId}
         aria-activedescendant={expanded && current >= 0 ? `${id}-${matches[current].id}` : undefined}

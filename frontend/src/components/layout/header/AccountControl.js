@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import Icon from '@/components/ui/Icon';
 import { useStudentAuth } from '@/providers/StudentAuthProvider';
 import styles from '../Header.module.css';
@@ -11,6 +12,7 @@ const displayName = (student) => student?.name?.split(' ')[0] || 'My account';
 // Log in button, or an avatar with a role=menu that supports arrow keys.
 export default function AccountControl() {
   const { student, status, openLogin, signOut } = useStudentAuth();
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   const trigger = useRef(null);
@@ -27,7 +29,11 @@ export default function AccountControl() {
   }, [open]);
 
   if (status === 'loading') return <span className={styles.accountSkeleton} aria-hidden="true" />;
-  if (!student) return <button type="button" className={styles.loginButton} onClick={openLogin}><Icon name="user" /><span>Log in</span></button>;
+  // Logged out: the login popup everywhere (the page stays put); on /login itself the form is already there.
+  if (!student) {
+    if (pathname === '/login') return null;
+    return <button type="button" className={styles.loginButton} aria-haspopup="dialog" onClick={() => openLogin()}><Icon name="user" /><span>Log in</span></button>;
+  }
 
   const onMenuKey = (event) => {
     const list = items();
@@ -45,8 +51,7 @@ export default function AccountControl() {
     </button>
     {open && <div id="header-account-menu" className={styles.accountMenu} role="menu" aria-label="Account" onKeyDown={onMenuKey}>
       <p className={styles.accountMeta} role="presentation"><strong>{student.name || 'Gyaan Vidhya student'}</strong><span>{student.email || student.phone}</span></p>
-      <Link role="menuitem" tabIndex={-1} href="/account" onClick={close}><Icon name="user" />My account</Link>
-      <Link role="menuitem" tabIndex={-1} href="/compare" onClick={close}><Icon name="scales" />My comparisons</Link>
+      <Link role="menuitem" tabIndex={-1} href="/account#applications" onClick={close}><Icon name="eligibility" />My applications</Link>
       <button role="menuitem" tabIndex={-1} type="button" onClick={() => { close(); signOut(); }}><Icon name="logout" />Log out</button>
     </div>}
   </div>;

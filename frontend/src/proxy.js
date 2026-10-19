@@ -19,7 +19,7 @@ export function proxy(request) {
     return NextResponse.redirect(login);
   }
   // Server loaders read this to send an expired session back here after logging in again.
-  const headers = new Headers(request.headers);
+  const headers = new globalThis.Headers(request.headers);
   headers.set(PATH_HEADER, path);
   return NextResponse.next({ request: { headers } });
 }

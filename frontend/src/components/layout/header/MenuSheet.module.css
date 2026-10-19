@@ -1,7 +1,7 @@
 .sheet { width: 100%; max-width: 100%; height: 100dvh; max-height: 100dvh; margin: 0; padding: 0 0 var(--lux-safe-bottom); border: 0; background: var(--lux-ivory); color: var(--lux-ink); overflow-y: auto; overscroll-behavior: contain; }
 .sheet[open] { animation: lux-sheet-up var(--lux-dur-3) var(--lux-ease-out) both; }
 .sheet::backdrop { background: rgb(31 20 24 / 40%); }
-.top { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; justify-content: space-between; height: calc(var(--header-bar-mobile-height) + var(--lux-safe-top)); padding: var(--lux-safe-top) var(--lux-gutter) 0; border-bottom: 1px solid var(--lux-border); background: rgb(255 250 245 / 94%); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+.top { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; justify-content: space-between; height: calc(var(--header-bar-mobile-height) + var(--lux-safe-top)); padding: var(--lux-safe-top) var(--lux-gutter) 0; border-bottom: 1px solid var(--lux-border); background: var(--lux-ivory); }
 .brand { --brand-height: 38px; display: inline-flex; align-items: center; min-height: 44px; }
 .close { display: grid; place-items: center; width: 44px; height: 44px; border: 1px solid var(--lux-border-strong); border-radius: 50%; background: var(--lux-surface-raised); color: var(--lux-wine); cursor: pointer; }
 .close:focus-visible, .brand:focus-visible { outline: 2px solid var(--lux-focus); outline-offset: 2px; }

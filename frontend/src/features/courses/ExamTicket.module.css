@@ -1,0 +1,57 @@
+/* Boarding-pass exam card. The stub sits beside the pass when the card is ≥ 600px wide, below it otherwise
+   (container query). Notches are page-coloured circles clipped by the ticket; set --ticket-cut to the colour behind. */
+.frame { container-type: inline-size; min-width: 0; --ticket-cut: var(--lux-surface-page); --stub-width: 252px; }
+.ticket { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); height: 100%; overflow: hidden; border: 1px solid var(--lux-border); border-radius: var(--lux-radius-lg); background: var(--lux-surface-raised); box-shadow: var(--lux-shadow-card); scroll-margin-top: calc(var(--lux-header-height) + var(--lux-space-4)); }
+.ticket:target { border-color: var(--lux-wine); box-shadow: 0 0 0 3px rgb(114 36 59 / 14%), var(--lux-shadow-card); }
+
+.pass { display: flex; flex-direction: column; gap: var(--lux-space-3); min-width: 0; padding: var(--lux-space-5); background: repeating-linear-gradient(135deg, transparent 0 18px, rgb(160 116 90 / 5%) 18px 19px); }
+.kicker { display: inline-flex; align-items: center; gap: var(--lux-space-2); margin: 0; color: var(--lux-bronze-ink); font-size: var(--lux-caption); font-weight: 700; letter-spacing: var(--lux-tracking-eyebrow); text-transform: uppercase; }
+.kicker :global(.icon) { width: 16px; height: 16px; color: var(--lux-bronze); }
+.name { margin: 0; color: var(--lux-heading); font-family: var(--lux-font-display); font-size: clamp(1.875rem, 1.5rem + 1.2vw, 2.5rem); font-weight: 400; line-height: 1.05; letter-spacing: var(--lux-tracking-display); }
+.fields { display: flex; flex-wrap: wrap; gap: var(--lux-space-3) var(--lux-space-6); margin: 0; padding-block: var(--lux-space-3); border-block: 1px dashed var(--lux-border-strong); }
+.fields div { display: grid; align-content: start; gap: 2px; min-width: 0; }
+.fields dt { color: var(--lux-text-subtle); font-size: .6875rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; white-space: nowrap; }
+.fields dd { margin: 0; color: var(--lux-ink); font-size: .9375rem; font-weight: 700; overflow-wrap: break-word; }
+.summary { margin: 0; color: var(--lux-text-muted); font-size: var(--lux-small); line-height: var(--lux-leading-body); }
+.note { display: flex; gap: var(--lux-space-2); margin: 0; padding: var(--lux-space-3); border-radius: var(--lux-radius-md); background: var(--lux-warn-soft); color: var(--lux-warn); font-size: var(--lux-small); line-height: 1.5; }
+.note :global(.icon) { width: 18px; height: 18px; margin-top: 1px; }
+.route { display: grid; gap: var(--lux-space-2); margin-top: auto; padding-top: var(--lux-space-2); }
+.route p { margin: 0; color: var(--lux-text-subtle); font-size: .6875rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+.route ul { display: flex; flex-wrap: wrap; gap: var(--lux-space-2); margin: 0; padding: 0; list-style: none; }
+.route a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 var(--lux-space-4); border: 1px solid var(--lux-border-strong); border-radius: var(--lux-radius-pill); color: var(--lux-wine); font-size: var(--lux-small); font-weight: 600; text-decoration: none; transition: background var(--lux-dur-2), border-color var(--lux-dur-2); }
+.route a:hover { border-color: var(--lux-wine); background: var(--lux-blush-soft); }
+.route a:focus-visible { outline: 2px solid var(--lux-focus); outline-offset: 2px; }
+
+.stub { position: relative; display: flex; flex-direction: column; justify-content: center; gap: var(--lux-space-3); min-width: 0; padding: var(--lux-space-5); border-top: 2px dashed var(--lux-border-strong); background: var(--lux-sand); }
+.stub::before, .stub::after { content: ''; position: absolute; top: -13px; width: 24px; height: 24px; border-radius: 50%; background: var(--ticket-cut); box-shadow: inset 0 0 0 1px var(--lux-border); }
+.stub::before { left: -13px; }
+.stub::after { right: -13px; }
+.stubLabel { display: inline-flex; align-items: center; gap: var(--lux-space-2); margin: 0; color: var(--lux-text-muted); font-size: .6875rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+.stubLabel :global(.icon) { width: 16px; height: 16px; color: var(--lux-bronze); }
+.host { margin: 0 0 var(--lux-space-1); color: var(--lux-ink); font-family: var(--lux-font-display); font-size: 1.375rem; line-height: 1.2; overflow-wrap: anywhere; }
+.guide { align-self: center; }
+.stubNote { margin: 0; color: var(--lux-text-muted); font-size: var(--lux-caption); line-height: 1.5; }
+
+@container (min-width: 600px) {
+  .ticket { grid-template-columns: minmax(0, 1fr) var(--stub-width); }
+  .pass { padding: var(--lux-space-6); }
+  .stub { border-top: 0; border-left: 2px dashed var(--lux-border-strong); padding: var(--lux-space-6) var(--lux-space-5); }
+  .stub::before { top: -13px; left: -13px; }
+  .stub::after { top: auto; bottom: -13px; left: -13px; right: auto; }
+}
+
+/* Exam page header: larger pass, dark stub with the gold CTA. */
+.frame[data-variant="hero"] { --stub-width: 340px; --ticket-cut: var(--lux-sand); }
+.frame[data-variant="hero"] .ticket { border-radius: var(--lux-radius-xl); box-shadow: var(--lux-shadow-float); }
+.frame[data-variant="hero"] .name { font-size: var(--lux-display-1); line-height: var(--lux-leading-tight); }
+.frame[data-variant="hero"] .summary { font-size: var(--lux-lead); line-height: 1.55; }
+.frame[data-variant="hero"] .stub { border-color: rgb(201 164 106 / 45%); background: var(--lux-surface-dark-glow), var(--lux-oxblood); color: var(--lux-text-on-dark); }
+.frame[data-variant="hero"] .stub::before, .frame[data-variant="hero"] .stub::after { box-shadow: none; }
+.frame[data-variant="hero"] .stubLabel, .frame[data-variant="hero"] .stubNote { color: var(--lux-text-on-dark-muted); }
+.frame[data-variant="hero"] .stubLabel :global(.icon) { color: var(--lux-champagne); }
+.frame[data-variant="hero"] .host { color: var(--lux-text-on-dark); font-size: clamp(1.5rem, 1.2rem + 1vw, 2rem); }
+.frame[data-variant="hero"] .stub :focus-visible { outline-color: var(--lux-focus-on-dark); }
+@container (min-width: 600px) {
+  .frame[data-variant="hero"] .pass { padding: var(--lux-space-7) var(--lux-space-7) var(--lux-space-6); }
+  .frame[data-variant="hero"] .stub { padding: var(--lux-space-7) var(--lux-space-6); }
+}

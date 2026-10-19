@@ -5,6 +5,15 @@ import collegesIcons from './icons/colleges';
 import compareIcons from './icons/compare';
 import coursesIcons from './icons/courses';
 import guidesIcons from './icons/guides';
+// Luxe page-group modules: each page agent edits only its own file; names are prefixed per module
+// (home*, uni*, compare*, study*, tool*, guide*, news*, page*) so modules never collide.
+import homeIcons from './icons/home';
+import universitiesIcons from './icons/universities';
+import coursesExamsIcons from './icons/coursesExams';
+import toolsIcons from './icons/tools';
+import guidesLuxIcons from './icons/guidesLux';
+import newsroomIcons from './icons/newsroom';
+import pagesIcons from './icons/pages';
 
 const basePaths = {
   mail: 'M3 5h18v14H3ZM3 5l9 7 9-7',
@@ -70,7 +79,11 @@ const basePaths = {
   sparkleUser: 'M16 21a6 6 0 0 0-12 0M10 13a4 4 0 1 0 0-8 4 4 0 0 0 0 8m8-10 .8 2.2L21 6l-2.2.8L18 9l-.8-2.2L15 6l2.2-.8L18 3Z',
 };
 // Area icon files extend (never override) the base set.
-const paths = { ...landingIcons, ...headerIcons, ...loginIcons, ...collegesIcons, ...compareIcons, ...coursesIcons, ...guidesIcons, ...basePaths };
+const paths = {
+  ...landingIcons, ...headerIcons, ...loginIcons, ...collegesIcons, ...compareIcons, ...coursesIcons, ...guidesIcons,
+  ...homeIcons, ...universitiesIcons, ...coursesExamsIcons, ...toolsIcons, ...guidesLuxIcons, ...newsroomIcons, ...pagesIcons,
+  ...basePaths,
+};
 
 export default function Icon({ name = 'arrow', className = '' }) {
   return <svg className={`icon ${className}`} viewBox="0 0 24 24" fill={name === 'bars' || name === 'bookmarkFilled' ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={paths[name] || paths.arrow} /></svg>;

@@ -8,17 +8,18 @@ import drawerStyles from '@/features/admin/ResourceManager.module.css';
 import UniversityCombobox from '@/features/apply/UniversityCombobox';
 import { INDIAN_STATES } from '@/features/apply/apply-options';
 import { api } from '@/lib/api/client';
-import { courseText, FILTER_KEYS, formatDateTime, LEAD_STATUSES, LEADS_QUERY_KEY, leadStatusLabel, placeText, statusTone } from './lead-format';
+import { courseText, FILTER_KEYS, formatDateTime, isQuick, LEAD_MODES, LEAD_STATUSES, LEADS_QUERY_KEY, leadStatusLabel, placeText, statusTone } from './lead-format';
 import styles from './Leads.module.css';
 
 const PAGE_SIZE = 20;
-const ADVANCED = ['institution', 'course', 'state', 'from', 'to', 'assignee'];
+const ADVANCED = ['institution', 'course', 'state', 'mode', 'from', 'to', 'assignee'];
 
 function readFilters(source) {
   const value = (key) => String((Array.isArray(source[key]) ? source[key][0] : source[key]) ?? '').trim().slice(0, 120);
   const filters = Object.fromEntries(FILTER_KEYS.map((key) => [key, value(key)]));
   filters.page = Math.max(1, Number.parseInt(filters.page, 10) || 1);
   if (filters.status && !LEAD_STATUSES.some((item) => item.value === filters.status)) filters.status = '';
+  if (filters.mode && !LEAD_MODES.some((item) => item.value === filters.mode)) filters.mode = '';
   return filters;
 }
 function toQuery(filters, { withPage = true, withNames = false } = {}) {
@@ -166,6 +167,12 @@ export default function LeadsManager({ initial = {} }) {
         </select>
       </div>
       <div className={styles.filterField}>
+        <label htmlFor="lead-filter-mode">Form</label>
+        <select id="lead-filter-mode" className={drawerStyles.input} value={filters.mode} onChange={(event) => change({ mode: event.target.value })}>
+          <option value="">Any form</option>{LEAD_MODES.map((mode) => <option key={mode.value} value={mode.value}>{mode.label}</option>)}
+        </select>
+      </div>
+      <div className={styles.filterField}>
         <label htmlFor="lead-filter-from">Submitted from</label>
         <input id="lead-filter-from" className={drawerStyles.input} type="date" value={filters.from} max={filters.to || undefined} onChange={(event) => change({ from: event.target.value })} />
       </div>
@@ -192,8 +199,8 @@ export default function LeadsManager({ initial = {} }) {
           </tr></thead>
           <tbody>{list.items.map((item) => <tr key={item.id} data-selected={selectedIds.includes(item.id) || undefined}>
             {isAdmin && <td className={styles.checkCell}><input type="checkbox" aria-label={`Select ${item.ref}`} checked={selectedIds.includes(item.id)} onChange={(event) => setSelectedIds((current) => event.target.checked ? [...current, item.id] : current.filter((id) => id !== item.id))} /></td>}
-            <td data-label="Lead"><Link className={styles.refLink} href={`/admin/leads/${item.id}`}>{item.ref}</Link><small>{formatDateTime(item.createdAt)}</small></td>
-            <td data-label="Applicant"><strong>{item.applicant.fullName}</strong><small>{item.applicant.phone} · {item.applicant.email}</small><small>{placeText(item.applicant)}</small></td>
+            <td data-label="Lead"><Link className={styles.refLink} href={`/admin/leads/${item.id}`}>{item.ref}</Link>{isQuick(item) && <span className={styles.mode} title="Submitted with the one-screen quick apply form">Quick</span>}<small>{formatDateTime(item.createdAt)}</small></td>
+            <td data-label="Applicant"><strong>{item.applicant.fullName || 'Not provided'}</strong><small>{[item.applicant.phone, item.applicant.email].filter(Boolean).join(' · ') || 'Not provided'}</small><small>{placeText(item.applicant) || 'Location not provided'}</small></td>
             <td data-label="University"><strong>{item.preference.institutionName}</strong><small>{courseText(item.preference)} · {item.preference.intakeYear}</small></td>
             <td data-label="Status"><span className={styles.status} data-tone={statusTone(item.status)}>{leadStatusLabel(item.status)}</span></td>
             {isAdmin && <td data-label="Assigned">{item.assignedEmployeeIds.length ? <small className={styles.assignees}>{item.assignedEmployeeIds.map((id) => employeeEmail(id) || 'Employee').join(', ')}</small> : <small className={styles.unassigned}>Unassigned</small>}</td>}

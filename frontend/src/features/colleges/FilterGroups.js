@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import Icon from '@/components/ui/Icon';
 import { FEE_LIMITS, RATING_FLOORS, SORT_OPTIONS, formatLakh } from '@/lib/college-catalog';
-import styles from './Listing.module.css';
+import styles from './Ledger.module.css';
 
 const COURSE_PREVIEW = 6;
 const FIELD_PREVIEW = 6;

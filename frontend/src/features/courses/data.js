@@ -1,10 +1,35 @@
-// Shared, pure helpers for the course and exam pages (used by server pages and client components).
+// Shared, pure helpers for the course and exam pages (server and client).
 
 // Course `level` and exam `level` / `courseSlugs` / `note` are catalogue fields edited in the admin console.
 export const LEVEL_LABEL = { UG: 'Undergraduate', PG: 'Postgraduate' };
 
 export const courseLevel = (course) => (LEVEL_LABEL[course?.level] ? course.level : null);
 export const examLevel = (exam) => (LEVEL_LABEL[exam?.level] ? exam.level : null);
+
+// Each stream keeps one palette tint everywhere (mosaic tile, course cards, detail header).
+const TONES = ['oxblood', 'blush', 'champagne', 'wine', 'sand', 'rose'];
+const STREAM_TONES = {
+  Medical: 'wine', Engineering: 'oxblood', Management: 'champagne', Computing: 'blush', Commerce: 'sand', Design: 'rose',
+  Law: 'sand', Pharmacy: 'blush', Healthcare: 'champagne', Arts: 'rose', Dentistry: 'blush', Hospitality: 'champagne', Undergraduate: 'sand',
+};
+export function streamTone(field = '') {
+  if (STREAM_TONES[field]) return STREAM_TONES[field];
+  let hash = 0;
+  for (const char of field) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
+  return TONES[hash % TONES.length];
+}
+export const isDarkTone = (tone) => tone === 'oxblood' || tone === 'wine';
+
+// Streams ordered by course count, then name.
+export function streamsOf(courses) {
+  const map = new Map();
+  for (const course of courses) {
+    if (!map.has(course.field)) map.set(course.field, []);
+    map.get(course.field).push(course);
+  }
+  return [...map].map(([name, items]) => ({ name, courses: items, tone: streamTone(name), icon: items[0].icon }))
+    .sort((a, b) => b.courses.length - a.courses.length || a.name.localeCompare(b.name));
+}
 
 export function median(values) {
   if (!values.length) return null;
@@ -17,6 +42,7 @@ function spread(values) {
   return values.length ? { min: Math.min(...values), max: Math.max(...values), median: median(values) } : null;
 }
 
+// Figures come only from the curated (illustrative) programme rows of /api/catalog/colleges.
 export function courseStats(courseId, colleges) {
   const rows = colleges.filter((row) => row.courseId === courseId);
   const tuition = rows.map((row) => row.annualTuitionInr).filter((value) => typeof value === 'number');
@@ -58,10 +84,7 @@ export function formatLakh(value) {
 }
 const trim = (value) => (Math.round(value * 10) / 10).toFixed(1).replace(/\.0$/, '');
 export const formatLpa = (value) => (value == null ? 'Not reported' : `₹${trim(value)} LPA`);
-
-export function formatRange(min, max, format) {
-  return min === max ? format(min) : `${format(min)}–${format(max)}`;
-}
+export const formatRange = (min, max, format) => (min === max ? format(min) : `${format(min)}–${format(max)}`);
 export const lpaRange = (salary) => (salary.min === salary.max ? formatLpa(salary.min) : `₹${trim(salary.min)}–${trim(salary.max)} LPA`);
 
 export function hostname(href) {
@@ -69,3 +92,10 @@ export function hostname(href) {
 }
 
 export const plural = (count, word, many = `${word}s`) => `${count} ${count === 1 ? word : many}`;
+
+export const firstParam = (value) => String((Array.isArray(value) ? value[0] : value) ?? '').trim().slice(0, 80);
+
+export function matchesTerms(text, query) {
+  const haystack = text.toLowerCase();
+  return query.toLowerCase().split(/\s+/).filter(Boolean).every((term) => haystack.includes(term));
+}

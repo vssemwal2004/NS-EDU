@@ -11,7 +11,7 @@ export default function CampusArtwork({ className }) {
   const source = getHeroImage(hero ?? null);
   if (!source) return null;
   return <>
-    <link rel="preload" href={source.src} as="image" />
+    <link rel="preload" href={source.src} as="image" fetchPriority="high" />
     <svg className={className} viewBox="0 120 1672 564" preserveAspectRatio="xMaxYMin slice" role="img" aria-label={source.alt}>
       <defs>
         <filter id={`${id}-blend`} x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="8" /></filter>

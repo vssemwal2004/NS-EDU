@@ -1,0 +1,23 @@
+/* Loading, not-found and error states for /universities/[slug]. */
+.page { min-height: 70vh; background: var(--lux-surface-page); }
+.state { padding-block: clamp(4rem, 3rem + 5vw, 7.5rem); }
+.state h1 { text-wrap: balance; }
+.actions { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--lux-space-3); margin-top: var(--lux-space-2); }
+.digest { color: var(--lux-text-subtle); font-size: var(--lux-caption); }
+
+.cover { padding-block: clamp(4rem, 3rem + 4vw, 7rem) clamp(5.5rem, 4rem + 4vw, 8rem); }
+.coverInner { display: flex; align-items: flex-end; gap: var(--lux-space-6); }
+.medallion { flex: none; width: 112px; height: 112px; border-radius: 30px; background: rgb(255 255 255 / 10%); }
+.lines { display: grid; flex: 1; gap: var(--lux-space-3); }
+.lines span { display: block; height: 14px; max-width: 220px; border-radius: 8px; background: rgb(255 255 255 / 12%); animation: lux-fade-in 1.2s var(--lux-ease-in-out) infinite alternate; }
+.lines span:nth-child(2) { height: 44px; max-width: 560px; }
+.lines span:nth-child(3) { max-width: 320px; }
+.ribbon { position: relative; height: 104px; margin-top: -3.75rem; border-radius: var(--lux-radius-xl); box-shadow: var(--lux-shadow-card); }
+.blocks { display: grid; gap: var(--lux-space-5); padding-block: var(--lux-space-8); }
+.blocks span { display: block; height: 180px; border-radius: var(--lux-radius-lg); }
+.blocks span:first-child { height: 40px; max-width: 320px; }
+
+@media (max-width: 640px) {
+  .coverInner { flex-direction: column; align-items: flex-start; }
+  .medallion { width: 80px; height: 80px; border-radius: 22px; }
+}

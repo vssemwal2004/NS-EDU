@@ -5,7 +5,6 @@ const initials = (name = '') => name.replace(/\(.*?\)/g, '').split(/\s+/).filter
 // University logo (remote, any official site, so a plain <img>) or a monogram when there is none.
 export default function UniversityMark({ university, size = 'md' }) {
   return <span className={styles.mark} data-size={size} aria-hidden="true">
-    {/* eslint-disable-next-line @next/next/no-img-element */}
     {university.logoUrl ? <img src={university.logoUrl} alt="" width={56} height={56} loading="lazy" decoding="async" referrerPolicy="no-referrer" /> : initials(university.name)}
   </span>;
 }

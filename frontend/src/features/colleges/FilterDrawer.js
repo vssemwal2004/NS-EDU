@@ -1,7 +1,7 @@
 'use client';
 import Icon from '@/components/ui/Icon';
 import { GROUPS, SortGroup } from './FilterGroups';
-import styles from './Listing.module.css';
+import styles from './Ledger.module.css';
 
 const TABS = [...GROUPS, { id: 'sort', label: 'Sort', Component: SortGroup, active: (value) => (value.sort && value.sort !== 'default' ? 1 : 0) }];
 
@@ -19,12 +19,12 @@ export default function FilterDrawer({ dialogRef, draft, tab, onTab, onChange, o
     onTab(next.id);
     event.currentTarget.parentElement.querySelector(`#drawer-tab-${next.id}`)?.focus();
   }
-  return <dialog ref={dialogRef} className={styles.drawer} aria-labelledby="filter-drawer-title"
+  return <dialog ref={dialogRef} className={styles.sheet} aria-labelledby="filter-drawer-title"
     onClick={(event) => { if (event.target === event.currentTarget) close(); }}>
-    {draft && <div className={styles.drawerInner}>
-      <div className={styles.drawerHead}>
-        <div><h2 id="filter-drawer-title">Filters</h2><p aria-live="polite">{total} {total === 1 ? 'college matches' : 'colleges match'}</p></div>
-        <button type="button" className="icon-button" aria-label="Close filters without applying" onClick={close}><Icon name="close" /></button>
+    {draft && <>
+      <div className={styles.sheetHead}>
+        <div><h2 id="filter-drawer-title">Refine the ledger</h2><p aria-live="polite">{total} {total === 1 ? 'college matches' : 'colleges match'}</p></div>
+        <button type="button" className="lux-button lux-button--ghost lux-button--icon" aria-label="Close filters without applying" onClick={close}><Icon name="close" /></button>
       </div>
       <div className={styles.drawerBody}>
         <div className={styles.rail} role="tablist" aria-orientation="vertical" aria-label="Filter categories">
@@ -39,10 +39,10 @@ export default function FilterDrawer({ dialogRef, draft, tab, onTab, onChange, o
           <Pane name="drawer" value={draft} counts={counts} options={options} onChange={onChange} unknown={unknown} />
         </div>
       </div>
-      <div className={styles.drawerFoot}>
-        <button type="button" className="button button--ghost" onClick={onClear}>Clear all</button>
-        <button type="button" className="button button--primary" onClick={onApply}>Show {total} {total === 1 ? 'college' : 'colleges'}</button>
+      <div className={styles.sheetFoot}>
+        <button type="button" className="lux-button lux-button--ghost" onClick={onClear}>Clear all</button>
+        <button type="button" className="lux-button lux-button--primary" onClick={onApply}>Show {total} {total === 1 ? 'college' : 'colleges'}</button>
       </div>
-    </div>}
+    </>}
   </dialog>;
 }

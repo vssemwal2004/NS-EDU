@@ -57,9 +57,17 @@
    .lux-bottom-bar                       fixed mobile action bar (≤ 640px only), respects the bottom safe area
    .lux-reveal                           CSS-only fade-up on first paint
    Still shared by both layers: .sr-only · .skip-link · .icon (svg from components/ui/Icon) · .dialog (components/ui/Dialog)
+
+   RULES FOR PAGE AGENTS
+   - Pages render inside (site)/layout.js: sticky header (z --lux-z-header) above, oxblood footer below. Give each page one
+     <main id="main"> (the skip link targets it). Sticky elements use top: var(--lux-header-height).
+   - Use <Icon name="…" /> from components/ui/Icon. Area icon modules (plain objects of 24x24 path strings, 1.65 stroke,
+     names prefixed per module; edit ONLY your own): icons/home.js (home*) · universities.js (uni*) · compare.js (compare*)
+     · coursesExams.js (study*) · tools.js (tool*) · guidesLux.js (guide*) · newsroom.js (news*) · pages.js (page*).
+   - Raster images: next/image with an honest `sizes`; reserve space (width/height or aspect-ratio) to avoid layout shift.
+   - Never restyle legacy classes or anything rendered on "/" — build new lux components instead.
    ========================================================================== */
 @import './themes/landing.css';
-@import './themes/header.css';
 @import './themes/login.css';
 @import './themes/colleges.css';
 @import './themes/compare.css';
@@ -98,19 +106,10 @@
   --header-bar-height: 72px;
   --header-bar-mobile-height: 60px;
   --desktop-header-height: calc(var(--header-utility-height) + var(--header-bar-height));
-  --header-background: rgb(255 250 248 / 88%);
-  --header-background-scrolled: rgb(255 255 255 / 94%);
-  --header-border: #EFE2E5;
   --header-hover: #F7ECEE;
   --header-icon-background: #F6E9EC;
   --header-brand-mark: linear-gradient(140deg, #8A2E49, #5E1B30);
-  --header-feature-background: radial-gradient(circle at 85% 10%, #8E3753, transparent 55%), linear-gradient(150deg, #72243B, #4E1528);
-  --header-feature-muted: #F1DCE2;
   --header-feature-eyebrow: #F0C9D4;
-  --header-nav-padding: clamp(.55rem, .8vw, .9rem);
-  --header-mega-width: 620px;
-  --header-panel-radius: 16px;
-  --header-scroll-shadow: 0 8px 24px rgb(72 37 46 / 8%);
   /* Feature page intro band. */
   --page-intro-background: radial-gradient(ellipse at 90% 0%, #F3E2E6, transparent 55%), linear-gradient(115deg, #FCF6F2, #FFFAF8 55%, #F8EEEF);
   --page-intro-line: #E2CBC6;

@@ -86,17 +86,19 @@ export default function Header() {
     window.clearTimeout(timers.current.close);
     window.clearTimeout(timers.current.open);
     if (openMenu === id) return;
-    timers.current.open = window.setTimeout(() => { timers.current.at = performance.now(); setOpenMenu(id); }, openMenu ? 60 : 120);
+    const delay = openMenu ? 60 : 120;
+    const openedAt = event.timeStamp + delay;
+    timers.current.open = window.setTimeout(() => { timers.current.at = openedAt; setOpenMenu(id); }, delay);
   };
   const hoverClose = (event) => {
     if (event.pointerType !== 'mouse') return;
     window.clearTimeout(timers.current.open);
     timers.current.close = window.setTimeout(() => setOpenMenu(null), 180);
   };
-  const toggleMenu = (id) => {
+  const toggleMenu = (id, event) => {
     window.clearTimeout(timers.current.open);
     // A click right after hover opened the menu should not close it again.
-    if (openMenu === id && performance.now() - timers.current.at < 450) return;
+    if (openMenu === id && event.timeStamp - timers.current.at < 450) return;
     setSearchOpen(false);
     setOpenMenu(openMenu === id ? null : id);
   };
@@ -123,7 +125,7 @@ export default function Header() {
               const open = openMenu === item.id;
               const id = `nav-menu-${item.id}`;
               return <li key={item.id} className={styles.menuItem} onPointerEnter={hoverOpen(item.id)} onPointerLeave={hoverClose}>
-                <button type="button" data-menu={item.id} className={styles.navLink} data-active={active} aria-expanded={open} aria-controls={id} onClick={() => toggleMenu(item.id)}>
+                <button type="button" data-menu={item.id} className={styles.navLink} data-active={active} aria-expanded={open} aria-controls={id} onClick={(event) => toggleMenu(item.id, event)}>
                   {item.label}<Icon name="chevron" />
                 </button>
                 <div id={id} className={styles.dropdown} data-menu={item.id} hidden={!open}>

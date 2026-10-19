@@ -2,13 +2,15 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import Icon from '@/components/ui/Icon';
+import ApplyButton from '@/features/apply/ApplyButton';
 import CollegeArtwork from '@/features/landing/CollegeArtwork';
 import { formatTuition } from '@/lib/college-catalog';
 import { useCatalog } from '@/providers/CatalogProvider';
-import CompareSlots from './CompareSlots';
+import CompareArena, { universityOf } from './CompareArena';
 import CompareTable from './CompareTable';
-import SuggestedComparisons, { SuggestionCard } from './SuggestedComparisons';
-import { MAX, buildSuggestions, compareHref, courseStats, groupByCourse, shortFee } from './compare-data';
+import CompareVerdict from './CompareVerdict';
+import SuggestedComparisons from './SuggestedComparisons';
+import { MAX, buildSuggestions, compareHref, courseStats, groupByCourse } from './compare-data';
 import { useCompareState } from './useCompareState';
 import styles from './Compare.module.css';
 
@@ -17,7 +19,7 @@ const noop = () => () => {};
 // Native share sheet only on touch devices; desktops get "Copy link".
 const canShareSnapshot = () => Boolean(window.navigator.share) && window.matchMedia('(pointer: coarse)').matches;
 
-export default function CompareView({ initialCourse = '', initialList = '' }) {
+export default function CompareView({ initialCourse = '', initialList = '', intro = null }) {
   const { courses, colleges } = useCatalog();
   const groups = useMemo(() => groupByCourse(colleges), [colleges]);
   const options = useMemo(() => courses.filter((course) => groups.has(course.id)).map((course) => ({ ...course, count: groups.get(course.id).length })), [courses, groups]);
@@ -41,18 +43,22 @@ export default function CompareView({ initialCourse = '', initialList = '' }) {
   });
 
   const course = options.find((item) => item.id === state.course);
-  if (!course) return <section className={`container ${styles.page}`} aria-label="Compare colleges">
-    <div className={styles.panel}><Icon name="building" /><h2>No colleges to compare yet</h2><p>College records will appear here once they are published.</p></div>
-  </section>;
+  if (!course) return <div className={styles.page}>
+    <section className={`lux-surface-dark ${styles.stage}`} aria-labelledby="compare-title">
+      <div className={`lux-container ${styles.stageInner}`}>
+        <div className={styles.intro}>{intro}</div>
+        <div className={`lux-state ${styles.emptyState}`}><Icon name="building" /><h2 className="lux-title">No colleges to compare yet</h2><p>College records will appear here once they are published.</p></div>
+      </div>
+    </section>
+  </div>;
 
   const { rows, selected } = state;
-  const stats = courseStats(rows);
   const total = selected.length;
+  const canCompare = rows.length > 1;
   const sortedKey = (ids) => ids.toSorted().join(',');
   const currentKey = `${course.id}:${sortedKey(state.ids)}`;
   const ownCards = allCards.filter((card) => card.course.id === course.id && card.key !== currentKey);
   const otherCards = allCards.filter((card) => card.course.id !== course.id);
-  const canCompare = rows.length > 1;
   const sameField = options.filter((item) => item.count > 1 && item.id !== course.id && item.field === course.field);
   const alternatives = sameField.length ? sameField : options.filter((item) => item.count > 1);
 
@@ -62,9 +68,9 @@ export default function CompareView({ initialCourse = '', initialList = '' }) {
     pendingFocus.current = total + 1 >= MAX ? 'diff' : 'combo';
     setMessage(`${row.shortName || row.name} added · ${total + 1} of ${MAX} slots used`);
   }
-  function remove(row, { quiet } = {}) {
+  function remove(row) {
     state.remove(row.id);
-    if (!quiet) pendingFocus.current = 'combo';
+    pendingFocus.current = 'combo';
     setMessage(`${row.shortName || row.name} removed · ${total - 1} of ${MAX} slots used`);
   }
   function clear() {
@@ -77,12 +83,6 @@ export default function CompareView({ initialCourse = '', initialList = '' }) {
     state.setCourse(id);
     const next = options.find((item) => item.id === id);
     setMessage(next ? `Showing ${next.name} comparison` : '');
-  }
-  function requestAdd() {
-    const input = comboRef.current;
-    if (!input) return;
-    input.scrollIntoView({ block: 'center' });
-    input.focus({ preventScroll: true });
   }
   async function shareLink() {
     const url = new URL(compareHref(course.id, state.ids), window.location.origin).href;
@@ -97,9 +97,9 @@ export default function CompareView({ initialCourse = '', initialList = '' }) {
     } catch { setShare({ status: 'failed', url }); }
   }
 
-  const setup = <div className={styles.setup}>
+  const controls = <div className={styles.controls}>
     <div className={styles.courseField}>
-      <label htmlFor="compare-course">Course</label>
+      <label htmlFor="compare-course" className={styles.controlLabel}>Course</label>
       <div className={styles.selectWrap}>
         <Icon name={course.icon || 'cap'} />
         <select id="compare-course" value={course.id} onChange={(event) => changeCourse(event.target.value)}>
@@ -108,114 +108,84 @@ export default function CompareView({ initialCourse = '', initialList = '' }) {
         </select>
         <Icon name="chevron" className={styles.selectChevron} />
       </div>
+      <p className={styles.controlHint}>Each course keeps its own picks, so switching never clears them.</p>
     </div>
-    <p className={styles.setupHint}><Icon name="compareInfo" />Each course keeps its own picks, so switching course never clears them.</p>
-    {canCompare && <div className={styles.setupMeta}>
+    {canCompare && state.hydrated && <div className={styles.controlRow}>
       <span className={styles.meter} aria-hidden="true">{Array.from({ length: MAX }, (_, index) => <i key={index} data-on={index < total || undefined} />)}</span>
-      <span><strong>{total}</strong> of {MAX} selected</span>
-      {total > 0 && <button type="button" className={`text-link ${styles.clear}`} onClick={clear}>Clear</button>}
+      <span className={styles.meterText}><strong>{total}</strong> of {MAX} selected</span>
+      {total > 0 && <button type="button" className={styles.textButton} onClick={clear}>Clear</button>}
     </div>}
+    {canCompare && total > 0 && <div className={styles.controlRow}>
+      <button type="button" className="lux-button lux-button--ghost lux-button--sm" onClick={shareLink}><Icon name={canShare ? 'compareShare' : 'compareLink'} />{canShare ? 'Share' : 'Copy link'}</button>
+      <button type="button" className={`lux-button lux-button--ghost lux-button--sm ${styles.print}`} onClick={() => window.print()}><Icon name="comparePrint" />Print</button>
+      <span className={styles.shareStatus} role="status">{share.status === 'copied' ? <><Icon name="check" />Link copied</> : share.status === 'failed' ? 'Copy failed: select the link below' : ''}</span>
+    </div>}
+    {share.status === 'failed' && <label className={styles.shareField}><span className="sr-only">Comparison link</span><input className="lux-field" readOnly value={share.url} onFocus={(event) => event.target.select()} /></label>}
   </div>;
 
-  const live = <p className="sr-only" role="status" aria-live="polite">{message}</p>;
+  const only = rows[0];
+  const showBoard = canCompare && state.hydrated && total > 0;
 
-  if (!canCompare) {
-    const only = rows[0];
-    return <section className={`container ${styles.page}`} aria-label="Compare colleges" id="comparison">
-      {setup}
-      {live}
-      <div className={`${styles.panel} ${styles.singlePanel}`}>
-        <div className={styles.singleCopy}>
-          <p className={styles.kicker}><Icon name={course.icon || 'cap'} />{course.name}</p>
-          <h2>Only one {course.name} college is listed right now</h2>
-          <p className={styles.subtle}>There is nothing to compare it with yet. You can still view its details, or compare another course.</p>
+  return <div className={styles.page}>
+    <section className={`lux-surface-dark ${styles.stage}`} aria-labelledby="compare-title" id="comparison" data-board={showBoard || undefined}>
+      <div className={`lux-container ${styles.stageInner}`}>
+        <div className={styles.stageHead}>
+          <div className={styles.intro}>{intro}</div>
+          {controls}
         </div>
-        <article className={styles.singleCard} aria-labelledby="single-name">
-          <CollegeArtwork row={only} className={styles.singleThumb} />
-          <div>
-            <h3 id="single-name">{only.name}</h3>
-            <p className={styles.slotCity}><Icon name="location" />{only.city}{only.state ? `, ${only.state}` : ''}</p>
-            <p className={styles.slotFacts}><span>{formatTuition(only.annualTuitionInr)}/yr</span><span className={styles.illustrative}>Illustrative</span></p>
-          </div>
-          <div className={styles.singleActions}>
-            <Link className="button button--primary" href={`/universities/${only.collegeId}`}>View college<Icon name="arrow" /></Link>
-            <Link className="button button--ghost" href={`/colleges?course=${course.id}`}>Browse {course.name} colleges</Link>
-          </div>
-        </article>
-        <div className={styles.altCourses}>
-          <p>{sameField.length ? `Other ${course.field} courses you can compare` : 'Courses you can compare'}</p>
-          <ul>{alternatives.map((item) => <li key={item.id}><Link className="chip" href={`${compareHref(item.id)}#comparison`}><Icon name={item.icon || 'cap'} />{item.name}<small>{item.count} colleges</small></Link></li>)}</ul>
-        </div>
-      </div>
-      <SuggestedComparisons cards={otherCards} />
-    </section>;
-  }
+        {state.droppedFromLink > 0 && <p className={styles.notice} role="status"><Icon name="compareInfo" />{state.droppedFromLink === 1 ? '1 college in this link is' : `${state.droppedFromLink} colleges in this link are`} no longer listed for {course.name}.</p>}
 
-  return <section className={`container ${styles.page}`} aria-label="Compare colleges" id="comparison">
-    {setup}
-    {live}
-    {state.droppedFromLink > 0 && <p className={styles.notice} role="status"><Icon name="compareInfo" />{state.droppedFromLink === 1 ? '1 college in this link is' : `${state.droppedFromLink} colleges in this link are`} no longer listed for {course.name}.</p>}
-
-    {!state.hydrated
-      ? <div className={styles.skeleton} aria-busy="true" aria-label="Loading your comparison"><span /><span /><span /><span /></div>
-      : <>
-        {total > 0 && <div className={styles.toolbar}>
-          <nav className={styles.jump} aria-label="Comparison sections">
-            <span className={styles.jumpLabel}>Jump to</span>
-            {jumpLinks.map(([id, label]) => <a key={id} className="chip" href={`#${id}`}>{label}</a>)}
-          </nav>
-          <div className={styles.actions}>
-            <button ref={diffRef} type="button" className={styles.switch} aria-pressed={highlight && total > 1} disabled={total < 2} onClick={() => setHighlight(!highlight)}
-              title={total < 2 ? 'Add a second college to highlight differences' : undefined}>
-              <span className={styles.switchTrack} aria-hidden="true"><span /></span><Icon name="compareDiff" />Highlight differences
-            </button>
-            <button type="button" className="button button--ghost" onClick={shareLink}><Icon name={canShare ? 'compareShare' : 'compareLink'} />{canShare ? 'Share' : 'Copy link'}</button>
-            <button type="button" className={`button button--ghost ${styles.print}`} onClick={() => window.print()}><Icon name="comparePrint" />Print</button>
-            <span className={styles.shareStatus} role="status">{share.status === 'copied' ? <><Icon name="check" />Link copied</> : share.status === 'failed' ? 'Copy failed: select the link below' : ''}</span>
-          </div>
-          {share.status === 'failed' && <label className={styles.shareField}><span className="sr-only">Comparison link</span><input className="field" readOnly value={share.url} onFocus={(event) => event.target.select()} /></label>}
-        </div>}
-
-        <CompareSlots course={course} rows={rows} selected={selected} onAdd={add} onRemove={remove} comboRef={comboRef} />
-
-        {total === 1 && <p className={styles.notice}><Icon name="plus" />Add one more college to compare. The table below already shows this college&apos;s figures.</p>}
-
-        {total > 0
-          ? <CompareTable course={course} stats={stats} selected={selected} highlight={highlight} onRemove={remove} onAddRequest={requestAdd} />
-          : <div className={`${styles.panel} ${styles.startPanel}`}>
-            <svg className={styles.startArt} viewBox="0 0 220 150" fill="none" aria-hidden="true">
-              <path d="M12 138h196" />
-              <rect x="22" y="40" width="52" height="98" rx="8" /><rect x="84" y="20" width="52" height="118" rx="8" /><rect x="146" y="56" width="52" height="82" rx="8" />
-              <path d="M32 62h32M32 74h22M94 42h32M94 54h22M156 78h32M156 90h22" />
-              <path className={styles.startBar} d="M32 120V104M42 120V96M52 120V110M94 120V84M104 120V72M114 120V90M156 120V108M166 120V100M176 120V112" />
-              <circle cx="110" cy="9" r="6" />
-            </svg>
-            <div className={styles.startCopy}>
-              <p className={styles.kicker}><Icon name="scales" />Get started</p>
-              <h2>Start a {course.name} comparison</h2>
-              <p className={styles.subtle}>Add two or three colleges offering {course.name} to see fees, placements and data years side by side. Tap a college to add it.</p>
-              <ul className={styles.quickAdd}>{rows.map((row) => <li key={row.id}>
-                <button type="button" className="chip" onClick={() => add(row)}><Icon name="plus" />{row.shortName || row.name}<small>{row.city} · {shortFee(row.annualTuitionInr)}/yr</small></button>
-              </li>)}</ul>
+        {canCompare
+          ? <CompareArena course={course} rows={rows} selected={selected} hydrated={state.hydrated} onAdd={add} onRemove={remove} comboRef={comboRef} />
+          : <div className={styles.single}>
+            <div className={styles.singleCopy}>
+              <p className={styles.kicker}><Icon name={course.icon || 'cap'} />{course.name}</p>
+              <h2 className={styles.arenaTitle}>Only one {course.name} college is listed right now</h2>
+              <p className={styles.subtleOnDark}>There is nothing to compare it with yet. You can still view its details, or compare another course.</p>
+              <p className={styles.altLabel}>{sameField.length ? `Other ${course.field} courses you can compare` : 'Courses you can compare'}</p>
+              <ul className={styles.altCourses}>{alternatives.map((item) => <li key={item.id}><Link className="lux-chip" href={`${compareHref(item.id)}#comparison`}><Icon name={item.icon || 'cap'} />{item.name}<small>{item.count}</small></Link></li>)}</ul>
             </div>
-            {ownCards.length > 0 && <div className={styles.startCards}>
-              <p className={styles.startCardsTitle}>Ready-made {course.name} comparisons</p>
-              <ul className={styles.suggestionGrid}>{ownCards.map((card) => <SuggestionCard key={card.key} card={card} />)}</ul>
-            </div>}
+            <article className={styles.slotCard} aria-labelledby="single-name" id="compare-slots">
+              <div className={styles.slotArt} aria-hidden="true"><CollegeArtwork row={only} className={styles.slotThumb} /></div>
+              <div className={styles.slotBody}>
+                <h3 id="single-name" className={styles.slotName}>{only.name}</h3>
+                <p className={styles.slotCity}><Icon name="location" />{only.city}{only.state ? `, ${only.state}` : ''}</p>
+                <p className={styles.slotFee}><strong>{formatTuition(only.annualTuitionInr)}</strong><small>tuition / yr · illustrative</small></p>
+              </div>
+              <div className={`${styles.slotActions} ${styles.singleActions}`}>
+                <ApplyButton university={universityOf(only)} courseSlug={course.id} variant="light" block />
+                <Link className={styles.slotLink} href={`/universities/${only.collegeId}`}>View college<Icon name="arrow" /></Link>
+              </div>
+            </article>
           </div>}
+      </div>
+    </section>
+    <p className="sr-only" role="status" aria-live="polite">{message}</p>
 
-        <aside className={styles.footnote} aria-label="About this data">
-          <Icon name="compareInfo" />
-          <div>
-            <p><strong>Illustrative data:</strong> these institutions are fictional examples. <strong>Lowest</strong> and <strong>Highest</strong> compare only the colleges you selected and are not a ranking. Tuition covers tuition only; hostel, exam and living costs are extra. Confirm fees and eligibility with each institution.</p>
-            <p className={styles.footLinks}>
-              <Link className="text-link" href="/budget"><Icon name="wallet" />Estimate full costs<Icon name="arrow" /></Link>
-              <Link className="text-link" href={`/colleges?course=${course.id}`}><Icon name="cap" />Browse all {course.name} colleges<Icon name="arrow" /></Link>
-            </p>
-          </div>
-        </aside>
-      </>}
+    {showBoard && <div className={`lux-container ${styles.board}`}>
+      <CompareVerdict selected={selected} />
+      <div className={styles.toolbar}>
+        <nav className={styles.jump} aria-label="Comparison sections">
+          {jumpLinks.map(([id, label]) => <a key={id} className={styles.jumpLink} href={`#${id}`}>{label}</a>)}
+        </nav>
+        <button ref={diffRef} type="button" className={styles.switch} aria-pressed={highlight && total > 1} disabled={total < 2} onClick={() => setHighlight(!highlight)}
+          title={total < 2 ? 'Add a second college to highlight differences' : undefined}>
+          <span className={styles.switchTrack} aria-hidden="true"><span /></span><Icon name="compareDiff" />Highlight differences
+        </button>
+      </div>
+      <CompareTable course={course} stats={courseStats(rows)} selected={selected} highlight={highlight} />
+      <aside className={styles.footnote} aria-label="About this data">
+        <Icon name="compareInfo" />
+        <div>
+          <p><strong>Illustrative data:</strong> these institutions are fictional examples. <strong>Lowest</strong> and <strong>Highest</strong> compare only the colleges you selected and are not a ranking. Tuition covers tuition only; hostel, exam and living costs are extra. Confirm fees and eligibility with each institution.</p>
+          <p className={styles.footLinks}>
+            <Link className="lux-link" href="/budget">Estimate full costs<Icon name="arrow" /></Link>
+            <Link className="lux-link" href={`/colleges?course=${course.id}`}>Browse all {course.name} colleges<Icon name="arrow" /></Link>
+          </p>
+        </div>
+      </aside>
+    </div>}
 
-    <SuggestedComparisons cards={total > 0 ? [...ownCards, ...otherCards] : otherCards} />
-  </section>;
+    <SuggestedComparisons cards={canCompare ? [...ownCards, ...otherCards] : otherCards} />
+  </div>;
 }

@@ -1,20 +1,17 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import PageIntro from '@/components/layout/PageIntro';
 import Icon from '@/components/ui/Icon';
-import GuideToc from '@/features/guides/GuideToc';
-import { GuideLink } from '@/features/guides/GuidePage';
-import { slugify } from '@/features/guides/data';
-import { getCatalog } from '@/lib/api/catalog';
 import { getContent } from '@/lib/api/content';
+import { Callout, CardGrid, Chapter, ContinueReading, JournalBody, journalStyles, LinkRow, Masthead, Prose, readingMinutes, slugify, Unavailable } from './_journal/Journal';
 import styles from './page.module.css';
 
 // Page copy, card lists and footer groups are admin-edited content (`pages`, `site`).
 const linkIcons = {
-  '/about': 'spark', '/contact': 'mail', '/help': 'guidesLifebuoy', '/report-correction': 'edit', '/sources-and-editorial': 'book', '/accessibility': 'guidesAccess',
-  '/legal': 'shield', '/terms-and-conditions': 'document', '/privacy-policy': 'lock', '/cookie-policy': 'layers', '/disclaimer': 'coursesInfo',
+  '/about': 'spark', '/contact': 'pageMail', '/help': 'pageQuestion', '/report-correction': 'edit', '/sources-and-editorial': 'book', '/accessibility': 'guidesAccess',
+  '/legal': 'pageScale', '/terms-and-conditions': 'document', '/privacy-policy': 'lock', '/cookie-policy': 'layers', '/disclaimer': 'coursesInfo',
   '/blog': 'news', '/scholarships': 'cap', '/career-guidance': 'compass', '/admission-checklist': 'guidesChecklist', '/news': 'news',
 };
+const botCard = { href: '/bot', icon: 'pageBot', title: 'For university websites', text: 'How GyaanVidhyaBot collects public facts, and how to opt out.' };
 
 async function load(params) {
   const [{ slug }, { pages, site }] = await Promise.all([params, getContent(['pages', 'site'])]);
@@ -27,7 +24,7 @@ function groupFor(slug, { pages, site }) {
   const group = site?.footerGroups.find((item) => item.title !== 'Explore' && item.links.some((link) => link.href === `/${slug}`)) || guideLinks;
   const legal = group.title === 'Legal & privacy';
   const hub = group === guideLinks ? null : legal ? { label: 'Legal', href: '/legal' } : { label: 'Help centre', href: '/help' };
-  return { ...group, icon: legal ? 'shield' : group === guideLinks ? 'book' : 'support', crumbs: hub && hub.href !== `/${slug}` ? [hub] : [] };
+  return { ...group, crumbs: hub && hub.href !== `/${slug}` ? [hub] : [] };
 }
 
 export async function generateMetadata({ params }) {
@@ -39,106 +36,81 @@ export async function generateMetadata({ params }) {
 
 export default async function InformationPage({ params }) {
   const { slug, page, pages, site } = await load(params);
-  if (!pages) return <main id="main" tabIndex={-1}>
-    <PageIntro compact eyebrow="Gyaan Vidhya" icon="support" title="Temporarily unavailable" current="Unavailable" description="This page could not be loaded right now. Please refresh in a moment." />
-  </main>;
+  if (!pages) return <Unavailable />;
   if (!page) notFound();
   const group = groupFor(slug, { pages, site });
   const sections = page.sections.map((section) => ({ ...section, id: slugify(section.title) }));
   const isHelp = slug === 'help';
   const isContact = slug === 'contact';
   const temporary = site?.contactIsTemporary !== false;
-
-  let stats = [];
-  if (slug === 'about') {
-    const catalog = await getCatalog();
-    stats = [
-      { value: catalog.courses.length, label: 'Courses' }, { value: catalog.exams.length, label: 'Exam guides' },
-      { value: catalog.colleges.length, label: 'Sample programmes' }, { value: new Set(catalog.colleges.map((row) => row.collegeId)).size, label: 'Sample institutions' },
-    ];
-  }
+  const current = `/${slug}`;
 
   const toc = isHelp ? [{ id: 'topics', label: 'Browse by topic' }, { id: 'faqs', label: 'Frequently asked' }, { id: 'more-help', label: 'Still need help?' }]
-    : [...(isContact ? [{ id: 'channels', label: 'Ways to reach us' }] : []), ...sections.map((section) => ({ id: section.id, label: section.title }))];
-  const showToc = toc.length >= 3;
+    : [...(isContact ? [{ id: 'channels', label: 'Ways to reach us' }] : []), ...sections.map((section) => ({ id: section.id, label: section.title })),
+      ...(slug === 'about' && pages.aboutTools?.length ? [{ id: 'what-you-can-do', label: 'What you can do today' }] : [])];
+  const meta = [
+    page.draft && { label: 'Policy preview · draft', icon: 'document', tone: 'warn' },
+    isContact && temporary && { label: 'Support channels not active yet', icon: 'calendar', tone: 'warn' },
+    isHelp ? { label: `${sections.length} answers`, icon: 'pageQuestion' } : { label: `${readingMinutes([page.description, ...sections.map((section) => section.text)])} min read`, icon: 'book' },
+  ].filter(Boolean);
 
-  return <main id="main" tabIndex={-1}>
-    <PageIntro compact eyebrow={page.category} icon={group.icon} title={page.title} current={page.title} crumbs={group.crumbs} description={page.description}
-      stats={stats} statsNote={stats.length ? 'In the illustrative directory · institutions are fictional.' : undefined}
-      meta={isContact && temporary ? 'Support channels are not active yet in this preview.' : undefined} />
+  return <main id="main" tabIndex={-1} className={journalStyles.page}>
+    <Masthead crumbs={group.crumbs} eyebrow={page.category} title={page.title} standfirst={page.description} meta={meta} />
+    <JournalBody toc={toc} collection={group} current={current} wide={isHelp || isContact}>
+      {page.draft && <Callout icon="document" tone="warn" title="Policy preview">Draft content for this preview. Final company and service policies are still being prepared.</Callout>}
 
-    <div className={`container ${styles.body} ${showToc ? styles.withToc : ''}`}>
-      <nav className={styles.sideNav} aria-label={group.title}>
-        <p className={styles.sideTitle}>{group.title}</p>
-        <ul>{group.links.map((link) => <li key={link.href}>
-          <Link href={link.href} aria-current={link.href === `/${slug}` ? 'page' : undefined}><Icon name={linkIcons[link.href] || 'arrow'} />{link.label}</Link>
-        </li>)}</ul>
-      </nav>
-
-      <article className={styles.article} aria-labelledby="page-title">
-        {page.draft && <p className={styles.notice}><Icon name="document" /><span><strong>Policy preview</strong>Draft content for this preview. Final company and service policies are still being prepared.</span></p>}
-
-        {isHelp ? <>
-          <form className={styles.helpSearch} action="/search" role="search">
-            <label htmlFor="help-search">Search courses, colleges and exams</label>
-            <div><Icon name="search" /><input id="help-search" type="search" name="q" placeholder="e.g. B.Tech, Pune or JEE Main" maxLength={120} /><button className="button button--primary" type="submit">Search</button></div>
-          </form>
-          <section id="topics" className={styles.block} aria-labelledby="topics-title">
-            <h2 id="topics-title" className={styles.blockTitle}>Browse by topic</h2>
-            <ul className={styles.cardGrid}>{pages.helpTopics.map((topic) => <li key={topic.href}><CardLink {...topic} /></li>)}</ul>
-          </section>
-          <section id="faqs" className={styles.block} aria-labelledby="faqs-title">
-            <h2 id="faqs-title" className={styles.blockTitle}>Frequently asked</h2>
-            <div className={styles.faq}>{sections.map((section, index) => <details key={section.id} id={section.id} open={index === 0}>
-              <summary>{section.title}<Icon name="chevron" /></summary>
-              <div><p>{section.text}</p>{section.links && <ul className={styles.links}>{section.links.map((link) => <li key={link.href}><GuideLink {...link} /></li>)}</ul>}</div>
-            </details>)}</div>
-          </section>
-          <section id="more-help" className={styles.moreHelp} aria-labelledby="more-help-title">
-            <Icon name="guidesLifebuoy" />
-            <div><h2 id="more-help-title">Still need help?</h2><p>See the current support-channel status, or tell us about information that needs correcting.</p></div>
-            <div className={styles.moreActions}><Link className="button button--primary" href="/contact">Contact & support</Link><Link className="button button--outline" href="/report-correction">Report a correction</Link></div>
-          </section>
-        </> : <>
-          {isContact && <section id="channels" className={styles.block} aria-labelledby="channels-title">
-            <h2 id="channels-title" className={styles.blockTitle}>Ways to reach us</h2>
-            <ul className={styles.cardGrid}>
-              {pages.contactCards.map((card) => <li key={card.href}><CardLink {...card} /></li>)}
-              {site && <li className={styles.wide}><div className={styles.channel}>
-                <span className={styles.channelIcon}><Icon name="mail" /></span>
-                <div><h3>Email support {temporary && <span className={styles.status}><Icon name="guidesClock" />Not active yet</span>}</h3>
-                  {temporary ? <p className={styles.address}>{site.supportEmail}</p> : <a className={styles.address} href={`mailto:${site.supportEmail}`}>{site.supportEmail}</a>}
-                  <p className={styles.small}>{temporary ? 'Temporary address for the design preview. Email support is not active yet.' : 'Include the relevant page and a short description of your question.'}</p></div>
-              </div></li>}
-              {site && <li id="social-profiles" className={styles.wide}><div className={styles.channel}>
-                <span className={styles.channelIcon}><Icon name="people" /></span>
-                <div><h3>Official social profiles</h3><p className={styles.small}>Follow our education updates when the official profiles are available.</p>
-                  <ul className={styles.profiles}>{site.socials.map((social) => <li key={social.name}><Icon name={social.icon} />{social.href ? <a href={social.href} target="_blank" rel="noopener noreferrer">{social.name}<span className="sr-only"> (opens in a new tab)</span></a> : <span>{social.name}<small>Coming soon</small></span>}</li>)}</ul></div>
-              </div></li>}
-            </ul>
-          </section>}
-          {sections.map((section, index) => <section key={section.id} id={section.id} className={styles.section} aria-labelledby={`${section.id}-title`}>
-            <span className={styles.number} aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
-            <div>
-              <h2 id={`${section.id}-title`}>{section.title}</h2>
-              <p>{section.text}</p>
-              {section.links && <ul className={styles.links}>{section.links.map((link) => <li key={link.href}><GuideLink {...link} /></li>)}</ul>}
+      {isHelp ? <>
+        <form className={styles.search} action="/search" role="search">
+          <label className={styles.searchLabel} htmlFor="help-search">Search courses, colleges and exams</label>
+          <div className={styles.searchRow}>
+            <input id="help-search" className="lux-field" type="search" name="q" placeholder="e.g. B.Tech, Pune or JEE Main" maxLength={120} aria-describedby="help-search-hint" />
+            <button className="lux-button lux-button--primary" type="submit"><Icon name="search" />Search</button>
+          </div>
+          <p id="help-search-hint" className={styles.searchHint}>Search results include universities, so you’ll be asked to log in first.</p>
+        </form>
+        <Chapter id="topics" title="Browse by topic"><CardGrid items={pages.helpTopics} /></Chapter>
+        <Chapter id="faqs" title="Frequently asked">
+          <div className={styles.faq}>{sections.map((section, index) => <details key={section.id} id={section.id} open={index === 0}>
+            <summary><span className={styles.faqNo} aria-hidden="true">{String(index + 1).padStart(2, '0')}</span><span className={styles.faqQ}>{section.title}</span><Icon name="plus" /></summary>
+            <div className={styles.faqA}><p>{section.text}</p><LinkRow links={section.links} /></div>
+          </details>)}</div>
+        </Chapter>
+        <section id="more-help" className={`lux-surface-dark ${styles.moreHelp}`} aria-labelledby="more-help-title">
+          <Icon name="pageInbox" />
+          <div><h2 id="more-help-title">Still need help?</h2><p>See the current support-channel status, or tell us about information that needs correcting.</p></div>
+          <div className={styles.moreActions}>
+            <Link className="lux-button lux-button--light" href="/contact">Contact & support</Link>
+            <Link className="lux-button lux-button--outline" href="/report-correction">Report a correction</Link>
+          </div>
+        </section>
+      </> : <>
+        {isContact && <Chapter id="channels" title="Ways to reach us">
+          {site && <div className={`lux-surface-dark ${styles.mailCard}`}>
+            <span className={styles.mailIcon}><Icon name="pageMail" /></span>
+            <div className={styles.mailText}>
+              <p className={styles.mailEyebrow}>Email support{temporary && <span className={styles.status}>Not active yet</span>}</p>
+              {temporary ? <p className={styles.address}>{site.supportEmail}</p> : <a className={styles.address} href={`mailto:${site.supportEmail}`}>{site.supportEmail}</a>}
+              <p className={styles.mailNote}>{temporary ? 'Temporary address for the design preview. Email support is not active yet.' : 'Include the relevant page and a short description of your question.'}</p>
             </div>
-          </section>)}
-          {slug === 'about' && <section className={styles.block} aria-labelledby="about-tools-title">
-            <h2 id="about-tools-title" className={styles.blockTitle}>What you can do today</h2>
-            <ul className={styles.cardGrid}>{pages.aboutTools.map((tool) => <li key={tool.href}><CardLink {...tool} /></li>)}</ul>
-          </section>}
-        </>}
+          </div>}
+          <CardGrid items={[...pages.contactCards, botCard]} />
+          {site && <div id="social-profiles" className={styles.socials}>
+            <h3 className={styles.socialsTitle}>Official social profiles</h3>
+            <p className={styles.socialsNote}>Follow our education updates when the official profiles are available.</p>
+            <ul>{site.socials.map((social) => <li key={social.name}><Icon name={social.icon} />{social.href ? <a href={social.href} target="_blank" rel="noopener noreferrer">{social.name}<span className="sr-only"> (opens in a new tab)</span></a> : <span>{social.name}<small>Coming soon</small></span>}</li>)}</ul>
+          </div>}
+        </Chapter>}
+        {sections.map((section, index) => <Chapter key={section.id} id={section.id} index={index} title={section.title}>
+          <Prose lead={index === 0 && !isContact}><p>{section.text}</p></Prose>
+          <LinkRow links={section.links} />
+        </Chapter>)}
+        {slug === 'about' && pages.aboutTools?.length > 0 && <Chapter id="what-you-can-do" title="What you can do today"><CardGrid items={pages.aboutTools} /></Chapter>}
+        {(slug === 'report-correction' || slug === 'sources-and-editorial') && <Callout icon="pageBot" title="Run a university or college website?">
+          Read <Link href="/bot">how GyaanVidhyaBot collects public facts</Link>, and how to opt out or ask for a correction.
+        </Callout>}
+      </>}
 
-        <div className={styles.return}><Link href="/"><Icon name="arrow" />Return to the student platform</Link></div>
-      </article>
-
-      {showToc && <GuideToc items={toc} disclosure={false} className={styles.toc} />}
-    </div>
+      <ContinueReading title={group.title} links={group.links} current={current} linkIcons={linkIcons} />
+    </JournalBody>
   </main>;
-}
-
-function CardLink({ href, icon, title, text }) {
-  return <Link className={styles.card} href={href}><span className={styles.channelIcon}><Icon name={icon} /></span><span><strong>{title}</strong><small>{text}</small></span><Icon name="arrow" /></Link>;
 }

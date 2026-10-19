@@ -2,7 +2,8 @@ const apiUrl = process.env.API_URL || 'http://127.0.0.1:4100';
 const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000').replace(/\/$/, '');
 export const revalidate = 3600;
 
-const STATIC_ROUTES = ['', '/universities', '/colleges', '/courses', '/exams', '/compare', '/locations', '/eligibility', '/budget', '/scholarships', '/career-guidance', '/admission-checklist', '/news', '/about', '/contact', '/help', '/sources-and-editorial', '/accessibility'];
+// Login-gated routes (/universities, /colleges, /compare, /search, /apply, /account) are left out.
+const STATIC_ROUTES = ['', '/courses', '/exams', '/locations', '/eligibility', '/budget', '/scholarships', '/career-guidance', '/admission-checklist', '/news', '/about', '/contact', '/help', '/sources-and-editorial', '/accessibility'];
 
 async function catalogIds(path) {
   try {
@@ -13,7 +14,7 @@ async function catalogIds(path) {
   }
 }
 
-// Core pages plus course and exam guides. University profiles have their own files (universities/sitemap.js).
+// Core public pages plus course and exam guides. University profiles are login-gated and not listed.
 export default async function sitemap() {
   const [courses, exams] = await Promise.all([catalogIds('courses'), catalogIds('exams')]);
   return [

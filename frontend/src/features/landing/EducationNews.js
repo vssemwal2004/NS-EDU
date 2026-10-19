@@ -76,7 +76,7 @@ function NewsDesk({ config }) {
     const start = () => { active = true; loadFeed(); };
     const observer = new window.IntersectionObserver((entries) => {
       if (entries.some((entry) => entry.isIntersecting)) { start(); observer.disconnect(); }
-    }, { rootMargin: '500px' });
+    }, { rootMargin: '1200px 0px' }); // ~1.5 screens early, so stories usually replace the skeleton before it is seen
     observer.observe(sectionRef.current);
     const interval = window.setInterval(() => { if (active && document.visibilityState === 'visible') loadFeed(); }, 600000);
     return () => { observer.disconnect(); window.clearInterval(interval); requestRef.current?.abort('unmount'); };

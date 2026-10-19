@@ -1,0 +1,8 @@
+/* Stream tints (see streamTone in data.js). Consumers read --tone-bg / -ink / -muted / -accent / -line. */
+.tone { --tone-bg: var(--lux-blush-soft); --tone-ink: var(--lux-wine); --tone-muted: var(--lux-text-muted); --tone-accent: var(--lux-wine); --tone-line: rgb(114 36 59 / 16%); --tone-chip: rgb(255 255 255 / 70%); }
+.tone[data-tone="oxblood"] { --tone-bg: radial-gradient(ellipse at 100% 0%, rgb(160 116 90 / 30%), transparent 60%), var(--lux-oxblood); --tone-ink: var(--lux-text-on-dark); --tone-muted: var(--lux-text-on-dark-muted); --tone-accent: var(--lux-champagne); --tone-line: rgb(201 164 106 / 32%); --tone-chip: rgb(255 255 255 / 10%); }
+.tone[data-tone="wine"] { --tone-bg: radial-gradient(ellipse at 0% 100%, rgb(61 15 30 / 55%), transparent 65%), var(--lux-wine); --tone-ink: var(--lux-text-on-dark); --tone-muted: #F2DCD5; --tone-accent: var(--lux-champagne); --tone-line: rgb(255 255 255 / 20%); --tone-chip: rgb(255 255 255 / 12%); }
+.tone[data-tone="blush"] { --tone-bg: var(--lux-blush-soft); --tone-ink: var(--lux-wine); --tone-accent: var(--lux-wine); }
+.tone[data-tone="rose"] { --tone-bg: var(--lux-blush); --tone-ink: var(--lux-oxblood); --tone-accent: var(--lux-wine); --tone-line: rgb(61 15 30 / 16%); }
+.tone[data-tone="sand"] { --tone-bg: var(--lux-sand); --tone-ink: var(--lux-wine); --tone-accent: var(--lux-bronze); --tone-line: rgb(160 116 90 / 30%); }
+.tone[data-tone="champagne"] { --tone-bg: var(--lux-champagne-soft); --tone-ink: var(--lux-oxblood); --tone-accent: var(--lux-bronze); --tone-line: rgb(160 116 90 / 34%); }

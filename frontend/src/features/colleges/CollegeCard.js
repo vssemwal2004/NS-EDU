@@ -2,83 +2,83 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Icon from '@/components/ui/Icon';
+import ApplyButton from '@/features/apply/ApplyButton';
 import CollegeArtwork from '@/features/landing/CollegeArtwork';
-import { formatTuition, lpaRange, placeName, summarize } from '@/lib/college-catalog';
-import { COMPARE_MAX, compareHref } from './compareStore';
-import styles from './Listing.module.css';
+import { formatSalary, formatTuition, placeName, summarize } from '@/lib/college-catalog';
+import { compareHref } from './compareStore';
+import styles from './Ledger.module.css';
 
-const CHIP_PREVIEW = 3;
+const PREVIEW = 3;
 
-function Stat({ label, year, value, note }) {
-  const missing = value === 'Not provided';
-  return <div className={styles.stat}>
-    <dt>{label}<small>{year}</small></dt>
-    <dd data-missing={missing || undefined}>{value}{note && <small>{note}</small>}</dd>
-  </div>;
-}
-
-export default function CollegeCard({ group, courseById, budgetCourse, compare, onToggle, notice, cardRef }) {
-  const [chipsOpen, setChipsOpen] = useState(false);
-  const [pickerOpen, setPickerOpen] = useState(false);
+// One ledger entry per institution: a programme-by-programme table of tuition (with a bar) and packages.
+export default function CollegeCard({ group, index, courseById, focusCourse, feeScale, compare, onToggle, notice }) {
+  const [open, setOpen] = useState(false);
   const { rows } = group;
   const summary = summarize(rows);
-  const single = rows.length === 1;
   const href = `/universities/${group.id}`;
   const titleId = `college-${group.id}`;
-  const pickerId = `compare-picker-${group.id}`;
-  const chips = chipsOpen ? rows : rows.slice(0, CHIP_PREVIEW);
-  const selectedRows = rows.filter((row) => compare.has(row.id));
+  const lines = open ? rows : rows.slice(0, PREVIEW);
   const courseName = (row) => courseById.get(row.courseId)?.name || row.courseId;
-  const tuition = single ? formatTuition(rows[0].annualTuitionInr) : `From ${formatTuition(summary.feeMin)}`;
-  const tuitionNote = single ? 'per year' : `up to ${formatTuition(summary.feeMax)} · ${rows.length} programmes`;
-  const reporting = summary.withPlacements;
-  const medianNote = reporting && reporting < rows.length ? `${reporting} of ${rows.length} programmes report` : '';
-  const budgetId = budgetCourse && rows.some((row) => row.courseId === budgetCourse) ? budgetCourse : rows[0].courseId;
+  const applyCourse = rows.some((row) => row.courseId === focusCourse) ? focusCourse : rows.length === 1 ? rows[0].courseId : undefined;
+  const budgetId = applyCourse || rows[0].courseId;
+  const picked = rows.filter((row) => compare.has(row.id)).length;
 
-  function compareButton(row, label) {
-    const pressed = compare.has(row.id);
-    return <button type="button" className={`button ${pressed ? 'button--primary' : 'button--outline'} ${styles.compareButton}`} aria-pressed={pressed} onClick={() => onToggle(row)}>
-      <Icon name={pressed ? 'check' : 'compare'} />{label(pressed)}
-    </button>;
-  }
+  return <article id={`card-${group.id}`} className={styles.entry} aria-labelledby={titleId} tabIndex={-1} data-selected={picked > 0 || undefined}>
+    <div className={styles.entryHead}>
+      <span className={styles.entryNo} aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
+      <Link href={href} className={styles.thumb} tabIndex={-1} aria-hidden="true"><CollegeArtwork row={group} className={styles.thumbArt} /></Link>
+      <div className={styles.entryTitle}>
+        <h3 id={titleId}><Link href={href}>{group.name}</Link></h3>
+        <p>
+          <span><Icon name="location" />{placeName(group)}</span>
+          {group.demoRating != null && <span><Icon name="star" />{group.demoRating.toFixed(1)}<small> / 5 demo rating</small></span>}
+        </p>
+      </div>
+    </div>
 
-  return <article ref={cardRef} id={`card-${group.id}`} className={styles.card} aria-labelledby={titleId} tabIndex={-1} data-selected={selectedRows.length > 0 || undefined}>
-    <Link href={href} className={styles.thumbLink} tabIndex={-1} aria-hidden="true"><CollegeArtwork row={group} className={styles.thumb} /></Link>
-    <div className={styles.cardHead}>
-      <h3 id={titleId}><Link href={href}>{group.name}</Link></h3>
-      <p className={styles.meta}>
-        <span><Icon name="location" />{placeName(group)}</span>
-        {group.demoRating != null && <span className={styles.rating}><Icon name="star" /><strong>{group.demoRating.toFixed(1)}</strong><small>/ 5 demo rating</small></span>}
+    <table className={styles.lines}>
+      <caption className="sr-only">Programmes at {group.name}: annual tuition and placement figures</caption>
+      <thead>
+        <tr><th scope="col">Programme</th><th scope="col">Annual tuition</th><th scope="col">Median package</th><th scope="col"><span className="sr-only">Compare</span></th></tr>
+      </thead>
+      <tbody>
+        {lines.map((row) => {
+          const pressed = compare.has(row.id);
+          const share = feeScale > 0 && Number.isFinite(row.annualTuitionInr) ? Math.min(100, (row.annualTuitionInr / feeScale) * 100) : 0;
+          return <tr key={row.id} data-selected={pressed || undefined} data-focus={row.courseId === focusCourse || undefined}>
+            <th scope="row"><span className={styles.lineName}>{courseName(row)}</span><small>Fees {row.tuitionYear || 'year not stated'}</small></th>
+            <td className={styles.feeCell}>
+              <span className={styles.amount}>{formatTuition(row.annualTuitionInr)}<small>/yr</small></span>
+              <span className={styles.feeBar} aria-hidden="true"><span style={{ width: `${share}%` }} /></span>
+            </td>
+            <td className={styles.payCell}>
+              <span className={styles.amount} data-missing={row.medianSalaryLpa == null || undefined}>{formatSalary(row.medianSalaryLpa)}</span>
+              {row.highestSalaryLpa != null && <small>Highest ₹{row.highestSalaryLpa} LPA · {row.placementYear}</small>}
+            </td>
+            <td className={styles.pickCell}>
+              <button type="button" className={styles.pick} aria-pressed={pressed} onClick={() => onToggle(row)}>
+                <Icon name={pressed ? 'check' : 'compare'} />{pressed ? 'Added' : 'Compare'}<span className="sr-only"> {group.shortName} {courseName(row)}</span>
+              </button>
+            </td>
+          </tr>;
+        })}
+      </tbody>
+    </table>
+    {rows.length > PREVIEW && <button type="button" className={styles.moreLines} aria-expanded={open} onClick={() => setOpen((value) => !value)}>
+      {open ? 'Show fewer programmes' : `+${rows.length - PREVIEW} more ${rows.length - PREVIEW === 1 ? 'programme' : 'programmes'}`}<Icon name="chevron" />
+    </button>}
+
+    <div className={styles.entryFoot}>
+      <p className={styles.entrySum}>
+        {rows.length > 1 ? <>{rows.length} programmes · {formatTuition(summary.feeMin)} – {formatTuition(summary.feeMax)}</> : <>1 programme listed</>}
+        {summary.highestMax != null && <> · top offer ₹{summary.highestMax} LPA</>}
       </p>
+      <div className={styles.entryActions}>
+        <Link className="lux-link" href={href}>View university<span className="sr-only">: {group.name}</span><Icon name="arrow" /></Link>
+        <Link className="lux-link" href={`/budget?course=${budgetId}`}><Icon name="wallet" />Budget<span className="sr-only"> for {courseById.get(budgetId)?.name}</span></Link>
+        <ApplyButton university={{ id: group.id, name: group.name, city: group.city, state: group.state }} courseSlug={applyCourse} size="md" />
+      </div>
     </div>
-    <div className={styles.cardBody}>
-      <ul className={styles.programmes} aria-label={`Matching programmes at ${group.shortName}`}>
-        {chips.map((row) => <li key={row.id} data-selected={compare.has(row.id) || undefined}><strong>{courseName(row)}</strong><span>{formatTuition(row.annualTuitionInr)}/yr</span></li>)}
-        {rows.length > CHIP_PREVIEW && <li className={styles.chipToggle}><button type="button" aria-expanded={chipsOpen} onClick={() => setChipsOpen((value) => !value)}>{chipsOpen ? 'Show fewer' : `+${rows.length - CHIP_PREVIEW} more`}</button></li>}
-      </ul>
-      <dl className={styles.stats}>
-        <Stat label="Annual tuition" year={summary.tuitionYear} value={tuition} note={tuitionNote} />
-        <Stat label="Median package" year={summary.placementYear} value={lpaRange(summary.medianMin, summary.medianMax)} note={medianNote} />
-        <Stat label="Highest package" year={summary.placementYear} value={summary.highestMax == null ? 'Not provided' : single ? `₹${summary.highestMax} LPA` : `Up to ₹${summary.highestMax} LPA`} />
-      </dl>
-      <p className={styles.deepLinks}>
-        <Link href={`${href}#courses`}><Icon name="collegesRupee" />Courses &amp; fees</Link>
-        <Link href={`${href}#placements`}><Icon name="collegesBriefcase" />Placements</Link>
-      </p>
-    </div>
-    <div className={styles.actions}>
-      <Link className="button button--primary" href={href}>View college<span className="sr-only">: {group.name}</span><Icon name="arrow" /></Link>
-      {single
-        ? compareButton(rows[0], (pressed) => <>{pressed ? 'Added to compare' : 'Add to compare'}<span className="sr-only"> {group.shortName} {courseName(rows[0])}</span></>)
-        : <button type="button" className={`button button--outline ${styles.compareButton}`} aria-expanded={pickerOpen} aria-controls={pickerId} onClick={() => setPickerOpen((value) => !value)}>
-          <Icon name="compare" />{selectedRows.length ? `Comparing ${selectedRows.length}` : 'Add to compare'}<Icon name="chevron" />
-        </button>}
-      <Link className={`text-link ${styles.budgetLink}`} href={`/budget?course=${budgetId}`}><Icon name="wallet" />Check budget<span className="sr-only"> for {courseById.get(budgetId)?.name}</span></Link>
-    </div>
-    {!single && pickerOpen && <div id={pickerId} className={styles.picker}>
-      <p>Pick a course to compare at {group.shortName} <small>· up to {COMPARE_MAX} colleges per course</small></p>
-      <div>{rows.map((row) => <span key={row.id}>{compareButton(row, (pressed) => <>{courseName(row)}<span className="sr-only">{pressed ? ' added to compare' : ' add to compare'}</span></>)}</span>)}</div>
-    </div>}
     {notice && <p className={styles.notice} data-full={notice.full || undefined}><Icon name="collegesInfo" />{notice.text}{notice.full && <> <Link href={compareHref(notice.courseId)}>Review your picks</Link></>}</p>}
   </article>;
 }

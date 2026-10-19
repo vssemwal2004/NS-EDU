@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Icon from '@/components/ui/Icon';
 import { useAdminSession } from '@/features/admin/AdminSession';
 import { GENDERS, labelOf, QUALIFICATIONS, STUDY_MODES } from '@/features/apply/apply-options';
-import { formatDate, formatDateTime, LEAD_STATUSES, LEADS_QUERY_KEY, leadStatusLabel, statusTone } from './lead-format';
+import { formatDate, formatDateTime, isQuick, LEAD_STATUSES, LEADS_QUERY_KEY, leadStatusLabel, statusTone } from './lead-format';
 import styles from './Leads.module.css';
 
 const inr = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 });
@@ -106,21 +106,29 @@ export default function LeadDetail({ id }) {
   if (!state.item) return <div className={styles.skeletonGrid} aria-busy="true" aria-label="Loading lead">{[0, 1, 2, 3].map((index) => <span key={index} />)}</div>;
 
   const { item } = state;
-  const { applicant, academics, preference, consent, source } = item;
+  // Quick-apply leads carry only a few fields; anything missing reads "Not provided".
+  const quick = isQuick(item);
+  const applicant = item.applicant ?? {};
+  const academics = item.academics ?? {};
+  const preference = item.preference ?? {};
+  const consent = item.consent ?? {};
+  const source = item.source ?? {};
+  const exams = item.exams ?? [];
   const years = age(applicant.dateOfBirth);
+  const hasScore = academics.score !== null && academics.score !== undefined && academics.score !== '';
   const utm = [['Source', source.utmSource], ['Medium', source.utmMedium], ['Campaign', source.utmCampaign], ['Term', source.utmTerm], ['Content', source.utmContent]].filter(([, value]) => value);
   return <div className={styles.detail}>
     <header className={styles.detailHead}>
       <Link className={styles.backLink} href="/admin/leads" onClick={back}><Icon name="arrow" />All leads</Link>
       <div className={styles.headMain}>
         <div className={styles.headText}>
-          <p className={styles.headRef}>{item.ref}<span className={styles.status} data-tone={statusTone(item.status)}>{leadStatusLabel(item.status)}</span></p>
-          <h2>{applicant.fullName}</h2>
+          <p className={styles.headRef}>{item.ref}<span className={styles.status} data-tone={statusTone(item.status)}>{leadStatusLabel(item.status)}</span>{quick && <span className={styles.mode} title="Submitted with the one-screen quick apply form">Quick apply</span>}</p>
+          <h2>{applicant.fullName || 'Name not provided'}</h2>
           <p className={styles.headMeta}>{preference.institutionName} · {[preference.courseName, preference.programmeName].filter(Boolean).join(' · ') || 'Course not specified'} · Submitted {formatDateTime(item.createdAt)}</p>
         </div>
         <div className={styles.headActions}>
-          <a className="button button--primary" href={`tel:${applicant.phone}`}><Icon name="phone" />Call</a>
-          <a className="button button--outline" href={`mailto:${applicant.email}?subject=${encodeURIComponent(`Your application ${item.ref}`)}`}><Icon name="mail" />Email</a>
+          {applicant.phone && <a className="button button--primary" href={`tel:${applicant.phone}`}><Icon name="phone" />Call</a>}
+          {applicant.email && <a className="button button--outline" href={`mailto:${applicant.email}?subject=${encodeURIComponent(`Your application ${item.ref}`)}`}><Icon name="mail" />Email</a>}
         </div>
       </div>
       {message.text && <p className={message.error ? styles.flashError : styles.flash} role={message.error ? 'alert' : 'status'}><Icon name={message.error ? 'shield' : 'check'} />{message.text}</p>}
@@ -139,8 +147,8 @@ export default function LeadDetail({ id }) {
         <Section id="lead-applicant" title="Applicant" icon="user">
           <Facts rows={[
             ['Full name', applicant.fullName],
-            ['Email', <><a href={`mailto:${applicant.email}`}>{applicant.email}</a><Verified on={item.contactVerified.email} /></>],
-            ['Mobile', <><a href={`tel:${applicant.phone}`}>{applicant.phone}</a><Verified on={item.contactVerified.phone} /></>],
+            ['Email', applicant.email && <><a href={`mailto:${applicant.email}`}>{applicant.email}</a><Verified on={item.contactVerified?.email} /></>],
+            ['Mobile', applicant.phone && <><a href={`tel:${applicant.phone}`}>{applicant.phone}</a><Verified on={item.contactVerified?.phone} /></>],
             ['Date of birth', applicant.dateOfBirth && `${formatDate(`${applicant.dateOfBirth}T12:00:00Z`)}${years !== null ? ` (age ${years})` : ''}`],
             ['Gender', labelOf(GENDERS, applicant.gender)],
             ['City / town', applicant.city], ['State', applicant.state], ['PIN code', applicant.pincode],
@@ -151,20 +159,20 @@ export default function LeadDetail({ id }) {
           <Facts rows={[
             ['Highest qualification', labelOf(QUALIFICATIONS, academics.highestQualification)],
             ['Board / university', academics.board], ['Passing year', academics.passingYear],
-            ['Result', `${academics.score}${academics.scoreType === 'cgpa' ? ' CGPA (out of 10)' : '%'}`],
+            ['Result', hasScore ? `${academics.score}${academics.scoreType === 'cgpa' ? ' CGPA (out of 10)' : '%'}` : ''],
             ['Stream / subjects', (academics.stream ?? []).join(', ')],
             ['Class 12', academics.class12 && `${academics.class12.board} · ${academics.class12.year} · ${academics.class12.percentage}%`],
           ]} />
         </Section>
         <Section id="lead-exams" title="Entrance exams" icon="document">
-          {item.exams.length ? <table className={styles.miniTable}>
+          {exams.length ? <table className={styles.miniTable}>
             <thead><tr><th scope="col">Exam</th><th scope="col">Year</th><th scope="col">Score or rank</th></tr></thead>
-            <tbody>{item.exams.map((exam, index) => <tr key={index}><td>{exam.name}</td><td>{exam.year}</td><td>{exam.scoreOrRank || '—'}</td></tr>)}</tbody>
-          </table> : <p className={styles.muted}>No exams added.</p>}
+            <tbody>{exams.map((exam, index) => <tr key={index}><td>{exam.name}</td><td>{exam.year}</td><td>{exam.scoreOrRank || '—'}</td></tr>)}</tbody>
+          </table> : <p className={styles.muted}>{quick ? 'Not provided (the quick form does not ask for exams).' : 'No exams added.'}</p>}
         </Section>
         <Section id="lead-preferences" title="Preferences" icon="wallet">
           <Facts rows={[
-            ['Hostel', preference.hostelRequired ? 'Needed' : 'Not needed'],
+            ['Hostel', preference.hostelRequired === true ? 'Needed' : preference.hostelRequired === false ? 'Not needed' : ''],
             ['Budget per year', preference.budgetPerYearInr !== null && preference.budgetPerYearInr !== undefined ? inr.format(preference.budgetPerYearInr) : ''],
             ['Message', preference.message && <span className={styles.message}>{preference.message}</span>],
           ]} />
@@ -175,7 +183,8 @@ export default function LeadDetail({ id }) {
             <li><Icon name="check" /><p>{consent.text?.privacy || 'Accepted the privacy terms.'}</p></li>
           </ul>
           <Facts rows={[
-            ['Consent given', `${formatDateTime(consent.at)} · wording ${consent.version}`],
+            ['Form', quick ? 'Quick apply (one screen)' : 'Detailed form'],
+            ['Consent given', consent.at ? `${formatDateTime(consent.at)} · wording ${consent.version || 'unknown'}` : ''],
             ['Came from', source.path],
             ...utm.map(([label, value]) => [`UTM ${label.toLowerCase()}`, value]),
             ...(isAdmin ? [['Browser', consent.userAgent && <small className={styles.agent}>{consent.userAgent}</small>]] : []),

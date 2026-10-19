@@ -31,6 +31,7 @@ const securityHeaders = [
 const nextConfig = {
   poweredByHeader: false,
   devIndicators: false,
+  distDir: process.env.NEXT_DIST_DIR || '.next',
   // Self-contained server bundle for the Docker image (see frontend/Dockerfile).
   output: 'standalone',
   outputFileTracingRoot: fileURLToPath(new URL('..', import.meta.url)),

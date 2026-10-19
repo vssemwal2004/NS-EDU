@@ -12,7 +12,9 @@ export const LEAD_STATUSES = [
 ];
 export const leadStatusLabel = (status) => LEAD_STATUSES.find((item) => item.value === status)?.label || status;
 export const LEADS_QUERY_KEY = 'gv-admin-leads-query';
-export const FILTER_KEYS = ['status', 'q', 'institution', 'institutionName', 'course', 'state', 'from', 'to', 'assignee', 'page'];
+export const FILTER_KEYS = ['status', 'q', 'institution', 'institutionName', 'course', 'state', 'mode', 'from', 'to', 'assignee', 'page'];
+export const LEAD_MODES = [{ value: 'quick', label: 'Quick apply' }, { value: 'detailed', label: 'Detailed form' }];
+export const isQuick = (item) => item?.mode === 'quick';
 
 const dateTime = new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Kolkata' });
 const dateOnly = new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' });

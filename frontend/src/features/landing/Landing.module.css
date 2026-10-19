@@ -121,7 +121,7 @@
   .shortcut { border-right: 0; border-bottom: 1px solid var(--color-border); padding: var(--space-3) 0; }
   .shortcut:last-child { border-bottom: 0; }
 }
-/* The approved desktop composition occupies one viewport. Both rows remain
+/* The approved desktop composition occupies one (approved-header) viewport. Both rows remain
    visible: their sizes adapt to height instead of clipping the page. */
 @media (min-width: 1101px) {
   .artwork { display: block; }
@@ -129,7 +129,9 @@
   .hero { container-type: size; }
   .shell { min-height: 100dvh; display: flex; flex-direction: column; }
   .main { min-height: 0; }
-  .firstScreen { height: calc(100dvh - var(--desktop-header-height)); display: grid; grid-template-rows: minmax(0, 1fr) var(--desktop-discovery-height); }
+  /* Sized as under the approved 108px header (36px utility strip + bar, since retired) so the
+     container-query composition — photo scale, quotes, type — stays exactly as approved. */
+  .firstScreen { --approved-header-height: 108px; height: calc(100dvh - max(var(--desktop-header-height), var(--approved-header-height))); display: grid; grid-template-rows: minmax(0, 1fr) var(--desktop-discovery-height); }
   /* Photo geometry: the campus artwork (1672×564 source window) is scaled to cover the
      hero but capped on tall/4:3 screens, and anchored bottom-right. The --photo-edge-*
      values are the photo's left edge (in hero px) at its top, middle and lower bands, so

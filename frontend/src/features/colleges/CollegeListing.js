@@ -6,13 +6,13 @@ import { useSearchParams } from 'next/navigation';
 import Icon from '@/components/ui/Icon';
 import { useCatalog } from '@/providers/CatalogProvider';
 import { usePreferences } from '@/providers/PreferencesProvider';
-import { FEE_LIMITS, RATING_FLOORS, SORT_OPTIONS, facetCounts, filterPrograms, formatLakh, groupByInstitution, lakhRange, lpaRange, resolveLocation, sortGroups, summarize } from '@/lib/college-catalog';
+import { FEE_LIMITS, RATING_FLOORS, SORT_OPTIONS, facetCounts, filterPrograms, formatLakh, formatTuition, groupByInstitution, lakhRange, lpaRange, resolveLocation, sortGroups, summarize } from '@/lib/college-catalog';
 import { useCompare } from './compareStore';
 import { GROUPS } from './FilterGroups';
 import FilterDrawer from './FilterDrawer';
 import CollegeCard from './CollegeCard';
 import CompareTray, { CompareGroups } from './CompareTray';
-import styles from './Listing.module.css';
+import styles from './Ledger.module.css';
 
 const PAGE = 8;
 const SORTS = SORT_OPTIONS.map((item) => item.value);
@@ -67,6 +67,7 @@ export default function CollegeListing({ initial }) {
       cities: [...new Set(colleges.map((row) => row.city).filter(Boolean))].sort(),
     };
   }, [courses, colleges]);
+  const feeScale = useMemo(() => Math.max(0, ...colleges.map((row) => row.annualTuitionInr).filter(Number.isFinite)), [colleges]);
   const clean = (value) => normalize(value, courseById, options.fields, colleges);
 
   const [filters, setFilters] = useState(() => clean(initial));
@@ -83,12 +84,10 @@ export default function CollegeListing({ initial }) {
   const timer = useRef(0);
   const compare = useCompare(colleges);
 
-  // Links to /colleges?… from the header or the location chips can land on this mounted page:
-  // re-read the address whenever it changes (our own replaceState writes parse back to the same state).
+  // Links to /colleges?… (header, location chips) can land on this mounted page: re-read the address when it changes.
   const searchParams = useSearchParams();
   const urlKey = searchParams.toString();
   const [syncedKey, setSyncedKey] = useState(urlKey);
-  // Skip intermediate router states that are already behind the address bar (rapid replaceState calls).
   if (urlKey !== syncedKey && urlKey === new URLSearchParams(window.location.search).toString()) {
     setSyncedKey(urlKey);
     const next = clean(Object.fromEntries(searchParams));
@@ -162,7 +161,7 @@ export default function CollegeListing({ initial }) {
     document.getElementById(`card-${groups[index]?.id}`)?.focus();
   }
 
-  // Mobile drawer edits a draft copy; only "Show N colleges" applies it.
+  // The mobile sheet edits a draft copy; only "Show N colleges" applies it.
   function openDrawer(which) {
     flushSync(() => { setDraft({ ...filters, q: queryInput }); setTab(which); });
     drawerRef.current?.showModal();
@@ -199,99 +198,99 @@ export default function CollegeListing({ initial }) {
   const title = `${course?.name || field || 'All'} colleges in ${filters.location || 'India'}`;
   const sortLabel = SORT_OPTIONS.find((item) => item.value === filters.sort)?.label;
 
-  return <div className={styles.listing}>
-    <div className={styles.strip}>
-      <div className="container">
-        <div className={styles.stripInner} role="group" aria-label="Choose a course">
+  return <div className={styles.listing} data-has-compare={compare.total > 0 || undefined}>
+    <nav className={styles.tabs} aria-label="Courses">
+      <div className="lux-container">
+        <div className={styles.tabsInner} role="group" aria-label="Choose a course">
           <button type="button" aria-pressed={!filters.course} onClick={() => commit({ course: '', field: '' })}>All courses</button>
-          {options.courses.map((item) => <button key={item.id} type="button" aria-pressed={filters.course === item.id} onClick={() => commit({ course: item.id, field: '' })}><Icon name={item.icon} />{item.name}</button>)}
+          {options.courses.map((item) => <button key={item.id} type="button" aria-pressed={filters.course === item.id} onClick={() => commit({ course: item.id, field: '' })}><Icon name={item.icon || 'cap'} />{item.name}</button>)}
         </div>
       </div>
-    </div>
+    </nav>
 
-    <div className={`container ${styles.layout}`}>
+    <div className={`lux-container ${styles.layout}`}>
       <aside className={styles.sidebar} aria-labelledby="filters-title">
         <div className={styles.sidebarHead}>
-          <h2 id="filters-title"><Icon name="collegesSliders" />Filters</h2>
-          {chips.length > 0 && <button type="button" className="text-link" onClick={clearAll}>Clear all</button>}
+          <h2 id="filters-title"><Icon name="collegesSliders" />Refine the ledger</h2>
+          {chips.length > 0 && <button type="button" className={styles.textButton} onClick={clearAll}>Clear all</button>}
         </div>
         {GROUPS.map(({ id, Component }) => <Component key={id} name="side" value={groupValue} counts={counts} options={options} onChange={change} unknown={unknownPlace} />)}
         <p className={styles.sidebarNote}><Icon name="collegesInfo" />Counts are institutions matching your other filters.</p>
       </aside>
 
       <section className={styles.results} aria-labelledby="results-title">
-        <div className={styles.search}>
-          <label htmlFor="college-search" className="sr-only">Search within results</label>
-          <Icon name="search" />
-          <input id="college-search" className="field" type="search" placeholder="Search by college, city or course" autoComplete="off" value={queryInput}
-            onChange={(event) => onQuery(event.target.value)} onKeyDown={(event) => { if (event.key === 'Escape' && queryInput) { event.preventDefault(); clearQuery(); } }} />
-          {queryInput && <button type="button" className={styles.searchClear} aria-label="Clear search" onClick={clearQuery}><Icon name="close" /></button>}
-        </div>
-
         <div className={styles.resultsHead}>
-          <div>
+          <div className={styles.resultsTitle}>
             <h2 id="results-title" ref={headingRef} tabIndex={-1}>{title}</h2>
-            <p role="status" aria-live="polite" className={styles.resultCount}><strong>{plural(groups.length, 'college')}</strong> · {plural(rows.length, 'programme')} · {scope} · {filters.location || 'All India'}</p>
+            <p role="status" aria-live="polite"><strong>{plural(groups.length, 'college')}</strong> · {plural(rows.length, 'programme')} · {scope} · {filters.location || 'All India'}</p>
           </div>
-          <div className={styles.headTools}>
-            <span className={styles.badge}><Icon name="collegesInfo" />Illustrative data</span>
-            <label className={styles.sort}><Icon name="collegesSort" /><span>Sort</span>
-              <select value={filters.sort} onChange={(event) => change('sort', event.target.value)}>{SORT_OPTIONS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select>
+          <div className={styles.tools}>
+            <div className={styles.search}>
+              <label htmlFor="college-search" className="sr-only">Search within results</label>
+              <Icon name="search" />
+              <input id="college-search" className="lux-field" type="search" placeholder="College, city or course" autoComplete="off" value={queryInput}
+                onChange={(event) => onQuery(event.target.value)} onKeyDown={(event) => { if (event.key === 'Escape' && queryInput) { event.preventDefault(); clearQuery(); } }} />
+              {queryInput && <button type="button" className={styles.searchClear} aria-label="Clear search" onClick={clearQuery}><Icon name="close" /></button>}
+            </div>
+            <label className={styles.sort}><span>Sort</span>
+              <select className="lux-field" value={filters.sort} onChange={(event) => change('sort', event.target.value)}>{SORT_OPTIONS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select>
             </label>
           </div>
         </div>
 
         {chips.length > 0 && <div className={styles.chips}>
-          <ul aria-label="Active filters">{chips.map((chip) => <li key={chip.key}><button type="button" className="chip" aria-label={`Remove filter: ${chip.label}`} onClick={() => removeChip(chip.patch)}>{chip.label}<Icon name="close" /></button></li>)}</ul>
-          <button type="button" className="text-link" onClick={clearAll}>Clear all</button>
+          <ul aria-label="Active filters">{chips.map((chip) => <li key={chip.key}><button type="button" className="lux-chip" aria-label={`Remove filter: ${chip.label}`} onClick={() => removeChip(chip.patch)}>{chip.label}<Icon name="close" /></button></li>)}</ul>
+          <button type="button" className={styles.textButton} onClick={clearAll}>Clear all</button>
         </div>}
 
-        {rows.length > 0 && <dl className={styles.insight} aria-label="Summary of these results">
-          <div><dt><Icon name="collegesRupee" />Annual tuition</dt><dd>{lakhRange(summary.feeMin, summary.feeMax)}</dd></div>
-          <div><dt><Icon name="collegesBriefcase" />Median package</dt><dd>{lpaRange(summary.medianMin, summary.medianMax)}</dd></div>
-          <div><dt><Icon name="chart" />Placement data</dt><dd>{summary.withPlacements} of {plural(summary.programmes, 'programme')} report</dd></div>
-          <div><dt><Icon name="calendar" />Data years</dt><dd>Fees {summary.tuitionYear} · placements {summary.placementYear}</dd></div>
+        {rows.length > 0 && <dl className={styles.totals} aria-label="Totals for these results">
+          <div><dt>Annual tuition</dt><dd>{lakhRange(summary.feeMin, summary.feeMax)}</dd></div>
+          <div><dt>Median package</dt><dd>{lpaRange(summary.medianMin, summary.medianMax)}</dd></div>
+          <div><dt>Report placements</dt><dd>{summary.withPlacements} of {summary.programmes}</dd></div>
+          <div><dt>Data years</dt><dd>Fees {summary.tuitionYear || '—'}<small>Placements {summary.placementYear || '—'}</small></dd></div>
         </dl>}
 
-        {groups.length > 0 ? <ul className={styles.list}>
-          {shown.map((group) => <li key={group.id}>
-            <CollegeCard group={group} courseById={courseById} budgetCourse={filters.course} compare={compare} onToggle={toggleCompare} notice={notice?.id === group.id ? notice : null} />
+        {groups.length > 0 && <p className={styles.scaleNote}><span aria-hidden="true" /><Icon name="collegesInfo" />Fee bars start at zero and are scaled to the highest listed tuition, {formatTuition(feeScale)} a year. Illustrative data.</p>}
+
+        {groups.length > 0 ? <ol className={styles.list}>
+          {shown.map((group, index) => <li key={group.id}>
+            <CollegeCard group={group} index={index} courseById={courseById} focusCourse={filters.course} feeScale={feeScale} compare={compare} onToggle={toggleCompare} notice={notice?.id === group.id ? notice : null} />
           </li>)}
-        </ul> : <div className={styles.empty}>
-          <span className={styles.emptyIcon}><Icon name="search" /></span>
-          <h3>{unknownPlace ? `No listed colleges in ${filters.location} yet` : 'No colleges match all of these filters'}</h3>
+        </ol> : <div className={`lux-state ${styles.empty}`}>
+          <Icon name="search" />
+          <h3 className="lux-title">{unknownPlace ? `No listed colleges in ${filters.location} yet` : 'No colleges match all of these filters'}</h3>
           <p>{relaxations.length ? 'Try one of these changes. Each shows how many colleges it would bring back.' : 'Clear the filters to see every listed college.'}</p>
-          {relaxations.length > 0 && <ul className={styles.relaxations}>{relaxations.map((item) => <li key={item.label}><button type="button" className="button button--outline" onClick={() => relax(item)}>{item.label}<span>{plural(item.count, 'college')}</span></button></li>)}</ul>}
-          <button type="button" className="text-link" onClick={clearAll}>Clear all filters<Icon name="arrow" /></button>
+          {relaxations.length > 0 && <ul className={styles.relaxations}>{relaxations.map((item) => <li key={item.label}><button type="button" className="lux-button lux-button--ghost" onClick={() => relax(item)}>{item.label}<small>{plural(item.count, 'college')}</small></button></li>)}</ul>}
+          <button type="button" className="lux-link" onClick={clearAll}>Clear all filters<Icon name="arrow" /></button>
         </div>}
 
         {groups.length > limit && <div className={styles.more}>
-          <button type="button" className="button button--outline" onClick={showMore}>Show {plural(groups.length - limit, 'more college')}<Icon name="chevron" /></button>
+          <button type="button" className="lux-button lux-button--outline" onClick={showMore}>Show {plural(groups.length - limit, 'more college')}<Icon name="chevron" /></button>
           <small>Showing {limit} of {groups.length}</small>
         </div>}
 
         <section className={styles.browse} aria-labelledby="browse-title">
-          <div className={styles.browseHead}><h2 id="browse-title">Browse colleges by location</h2><Link className="text-link" href="/locations">Study locations<Icon name="arrow" /></Link></div>
-          <ul>{places.map((item) => <li key={item.name}><Link className="chip" href={`/colleges?location=${encodeURIComponent(item.name)}`} aria-current={filters.location === item.name ? 'true' : undefined}><Icon name="location" />{item.name}<span>{item.count}</span></Link></li>)}</ul>
+          <div className={styles.browseHead}><h2 id="browse-title">Ledger by location</h2><Link className="lux-link" href="/locations">Study locations<Icon name="arrow" /></Link></div>
+          <ul>{places.map((item) => <li key={item.name}><Link className="lux-chip" href={`/colleges?location=${encodeURIComponent(item.name)}`} aria-current={filters.location === item.name ? 'page' : undefined}><Icon name="location" />{item.name}<small>{item.count}</small></Link></li>)}</ul>
         </section>
 
         <section className={styles.notes} aria-labelledby="notes-title">
-          <h2 id="notes-title"><Icon name="collegesInfo" />How to read these figures</h2>
-          <ul>
-            <li><strong>Annual tuition</strong> is the tuition fee for one year only. Hostel, meals, exam and one-time fees are extra. <Link href={course ? `/budget?course=${course.id}` : '/budget'}>Estimate the full cost</Link>.</li>
-            <li><strong>Demo rating</strong> is an illustrative score for this preview. It is not a ranking, and it is not based on student reviews.</li>
-            <li><strong>Median and highest packages</strong> are placement figures for {summary.placementYear || '2024–25'}. “Not provided” means the record has no placement data.</li>
-            <li><strong>Institutions are illustrative.</strong> Confirm eligibility, fees and deadlines with each institution before you apply. <Link href="/admission-checklist">Admission checklist</Link>.</li>
-          </ul>
+          <h2 id="notes-title">How to read the ledger</h2>
+          <dl>
+            <div><dt>Annual tuition</dt><dd>Tuition for one year only. Hostel, meals, exam and one-time fees are extra. <Link href={course ? `/budget?course=${course.id}` : '/budget'}>Estimate the full cost</Link>.</dd></div>
+            <div><dt>Demo rating</dt><dd>An illustrative score for this preview. It is not a ranking and not based on student reviews.</dd></div>
+            <div><dt>Packages</dt><dd>Median and highest placement figures for {summary.placementYear || 'the stated year'}. “Not provided” means the record has no placement data.</dd></div>
+            <div><dt>Institutions</dt><dd>Illustrative. Confirm eligibility, fees and deadlines with each institution before you apply. <Link href="/admission-checklist">Admission checklist</Link>.</dd></div>
+          </dl>
         </section>
       </section>
     </div>
 
     <CompareTray compare={compare} courseById={courseById} onRemove={removeCompare} open={trayOpen} onToggle={() => setTrayOpen((value) => !value)} />
 
-    <nav className={styles.dock} aria-label="Filter, sort and compare" data-colleges-dock>
+    <nav className={`lux-bottom-bar ${styles.dock}`} aria-label="Filter, sort and compare">
       <button type="button" onClick={() => openDrawer('field')}><Icon name="collegesSliders" />Filters{chips.length > 0 && <span className={styles.dockBadge} aria-label={`${chips.length} active`}>{chips.length}</span>}</button>
-      <button type="button" onClick={() => openDrawer('sort')}><Icon name="collegesSort" />Sort<small>{filters.sort === 'default' ? '' : sortLabel}</small></button>
+      <button type="button" onClick={() => openDrawer('sort')}><Icon name="collegesSort" /><span>Sort{filters.sort !== 'default' && <small>{sortLabel}</small>}</span></button>
       {compare.total > 0 && <button type="button" onClick={() => sheetRef.current?.showModal()}><Icon name="compare" />Compare<span className={styles.dockBadge}>{compare.total}</span></button>}
     </nav>
 
@@ -302,11 +301,13 @@ export default function CollegeListing({ initial }) {
       onApply={applyDraft} />
 
     <dialog ref={sheetRef} className={styles.sheet} aria-labelledby="compare-sheet-title" onClick={(event) => { if (event.target === event.currentTarget) event.currentTarget.close(); }}>
-      <div className={styles.drawerHead}>
+      <div className={styles.sheetHead}>
         <div><h2 id="compare-sheet-title">Compare shortlist</h2><p>{plural(compare.total, 'college')} · up to 3 per course</p></div>
-        <button type="button" className="icon-button" aria-label="Close compare shortlist" onClick={() => sheetRef.current?.close()}><Icon name="close" /></button>
+        <button type="button" className="lux-button lux-button--ghost lux-button--icon" aria-label="Close compare shortlist" onClick={() => sheetRef.current?.close()}><Icon name="close" /></button>
       </div>
-      {compare.total > 0 ? <CompareGroups compare={compare} courseById={courseById} onRemove={removeCompare} /> : <p className={styles.sheetEmpty}>Your shortlist is empty. Use “Add to compare” on any college.</p>}
+      <div className={styles.sheetBody}>
+        {compare.total > 0 ? <CompareGroups compare={compare} courseById={courseById} onRemove={removeCompare} /> : <p className={styles.sheetEmpty}>Your shortlist is empty. Use “Compare” on any programme line.</p>}
+      </div>
     </dialog>
 
     <p className="sr-only" role="status" aria-live="polite">{status}</p>

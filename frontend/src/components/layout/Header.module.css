@@ -42,7 +42,7 @@
 .loginButton:hover { background: var(--lux-wine-deep); }
 .loginButton:focus-visible { outline: 2px solid var(--lux-focus); outline-offset: 3px; }
 .loginButton :global(.icon) { width: 18px; height: 18px; }
-.accountSkeleton { width: 96px; height: 44px; border-radius: var(--lux-radius-pill); background: linear-gradient(90deg, var(--lux-sand), var(--lux-ivory) 50%, var(--lux-sand)); background-size: 200% 100%; animation: lux-shimmer 1.4s linear infinite; }
+.accountSkeleton { width: 104px; height: 44px; border-radius: var(--lux-radius-pill); background: linear-gradient(90deg, var(--lux-sand), var(--lux-ivory) 50%, var(--lux-sand)); background-size: 200% 100%; animation: lux-shimmer 1.4s linear infinite; }
 .account { position: relative; }
 .avatarButton { display: inline-flex; align-items: center; gap: var(--lux-space-2); height: 44px; padding: 0 10px 0 5px; border: 1px solid var(--lux-border-strong); border-radius: var(--lux-radius-pill); background: var(--lux-surface-raised); color: var(--lux-wine); font: 600 var(--lux-small)/1 var(--lux-font-body); cursor: pointer; }
 .avatarButton:focus-visible { outline: 2px solid var(--lux-focus); outline-offset: 2px; }

@@ -3,25 +3,31 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import HeroPhoto from './HeroPhoto';
 import Icon from '@/components/ui/Icon';
+import { isGatedPath, loginHref } from '@/features/auth/gated-routes';
 import { useCatalog } from '@/providers/CatalogProvider';
 import { useContent } from '@/providers/ContentProvider';
 import { usePreferences } from '@/providers/PreferencesProvider';
+import { useStudentAuth } from '@/providers/StudentAuthProvider';
 import SearchBox from './SearchBox';
 import CampusArtwork from './CampusArtwork';
 import styles from './Landing.module.css';
 
-const searchRoutes = { Colleges: '/search', Courses: '/courses', Exams: '/exams' };
+// College searches go to the login-gated university directory; courses and exams stay public.
+const searchRoutes = { Colleges: '/universities', Courses: '/courses', Exams: '/exams' };
 
 // Approved first screen: hero + popular courses + tool shortcuts. At ≥1101px it fills
-// exactly the viewport below the fixed header. The homepage composition is features/home/HomePage.js.
+// the viewport below the approved header height. The homepage composition is features/home/HomePage.js.
 export default function LandingFirstScreen() {
   const router = useRouter();
+  const { status } = useStudentAuth();
   const { courses } = useCatalog();
   const { setCourse } = usePreferences();
   const { fields = [], shortcuts = [] } = useContent('landing') ?? {};
   const popular = courses.filter((course) => course.popular).slice(0, 6);
   function search({ type, query }) {
-    router.push(query ? `${searchRoutes[type]}?q=${encodeURIComponent(query)}` : searchRoutes[type]);
+    const target = query ? `${searchRoutes[type]}?q=${encodeURIComponent(query)}` : searchRoutes[type];
+    // Signed-out visitors skip the proxy round trip; /login returns them here via ?next=.
+    router.push(status === 'signed-out' && isGatedPath(searchRoutes[type]) ? loginHref(target) : target);
   }
   return <div className={styles.firstScreen} data-first-screen>
     <section className={styles.hero} aria-labelledby="hero-title">

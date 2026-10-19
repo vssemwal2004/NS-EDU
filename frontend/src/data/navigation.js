@@ -26,7 +26,4 @@ export const supportLinks = [
   { label: 'Contact', href: '/contact' },
 ];
 
-// Streams without a fitting course icon get a clearer one here.
-export const fieldIcons = { Engineering: 'gear', Commerce: 'commerce', Healthcare: 'heart', Dentistry: 'medical', Hospitality: 'building' };
-
 export const isActivePath = (pathname, item) => item.match?.some((path) => pathname === path || pathname.startsWith(`${path}/`));

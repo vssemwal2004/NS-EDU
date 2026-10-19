@@ -1,42 +1,68 @@
 import Link from 'next/link';
 import Icon from '@/components/ui/Icon';
-import { CATEGORY_LABELS, TYPE_LABELS, formatInr, labelOf, monogram, placeOf, sourceNote } from './labels';
-import styles from './Universities.module.css';
+import ApplyButton from '@/features/apply/ApplyButton';
+import { kindOf, lakhRange, monogram, nirfOf, ownershipOf, placeOf, sourceNote } from './labels';
+import styles from './Directory.module.css';
 
-export function UniversityLogo({ item, size = 'md' }) {
-  // Logos are remote URLs from many hosts (official sites, Cloudinary), so a plain lazy <img> is used.
-  return item.logoUrl ? <img className={styles.logo} data-size={size} src={item.logoUrl} alt="" loading="lazy" decoding="async" referrerPolicy="no-referrer" />
-    : <span className={styles.logo} data-size={size} data-fallback aria-hidden="true">{monogram(item.name)}</span>;
+// Logos are remote URLs from many hosts (official sites, Cloudinary), so a plain sized <img> is used.
+export function UniversityLogo({ item, size = 'md', className = '' }) {
+  const px = size === 'lg' ? 112 : size === 'sm' ? 44 : 60;
+  return <span className={`${styles.logo} ${className}`} data-size={size} data-fallback={item.logoUrl ? undefined : true} aria-hidden="true">
+    {item.logoUrl ? <img src={item.logoUrl} alt="" width={px} height={px} loading="lazy" decoding="async" referrerPolicy="no-referrer" /> : monogram(item.name)}
+  </span>;
 }
 
-export default function UniversityCard({ item, courseNames = {} }) {
+export const applyTarget = (item) => ({ id: item.id, name: item.name, city: item.city, state: item.state || '', logoUrl: item.logoUrl || '' });
+
+export function SourceTag({ item, className = '' }) {
+  const tone = item.isIllustrative ? 'illustrative' : item.verification === 'verified' ? 'verified' : 'plain';
+  return <span className={`${styles.source} ${className}`} data-tone={tone}>
+    <Icon name={tone === 'verified' ? 'uniVerified' : 'uniInfo'} />{sourceNote(item)}
+  </span>;
+}
+
+export default function UniversityCard({ item, courseNames = {}, headingLevel = 3 }) {
+  const Heading = `h${headingLevel}`;
   const href = `/universities/${item.id}`;
   const fees = item.programmes;
+  const kind = [kindOf(item), ownershipOf(item)].filter(Boolean).join(' · ');
   const badges = [
-    item.category && item.category !== 'other' ? labelOf(CATEGORY_LABELS, item.category) : labelOf(TYPE_LABELS, item.type),
-    item.establishedYear && `Est. ${item.establishedYear}`,
-    item.naacGrade && `NAAC ${item.naacGrade}`,
-    item.nirfRank && `NIRF #${item.nirfRank}${item.nirfYear ? ` (${item.nirfYear})` : ''}`,
-    ...item.approvals.slice(0, 3),
+    item.naacGrade && { key: 'naac', icon: 'uniMedal', label: `NAAC ${item.naacGrade}` },
+    item.nirfRank && { key: 'nirf', icon: 'uniRibbon', label: `NIRF ${nirfOf(item)}` },
+    ...item.approvals.slice(0, 3).map((approval) => ({ key: approval, icon: 'uniVerified', label: approval })),
+    item.establishedYear && { key: 'est', icon: 'uniCalendar', label: `Est. ${item.establishedYear}` },
   ].filter(Boolean);
+  const courses = fees?.courseIds?.map((id) => courseNames[id] || id) || [];
+
   return <article className={styles.card} aria-labelledby={`uni-${item.id}`}>
-    <UniversityLogo item={item} />
-    <div className={styles.cardMain}>
-      <h3 id={`uni-${item.id}`}><Link href={href}>{item.name}</Link></h3>
-      <p className={styles.cardMeta}>
-        <span><Icon name="location" />{placeOf(item) || 'Location not listed'}</span>
-        <span className={styles.source} data-verified={item.verification === 'verified' || undefined}><Icon name={item.verification === 'verified' ? 'shield' : 'collegesInfo'} />{sourceNote(item)}</span>
-      </p>
-      {badges.length > 0 && <ul className={styles.badges} aria-label="Key facts">{badges.map((badge) => <li key={badge}>{badge}</li>)}</ul>}
-      {item.streams.length > 0 && <p className={styles.streams}><Icon name="book" />{item.streams.slice(0, 5).join(' · ')}{item.streams.length > 5 ? ` +${item.streams.length - 5}` : ''}</p>}
-      {fees && <p className={styles.fees}><Icon name="collegesRupee" /><span>
-        <strong>{fees.feeMin === fees.feeMax ? formatInr(fees.feeMin) : `${formatInr(fees.feeMin)} – ${formatInr(fees.feeMax)}`}</strong> annual tuition{fees.tuitionYear ? ` (${fees.tuitionYear})` : ''}
-        <small>{fees.courseIds.map((id) => courseNames[id] || id).join(', ')}</small>
-      </span></p>}
+    <div className={styles.cardTop}>
+      <UniversityLogo item={item} />
+      <div className={styles.cardTitle}>
+        <p className={styles.cardKind}>{kind}</p>
+        <Heading id={`uni-${item.id}`}><Link href={href}>{item.name}</Link></Heading>
+        <p className={styles.cardPlace}><Icon name="uniMapPin" />{placeOf(item) || 'Location not listed'}</p>
+      </div>
     </div>
-    <div className={styles.cardActions}>
-      <Link className="button button--primary" href={`/apply?university=${encodeURIComponent(item.id)}`}>Apply<span className="sr-only"> to {item.name}</span><Icon name="arrow" /></Link>
-      <Link className="button button--outline" href={href}>View profile<span className="sr-only">: {item.name}</span></Link>
+
+    {badges.length > 0 && <ul className={styles.badges} aria-label="Accreditation and approvals">
+      {badges.map((badge) => <li key={badge.key}><Icon name={badge.icon} />{badge.label}</li>)}
+    </ul>}
+
+    {item.streams.length > 0 && <p className={styles.streams}><span className="sr-only">Streams: </span>
+      {item.streams.slice(0, 4).join(' · ')}{item.streams.length > 4 && <span className={styles.more}> +{item.streams.length - 4}</span>}
+    </p>}
+
+    {fees && fees.feeMin != null && <div className={styles.feeWell}>
+      <p><span>Annual tuition{fees.tuitionYear ? ` · ${fees.tuitionYear}` : ''}</span><strong>{lakhRange(fees.feeMin, fees.feeMax)}</strong></p>
+      {courses.length > 0 && <small>{fees.count === 1 ? '1 programme' : `${fees.count} programmes`}: {courses.slice(0, 4).join(', ')}{courses.length > 4 ? ` +${courses.length - 4}` : ''}</small>}
+    </div>}
+
+    <div className={styles.cardFoot}>
+      <SourceTag item={item} />
+      <div className={styles.cardActions}>
+        <Link className="lux-button lux-button--ghost lux-button--sm" href={href}>View profile<span className="sr-only">: {item.name}</span></Link>
+        <ApplyButton university={applyTarget(item)} className="lux-button--sm" />
+      </div>
     </div>
   </article>;
 }

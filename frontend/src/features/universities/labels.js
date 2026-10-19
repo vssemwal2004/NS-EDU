@@ -16,9 +16,20 @@ export const SORT_OPTIONS = [
 
 export const labelOf = (map, value) => map[value] || value;
 export const placeOf = (item) => [item.city, item.state].filter(Boolean).join(', ');
+// Category when it is specific ("State university"), otherwise the broad type ("College").
+export const kindOf = (item) => (item.category && item.category !== 'other' ? labelOf(CATEGORY_LABELS, item.category) : labelOf(TYPE_LABELS, item.type));
+export const ownershipOf = (item) => (item.ownership && item.ownership !== 'unknown' ? labelOf(OWNERSHIP_LABELS, item.ownership) : '');
+export const nirfOf = (item) => (item.nirfRank ? `#${item.nirfRank}${item.nirfYear ? ` · ${item.nirfYear}` : ''}` : '');
+
 const rupees = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 });
 export const formatInr = (value) => rupees.format(value);
 export const formatCount = (value) => new Intl.NumberFormat('en-IN').format(value);
+const lakh = (value) => Number((value / 100000).toFixed(2));
+// ₹1.2 L, or ₹1.1–6.5 L for a range.
+export const lakhRange = (min, max) => (min == null ? '' : min === max || max == null ? `₹${lakh(min)} L` : `₹${lakh(min)}–${lakh(max)} L`);
+export const formatLpa = (value) => (value == null ? '' : `₹${value} LPA`);
+export const hostOf = (url) => { try { return new URL(url).hostname.replace(/^www\./, ''); } catch { return url; } };
+export const shortDate = (value) => (value ? new Date(value).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '');
 
 // Initials for institutions without a logo, e.g. "Indian Institute of Technology Bombay" -> "IB".
 export function monogram(name = '') {

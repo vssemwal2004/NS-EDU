@@ -45,6 +45,7 @@
 .status[data-tone="new"] { background: var(--admin-warning-background); color: #8A5300; }
 .status[data-tone="good"] { background: var(--admin-success-background); color: var(--admin-success); }
 .status[data-tone="ended"] { background: #F1ECEA; color: var(--color-muted); }
+.mode { display: inline-flex; align-items: center; gap: 4px; margin-left: 6px; padding: 1px 8px; border: 1px solid #C9A46A; border-radius: var(--radius-pill); background: #FBF3E6; color: #7A5A2C; font-family: var(--font-body); font-size: .6875rem; font-weight: 700; letter-spacing: .02em; vertical-align: middle; white-space: nowrap; }
 .assignees { max-width: 220px; }
 .unassigned { color: #8A5300 !important; font-weight: 600; }
 .empty { display: grid; justify-items: center; gap: var(--space-3); padding: var(--space-10) var(--space-5); color: var(--color-muted); text-align: center; }

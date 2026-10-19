@@ -1,4 +1,4 @@
-// Extra icon paths for the compare area (24x24 viewBox, 1.65 stroke, round caps). Merged into <Icon />.
+// Compare area icons (24x24 viewBox, 1.65 stroke, round caps). Owned by the compare agent.
 export default {
   compareBest: 'M12 15a6 6 0 1 0 0-12 6 6 0 0 0 0 12Zm-3.5-1.1L7 22l5-3 5 3-1.5-8.1M9.4 9.1l1.8 1.8 3.4-3.4',
   compareDiff: 'M3 5h11v5H3ZM10 14h11v5H10Z',
@@ -8,4 +8,7 @@ export default {
   compareSwipe: 'M8 12h12m-3-3 3 3-3 3M4 7v10',
   compareInfo: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Zm0-10v5m0-8.5v.01',
   compareColumns: 'M3 4h5v16H3ZM10 4h4v16h-4ZM16 4h5v16h-5Z',
+  compareTrophy: 'M8 4h8v5a4 4 0 0 1-8 0V4Zm0 2H4v1a4 4 0 0 0 4 4m8-5h4v1a4 4 0 0 1-4 4m-4 2v4m-4 3h8l-1-3H9l-1 3Z',
+  compareGauge: 'M3 16a9 9 0 1 1 18 0M12 16l4-5M12 17a1 1 0 1 0 0-2 1 1 0 0 0 0 2M5 20h14',
+  compareSparkle: 'M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z',
 };

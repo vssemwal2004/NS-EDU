@@ -138,7 +138,7 @@ export default function QuickApplyForm({ university, courseSlug = '', courses: g
 
   function update(name, value) {
     setValues((current) => ({ ...current, [name]: value }));
-    if (errors[name]) setErrors(({ [name]: _removed, ...rest }) => rest);
+    if (errors[name]) setErrors((current) => Object.fromEntries(Object.entries(current).filter(([key]) => key !== name)));
     setFormError('');
     onDirtyChange?.(true);
   }

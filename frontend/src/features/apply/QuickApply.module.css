@@ -67,7 +67,7 @@ select.input { appearance: none; padding-right: 2.75rem; background-image: url("
 .reassure :global(.icon) { width: 16px; height: 16px; color: var(--lux-bronze-ink); }
 
 /* In the popup the send button stays reachable while the fields scroll. */
-.form[data-variant="dialog"] .submitRow { position: sticky; bottom: 0; z-index: 1; margin: 0 calc(var(--qa-pad, 0px) * -1) calc(var(--qa-pad-bottom, 0px) * -1); padding: var(--lux-space-3) var(--qa-pad, 0px) calc(var(--qa-pad-bottom, 0px)); border-top: 1px solid var(--lux-border); background: rgb(255 250 245 / 96%); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.form[data-variant="dialog"] .submitRow { position: sticky; bottom: calc(var(--qa-pad-bottom, 0px) * -1); z-index: 1; margin: 0 calc(var(--qa-pad, 0px) * -1) calc(var(--qa-pad-bottom, 0px) * -1); padding: var(--lux-space-3) var(--qa-pad, 0px) var(--qa-pad-bottom, 0px); border-top: 1px solid var(--lux-border); background: var(--lux-ivory); box-shadow: 0 -12px 24px -18px rgb(61 15 30 / 35%); }
 
 /* Result (success or duplicate) */
 .result { display: grid; justify-items: center; gap: var(--lux-space-3); padding: var(--lux-space-5) 0 var(--lux-space-2); text-align: center; outline: none; }
