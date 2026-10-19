@@ -1,3 +1,5 @@
+import RecommendedUniversities from '@/features/recommendations/RecommendedUniversities';
+import TrackEvent from '@/features/recommendations/TrackEvent';
 import DirectoryHero from '@/features/universities/DirectoryHero';
 import DirectoryResults from '@/features/universities/DirectoryResults';
 import { DirectoryProvider } from '@/features/universities/DirectoryState';
@@ -28,10 +30,19 @@ export default async function UniversitiesPage({ searchParams }) {
     getUniversityFacets(params.state),
     getCatalog(),
   ]);
+  // One event per distinct search/filter combination. `results` is what feeds the admin content-gap list.
+  const searched = Boolean(params.q || params.state || params.city || params.stream || params.course);
   return <main id="main" tabIndex={-1} className={styles.page}>
     <DirectoryProvider params={params}>
       <DirectoryHero params={params} facets={facets} result={result} />
       <DirectoryResults params={params} result={result} facets={facets} courses={catalog.courses} />
+      {searched && !result.failed && <TrackEvent event={{
+        type: 'search', query: params.q, state: params.state, city: params.city,
+        stream: params.stream, courseSlug: params.course, results: result.total ?? 0,
+      }} />}
+      <div className={`lux-container lux-container--wide ${styles.recommended}`}>
+        <RecommendedUniversities limit={6} courseNames={Object.fromEntries(catalog.courses.map((course) => [course.id, course.name]))} />
+      </div>
     </DirectoryProvider>
   </main>;
 }

@@ -9,6 +9,7 @@ import { ContentProvider } from '@/providers/ContentProvider';
 import { PreferencesProvider } from '@/providers/PreferencesProvider';
 import { QuickApplyProvider } from '@/providers/QuickApplyProvider';
 import { StudentAuthProvider } from '@/providers/StudentAuthProvider';
+import { TrackingProvider } from '@/providers/TrackingProvider';
 import styles from './layout.module.css';
 
 export default async function SiteLayout({ children }) {
@@ -20,11 +21,13 @@ export default async function SiteLayout({ children }) {
       <PreferencesProvider>
         <StudentAuthProvider>
           <QuickApplyProvider>
-            <Header />
-            {children}
-            <SiteFooter />
-            <LoginDrawer />
-            {unavailable && <p className={styles.notice} role="status"><Icon name="coursesInfo" />Some information is temporarily unavailable. Please refresh in a moment.</p>}
+            <TrackingProvider>
+              <Header />
+              {children}
+              <SiteFooter />
+              <LoginDrawer />
+              {unavailable && <p className={styles.notice} role="status"><Icon name="coursesInfo" />Some information is temporarily unavailable. Please refresh in a moment.</p>}
+            </TrackingProvider>
           </QuickApplyProvider>
         </StudentAuthProvider>
       </PreferencesProvider>

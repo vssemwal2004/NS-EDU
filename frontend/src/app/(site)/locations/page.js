@@ -13,8 +13,10 @@ export const metadata = { title: 'Study destinations | Gyaan Vidhya', descriptio
 
 const byName = (a, b) => a.name.localeCompare(b.name);
 
+// Each postcard is a small window into one shared sprite, so a 1200px-wide copy is plenty even on
+// desktop. width/height stay the original values because the crop coordinates live in that space.
 function artFor(entry) {
-  const image = mediaImage(entry);
+  const image = mediaImage(entry, Math.min(1200, entry?.width ?? 1200));
   return image ? { src: image.src, width: entry.width, height: entry.height } : null;
 }
 

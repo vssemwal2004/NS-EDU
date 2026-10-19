@@ -41,6 +41,25 @@ async function readLimited(response, maxBytes) {
   return { text: decoder.decode(Buffer.concat(chunks)), truncated };
 }
 
+// Binary bodies are never truncated: half an image is useless, so an over-sized one is refused.
+async function readBytes(response, maxBytes) {
+  if (!response.body) return Buffer.alloc(0);
+  const reader = response.body.getReader();
+  const chunks = [];
+  let size = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    size += value.byteLength;
+    if (size > maxBytes) {
+      await reader.cancel().catch(() => {});
+      throw new CrawlError(`File is larger than ${Math.round(maxBytes / 1024)} KB`, { code: 'too-large', permanent: true });
+    }
+    chunks.push(value);
+  }
+  return Buffer.concat(chunks);
+}
+
 /**
  * Polite HTTP client for one worker process: identifies itself, honours robots.txt per origin,
  * keeps a minimum gap between requests to the same host, caps time and size, and never leaves
@@ -151,5 +170,45 @@ export function createFetcher({ config, fetchImpl = globalThis.fetch, wait = sle
     throw new CrawlError('Too many redirects', { code: 'http', permanent: true });
   }
 
-  return { getPage, robotsFor, stats };
+  /**
+   * Downloads a non-HTML file (an image) under the same rules as a page: robots.txt, the per-host
+   * delay, the institution's own domain only, and a hard size cap. Used by the image pipeline so
+   * photographs are fetched as politely as pages are.
+   */
+  async function getFile(href, { domain, accept = 'image/*', types, maxBytes = 8 * 1024 * 1024 }) {
+    let url = href instanceof URL ? href : resolveUrl(href);
+    if (!url) throw new CrawlError(`Invalid URL: ${href}`, { code: 'http', permanent: true });
+    for (let hop = 0; hop <= config.maxRedirects; hop += 1) {
+      if (!isSameSite(url, domain)) throw new CrawlError(`Leaves the institution's domain: ${url.hostname}`, { code: 'offsite', permanent: true });
+      const policy = await robotsFor(url, domain);
+      if (!policy.isAllowed(`${url.pathname}${url.search}`)) throw new CrawlError(`robots.txt disallows ${url.pathname}`, { code: 'robots', permanent: true });
+      const response = await request(url, accept);
+      const location = response.headers.get('location');
+      if (response.status >= 300 && response.status < 400 && location) {
+        await response.body?.cancel().catch(() => {});
+        const next = resolveUrl(location, url);
+        if (!next) throw new CrawlError('Invalid redirect', { code: 'http', permanent: true });
+        url = next;
+        continue;
+      }
+      if (!response.ok) {
+        await response.body?.cancel().catch(() => {});
+        throw new CrawlError(`HTTP ${response.status}`, { code: 'http', status: response.status, permanent: [404, 410].includes(response.status) });
+      }
+      const contentType = (response.headers.get('content-type') ?? '').split(';')[0].trim().toLowerCase();
+      if (types && !types.includes(contentType)) {
+        await response.body?.cancel().catch(() => {});
+        throw new CrawlError(`Unsupported content type: ${contentType || 'unknown'}`, { code: 'not-allowed-type', permanent: true });
+      }
+      const length = Number(response.headers.get('content-length'));
+      if (Number.isFinite(length) && length > maxBytes) {
+        await response.body?.cancel().catch(() => {});
+        throw new CrawlError(`File is larger than ${Math.round(maxBytes / 1024)} KB`, { code: 'too-large', permanent: true });
+      }
+      return { url: url.toString(), status: response.status, contentType, body: await readBytes(response, maxBytes) };
+    }
+    throw new CrawlError('Too many redirects', { code: 'http', permanent: true });
+  }
+
+  return { getPage, getFile, robotsFor, stats };
 }

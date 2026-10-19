@@ -1,22 +1,30 @@
-import Image from 'next/image';
 import Link from 'next/link';
 import Icon from '@/components/ui/Icon';
 import ApplyButton from '@/features/apply/ApplyButton';
+import CompareToggle from '@/features/compare/CompareToggle';
 import UniversityCard, { SourceTag, UniversityLogo, applyTarget } from '../UniversityCard';
-import { formatCount, formatInr, formatLpa, hostOf, kindOf, lakhRange, ownershipOf, shortDate, sourceNote } from '../labels';
+import { formatInr, formatLpa, hostOf, kindOf, lakhRange, ownershipOf, shortDate, sourceNote } from '../labels';
+import Gallery from './Gallery';
+import OfferedProgrammes from './OfferedProgrammes';
+import { Photo } from './media';
 import SectionTabs from './SectionTabs';
 import styles from './Profile.module.css';
 
 const external = { target: '_blank', rel: 'noopener noreferrer' };
-const isCloudinary = (url) => { try { return new URL(url).hostname === 'res.cloudinary.com'; } catch { return false; } };
+
+// Every scraped value carries where it came from; nothing on this page is presented as verified.
+function Source({ href, children }) {
+  if (!href) return <span className={styles.sourceLine}>{children}</span>;
+  return <a className={styles.sourceLine} href={href} target="_blank" rel="noopener noreferrer nofollow">
+    {children}<Icon name="external" /><span className="sr-only"> (opens in a new tab)</span>
+  </a>;
+}
 
 function Cover({ model }) {
-  const { item, shortName, place } = model;
+  const { item, shortName, place, heroImage, chips } = model;
   const directoryLink = item.state ? `/universities?${new URLSearchParams(item.city ? { state: item.state, city: item.city } : { state: item.state })}` : '/universities';
-  return <section id="profile-top" className={`lux-surface-dark ${styles.cover}`} data-image={item.coverUrl ? true : undefined} aria-labelledby="page-title">
-    {item.coverUrl && (isCloudinary(item.coverUrl)
-      ? <Image className={styles.coverImage} src={item.coverUrl} alt="" fill priority sizes="100vw" />
-      : <img className={styles.coverImage} src={item.coverUrl} alt="" decoding="async" fetchPriority="high" referrerPolicy="no-referrer" />)}
+  return <section id="profile-top" className={`lux-surface-dark ${styles.cover}`} data-image={heroImage ? true : undefined} aria-labelledby="page-title">
+    {heroImage && <div className={styles.coverMedia} aria-hidden="true"><Photo src={heroImage} sizes="100vw" priority /></div>}
     <div className={styles.coverPattern} aria-hidden="true" />
     <div className={`lux-container ${styles.coverInner}`}>
       <nav aria-label="Breadcrumb" className={styles.breadcrumb}>
@@ -36,10 +44,14 @@ function Cover({ model }) {
             {item.establishedYear && <li><Icon name="uniCalendar" />Established {item.establishedYear}</li>}
             <li><SourceTag item={item} className={styles.coverSource} /></li>
           </ul>
+          {chips.length > 0 && <ul className={styles.chips} aria-label="Accreditation and ranking, as reported by the source">
+            {chips.map((chip) => <li key={chip.key}><Icon name={chip.icon} /><strong>{chip.label}</strong><small>{chip.note}</small></li>)}
+          </ul>}
         </div>
         <div className={styles.coverActions}>
           <ApplyButton university={applyTarget(item)} variant="light" size="lg" />
           {item.website && <a className="lux-button lux-button--outline lux-button--lg" href={item.website} {...external}><Icon name="uniGlobe" />Official website<span className="sr-only"> (opens in a new tab)</span></a>}
+          <CompareToggle slug={item.id} name={item.name} size="md" />
         </div>
       </div>
     </div>
@@ -65,10 +77,12 @@ function SectionHead({ id, eyebrow, title, aside }) {
 }
 
 function Overview({ model }) {
-  const { item, about, highlights } = model;
+  const { item, about, aboutSource, highlights, gaps } = model;
   return <section id="overview" className={styles.section} aria-labelledby="overview-title">
     <SectionHead id="overview" eyebrow="About" title="Overview" aside={item.source?.fetchedAt && !item.isIllustrative ? `Updated ${shortDate(item.source.fetchedAt)}` : ''} />
     <p className={styles.about}>{about}</p>
+    {aboutSource ? <p className={styles.sourceRow}><Source href={aboutSource}>From the institution’s website</Source></p>
+      : <p className={styles.footnote}>Written from the directory record: name, type, location and year of establishment.</p>}
     {item.isIllustrative && <p className={styles.notice}><Icon name="uniInfo" />This is an illustrative profile used to demonstrate the platform. Its fees and packages are sample values, not verified figures.</p>}
     {highlights.length > 0 && <>
       <h3 className={styles.subhead}>Highlights</h3>
@@ -82,15 +96,26 @@ function Overview({ model }) {
         {item.streams.map((stream) => <li key={stream}><Link className="lux-chip" href={`/universities?${new URLSearchParams({ stream, ...(item.state ? { state: item.state } : {}) })}`}>{stream}</Link></li>)}
       </ul>
     </>}
+    {gaps.length > 0 && <p className={styles.notice}><Icon name="uniInfo" />
+      <span>We do not have {gaps.length === 1 ? gaps[0] : `${gaps.slice(0, -1).join(', ')} or ${gaps.at(-1)}`} for this institution yet. Check its {item.website ? <a href={item.website} {...external}>official website</a> : 'official website'}, or <Link href="/report-correction">send us what you know</Link>.</span>
+    </p>}
+  </section>;
+}
+
+function Photos({ model }) {
+  const { item, photos, shortName } = model;
+  return <section id="photos" className={styles.section} aria-labelledby="photos-title">
+    <SectionHead id="photos" eyebrow="Campus" title="Photos" aside={`${photos.length} ${photos.length === 1 ? 'photo' : 'photos'} from the institution’s own website`} />
+    <Gallery photos={photos} name={shortName} />
+    <p className={styles.footnote}>Photos are published by {item.name} on its website and are shown here with their source page. They are not Gyaan Vidhya’s own photography.</p>
   </section>;
 }
 
 function Courses({ model }) {
-  const { item, rows, summary, moreCourses } = model;
-  const offered = item.coursesOffered;
+  const { item, rows, summary, moreCourses, offeredRows, offeredWithFees, offeredSource } = model;
   const target = applyTarget(item);
   return <section id="courses" className={styles.section} aria-labelledby="courses-title">
-    <SectionHead id="courses" eyebrow="Programmes" title={rows.length ? 'Courses & fees' : 'Courses'}
+    <SectionHead id="courses" eyebrow="Programmes" title={rows.length || offeredWithFees ? 'Courses & fees' : 'Courses'}
       aside={rows.length ? `${rows.length === 1 ? '1 programme' : `${rows.length} programmes`} with published fees` : ''} />
     {rows.length > 0 && <div className={styles.tableWrap}>
       <table className={styles.table}>
@@ -122,19 +147,56 @@ function Courses({ model }) {
         </li>)}
       </ul>
     </>}
-    {offered.length > 0 && <div className={styles.offered}>
-      <h3 className={styles.subhead}>Programmes listed by the institution <small>{formatCount(offered.length)}</small></h3>
-      <ul>{offered.slice(0, 24).map((name) => <li key={name}>{name}</li>)}</ul>
-      {offered.length > 24 && <details>
-        <summary>Show all {formatCount(offered.length)} programmes</summary>
-        <ul>{offered.slice(24).map((name) => <li key={name}>{name}</li>)}</ul>
-      </details>}
-    </div>}
+    {offeredRows.length > 0 && <>
+      <h3 className={styles.subhead}>Programmes listed by the institution
+        <small>{offeredWithFees ? `${offeredWithFees} with a published fee` : 'fees not published'}</small>
+      </h3>
+      <OfferedProgrammes rows={offeredRows} withFees={offeredWithFees > 0} />
+      {(offeredSource || item.website) && <p className={styles.sourceRow}><Source href={offeredSource || item.website}>From the institution’s website</Source></p>}
+    </>}
+  </section>;
+}
+
+function Placements({ model }) {
+  const { item, placementStats, recruiters, placementYear, placementSource, summary } = model;
+  return <section id="placements" className={styles.section} aria-labelledby="placements-title">
+    <SectionHead id="placements" eyebrow="Outcomes" title="Placements" aside={placementYear ? `Reported for ${placementYear}` : ''} />
+    {placementStats.length > 0 ? <ul className={styles.stats}>
+      {placementStats.map((stat) => <li key={stat.key}><span>{stat.label}</span><strong>{stat.value}</strong></li>)}
+    </ul> : <p className={styles.notice}><Icon name="uniInfo" />The institution does not publish overall placement figures{placementYear ? ` for ${placementYear}` : ''}. Only the course-level packages below are known.</p>}
+    {summary?.medianMax != null && <p className={styles.footnote}>Course-level packages for {summary.placementYear} are in the courses table above{item.isIllustrative ? ' (illustrative values)' : ''}.</p>}
+    {recruiters.length > 0 && <>
+      <h3 className={styles.subhead}>Recruiters listed <small>{recruiters.length}</small></h3>
+      <ul className={styles.tagList}>{recruiters.map((name) => <li key={name} className="lux-chip lux-chip--static">{name}</li>)}</ul>
+    </>}
+    <p className={styles.sourceRow}><Source href={placementSource || item.website}>
+      {placementSource || item.website ? 'Reported by the institution — open the source page' : 'Reported by the institution'}
+    </Source></p>
+    <p className={styles.footnote}>Packages are what the institution reports; Gyaan Vidhya has not audited them. Ask for the detailed placement report before you decide.</p>
+  </section>;
+}
+
+function Campus({ model }) {
+  const { item, campusFacts, facilities, activities, campusSource } = model;
+  return <section id="campus" className={styles.section} aria-labelledby="campus-title">
+    <SectionHead id="campus" eyebrow="Student life" title="Campus & activities" />
+    {campusFacts.length > 0 && <dl className={styles.statusList}>
+      {campusFacts.map((fact) => <div key={fact.label}><dt>{fact.label}</dt><dd>{fact.value}</dd></div>)}
+    </dl>}
+    {facilities.length > 0 && <>
+      <h3 className={styles.subhead}>Facilities <small>{facilities.length}</small></h3>
+      <ul className={styles.tagList}>{facilities.map((name) => <li key={name} className="lux-chip lux-chip--static"><Icon name="uniCampus" />{name}</li>)}</ul>
+    </>}
+    {activities.length > 0 && <>
+      <h3 className={styles.subhead}>Clubs & activities <small>{activities.length}</small></h3>
+      <ul className={styles.tagList}>{activities.map((name) => <li key={name} className="lux-chip lux-chip--static"><Icon name="uniSpark" />{name}</li>)}</ul>
+    </>}
+    {(campusSource || item.website) && <p className={styles.sourceRow}><Source href={campusSource || item.website}>From the institution’s website</Source></p>}
   </section>;
 }
 
 function Admissions({ model }) {
-  const { item, shortName } = model;
+  const { item, shortName, entranceExams, admissionNote } = model;
   const official = item.admissionUrl || item.website;
   return <section id="admissions" className={styles.section} aria-labelledby="admissions-title">
     <SectionHead id="admissions" eyebrow="How to apply" title="Admissions" />
@@ -154,7 +216,12 @@ function Admissions({ model }) {
         <h3 className="lux-title">Official admissions</h3>
         {official ? <p>Deadlines, eligibility and entrance requirements are set by the institution. Check them on its {item.admissionUrl ? 'admissions page' : 'website'}.</p>
           : <p>The institution’s admissions page is not listed yet. Our team can confirm deadlines and eligibility when you apply.</p>}
+        {admissionNote && <p className={styles.quote}>{admissionNote}</p>}
         {official && <a className="lux-link" href={official} {...external}>{item.admissionUrl ? 'Official admissions page' : hostOf(official)}<Icon name="external" /><span className="sr-only"> (opens in a new tab)</span></a>}
+        {entranceExams.length > 0 && <>
+          <h4>Entrance exams listed</h4>
+          <ul className={styles.tagList}>{entranceExams.map((exam) => <li key={exam} className="lux-chip lux-chip--static">{exam}</li>)}</ul>
+        </>}
         <h4>Before you apply, verify</h4>
         <ul className={styles.checklist}>
           <li><Icon name="check" />Eligibility for your course</li>
@@ -169,20 +236,37 @@ function Admissions({ model }) {
 }
 
 function Accreditation({ model }) {
-  const { accreditation, status } = model;
+  const { accreditation, status, snapshotOn, directorySources, item } = model;
   return <section id="accreditation" className={styles.section} aria-labelledby="accreditation-title">
-    <SectionHead id="accreditation" eyebrow="Quality & recognition" title="Accreditation & approvals" />
+    <SectionHead id="accreditation" eyebrow="Quality & recognition" title="Accreditation & approvals"
+      aside={snapshotOn ? `Source snapshot · ${snapshotOn}` : ''} />
+    <p className={styles.notice}><Icon name="uniInfo" /><span><strong>Read these as source-reported, not verified.</strong> They are the values our directory source recorded{snapshotOn ? ` on ${snapshotOn}` : ''}, not a current certificate and not a Gyaan Vidhya rating. Confirm the live status on the regulator’s own website before you apply.</span></p>
     {accreditation.length > 0 ? <ul className={styles.seals}>
-      {accreditation.map((row) => <li key={row.key}><Icon name={row.icon} /><span>{row.label}</span><strong>{row.value}</strong></li>)}
-    </ul> : <p className={styles.notice}><Icon name="uniInfo" /><span>No accreditation, ranking or approval details are listed for this institution yet. You can check its status on the official <a href="https://www.naac.gov.in/" {...external}>NAAC</a>, <a href="https://www.nirfindia.org/" {...external}>NIRF</a> and <a href="https://www.ugc.gov.in/" {...external}>UGC</a> websites.</span></p>}
+      {accreditation.map((row) => <li key={row.key}>
+        <Icon name={row.icon} />
+        <span>{row.label}</span>
+        <strong>{row.value}</strong>
+        {row.facts?.length > 0 && <dl>{row.facts.map((fact) => <div key={fact.label}><dt>{fact.label}</dt><dd>{fact.value}</dd></div>)}</dl>}
+        {row.note && <p className={styles.quote}>{row.note}</p>}
+        {row.href && <a className={styles.sourceLine} href={row.href} {...external}>Check on {hostOf(row.href)}<Icon name="external" /><span className="sr-only"> (opens in a new tab)</span></a>}
+      </li>)}
+    </ul> : <p className={styles.notice}><Icon name="uniInfo" /><span>No accreditation, ranking or approval details are recorded for this institution. You can check its status on the official <a href="https://www.naac.gov.in/" {...external}>NAAC</a>, <a href="https://www.nirfindia.org/" {...external}>NIRF</a> and <a href="https://www.ugc.gov.in/" {...external}>UGC</a> websites.</span></p>}
+    <h3 className={styles.subhead}>Directory record</h3>
     <dl className={styles.statusList}>
       {status.map((row) => <div key={row.label}><dt>{row.label}</dt><dd>{row.value}</dd></div>)}
     </dl>
+    <div className={styles.attribution}>
+      <SourceTag item={item} />
+      <p>{sourceNote(item)}{snapshotOn ? `. Snapshot compiled ${snapshotOn}` : ''}.
+        {directorySources.length > 0 && <> Sources: {directorySources.map((source, index) => <span key={source.label}>{index > 0 && ', '}{source.url ? <a href={source.url} target="_blank" rel="noopener noreferrer nofollow">{source.label}</a> : source.label}</span>)}.</>}
+      </p>
+      <Link className="lux-link" href="/report-correction"><Icon name="uniFlag" />Report a correction</Link>
+    </div>
   </section>;
 }
 
 function Contact({ model }) {
-  const { item, contacts, address, mapQuery, place } = model;
+  const { item, contacts, address, mapQuery, place, sourceUrl } = model;
   return <section id="contact" className={styles.section} aria-labelledby="contact-title">
     <SectionHead id="contact" eyebrow="Get in touch" title="Contact & location" />
     <div className={styles.contactGrid}>
@@ -205,9 +289,8 @@ function Contact({ model }) {
       </ul> : <p className={styles.notice}><Icon name="uniInfo" />Contact details for this institution are not listed yet. Apply through Gyaan Vidhya and our team will connect you.</p>}
     </div>
     <div className={styles.attribution}>
-      <SourceTag item={item} />
       <p>{item.isIllustrative ? 'This profile is illustrative and is not about a real institution.'
-        : <>{sourceNote(item)}{item.source?.url && <>. Source: <a href={item.source.url} target="_blank" rel="noopener noreferrer nofollow">{hostOf(item.source.url)}</a></>}{item.updatedAt && <>. Last updated {shortDate(item.updatedAt)}</>}.</>}</p>
+        : <>{sourceNote(item)}{sourceUrl && <>. Source: <a href={sourceUrl} target="_blank" rel="noopener noreferrer nofollow">{hostOf(sourceUrl)}</a></>}{item.updatedAt && <>. Last updated {shortDate(item.updatedAt)}</>}.</>}</p>
       <Link className="lux-link" href="/report-correction"><Icon name="uniFlag" />Report a correction</Link>
     </div>
   </section>;
@@ -230,6 +313,7 @@ function Rail({ model }) {
       <h2 id="rail-title" className={styles.railTitle}>Apply in one short form</h2>
       {summary?.feeMin != null && <p className={styles.railFee}><span>Annual tuition · {summary.tuitionYear}</span><strong>{lakhRange(summary.feeMin, summary.feeMax)}</strong></p>}
       <ApplyButton university={applyTarget(item)} variant="light" size="lg" block />
+      {item.website && <a className={`lux-button lux-button--outline lux-button--block ${styles.railSite}`} href={item.website} {...external}><Icon name="uniGlobe" />Official website<span className="sr-only"> (opens in a new tab)</span></a>}
       <p className={styles.railNote}>Gyaan Vidhya’s admissions team then contacts you to help with the institution’s own application.</p>
     </div>
     {contacts.length > 0 && <div className={styles.railContacts}>
@@ -248,7 +332,10 @@ export default function UniversityProfile({ model, courseNames }) {
     <div className={`lux-container ${styles.body}`}>
       <div className={styles.main}>
         <Overview model={model} />
+        {model.photos.length > 0 && <Photos model={model} />}
         {model.hasCourses && <Courses model={model} />}
+        {model.hasPlacements && <Placements model={model} />}
+        {model.hasCampus && <Campus model={model} />}
         <Admissions model={model} />
         <Accreditation model={model} />
         <Contact model={model} />
@@ -258,7 +345,10 @@ export default function UniversityProfile({ model, courseNames }) {
     </div>
     <div className={styles.bottomBar}>
       <p><strong>{shortName}</strong><span>{summary?.feeMin != null ? `${lakhRange(summary.feeMin, summary.feeMax)} a year` : kindOf(item)}</span></p>
-      <ApplyButton university={applyTarget(item)} />
+      <div className={styles.bottomActions}>
+        {item.website && <a className="lux-button lux-button--outline lux-button--icon" href={item.website} {...external} aria-label={`Official website of ${item.name} (opens in a new tab)`}><Icon name="uniGlobe" /></a>}
+        <ApplyButton university={applyTarget(item)} />
+      </div>
     </div>
   </>;
 }

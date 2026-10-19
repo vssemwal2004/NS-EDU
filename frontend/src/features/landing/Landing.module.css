@@ -66,7 +66,8 @@
   .fields a { flex: 0 0 70px; }
   .fieldIcon { width: 46px; height: 46px; }
   .searchInput { padding-inline: var(--space-3); gap: var(--space-2); }
-  .searchInput input { font-size: .75rem; }
+  /* 16px: anything smaller makes iOS Safari zoom the page when the field is tapped. */
+  .searchInput input { font-size: 16px; }
   .heroSearch > button { min-width: 100px; padding-inline: var(--space-4); }
   .courseRow { flex-wrap: wrap; gap: var(--space-4); }
   .courseIntro { flex: 1; }
@@ -85,7 +86,7 @@
   .tabs button { min-width: 0; flex: 1; padding-inline: var(--space-4); }
   .heroSearch { gap: var(--space-2); padding: var(--space-2); }
   .searchInput { padding-inline: var(--space-2); gap: var(--space-2); }
-  .searchInput input { min-height: 44px; font-size: .73rem; }
+  .searchInput input { min-height: 44px; font-size: 16px; }
   .searchInput > svg { width: 18px; }
   .heroSearch > button { min-width: 78px; font-size: .8rem; padding-inline: var(--space-3); border-radius: var(--radius-control); }
   /* 3×2 grid so every field (incl. Law and Commerce) is visible without scrolling. */

@@ -1,3 +1,4 @@
+import { slugify } from '../lib/validation.js';
 import { buildRecord, LINK_CATEGORIES, parsePage, pickLinks } from './extract.js';
 import { CrawlError } from './fetcher.js';
 import { isSameSite, normalizeWebsite, registrableDomain, resolveUrl } from './urls.js';
@@ -21,7 +22,7 @@ async function fetchHome(fetcher, website, domain) {
  * internal pages (about, contact, admissions, programmes, accreditation). Home-page failures
  * (robots, off-site redirect, HTTP errors) throw a CrawlError; sub-page failures are recorded.
  */
-export async function crawlSource(source, { fetcher, config, courses = [], fetchedAt = new Date() }) {
+export async function crawlSource(source, { fetcher, config, courses = [], fetchedAt = new Date(), images = null }) {
   const website = normalizeWebsite(source.website);
   if (!website) throw new CrawlError('The source has no valid website', { code: 'http', permanent: true });
   const domain = registrableDomain(new URL(website).hostname);
@@ -47,8 +48,21 @@ export async function crawlSource(source, { fetcher, config, courses = [], fetch
   const finalHome = new URL(homeResult.url);
   const path = new URL(website).pathname;
   const canonical = `${finalHome.origin}${path === '/' ? '/' : path}`;
-  const { record, fields, siteName } = buildRecord({ home, pages, source, domain, website: canonical, courses });
-  return { record: { ...record, sourceUrl: homeResult.url, fetchedAt }, fields, siteName, pages: visited, domain };
+  const { record, fields, siteName, imageCandidates } = buildRecord({ home, pages, source, domain, website: canonical, courses });
+
+  // Campus photographs: downloaded through the same polite fetcher, verified, compressed and
+  // re-hosted. Failures never fail the crawl — the record is saved without them.
+  const want = Math.max(0, Math.min(config.maxImages ?? 0, 8));
+  const slug = source.institutionSlug || slugify(source.name) || slugify(domain);
+  if (images?.enabled && want && slug && imageCandidates.length) {
+    const stored = await images.processMany(imageCandidates, { slug, kind: 'photo', want, domain });
+    if (stored.length) {
+      record.gallery = stored.map(({ bytes: _bytes, originalBytes: _originalBytes, ...row }) => row);
+      record.coverUrl ||= stored[0].url;
+      fields.push('gallery', 'coverUrl');
+    }
+  }
+  return { record: { ...record, sourceUrl: homeResult.url, fetchedAt }, fields, siteName, pages: visited, domain, imageCandidates };
 }
 
 // Product owner's rule: publish only with a name, a state/UT and the official website.

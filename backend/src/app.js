@@ -13,6 +13,7 @@ import { adminRouter } from './modules/admin/admin.routes.js';
 import { universitiesRouter } from './modules/universities/universities.routes.js';
 import { applicationsRouter } from './modules/applications/applications.routes.js';
 import { contentRouter } from './modules/content/content.routes.js';
+import { insightsRouter } from './modules/insights/insights.routes.js';
 
 const isDatabaseUnavailable = (error) => /^Mongo(ServerSelection|Network|NotConnected|Topology)/.test(error?.name ?? '')
   || error?.message?.startsWith('Set MONGODB_URI');
@@ -32,6 +33,7 @@ app.use('/api/catalog', catalogRouter);
 app.use('/api/platform', platformRouter);
 app.use('/api/content', contentRouter);
 app.use('/api/universities', universitiesRouter);
+app.use('/api/insights', insightsRouter);
 app.use('/api/auth', studentAuthRouter);
 app.use('/api/applications', applicationsRouter);
 app.use('/api/admin/auth', adminAuthRouter);

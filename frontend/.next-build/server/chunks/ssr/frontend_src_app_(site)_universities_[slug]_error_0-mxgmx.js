@@ -1,0 +1,3 @@
+module.exports=[78320,a=>{"use strict";a.s(["default",()=>b]);let b=(0,a.i(11857).registerClientReference)(function(){throw Error("Attempted to call the default export of [project]/frontend/src/app/(site)/universities/[slug]/error.js from the server, but it's on the client. It's not possible to invoke a client function from the server, it can only be rendered as a Component or passed to props of a Client Component.")},"[project]/frontend/src/app/(site)/universities/[slug]/error.js","default")},3152,a=>{"use strict";var b=a.i(78320);a.n(b)},7117,function(a){a.n(a.i(3152))}];
+
+//# sourceMappingURL=frontend_src_app_%28site%29_universities_%5Bslug%5D_error_0-mxgmx.js.map

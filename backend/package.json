@@ -4,13 +4,16 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "node --env-file-if-exists=.env --watch src/server.js",
-    "start": "node --env-file-if-exists=.env src/server.js",
-    "test": "node --env-file-if-exists=.env --test",
-    "seed": "node --env-file-if-exists=.env src/scripts/seed.js",
-    "images:migrate": "node --env-file-if-exists=.env src/scripts/migrate-images.js",
-    "benchmark:universities": "node --env-file-if-exists=.env src/scripts/benchmark-universities.js",
-    "scrape": "node --env-file-if-exists=.env src/scripts/scrape.js"
+    "dev": "node --env-file-if-exists=.env --env-file-if-exists=.env.local --watch src/server.js",
+    "start": "node --env-file-if-exists=.env --env-file-if-exists=.env.local src/server.js",
+    "test": "node --env-file-if-exists=.env --env-file-if-exists=.env.local --test",
+    "seed": "node --env-file-if-exists=.env --env-file-if-exists=.env.local src/scripts/seed.js",
+    "images:migrate": "node --env-file-if-exists=.env --env-file-if-exists=.env.local src/scripts/migrate-images.js",
+    "benchmark:universities": "node --env-file-if-exists=.env --env-file-if-exists=.env.local src/scripts/benchmark-universities.js",
+    "scrape": "node --env-file-if-exists=.env --env-file-if-exists=.env.local src/scripts/scrape.js",
+    "import:directory": "node --env-file-if-exists=.env --env-file-if-exists=.env.local src/scripts/import-directory.js",
+    "db:local": "node scripts/local-mongo.mjs",
+    "db:copy": "node --env-file-if-exists=.env src/scripts/copy-database.js"
   },
   "dependencies": {
     "compression": "^1.8.2",

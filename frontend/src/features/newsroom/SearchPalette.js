@@ -57,7 +57,7 @@ export default function SearchPalette({ query, tab, children }) {
   }
 
   return <div className={styles.palette} data-pending={pending || undefined} onKeyDown={move}>
-    <form className={styles.form} action="/search" role="search" onSubmit={submit}>
+    <form className={styles.form} action="/search" role="search" data-page-search onSubmit={submit}>
       <label className={styles.field}>
         <Icon name="search" />
         <span className="sr-only">Search universities, courses and exams</span>

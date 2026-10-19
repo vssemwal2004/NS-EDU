@@ -63,6 +63,16 @@ const specs = {
   ],
   scrape_runs: [[{ createdAt: -1 }]],
   site_content: [[{ key: 1 }, { unique: true }]],
+  // Student search/view activity. The TTL index on `at` deletes raw rows after 180 days;
+  // the rest serve the per-viewer recommendation read and the admin reports.
+  student_events: [
+    [{ at: 1 }, { expireAfterSeconds: 180 * 24 * 60 * 60, name: 'student_events_ttl' }],
+    [{ visitorId: 1, at: -1 }],
+    [{ studentId: 1, at: -1 }],
+    [{ type: 1, at: -1 }],
+    [{ type: 1, query: 1, at: -1 }],
+    [{ type: 1, institutionSlug: 1, at: -1 }],
+  ],
 };
 
 export async function ensureIndexes(db) {

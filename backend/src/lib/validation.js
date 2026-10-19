@@ -71,12 +71,40 @@ function coerce(field, raw) {
     if (values.some((value) => value < min || value > max)) return { error: `Each number must be between ${min} and ${max}` };
     return { value: values };
   }
+  // Structured values; `field.fields` declares the sub-fields (see universities/schema.js).
+  // Accepts an object/array, or the JSON text a CSV export round-trips. Anything else — a plain
+  // form posting "[object Object]" for a control it cannot render — is skipped, not rejected, so
+  // an editor that does not understand the field can never blank it out.
+  if (field.type === 'object' || field.type === 'objectList') {
+    let input = raw;
+    if (typeof input === 'string') {
+      try { input = JSON.parse(input); } catch { return { skip: true }; }
+    }
+    if (field.type === 'object') {
+      if (!isPlainObject(input)) return { skip: true };
+      const kept = withoutEmpty(validate(field.fields, input, { partial: true }).value);
+      return Object.keys(kept).length ? { value: kept } : { skip: true };
+    }
+    if (!Array.isArray(input)) return { skip: true };
+    const items = [];
+    for (const entry of input) {
+      if (!isPlainObject(entry)) continue;
+      const { value, errors } = validate(field.fields, entry);
+      if (Object.keys(errors).length) continue; // keep the rows that are fine; drop the broken one
+      items.push(withoutEmpty(value));
+      if (items.length >= (field.maxItems ?? 50)) break;
+    }
+    return items.length ? { value: items } : { skip: true };
+  }
   throw new Error(`Unsupported field type: ${field.type}`);
 }
+
+const withoutEmpty = (value) => Object.fromEntries(Object.entries(value).filter(([, item]) => !isEmpty(item)));
 
 const fallback = (field) => {
   if (field.default !== undefined) return { value: structuredClone(field.default) };
   if (field.nullable) return { value: null };
+  if ((field.type === 'object' || field.type === 'objectList') && !field.required) return { skip: true };
   if (TEXT_TYPES.has(field.type) && !field.required) return { value: '' };
   if (field.type === 'stringList' && !field.required) return { value: [] };
   return { error: 'This field is required' };
@@ -98,6 +126,7 @@ export function validate(fields, input, { partial = false } = {}) {
       result = useFallback ? fallback(field) : { error: 'This field is required' };
     }
     else result = coerce(field, raw);
+    if (result.skip) continue; // the input carried nothing usable for this field; leave it untouched
     if (result.error) errors[field.name] = result.error;
     else value[field.name] = result.value;
   }

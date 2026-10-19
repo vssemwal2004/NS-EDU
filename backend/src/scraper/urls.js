@@ -3,6 +3,9 @@
 const MULTI_PART_SUFFIXES = new Set([
   'ac.in', 'edu.in', 'res.in', 'gov.in', 'nic.in', 'ernet.in', 'co.in', 'org.in', 'net.in', 'gen.in', 'firm.in', 'ind.in',
   'ac.uk', 'co.uk', 'org.uk', 'edu.au', 'com.au',
+  // Free hosts. Small colleges publish on these, and without them every other site on the host
+  // would count as "the same institution" — including the provider's own image CDNs.
+  'blogspot.com', 'blogspot.in', 'wordpress.com', 'wixsite.com', 'weebly.com', 'github.io', 'webs.com', '000webhostapp.com', 'yolasite.com',
 ]);
 
 export function registrableDomain(hostname) {

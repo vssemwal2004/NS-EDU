@@ -58,6 +58,9 @@ export default function Header() {
       const slash = event.key === '/' && !isTyping(event.target) && !event.metaKey && !event.ctrlKey && !event.altKey;
       const commandK = event.key?.toLowerCase() === 'k' && (event.metaKey || event.ctrlKey) && !event.altKey;
       if (!slash && !commandK) return;
+      // A page with its own search field (e.g. /search) owns these shortcuts; opening the header
+      // overlay on top of it would cover the results with a scrim.
+      if (document.querySelector('[data-page-search]')) return;
       event.preventDefault();
       setOpenMenu(null);
       setSearchOpen(true);

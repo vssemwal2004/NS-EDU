@@ -85,7 +85,9 @@
   .progress { top: calc(var(--lux-space-2) * 2 + 56px); }
   .results { padding-inline: var(--lux-space-1); }
   .rowMain { grid-template-columns: 44px minmax(0, 1fr) auto; gap: var(--lux-space-3); }
-  .rowTag, .rowEnter { display: none; }
+  /* The "Illustrative" tag must stay visible on phones: it tells students the record is a sample. */
+  .rowEnter { display: none; }
+  .rowTag { order: 2; flex-basis: 100%; margin-top: 2px; }
   .row[data-action] { grid-template-columns: minmax(0, 1fr); }
   .row[data-action] .rowMain { padding-bottom: 0; }
   .rowAction { padding: var(--lux-space-1) var(--lux-space-3) var(--lux-space-3) calc(44px + var(--lux-space-3) * 2); }

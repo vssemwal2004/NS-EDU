@@ -28,11 +28,11 @@ export default function AccountControl() {
     return () => { document.removeEventListener('pointerdown', onPointer); document.removeEventListener('keydown', onKey); };
   }, [open]);
 
-  if (status === 'loading') return <span className={styles.accountSkeleton} aria-hidden="true" />;
-  // Logged out: the login popup everywhere (the page stays put); on /login itself the form is already there.
+  // While the session check runs, show the Log in button rather than a shimmer: it is the primary
+  // call to action, most visitors are signed out, and it keeps the header width stable.
   if (!student) {
     if (pathname === '/login') return null;
-    return <button type="button" className={styles.loginButton} aria-haspopup="dialog" onClick={() => openLogin()}><Icon name="user" /><span>Log in</span></button>;
+    return <button type="button" className={styles.loginButton} aria-haspopup="dialog" data-pending={status === 'loading' || undefined} onClick={() => openLogin()}><Icon name="user" /><span>Log in</span></button>;
   }
 
   const onMenuKey = (event) => {

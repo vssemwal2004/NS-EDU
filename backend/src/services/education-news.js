@@ -10,8 +10,22 @@ const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: '@_
 const array = (value) => value === undefined ? [] : Array.isArray(value) ? value : [value];
 const scalar = (value) => typeof value === 'string' ? value : value?.['#text'] || '';
 
+// Publisher feeds mix named and numeric references, zero-padded (&#039;) and hex (&#x27;) alike.
+const NAMED = { amp: '&', nbsp: ' ', quot: '"', apos: "'", lt: '<', gt: '>', ldquo: '“', rdquo: '”', lsquo: '‘', rsquo: '’', ndash: '–', mdash: '—', hellip: '…' };
+// Control characters and unpaired surrogates would corrupt the text, so they decode to a space.
+const fromCode = (code) => Number.isInteger(code) && code > 31 && code !== 127 && code <= 0x10ffff && !(code >= 0xd800 && code <= 0xdfff) ? String.fromCodePoint(code) : ' ';
+
+// One pass, so a double-encoded "&amp;#39;" stays the literal text "&#39;" as a browser would show it.
+function decodeEntities(text) {
+  return text
+    .replace(/&#x([0-9a-f]{1,6});/gi, (_, hex) => fromCode(Number.parseInt(hex, 16)))
+    .replace(/&#(\d{1,7});/g, (_, digits) => fromCode(Number(digits)))
+    .replace(/&([a-z]+);/gi, (match, name) => NAMED[name.toLowerCase()] ?? match);
+}
+
 export function plainText(value, limit = 220) {
-  return scalar(value).replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '').replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, '').replace(/<[^>]*>/g, ' ').replace(/&(?:amp|#38);/gi, '&').replace(/&(?:nbsp|#160);/gi, ' ').replace(/&quot;/gi, '"').replace(/&#(?:39|x27);/gi, "'").replace(/&lt;/gi, '<').replace(/&gt;/gi, '>').replace(/\s+/g, ' ').trim().slice(0, limit);
+  const text = scalar(value).replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '').replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, '').replace(/<[^>]*>/g, ' ');
+  return decodeEntities(text).replace(/\s+/g, ' ').trim().slice(0, limit);
 }
 
 function trustedUrl(value, hosts, path) {

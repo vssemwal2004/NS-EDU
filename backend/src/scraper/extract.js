@@ -1,5 +1,6 @@
 import { parse } from 'node-html-parser';
 import { foldText } from '../modules/universities/normalize.js';
+import { aboutDeep, activitiesFrom, admissionNoteFrom, awardsFrom, campusFrom, entranceExamsFrom, facilitiesFrom, galleryCandidates, placementsFrom, programmeRows } from './deep.js';
 import { INSTITUTION_CATEGORIES, INSTITUTION_TYPES, NAAC_GRADES } from '../modules/universities/schema.js';
 import { APPROVAL_RULES, DEGREE_PATTERN, STREAM_RULES, canonicalState, stateFromPin, statesIn } from './india.js';
 import { isSameSite, resolveUrl } from './urls.js';
@@ -25,6 +26,9 @@ export const LINK_CATEGORIES = [
   ['admission', /admission|how-?to-?apply|apply-?now/i],
   ['programmes', /programmes?|programs?|courses?|academics?|degrees?|departments?|schools?|faculty-of|disciplines/i],
   ['accreditation', /naac|nirf|accreditation|approvals?|recognitions?|rankings?|iqac|mandatory-?disclosure|aicte|ugc/i],
+  // "career", "jobs" and "recruitment" are vacancy pages and are excluded by PRIVATE_SECTIONS above.
+  ['placement', /placements?|training-?(and|&|-)-?placement|\btpo\b/i],
+  ['campus', /campus|facilit|infrastructure|hostels?|librar|sports|student-?life|amenit|laborator/i],
 ];
 
 // ---------------------------------------------------------------------------------------------
@@ -81,14 +85,28 @@ export function parsePage(html, pageUrl) {
   const links = root.querySelectorAll('a[href]').map((anchor) => ({ href: anchor.getAttribute('href'), text: clean(anchor.text) || clean(anchor.getAttribute('title')), node: anchor }));
   const logoImages = root.querySelectorAll('img').filter((img) => !/naac|nirf|ugc|aicte|partner|accredit|award|sponsor|recruit/i.test(`${img.getAttribute('src') ?? ''} ${img.getAttribute('alt') ?? ''}`) && /logo/i.test(`${img.getAttribute('src') ?? ''} ${img.getAttribute('alt') ?? ''} ${img.getAttribute('class') ?? ''} ${img.getAttribute('id') ?? ''}`))
     .map((img) => img.getAttribute('src') || img.getAttribute('data-src') || '').filter(Boolean);
+  // Every image with its markup hints, for the gallery picker. Lazy-loaded sites keep the real
+  // file in a data- attribute and leave src as a 1px placeholder.
+  const images = root.querySelectorAll('img').map((img) => ({
+    src: img.getAttribute('data-src') || img.getAttribute('data-lazy-src') || img.getAttribute('data-original') || img.getAttribute('src') || '',
+    alt: clean(img.getAttribute('alt')),
+    width: Number.parseInt(img.getAttribute('width'), 10) || 0,
+    height: Number.parseInt(img.getAttribute('height'), 10) || 0,
+    hint: `${img.getAttribute('class') ?? ''} ${img.getAttribute('id') ?? ''}`,
+  })).filter((image) => image.src && !image.src.startsWith('data:')).slice(0, 300);
   for (const node of root.querySelectorAll('script, style, noscript, template, svg, iframe')) node.remove();
   const body = root.querySelector('body') ?? root;
+  // Fee and course tables, kept as cells so a programme row can be read with its duration and fee.
+  const tables = body.querySelectorAll('table').slice(0, 40).map((table) => {
+    const rows = table.querySelectorAll('tr').slice(0, 200).map((row) => row.querySelectorAll('th, td').map((cell) => clean(cell.text)));
+    return { headers: rows[0] ?? [], rows: rows.filter((row) => row.length > 1) };
+  }).filter((table) => table.rows.length);
   const lines = body.structuredText.split('\n').map(clean).filter(Boolean);
   const shortTexts = body.querySelectorAll('li, td, th, a, option, h2, h3, h4, h5, h6, strong, dt, dd, p, span')
     .map((node) => clean(node.text)).filter((text) => text.length >= 2 && text.length <= 140);
   const headings = body.querySelectorAll('h1, h2, h3, h4, nav a, header a').map((node) => clean(node.text)).filter((text) => text.length <= 120);
   const paragraphs = body.querySelectorAll('p').map((node) => clean(node.text));
-  return { url: pageUrl, jsonLd, organization: organizationOf(jsonLd), head, links, logoImages, lines, shortTexts, headings, paragraphs };
+  return { url: pageUrl, jsonLd, organization: organizationOf(jsonLd), head, links, logoImages, images, tables, lines, shortTexts, headings, paragraphs };
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -399,8 +417,22 @@ export function buildRecord({ home, pages, source, domain, website, courses = []
   facts.courseSlugs = matchCourseSlugs(facts.coursesOffered, courses);
   facts.logoUrl = logoFrom(home);
   const aboutPage = byCategory('about')[0];
-  facts.about = (aboutPage && aboutFrom(aboutPage)) || aboutFrom(home, { paragraphs: false });
+  // A 2–4 sentence factual summary from the about page; the old one-paragraph extract is the fallback.
+  const deepAbout = aboutDeep(prefer(['about']));
+  facts.about = deepAbout.about || (aboutPage && aboutFrom(aboutPage)) || aboutFrom(home, { paragraphs: false });
+  facts.aboutSource = deepAbout.about ? deepAbout.aboutSource : '';
   facts.admissionUrl = admissionUrlFrom(all, domain);
+  facts.programmesOffered = programmeRows(prefer(['programmes', 'admission']), facts.coursesOffered);
+  const placements = placementsFrom(all, { institutionName: clean(source.name) || siteName });
+  if (placements) facts.placements = placements;
+  facts.facilities = facilitiesFrom(all);
+  facts.activities = activitiesFrom(all);
+  const campus = campusFrom(all);
+  if (campus) facts.campus = campus;
+  const admission = admissionNoteFrom(all);
+  if (admission) facts.admissionNote = admission.admissionNote;
+  facts.entranceExams = entranceExamsFrom(all);
+  facts.awards = awardsFrom(all);
   facts.email = prefer(['contact', 'admission']).map((page) => emailFrom(page, domain)).find(Boolean) ?? '';
   facts.phone = prefer(['contact', 'admission']).map(phoneFrom).find(Boolean) ?? '';
   const fromSeed = inferType(source.name);
@@ -416,11 +448,14 @@ export function buildRecord({ home, pages, source, domain, website, courses = []
     city: clean(source.city) || facts.city,
   };
   if (siteName && source.name && foldText(siteName) !== foldText(source.name) && siteName.length <= 200) record.aliases = [siteName];
-  for (const key of ['address', 'pincode', 'establishedYear', 'naacGrade', 'nirfRank', 'nirfYear', 'approvals', 'streams', 'courseSlugs', 'coursesOffered', 'logoUrl', 'about', 'admissionUrl', 'email', 'phone']) {
+  for (const key of ['address', 'pincode', 'establishedYear', 'naacGrade', 'nirfRank', 'nirfYear', 'approvals', 'streams', 'courseSlugs', 'coursesOffered',
+    'logoUrl', 'about', 'aboutSource', 'admissionUrl', 'programmesOffered', 'placements', 'facilities', 'activities', 'campus', 'admissionNote', 'entranceExams', 'awards', 'email', 'phone']) {
     record[key] = facts[key];
   }
-  const filled = (value) => !(value === '' || value === null || value === undefined || (Array.isArray(value) && !value.length));
+  const filled = (value) => !(value === '' || value === null || value === undefined || (Array.isArray(value) && !value.length)
+    || (typeof value === 'object' && !Array.isArray(value) && !Object.keys(value).length));
   const fields = Object.keys(facts).filter((key) => filled(facts[key]) && (key !== 'name' || !source.name) && (key !== 'state' || !canonicalState(source.state)) && (key !== 'city' || !clean(source.city)));
   for (const key of Object.keys(record)) if (!filled(record[key])) delete record[key];
-  return { record, fields: ['website', ...fields], siteName };
+  // Image URLs still have to be downloaded, verified and re-hosted, which the crawler does next.
+  return { record, fields: ['website', ...fields], siteName, imageCandidates: galleryCandidates(all, { domain }) };
 }

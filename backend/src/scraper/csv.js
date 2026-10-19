@@ -44,9 +44,12 @@ export function rowsToObjects(rows, mapHeader) {
 
 // Spreadsheet formula injection guard; phone numbers such as "+91 ..." stay untouched.
 const risky = (text) => /^[=@\t\r]/.test(text) || /^[+-](?![\d\s()-]*$)/.test(text);
+const isStructured = (value) => value !== null && typeof value === 'object' && !(value instanceof Date);
 export function csvCell(value) {
   if (value === null || value === undefined) return '';
-  let text = Array.isArray(value) ? value.join('; ') : value instanceof Date ? value.toISOString() : String(value);
+  // Structured fields (gallery, programme rows, placements) export as JSON, which re-imports as-is.
+  let text = isStructured(value) && (!Array.isArray(value) || value.some(isStructured)) ? JSON.stringify(value)
+    : Array.isArray(value) ? value.join('; ') : value instanceof Date ? value.toISOString() : String(value);
   if (risky(text)) text = `'${text}`;
   return /[",\r\n;]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 }

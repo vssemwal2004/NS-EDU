@@ -22,6 +22,7 @@ export const COLLECTIONS = Object.freeze({
   scrapeRuns: 'scrape_runs',
   siteContent: 'site_content',
   media: 'media',
+  studentEvents: 'student_events',
 });
 
 let ready;

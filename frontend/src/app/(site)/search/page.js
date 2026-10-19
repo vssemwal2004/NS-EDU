@@ -2,6 +2,7 @@ import Link from 'next/link';
 import Icon from '@/components/ui/Icon';
 import { mergeUniversities, Results, SEARCH_TABS, Suggestions, TabBar, tabHref } from '@/features/newsroom/PaletteResults';
 import SearchPalette from '@/features/newsroom/SearchPalette';
+import TrackEvent from '@/features/recommendations/TrackEvent';
 import { getCatalog, getUniversities, searchCatalog, universityQuery } from '@/lib/api/catalog';
 import { requireStudentSession } from '@/lib/api/session';
 import styles from '@/features/newsroom/Search.module.css';
@@ -50,5 +51,7 @@ export default async function SearchPage({ searchParams }) {
     <div className={styles.shell}>
       <SearchPalette query={query} tab={tab}>{body}</SearchPalette>
     </div>
+    {/* `results` is the whole-directory total, so a zero lands in the admin content-gap list. */}
+    {query && !broken && <TrackEvent event={{ type: 'search', query, results: counts.all }} />}
   </main>;
 }

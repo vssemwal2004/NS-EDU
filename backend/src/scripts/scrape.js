@@ -3,16 +3,24 @@
 //   import-sources <file.csv|file.json> [--list "Name"]   add/update crawl sources from a seed list
 //   enqueue [--all | --stale-days N | --never] [--limit N] [--list "Name"]   queue one job per active source
 //   work [--concurrency N] [--max-jobs N] [--watch]         lease and crawl jobs until none are due
+//   enrich-images [--limit N] [--slug a,b] [--state S] [--all] [--want N] [--concurrency N] [--dry-run]
+//                                                           (re)process campus photographs only
 //   status                                                  queue counts and the latest run
 //   retry-failed | cancel-queued                            queue maintenance
 import { readFile } from 'node:fs/promises';
 import { basename, extname } from 'node:path';
 import { env } from '../config/env.js';
 import { closeDb } from '../db/collections.js';
+import { compressionRatio } from '../lib/image-pipeline.js';
 import { scraperConfig } from '../scraper/config.js';
 import { cancelJobs, enqueueSources, queueStats, retryJobs } from '../scraper/queue.js';
 import { importSources, parseSeedList } from '../scraper/sources.js';
 import { runWorker } from '../scraper/worker.js';
+import { enrichImages } from './enrich-images.js';
+
+const mb = (bytes) => `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+const describeImages = (stats) => `${stats.uploaded} images uploaded, ${stats.skipped} skipped, ${stats.failed} failed; `
+  + `${mb(stats.originalBytes)} → ${mb(stats.compressedBytes)} (${Math.round(compressionRatio(stats) * 100)}% of the originals)`;
 
 const [command, ...args] = process.argv.slice(2);
 const option = (name) => {
@@ -63,12 +71,32 @@ async function workCommand() {
   process.on('SIGINT', () => stop('SIGINT'));
   process.on('SIGTERM', () => stop('SIGTERM'));
   const concurrency = positiveInt(option('concurrency'), 'concurrency') ?? config.concurrency;
-  console.log(`Worker on "${env.mongodbDatabase}" as ${config.userAgent} — ${concurrency} sites at a time, ≥${config.hostDelayMs} ms between requests per site, ≤${config.maxPages} pages per site.`);
+  console.log(`Worker on "${env.mongodbDatabase}" as ${config.userAgent} — ${concurrency} sites at a time, ≥${config.hostDelayMs} ms between requests per site, ≤${config.maxPages} pages and ≤${config.maxImages} photographs per site.`);
   const stats = await runWorker({
     concurrency, maxJobs: positiveInt(option('max-jobs'), 'max-jobs') ?? Infinity, watch: flag('watch'),
     signal: controller.signal, config, log: (line) => console.log(line),
   });
   console.log(`Finished: ${stats.done} done, ${stats.skipped} skipped, ${stats.failed} failed, ${stats.retrying} scheduled for retry, ${stats.released} released; ${stats.requests} HTTP requests.`);
+  if (stats.images) console.log(`Images: ${describeImages(stats.images)}.`);
+}
+
+async function enrichImagesCommand() {
+  const controller = new AbortController();
+  process.on('SIGINT', () => controller.abort(new Error('Stopped')));
+  const summary = await enrichImages({
+    slugs: (option('slug') ?? '').split(',').map((part) => part.trim()).filter(Boolean),
+    state: option('state') ?? '',
+    limit: positiveInt(option('limit'), 'limit') ?? 50,
+    want: positiveInt(option('want'), 'want'),
+    concurrency: positiveInt(option('concurrency'), 'concurrency'),
+    mode: flag('all') ? 'all' : 'missing',
+    dryRun: flag('dry-run'),
+    signal: controller.signal,
+    log: (line) => console.log(line),
+  });
+  console.log(`Selected ${summary.selected} institutions: ${summary.updated} updated, ${summary.empty} with no usable photograph, ${summary.failed} failed.`);
+  console.log(`Images: ${describeImages(summary.images)}.`);
+  for (const example of summary.examples) console.log(`  ${example.slug}: ${example.images} photographs, first ${example.first}`);
 }
 
 async function statusCommand() {
@@ -83,6 +111,7 @@ const commands = {
   'import-sources': importCommand,
   enqueue: enqueueCommand,
   work: workCommand,
+  'enrich-images': enrichImagesCommand,
   status: statusCommand,
   'retry-failed': async () => console.log(await retryJobs({ status: 'failed' })),
   'cancel-queued': async () => console.log(await cancelJobs({})),
@@ -90,7 +119,7 @@ const commands = {
 
 try {
   if (!commands[command]) {
-    console.log('Commands: import-sources <file>, enqueue [--all|--stale-days N|--never] [--limit N], work [--concurrency N] [--max-jobs N] [--watch], status, retry-failed, cancel-queued');
+    console.log('Commands: import-sources <file>, enqueue [--all|--stale-days N|--never] [--limit N], work [--concurrency N] [--max-jobs N] [--watch], enrich-images [--limit N] [--slug a,b] [--all] [--dry-run], status, retry-failed, cancel-queued');
     process.exitCode = command ? 1 : 0;
   } else {
     await commands[command]();

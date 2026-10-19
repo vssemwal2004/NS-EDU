@@ -1,5 +1,7 @@
 /* /account: a personal dashboard. Oxblood "concierge" band with the student's monogram, then a two-column workspace. */
 .page { min-height: 70vh; padding-bottom: var(--lux-section); background: var(--lux-surface-page); color: var(--lux-text); }
+.recommended { margin-top: var(--lux-stack); }
+.recommended:empty { display: none; }
 
 /* Band */
 .band { position: relative; overflow: hidden; isolation: isolate; }

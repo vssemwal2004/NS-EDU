@@ -1,4 +1,6 @@
 import { notFound } from 'next/navigation';
+import RecommendedUniversities from '@/features/recommendations/RecommendedUniversities';
+import TrackEvent from '@/features/recommendations/TrackEvent';
 import { kindOf, lakhRange, placeOf } from '@/features/universities/labels';
 import UniversityProfile from '@/features/universities/profile/UniversityProfile';
 import { profileModel } from '@/features/universities/profile/profile-data';
@@ -29,7 +31,12 @@ export default async function UniversityProfilePage({ params }) {
   const [, data] = await Promise.all([requireStudentSession(), load(slug)]);
   if (!data) notFound();
   const courseNames = Object.fromEntries(data.catalog.courses.map((course) => [course.id, course.name]));
+  const { item } = data.model;
   return <main id="main" tabIndex={-1} className={styles.page}>
     <UniversityProfile model={data.model} courseNames={courseNames} />
+    <TrackEvent event={{ type: 'view', institutionSlug: item.id, city: item.city, state: item.state || '' }} />
+    <div className={`lux-container ${styles.recommended}`}>
+      <RecommendedUniversities exclude={item.id} eyebrow="Keep looking" title="Students who looked here also considered" courseNames={courseNames} />
+    </div>
   </main>;
 }

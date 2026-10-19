@@ -1,6 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import { hostname } from 'node:os';
 import { COLLECTIONS, getDb } from '../db/collections.js';
+import { createImagePipeline } from '../lib/image-pipeline.js';
 import { upsertUniversities } from '../modules/universities/university-service.js';
 import { scraperConfig } from './config.js';
 import { crawlSource, missingForPublish, shouldPublish } from './crawler.js';
@@ -15,8 +16,32 @@ export async function loadCourses() {
 
 const describeErrors = (errors) => Object.entries(errors ?? {}).map(([field, message]) => `${field}: ${message}`).join('; ');
 
+// A site that answers every request just under the per-request timeout can hold a lane for hours.
+// The abandoned crawl finishes into nothing; the job goes back to the queue and is retried later.
+export async function withTimeout(promise, ms) {
+  let timer;
+  try {
+    return await Promise.race([promise, new Promise((_, reject) => {
+      timer = setTimeout(() => reject(new CrawlError(`The site did not finish within ${Math.round(ms / 1000)} s`, { code: 'network' })), ms);
+    })]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 // Crawls one leased job and writes the result through upsertUniversities (the only write path).
-export async function processJob(job, { fetcher, config, courses, workerId, now = () => new Date() }) {
+/** An image pipeline that downloads through the crawler's polite fetcher (robots + per-host delay). */
+export function pipelineFor(fetcher, { config, log } = {}) {
+  return createImagePipeline({
+    log,
+    download: async (url, options) => {
+      const result = await fetcher.getFile(url, { domain: options.domain, types: options.types, maxBytes: options.maxBytes ?? config?.maxImageBytes });
+      return { contentType: result.contentType, body: result.body };
+    },
+  });
+}
+
+export async function processJob(job, { fetcher, config, courses, workerId, images = null, now = () => new Date() }) {
   const database = await getDb();
   const source = await database.collection(COLLECTIONS.scrapeSources).findOne({ _id: job.sourceId });
   if (!source || source.status !== 'active') {
@@ -26,7 +51,7 @@ export async function processJob(job, { fetcher, config, courses, workerId, now 
   }
   let crawl;
   try {
-    crawl = await crawlSource(source, { fetcher, config, courses, fetchedAt: now() });
+    crawl = await withTimeout(crawlSource(source, { fetcher, config, courses, images, fetchedAt: now() }), config.jobTimeoutMs);
   } catch (error) {
     if (error instanceof CrawlError && SKIP_CODES.has(error.code)) {
       await finishJob(job, workerId, { status: 'skipped', error: error.message, result: { reason: error.code } });
@@ -40,7 +65,7 @@ export async function processJob(job, { fetcher, config, courses, workerId, now 
   const result = {
     slug: item?.slug ?? null, action: item?.action ?? 'failed', published: item?.action === 'inserted' ? publish : null, publishable: publish,
     fields: crawl.fields, changed: item?.fields ?? [], missing: missingForPublish(crawl.record), siteName: crawl.siteName,
-    sourceUrl: crawl.record.sourceUrl, pages: crawl.pages,
+    sourceUrl: crawl.record.sourceUrl, pages: crawl.pages, images: crawl.record.gallery?.length ?? 0,
   };
   if (!item) {
     const error = `Not saved (${describeErrors(summary.errors[0]?.errors)}). Add the missing values to the source and retry.`;
@@ -61,9 +86,11 @@ export async function runWorker({
   concurrency, maxJobs = Infinity, signal, fetchImpl, watch = false, pollMs = 30_000, log = () => {},
   workerId = `${hostname()}:${process.pid}:${randomBytes(3).toString('hex')}`, config = scraperConfig(), wait = sleep,
 } = {}) {
-  const lanes = Math.max(1, Math.min(Number(concurrency) || config.concurrency, 32));
+  const lanes = Math.max(1, Math.min(Number(concurrency) || config.concurrency, 64));
   const courses = await loadCourses();
   const fetcher = createFetcher({ config, fetchImpl, signal, wait });
+  // One pipeline per worker so the compression totals cover the whole run.
+  const images = config.maxImages ? pipelineFor(fetcher, { config, log }) : null;
   const stats = { workerId, leased: 0, done: 0, skipped: 0, failed: 0, retrying: 0, released: 0 };
 
   async function lane() {
@@ -79,7 +106,7 @@ export async function runWorker({
       const heartbeat = setInterval(() => { extendLease(job, workerId, { leaseMs: config.leaseMs }).catch(() => {}); }, Math.max(1000, config.leaseMs / 3));
       heartbeat.unref?.();
       try {
-        const outcome = await processJob(job, { fetcher, config, courses, workerId });
+        const outcome = await processJob(job, { fetcher, config, courses, workerId, images });
         stats[outcome.status] += 1;
         log(`[${outcome.status}] ${job.name} <${job.website}>${outcome.result?.slug ? ` → ${outcome.result.slug} (${outcome.result.action}${outcome.result.published === false ? ', held for review' : ''})` : ''}${outcome.error ? ` — ${outcome.error}` : ''}`);
       } catch (error) {
@@ -100,5 +127,6 @@ export async function runWorker({
 
   await Promise.all(Array.from({ length: lanes }, lane));
   stats.requests = fetcher.stats.requests;
+  if (images) stats.images = images.stats;
   return stats;
 }

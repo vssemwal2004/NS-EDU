@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import Icon from '@/components/ui/Icon';
 import ApplyButton from '@/features/apply/ApplyButton';
+import CompareToggle from '@/features/compare/CompareToggle';
 import { kindOf, lakhRange, monogram, nirfOf, ownershipOf, placeOf, sourceNote } from './labels';
 import styles from './Directory.module.css';
 
@@ -61,6 +62,7 @@ export default function UniversityCard({ item, courseNames = {}, headingLevel = 
       <SourceTag item={item} />
       <div className={styles.cardActions}>
         <Link className="lux-button lux-button--ghost lux-button--sm" href={href}>View profile<span className="sr-only">: {item.name}</span></Link>
+        <CompareToggle slug={item.id} name={item.name} />
         <ApplyButton university={applyTarget(item)} className="lux-button--sm" />
       </div>
     </div>

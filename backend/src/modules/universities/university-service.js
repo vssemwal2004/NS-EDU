@@ -60,6 +60,18 @@ const toDetail = (doc) => ({
   affiliatedTo: doc.affiliatedTo || '',
   coursesOffered: doc.coursesOffered ?? [],
   about: doc.about || '',
+  // Scraped depth (every field optional and absent when unknown) plus the raw directory snapshot.
+  // The profile shows each with its source page; none of it is presented as verified.
+  aboutSource: doc.aboutSource || '',
+  gallery: doc.gallery ?? [],
+  programmesOffered: doc.programmesOffered ?? [],
+  placements: doc.placements ?? null,
+  facilities: doc.facilities ?? [],
+  activities: doc.activities ?? [],
+  campus: doc.campus ?? null,
+  admissionNote: doc.admissionNote || '',
+  entranceExams: doc.entranceExams ?? [],
+  directory: doc.directory ?? null,
 });
 
 // ---------------------------------------------------------------------------------------------

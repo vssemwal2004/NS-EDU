@@ -2,6 +2,7 @@
 export const adminNavigation = [
   { label: 'Overview', items: [
     { label: 'Dashboard', href: '/admin/dashboard', icon: 'dashboard', adminOnly: true, description: 'Platform activity at a glance' },
+    { label: 'Search insights', href: '/admin/insights', icon: 'trend', adminOnly: true, description: 'What students search and view, and the gaps in the directory' },
   ] },
   { label: 'Catalogue', items: [
     { label: 'Universities', href: '/admin/institutions', icon: 'building', resource: 'institutions', adminOnly: true, description: 'Search, edit and publish 20k+ universities and colleges' },
