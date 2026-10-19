@@ -12,7 +12,8 @@ export const isEmail = (value) => value.length <= 254 && EMAIL_PATTERN.test(valu
 export const slugify = (value) => String(value ?? '').normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase()
   .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 100).replace(/-+$/, '');
 
-const isEmpty = (value) => value === undefined || value === null || (typeof value === 'string' && value.trim() === '');
+const isEmpty = (value) => value === undefined || value === null || (typeof value === 'string' && value.trim() === '')
+  || (Array.isArray(value) && value.length === 0);
 const toNumber = (value) => typeof value === 'string' && value.trim() !== '' ? Number(value.trim()) : value;
 
 function coerce(field, raw) {
@@ -27,6 +28,7 @@ function coerce(field, raw) {
       return { error: 'Use lowercase letters, numbers and single hyphens' };
     }
     if (field.type === 'email' && !isEmail(value)) return { error: 'Enter a valid email address' };
+    if (field.pattern && !field.pattern.test(value)) return { error: field.patternMessage ?? 'Invalid format' };
     if (field.type === 'select' && !field.options.includes(value)) return { error: `Choose one of: ${field.options.join(', ')}` };
     if (field.type === 'url') {
       try {
@@ -49,6 +51,16 @@ function coerce(field, raw) {
     if (raw === 'true' || raw === 'false') return { value: raw === 'true' };
     return { error: 'Must be true or false' };
   }
+  // A list of short texts: a JSON array, or one comma-separated string from a form or CSV cell.
+  if (field.type === 'stringList') {
+    const parts = Array.isArray(raw) ? raw : typeof raw === 'string' ? raw.split(',') : null;
+    if (!parts || parts.some((part) => typeof part !== 'string')) return { error: 'Must be a list of text values' };
+    const maxLength = field.maxLength ?? 100;
+    const values = [...new Set(parts.map((part) => part.trim().replace(/\s+/g, ' ')).filter(Boolean))];
+    if (values.length > (field.maxItems ?? 50)) return { error: `Use at most ${field.maxItems ?? 50} values` };
+    if (values.some((part) => part.length > maxLength)) return { error: `Each value must be at most ${maxLength} characters` };
+    return { value: values };
+  }
   if (field.type === 'numberArray4') {
     const values = Array.isArray(raw) ? raw.map(toNumber) : [];
     if (values.length !== 4 || !values.every((value) => typeof value === 'number' && Number.isFinite(value))) {
@@ -66,6 +78,7 @@ const fallback = (field) => {
   if (field.default !== undefined) return { value: structuredClone(field.default) };
   if (field.nullable) return { value: null };
   if (TEXT_TYPES.has(field.type) && !field.required) return { value: '' };
+  if (field.type === 'stringList' && !field.required) return { value: [] };
   return { error: 'This field is required' };
 };
 

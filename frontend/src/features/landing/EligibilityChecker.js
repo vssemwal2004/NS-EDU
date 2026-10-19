@@ -3,8 +3,9 @@ import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import Icon from '@/components/ui/Icon';
 import { useCatalog } from '@/providers/CatalogProvider';
-import { admissionYears, eligibilityDemoProfiles, initialEligibilityAnswers, qualificationOptions, studyStages, subjectOptions } from '@/data/eligibility';
-import { eligibilitySteps, qualificationFor, reviewEligibility, validateEligibilityStep } from '@/lib/eligibility';
+import { optimisable } from '@/lib/hero-image';
+import { eligibilitySteps, initialEligibilityAnswers, profileFor, qualificationFor, reviewEligibility, validateEligibilityStep } from '@/lib/eligibility';
+import { useContent } from '@/providers/ContentProvider';
 import { SectionBackdrop, StudyPathGraphic } from './SectionVisuals';
 import styles from './EligibilityChecker.module.css';
 
@@ -22,8 +23,11 @@ const stepCopy = {
 const groupFor = (step) => ['stage', 'qualification'].includes(step) ? 0 : step === 'review' ? 2 : 1;
 const statusCopy = { match: 'Match', 'not-met': 'Not met', pending: 'Details needed', unverified: 'Review needed' };
 
+// Illustrations come from `media.eligibility` (notebook, certificate, graduation).
 function Artwork({ name, className = '' }) {
-  return <Image className={`${styles.art} ${className}`} src={`/images/eligibility/${name}.webp`} alt="" width={480} height={480} sizes="(max-width: 640px) 60px, 108px" loading="lazy" decoding="async" />;
+  const image = useContent('media')?.eligibility?.[name];
+  if (!image?.src) return null;
+  return <Image className={`${styles.art} ${className}`} src={image.src} unoptimized={!optimisable(image.src)} alt="" width={480} height={Math.round((480 * image.height) / image.width)} sizes="(max-width: 640px) 60px, 108px" loading="lazy" decoding="async" />;
 }
 
 function Choice({ name, value, selected, onChange, children, className = '' }) {
@@ -34,7 +38,16 @@ function Choice({ name, value, selected, onChange, children, className = '' }) {
   </label>;
 }
 
-export default function EligibilityChecker({ records = [], course, onCourseChange, onExplore }) {
+export default function EligibilityChecker(props) {
+  const config = useContent('eligibility');
+  if (!config) return <section id="course-eligibility" className={styles.section} aria-labelledby="eligibility-title" data-eligibility-section>
+    <div className={`container ${styles.layout}`}><div className={styles.intro}><h2 id="eligibility-title">Eligibility check</h2><p className={styles.helper} role="status">The eligibility checker is temporarily unavailable. Please refresh in a moment.</p></div></div>
+  </section>;
+  return <Checker {...props} config={config} />;
+}
+
+function Checker({ records = [], course, onCourseChange, onExplore, config }) {
+  const { stages: studyStages, qualifications: qualificationOptions, subjects: subjectOptions, admissionYears, ruleYear } = config;
   const { courses, exams } = useCatalog();
   const [answers, setAnswers] = useState({ ...initialEligibilityAnswers });
   const [step, setStep] = useState('stage');
@@ -45,13 +58,13 @@ export default function EligibilityChecker({ records = [], course, onCourseChang
   const headingRef = useRef(null);
   const formRef = useRef(null);
   const hasNavigated = useRef(false);
-  const steps = eligibilitySteps(answers);
+  const steps = eligibilitySteps(answers, config);
   const index = steps.indexOf(step);
   const group = groupFor(step);
   const selectedCourse = courses.find((item) => item.id === answers.courseId);
-  const profile = eligibilityDemoProfiles[answers.courseId];
+  const profile = profileFor(config, answers.courseId);
   const programme = records.find((row) => row.courseId === answers.courseId);
-  const review = step === 'review' ? reviewEligibility(answers) : null;
+  const review = step === 'review' ? reviewEligibility(answers, config) : null;
   const currentQualification = qualificationFor(answers);
   const marksBasis = profile?.basis || (['degree', 'engineering-degree', 'postgraduate'].includes(currentQualification.id) ? 'Degree aggregate (%)' : 'Academic aggregate (%)');
   const entry = step === 'stage';
@@ -99,7 +112,7 @@ export default function EligibilityChecker({ records = [], course, onCourseChang
     <SectionBackdrop variant="study" />
     <div className={`container ${styles.layout}`}>
       <aside className={styles.intro}>
-        <p className={`eyebrow section-label`}><Icon name="compass" />NSEDU / Eligibility</p>
+        <p className={`eyebrow section-label`}><Icon name="compass" />Gyaan Vidhya / Eligibility</p>
         <h2 id="eligibility-title"><span className={styles.titleLead}>Your next </span><span className={styles.titleMain}>step starts <span className="section-title-accent">here.</span></span></h2>
         <p className={styles.introDescription}>Check course requirements, one simple question at a time.</p>
         {entry && <StudyPathGraphic />}
@@ -131,7 +144,7 @@ export default function EligibilityChecker({ records = [], course, onCourseChang
           <div className={styles.actions}>{!entry ? <button type="button" className={styles.back} onClick={() => navigate(steps[index - 1])}><Icon name="arrow" />Back</button> : <button className={styles.otherRoute} type="button" onClick={() => { selectStage('other'); navigate('qualification'); }}><Icon name="cap" /><span>Diploma or another qualification? Choose here</span><Icon name="arrow" /></button>}<button type="submit" className={styles.continue}><span>{steps[index + 1] === 'review' ? 'Review requirements' : 'Continue'}</span><span aria-hidden="true"><Icon name="arrow" /></span></button></div>
         </form> : <div className={styles.review}>
           <div className={styles.resultHeading} data-result={review.state}><span className={styles.resultIcon}><Icon name={review.state === 'match' ? 'check' : 'eligibility'} /></span><div><span className="eyebrow">Illustrative academic check</span><h4>{review.title}</h4><p>{review.description}</p></div></div>
-          <p className={styles.programme}>{selectedCourse.name} · {answers.admissionYear}{programme ? ` · ${programme.name}` : ''}<small>{profile ? 'Fictional programme criteria · sample rule year 2026–27' : 'Programme rules not verified'}</small></p>
+          <p className={styles.programme}>{selectedCourse.name} · {answers.admissionYear}{programme ? ` · ${programme.name}` : ''}<small>{profile ? `Fictional programme criteria · sample rule year ${ruleYear}` : 'Programme rules not verified'}</small></p>
           {review.rows.length > 0 && <div className={styles.requirements}>{review.rows.map((row) => <div key={row.label} className={styles.requirement} data-requirement-state={row.state}><div><strong>{row.label}</strong><small>{row.requirement}</small></div><p>{row.detail}</p><span className={styles.requirementStatus}><Icon name={row.state === 'match' ? 'check' : 'eligibility'} />{statusCopy[row.state]}</span></div>)}</div>}
           <div className={styles.entranceReview}><Icon name="compass" /><div><strong>Entrance-route requirements are not checked</strong><p>{answers.examStatus === 'result' ? `${answers.examId === 'other' ? answers.examName : exams.find((item) => item.id === answers.examId)?.name} · ${answers.scoreType === 'rank' ? 'general rank' : answers.scoreType === 'category-rank' ? 'category rank' : answers.scoreType}: ${answers.score}. ` : answers.examStatus === 'awaited' ? 'Your entrance result is awaited. ' : 'You have not taken an entrance exam yet. '}Review the official programme notice, exam year and counselling route.</p></div></div>
           <details className={styles.answerSummary}><summary>Your answers &amp; next steps<Icon name="chevron" /></summary><dl><div><dt>Study stage</dt><dd>{studyStages.find((item) => item.id === answers.stage)?.label || 'Another qualification'}</dd></div><div><dt>Qualification</dt><dd>{qualificationOptions.find((item) => item.id === currentQualification.id)?.label} · {currentQualification.completed ? 'completed' : 'studying / awaited'}</dd></div><div><dt>Subjects</dt><dd>{answers.subjects.length ? answers.subjects.join(', ') : 'Not requested for this sample check'}</dd></div><div><dt>Marks</dt><dd>{answers.grading === 'pending' ? 'Result / details awaited' : answers.grading === 'cgpa' ? `${answers.marks} / ${answers.cgpaScale} CGPA` : `${answers.marks}% · ${marksBasis}`}</dd></div></dl><ol><li>Confirm institution-specific criteria for {answers.admissionYear}.</li><li>Check required exams and the official admission route.</li><li>Compare programme fees and application dates before applying.</li></ol></details>

@@ -10,9 +10,9 @@ async function findCourse(params) {
 
 export async function generateMetadata({ params }) {
   const { course } = await findCourse(params);
-  if (!course) return { title: 'Course not found | NSEDU' };
+  if (!course) return { title: 'Course not found | Gyaan Vidhya' };
   const name = course.fullName ? `${course.name} (${course.fullName})` : course.name;
-  return { title: `${name} — colleges, fees & exams | NSEDU`, description: course.summary };
+  return { title: `${name} — colleges, fees & exams | Gyaan Vidhya`, description: course.summary };
 }
 
 export default async function CoursePage({ params }) {

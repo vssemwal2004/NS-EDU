@@ -1,0 +1,15 @@
+**/node_modules
+**/.env
+**/.env.*
+!**/.env.example
+**/.next
+**/dist
+**/.angular
+**/coverage
+**/test-results
+**/playwright-report
+**/*.log
+.git
+.claude
+design
+README.md

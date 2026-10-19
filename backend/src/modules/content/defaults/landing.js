@@ -1,0 +1,52 @@
+// Homepage chrome: hero field links, tool shortcuts, "View all" rows and stream icons.
+export default {
+  fields: [
+    { label: 'Engineering', icon: 'gear' },
+    { label: 'Management', icon: 'people' },
+    { label: 'Medical', icon: 'medical' },
+    { label: 'Design', icon: 'palette' },
+    { label: 'Law', icon: 'scales' },
+    { label: 'Commerce', icon: 'bars' },
+  ],
+  shortcuts: [
+    { id: 'compare', title: 'Compare colleges', description: 'Fees, courses and facilities', icon: 'scales', href: '/compare' },
+    { id: 'eligibility', title: 'Check eligibility', description: 'Understand admission requirements', icon: 'eligibility', href: '/eligibility' },
+    { id: 'scholarships', title: 'Explore scholarships', description: 'Find funding options', icon: 'cap', href: '/scholarships' },
+    { id: 'guidance', title: 'Career guidance', description: 'Explore suitable career paths', icon: 'compass', href: '/career-guidance' },
+  ],
+  featureDirectory: [
+    { id: 'colleges', title: 'Course-wise colleges', icon: 'cap', href: '/colleges', label: 'View all colleges' },
+    { id: 'eligibility', title: 'Eligibility check', icon: 'eligibility', href: '/eligibility', label: 'Open full eligibility check' },
+    {
+      id: 'budget',
+      title: 'Budget check',
+      icon: 'wallet',
+      href: '/budget',
+      label: 'Open budget check',
+      meta: 'Tuition, stay and one-time costs together',
+      secondary: { href: '/scholarships', label: 'Scholarships & funding' },
+    },
+    {
+      id: 'news',
+      title: 'Education news',
+      icon: 'news',
+      href: '/news',
+      label: 'View all news & articles',
+      meta: 'Dated updates, linked to the original publisher',
+    },
+  ],
+  fieldIcons: {
+    Engineering: 'gear',
+    Management: 'people',
+    Commerce: 'commerce',
+    Computing: 'laptop',
+    Medical: 'medical',
+    Design: 'palette',
+    Law: 'scales',
+    Pharmacy: 'science',
+    Healthcare: 'medical',
+    Arts: 'book',
+    Dentistry: 'tooth',
+    Hospitality: 'cloche',
+  },
+};

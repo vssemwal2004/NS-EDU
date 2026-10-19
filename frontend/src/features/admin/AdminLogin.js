@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import Brand from '@/components/ui/Brand';
 import Icon from '@/components/ui/Icon';
 import { getHeroImage } from '@/lib/hero-image';
 import { api } from '@/lib/api/client';
@@ -55,12 +56,12 @@ export default function AdminLogin({ next }) {
   return <main className={styles.page}>
     <section className={styles.showcase} aria-labelledby="admin-about">
       <svg className={styles.linework} viewBox="0 0 450 300" fill="none" aria-hidden="true"><path d="M25 230h390M60 230V120h110v110m-97-87h20v27H73zm48 0h20v27h-20zM82 230v-34h38v34M170 230V85h170v145M184 85l71-47 71 47M225 230v-55h60v55M190 108h26v33h-26zm51 0h26v33h-26zm51 0h26v33h-26zM340 230V120h60v110M360 140h20v30h-20zM55 247h345M205 66V45m100 21V45" /><circle cx="255" cy="75" r="8" /></svg>
-      <header className={styles.brand}><span className={styles.brandMark}><Icon name="cap" /></span><span><strong>NSEDU</strong><small>Admin console</small></span></header>
+      <header className={styles.brand}><Brand tone="light" priority /><small>Admin console</small></header>
       <div className={styles.showcaseBody}>
         <div className={styles.about}>
           <p className={styles.eyebrow}><Icon name="shield" />Platform administration</p>
           <h2 id="admin-about">The information students <em>rely on</em>, managed in one place.</h2>
-          <p className={styles.aboutText}>NSEDU helps students across India discover colleges, compare programmes, check eligibility and plan their budget. Everything they see is published from this console.</p>
+          <p className={styles.aboutText}>Gyaan Vidhya helps students across India discover colleges, compare programmes, check eligibility and plan their budget. Everything they see is published from this console.</p>
           <ul className={styles.capabilities}>{capabilities.map((item) => <li key={item.title}><span><Icon name={item.icon} /></span><div><strong>{item.title}</strong><small>{item.text}</small></div></li>)}</ul>
         </div>
         <figure className={styles.visual}>
@@ -72,14 +73,14 @@ export default function AdminLogin({ next }) {
           {statItems.length > 0 && <dl className={styles.stats}>{statItems.map((item) => <div key={item.label}><dd>{item.value}</dd><dt>{item.label}</dt></div>)}</dl>}
         </figure>
       </div>
-      <p className={styles.showcaseFooter}>© {new Date().getFullYear()} NSEDU · Discover · Learn · Belong</p>
+      <p className={styles.showcaseFooter}>© {new Date().getFullYear()} Gyaan Vidhya · Discover · Learn · Belong</p>
     </section>
 
     <section className={styles.formSide} aria-labelledby="admin-login-title">
       <div className={styles.formCard}>
         <span className={styles.lockBadge}><Icon name="lock" /></span>
         <h1 id="admin-login-title">Welcome back</h1>
-        <p className={styles.formLead}>Sign in to manage the NSEDU platform.</p>
+        <p className={styles.formLead}>Sign in to manage the Gyaan Vidhya platform.</p>
         <form className={styles.form} onSubmit={submit} noValidate aria-busy={state.busy}>
           <label className={styles.field}><span>Email address</span>
             <span className={styles.inputWrap} data-invalid={Boolean(state.error)}><Icon name="mail" /><input type="email" autoComplete="username" inputMode="email" placeholder="admin@example.com" value={form.email} maxLength={254} onChange={(event) => setForm({ ...form, email: event.target.value })} disabled={state.busy} autoFocus /></span>
@@ -92,7 +93,7 @@ export default function AdminLogin({ next }) {
           <button className={styles.submit} type="submit" disabled={state.busy || state.checking}>{state.busy && <span className={styles.spinner} aria-hidden="true" />}{state.checking ? 'Checking session…' : state.busy ? 'Signing in…' : 'Sign in'}{!state.busy && !state.checking && <Icon name="arrow" />}</button>
         </form>
         <p className={styles.secureNote}><Icon name="shield" />Authorised staff only. Sessions use signed, http-only tokens and expire after 8 hours.</p>
-        <Link className={styles.back} href="/"><Icon name="arrow" />Back to NSEDU</Link>
+        <Link className={styles.back} href="/"><Icon name="arrow" />Back to Gyaan Vidhya</Link>
       </div>
     </section>
   </main>;

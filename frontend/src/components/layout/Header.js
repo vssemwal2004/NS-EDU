@@ -2,39 +2,45 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import Dialog from '@/components/ui/Dialog';
+import Brand from '@/components/ui/Brand';
 import Icon from '@/components/ui/Icon';
-import { primaryNavigation, utilityLinks, isActivePath } from '@/data/navigation';
+import { primaryNavigation, toolLinks, isActivePath } from '@/data/navigation';
+import { useCatalog } from '@/providers/CatalogProvider';
 import AccountControl from './header/AccountControl';
-import MegaColleges from './header/MegaColleges';
-import MegaCourses from './header/MegaCourses';
-import MegaExams from './header/MegaExams';
-import MegaResources from './header/MegaResources';
-import MobileNav from './header/MobileNav';
-import PreferenceChip from './header/PreferenceChip';
+import MenuSheet from './header/MenuSheet';
+import NavMenu from './header/NavMenu';
 import SearchPanel from './header/SearchPanel';
-import { useCompareSummary } from './header/useCatalogNav';
+import { useCompareSummary } from './header/storage';
 import styles from './Header.module.css';
 
-const panels = { colleges: MegaColleges, courses: MegaCourses, exams: MegaExams };
-const panelId = (group) => `menu-${group.label.toLowerCase().replace(/\s+/g, '-')}`;
 const isTyping = (target) => /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName) || target.isContentEditable;
+
+// Light dropdown contents, built from the live catalogue (nothing invented: empty catalogue → link only).
+function useMenus() {
+  const { courses = [], exams = [] } = useCatalog();
+  return {
+    courses: { columns: 2, items: courses.map((course) => ({ href: `/courses/${encodeURIComponent(course.id)}`, label: course.name, description: course.fullName || course.field, icon: course.icon })), footer: { href: '/courses', label: 'All courses' } },
+    exams: { items: exams.map((exam) => ({ href: `/exams/${encodeURIComponent(exam.id)}`, label: exam.name, description: `${exam.field} entrance exam`, icon: exam.icon })), footer: { href: '/exams', label: 'All exam guides' } },
+    tools: { items: toolLinks },
+  };
+}
 
 export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const compare = useCompareSummary();
-  const [openGroup, setOpenGroup] = useState(null);
+  const menus = useMenus();
+  const [openMenu, setOpenMenu] = useState(null);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const navRef = useRef(null);
   const searchButton = useRef(null);
-  const timers = useRef({ open: 0, close: 0, hoverAt: 0 });
+  const timers = useRef({ open: 0, close: 0, at: 0 });
 
-  // Close transient menus whenever the route changes (React's "adjust state on prop change" pattern).
+  // Close everything transient when the route changes (adjust-state-on-prop-change pattern).
   const [routeKey, setRouteKey] = useState(pathname);
-  if (routeKey !== pathname) { setRouteKey(pathname); setOpenGroup(null); setSearchOpen(false); setMobileOpen(false); }
+  if (routeKey !== pathname) { setRouteKey(pathname); setOpenMenu(null); setSearchOpen(false); setSheetOpen(false); }
 
   useEffect(() => {
     let frame = 0;
@@ -46,120 +52,100 @@ export default function Header() {
     return () => { window.removeEventListener('scroll', schedule); window.cancelAnimationFrame(frame); window.clearTimeout(pending.open); window.clearTimeout(pending.close); };
   }, []);
 
-  // Shortcuts: "/" (outside fields) and Ctrl/Cmd+K open search.
+  // "/" (outside fields) and Ctrl/Cmd+K open search.
   useEffect(() => {
     function onKey(event) {
       const slash = event.key === '/' && !isTyping(event.target) && !event.metaKey && !event.ctrlKey && !event.altKey;
-      const commandK = event.key.toLowerCase() === 'k' && (event.metaKey || event.ctrlKey) && !event.altKey;
+      const commandK = event.key?.toLowerCase() === 'k' && (event.metaKey || event.ctrlKey) && !event.altKey;
       if (!slash && !commandK) return;
       event.preventDefault();
-      setOpenGroup(null);
+      setOpenMenu(null);
       setSearchOpen(true);
-      document.getElementById('header-search-input')?.focus();
     }
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, []);
 
-  // An open mega panel closes on Escape, outside press and page scroll.
+  // An open dropdown closes on Escape (focus returns to its trigger) and on an outside press.
   useEffect(() => {
-    if (!openGroup) return undefined;
-    const start = window.scrollY;
+    if (!openMenu) return undefined;
     function onKey(event) {
       if (event.key !== 'Escape') return;
-      navRef.current?.querySelector(`[data-group="${openGroup}"]`)?.focus();
-      setOpenGroup(null);
+      navRef.current?.querySelector(`[data-menu="${openMenu}"]`)?.focus();
+      setOpenMenu(null);
     }
-    function onPointer(event) { if (!navRef.current?.contains(event.target)) setOpenGroup(null); }
-    function onScroll() { if (Math.abs(window.scrollY - start) > 48) setOpenGroup(null); }
+    function onPointer(event) { if (!navRef.current?.contains(event.target)) setOpenMenu(null); }
     document.addEventListener('keydown', onKey);
     document.addEventListener('pointerdown', onPointer);
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => { document.removeEventListener('keydown', onKey); document.removeEventListener('pointerdown', onPointer); window.removeEventListener('scroll', onScroll); };
-  }, [openGroup]);
+    return () => { document.removeEventListener('keydown', onKey); document.removeEventListener('pointerdown', onPointer); };
+  }, [openMenu]);
 
-  // Hover intent: open after a short pause, close shortly after leaving. Mouse only.
-  const hoverOpen = (label) => (event) => {
+  // Mouse hover intent: open after a short pause, close shortly after leaving.
+  const hoverOpen = (id) => (event) => {
     if (event.pointerType !== 'mouse' || searchOpen) return;
     window.clearTimeout(timers.current.close);
     window.clearTimeout(timers.current.open);
-    if (openGroup === label) return;
-    const delay = openGroup ? 80 : 120;
-    const openedAt = event.timeStamp + delay;
-    timers.current.open = window.setTimeout(() => { timers.current.hoverAt = openedAt; setOpenGroup(label); }, delay);
+    if (openMenu === id) return;
+    timers.current.open = window.setTimeout(() => { timers.current.at = performance.now(); setOpenMenu(id); }, openMenu ? 60 : 120);
   };
   const hoverClose = (event) => {
     if (event.pointerType !== 'mouse') return;
     window.clearTimeout(timers.current.open);
-    window.clearTimeout(timers.current.close);
-    timers.current.close = window.setTimeout(() => setOpenGroup(null), 160);
+    timers.current.close = window.setTimeout(() => setOpenMenu(null), 180);
   };
-  const toggleGroup = (label, event) => {
+  const toggleMenu = (id) => {
     window.clearTimeout(timers.current.open);
-    // A click that lands just after hover opened the panel should not immediately close it.
-    if (openGroup === label && event.timeStamp - timers.current.hoverAt < 500) return;
+    // A click right after hover opened the menu should not close it again.
+    if (openMenu === id && performance.now() - timers.current.at < 450) return;
     setSearchOpen(false);
-    setOpenGroup(openGroup === label ? null : label);
+    setOpenMenu(openMenu === id ? null : id);
   };
-  const closeGroup = () => setOpenGroup(null);
   const closeSearch = (returnFocus) => { setSearchOpen(false); if (returnFocus) searchButton.current?.focus(); };
-  const search = (query) => { setSearchOpen(false); setMobileOpen(false); router.push(query ? `/search?q=${encodeURIComponent(query)}` : '/search'); };
-  const overlay = Boolean(openGroup && primaryNavigation.find((group) => group.label === openGroup)?.panel) || searchOpen;
+  const search = (query) => { setSearchOpen(false); setSheetOpen(false); router.push(query ? `/search?q=${encodeURIComponent(query)}` : '/search'); };
 
   return <>
     <a className="skip-link" href="#main">Skip to main content</a>
-    <div className={styles.utility}>
-      <div className={`container ${styles.utilityInner}`}>
-        <p className={styles.utilityNote}><Icon name="calendar" />Admissions 2026–27 · confirm fees and eligibility with each institution</p>
-        <div className={styles.utilityActions}>
-          <PreferenceChip />
-          {utilityLinks.map((link) => <Link key={link.href} href={link.href} prefetch={false}><Icon name={link.icon} />{link.label}</Link>)}
-        </div>
-      </div>
-    </div>
-    <header className={styles.header} data-scrolled={scrolled} data-search-open={searchOpen} data-panel-open={overlay}>
-      <div className={`container ${styles.bar}`}>
-        <Link className={styles.brand} href="/" aria-label="NSEDU home">
-          <span className={styles.brandMark} aria-hidden="true"><Icon name="cap" /></span>
-          <span className={styles.brandText}><span className={styles.wordmark}>NSEDU</span><span className={styles.brandTagline}>Discover · Learn · Belong</span></span>
-        </Link>
+    <header className={styles.header} data-scrolled={scrolled} data-raised={searchOpen || Boolean(openMenu)}>
+      <div className={`lux-container lux-container--wide ${styles.bar}`}>
+        <Link className={styles.brand} href="/" aria-label="Gyaan Vidhya home"><Brand priority /></Link>
+
         <nav className={styles.nav} aria-label="Main navigation" ref={navRef}>
           <ul>
-            {primaryNavigation.map((group) => {
-              const active = isActivePath(pathname, group);
-              if (!group.panel && !group.items) {
-                const badge = group.badge === 'compare' ? compare.count : 0;
-                const href = group.badge === 'compare' && compare.courseId ? `${group.href}?course=${encodeURIComponent(compare.courseId)}` : group.href;
-                return <li key={group.label}><Link className={styles.navLink} href={href} aria-current={active ? 'page' : undefined}>
-                  {group.label}{badge > 0 && <><span className={styles.badge} aria-hidden="true">{badge}</span><span className="sr-only">, {badge} selected</span></>}
+            {primaryNavigation.map((item) => {
+              const active = isActivePath(pathname, item);
+              if (!item.menu) {
+                const badge = item.badge === 'compare' ? compare.count : 0;
+                const href = item.badge === 'compare' && compare.courseId ? `${item.href}?course=${encodeURIComponent(compare.courseId)}` : item.href;
+                return <li key={item.id}><Link className={styles.navLink} href={href} aria-current={active ? 'page' : undefined}>
+                  {item.label}{badge > 0 && <><span className={styles.badge} aria-hidden="true">{badge}</span><span className="sr-only">, {badge} selected</span></>}
                 </Link></li>;
               }
-              const id = panelId(group);
-              const open = openGroup === group.label;
-              const Panel = panels[group.panel];
-              return <li key={group.label} className={styles.navItem} data-wide={Boolean(group.panel)} onPointerEnter={hoverOpen(group.label)} onPointerLeave={hoverClose}>
-                <button type="button" data-group={group.label} className={styles.navLink} data-active={active} aria-expanded={open} aria-controls={id} onClick={(event) => toggleGroup(group.label, event)}>{group.label}<Icon name="chevron" /></button>
-                <div id={id} className={group.panel ? styles.megaWide : styles.megaCompact} hidden={!open}>
-                  {open && (Panel ? <div className={styles.megaInner}><Panel id={id} onNavigate={closeGroup} /></div> : <MegaResources group={group} onNavigate={closeGroup} />)}
+              const open = openMenu === item.id;
+              const id = `nav-menu-${item.id}`;
+              return <li key={item.id} className={styles.menuItem} onPointerEnter={hoverOpen(item.id)} onPointerLeave={hoverClose}>
+                <button type="button" data-menu={item.id} className={styles.navLink} data-active={active} aria-expanded={open} aria-controls={id} onClick={() => toggleMenu(item.id)}>
+                  {item.label}<Icon name="chevron" />
+                </button>
+                <div id={id} className={styles.dropdown} data-menu={item.id} hidden={!open}>
+                  {open && <NavMenu {...menus[item.menu]} label={item.label} onNavigate={() => setOpenMenu(null)} />}
                 </div>
               </li>;
             })}
           </ul>
         </nav>
+
         <div className={styles.actions}>
-          <button ref={searchButton} type="button" className={styles.searchTrigger} aria-expanded={searchOpen} aria-controls="header-search" aria-keyshortcuts="/ Control+K Meta+K" onClick={() => { setOpenGroup(null); setSearchOpen(!searchOpen); }}>
+          <button ref={searchButton} type="button" className={styles.searchTrigger} aria-expanded={searchOpen} aria-controls="header-search" aria-keyshortcuts="/ Control+K Meta+K"
+            onClick={() => { setOpenMenu(null); setSearchOpen(!searchOpen); }}>
             <Icon name={searchOpen ? 'close' : 'search'} /><span className={styles.searchLabel}>{searchOpen ? 'Close search' : 'Search'}</span><kbd aria-hidden="true">/</kbd>
           </button>
           <AccountControl />
-          <button className={styles.menuButton} type="button" aria-label="Open navigation" aria-expanded={mobileOpen} aria-controls="mobile-navigation" onClick={() => setMobileOpen(true)}><Icon name="menu" /></button>
+          <button className={styles.menuButton} type="button" aria-label="Open menu" aria-expanded={sheetOpen} aria-controls="site-menu" onClick={() => { setSearchOpen(false); setSheetOpen(true); }}><Icon name="menu" /></button>
         </div>
       </div>
       {searchOpen && <SearchPanel id="header-search" onSubmit={search} onClose={closeSearch} />}
     </header>
-    <div className={styles.scrim} data-open={overlay} aria-hidden="true" />
-
-    <Dialog open={mobileOpen} onClose={() => setMobileOpen(false)} title="NSEDU" variant={`dialog--drawer ${styles.drawer}`}>
-      <MobileNav pathname={pathname} onSearch={search} onNavigate={() => setMobileOpen(false)} />
-    </Dialog>
+    <div className={styles.scrim} data-open={searchOpen} aria-hidden="true" onClick={() => closeSearch(false)} />
+    <MenuSheet id="site-menu" open={sheetOpen} pathname={pathname} compareCount={compare.count} onClose={() => setSheetOpen(false)} onSearch={search} />
   </>;
 }

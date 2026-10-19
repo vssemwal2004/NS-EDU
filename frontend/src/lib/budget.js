@@ -1,4 +1,5 @@
-import { budgetCostFields, budgetDefaults, livingOptions } from '../data/budget.js';
+// Pure budget maths. `config` is the admin-edited `budget` content entry (living options and cost rows).
+export const MAX_AMOUNT_INR = 100_000_000;
 
 const currency = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 });
 const digits = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 });
@@ -11,23 +12,28 @@ export function parseBudgetAmount(raw, { allowZero = false } = {}) {
   const text = String(raw ?? '').trim();
   if (!/^(?:\d+|\d{1,3}(?:,\d{3})+|\d{1,2}(?:,\d{2})*,\d{3})$/.test(text)) return null;
   const value = Number(text.replaceAll(',', ''));
-  return Number.isSafeInteger(value) && value >= (allowZero ? 0 : 1) && value <= budgetDefaults.maxAmountInr ? value : null;
+  return Number.isSafeInteger(value) && value >= (allowZero ? 0 : 1) && value <= MAX_AMOUNT_INR ? value : null;
 }
 
-export function getBudgetAssumptions(livingId, overrides = {}) {
-  const living = livingOptions.find((option) => option.id === livingId) || livingOptions[0];
-  return Object.fromEntries(budgetCostFields.map((field) => [field.id,
-    Object.hasOwn(overrides, field.id) ? overrides[field.id] : String(living[field.id] ?? field.defaultInr),
+export function getBudgetAssumptions(config, livingId, overrides = {}) {
+  const living = config.livingOptions.find((option) => option.id === livingId) || config.livingOptions[0];
+  return Object.fromEntries(config.costFields.map((field) => [field.id,
+    Object.hasOwn(overrides, field.id) ? overrides[field.id] : String(living?.[field.id] ?? field.defaultInr ?? ''),
   ]));
 }
 
-export function calculateBudgetEstimate(record, assumptions, budgetRaw) {
+export function calculateBudgetEstimate(config, record, assumptions, budgetRaw) {
   const tuition = Number.isSafeInteger(record?.annualTuitionInr) && record.annualTuitionInr >= 0 ? record.annualTuitionInr : null;
-  const values = Object.fromEntries(budgetCostFields.map((field) => [field.id, parseBudgetAmount(assumptions[field.id], { allowZero: true })]));
-  const invalidFields = budgetCostFields.filter((field) => values[field.id] === null).map((field) => field.id);
+  const values = Object.fromEntries(config.costFields.map((field) => [field.id, parseBudgetAmount(assumptions[field.id], { allowZero: true })]));
+  const invalidFields = config.costFields.filter((field) => values[field.id] === null).map((field) => field.id);
   const complete = tuition !== null && invalidFields.length === 0;
-  const living = values.accommodation !== null && values.meals !== null ? values.accommodation + values.meals : null;
-  const other = ['booksTravel', 'joiningFees', 'deposit'].every((id) => values[id] !== null) ? values.booksTravel + values.joiningFees + values.deposit : null;
+  // Cost rows are summed by their `group` ('living' or 'other'); an invalid row leaves its group incomplete.
+  const sum = (group) => {
+    const ids = config.costFields.filter((field) => field.group === group).map((field) => field.id);
+    return ids.every((id) => values[id] !== null) ? ids.reduce((total, id) => total + values[id], 0) : null;
+  };
+  const living = sum('living');
+  const other = sum('other');
   const total = complete ? tuition + living + other : null;
   const budget = parseBudgetAmount(budgetRaw);
   const difference = total !== null && budget !== null ? budget - total : null;
@@ -35,10 +41,10 @@ export function calculateBudgetEstimate(record, assumptions, budgetRaw) {
   return { tuition, values, living, other, total, budget, difference, state, invalidFields };
 }
 
-export function findAffordableColleges(records, { courseId, tuitionYear, assumptions, budget }) {
+export function findAffordableColleges(config, records, { courseId, tuitionYear, assumptions, budget }) {
   if (parseBudgetAmount(budget) === null) return [];
   return records.filter((row) => row.courseId === courseId && row.tuitionYear === tuitionYear)
-    .map((record) => ({ record, estimate: calculateBudgetEstimate(record, assumptions, budget) }))
+    .map((record) => ({ record, estimate: calculateBudgetEstimate(config, record, assumptions, budget) }))
     .filter(({ estimate }) => estimate.total !== null && estimate.difference >= 0)
     .toSorted((a, b) => a.estimate.total - b.estimate.total);
 }

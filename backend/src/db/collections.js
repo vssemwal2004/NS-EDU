@@ -15,6 +15,13 @@ export const COLLECTIONS = Object.freeze({
   cities: 'cities',
   states: 'states',
   scholarships: 'scholarships',
+  applications: 'applications',
+  applicationNotes: 'application_notes',
+  scrapeSources: 'scrape_sources',
+  scrapeJobs: 'scrape_jobs',
+  scrapeRuns: 'scrape_runs',
+  siteContent: 'site_content',
+  media: 'media',
 });
 
 let ready;

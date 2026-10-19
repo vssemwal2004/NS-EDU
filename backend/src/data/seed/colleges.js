@@ -49,7 +49,10 @@ const programmes = [
   ['hillside-hospitality', 'bhm', 170000, 4.2, 10],
 ];
 
-export const seedInstitutions = institutions.map((institution, order) => ({ ...institution, isIllustrative: true, order, active: true }));
+export const seedInstitutions = institutions.map((institution, order) => ({
+  ...institution, type: /University/.test(institution.name) ? 'university' : 'college', category: 'other', ownership: 'private',
+  verification: 'unverified', isIllustrative: true, order, active: true,
+}));
 
 export const seedProgrammes = programmes.map(([institutionSlug, courseSlug, annualTuitionInr, medianSalaryLpa, highestSalaryLpa], order) => ({
   slug: `${institutionSlug}-${courseSlug}`, institutionSlug, courseSlug,

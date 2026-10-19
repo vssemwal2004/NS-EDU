@@ -5,65 +5,49 @@ import Icon from '@/components/ui/Icon';
 import GuideToc from '@/features/guides/GuideToc';
 import { GuideLink } from '@/features/guides/GuidePage';
 import { slugify } from '@/features/guides/data';
-import { footerGroups, site } from '@/data/site';
-import { sitePages } from '@/data/site-pages';
 import { getCatalog } from '@/lib/api/catalog';
+import { getContent } from '@/lib/api/content';
 import styles from './page.module.css';
 
-// These topics have dedicated feature routes; their copy is reused there.
-const featureRoutes = new Set(['scholarships', 'career-guidance', 'admission-checklist']);
-const findPage = (slug) => Object.hasOwn(sitePages, slug) && !featureRoutes.has(slug) ? sitePages[slug] : null;
-
+// Page copy, card lists and footer groups are admin-edited content (`pages`, `site`).
 const linkIcons = {
   '/about': 'spark', '/contact': 'mail', '/help': 'guidesLifebuoy', '/report-correction': 'edit', '/sources-and-editorial': 'book', '/accessibility': 'guidesAccess',
   '/legal': 'shield', '/terms-and-conditions': 'document', '/privacy-policy': 'lock', '/cookie-policy': 'layers', '/disclaimer': 'coursesInfo',
   '/blog': 'news', '/scholarships': 'cap', '/career-guidance': 'compass', '/admission-checklist': 'guidesChecklist', '/news': 'news',
 };
-const guideLinks = { title: 'Student guides', links: [
-  { label: 'Blog & student guides', href: '/blog' }, { label: 'Scholarships & funding', href: '/scholarships' }, { label: 'Career guidance', href: '/career-guidance' },
-  { label: 'Admission checklist', href: '/admission-checklist' }, { label: 'Education news', href: '/news' },
-] };
-function groupFor(slug) {
-  const group = footerGroups.find((item) => item.title !== 'Explore' && item.links.some((link) => link.href === `/${slug}`)) || guideLinks;
+
+async function load(params) {
+  const [{ slug }, { pages, site }] = await Promise.all([params, getContent(['pages', 'site'])]);
+  const page = pages && Object.hasOwn(pages.pages, slug) ? pages.pages[slug] : null;
+  return { slug, page, pages, site };
+}
+
+function groupFor(slug, { pages, site }) {
+  const guideLinks = pages.guideLinks;
+  const group = site?.footerGroups.find((item) => item.title !== 'Explore' && item.links.some((link) => link.href === `/${slug}`)) || guideLinks;
   const legal = group.title === 'Legal & privacy';
   const hub = group === guideLinks ? null : legal ? { label: 'Legal', href: '/legal' } : { label: 'Help centre', href: '/help' };
   return { ...group, icon: legal ? 'shield' : group === guideLinks ? 'book' : 'support', crumbs: hub && hub.href !== `/${slug}` ? [hub] : [] };
 }
 
-const helpTopics = [
-  { href: '/colleges', icon: 'building', title: 'Finding colleges', text: 'Filter sample colleges by course, city and fee.' },
-  { href: '/courses', icon: 'book', title: 'Courses', text: 'Fields, levels, sample fees and linked exams.' },
-  { href: '/compare', icon: 'compare', title: 'Comparing', text: 'Put up to three colleges side by side.' },
-  { href: '/eligibility', icon: 'eligibility', title: 'Eligibility', text: 'What to confirm before applying.' },
-  { href: '/budget', icon: 'wallet', title: 'Budget planning', text: 'Tuition plus living and one-time costs.' },
-  { href: '/exams', icon: 'document', title: 'Entrance exams', text: 'Official sites and the courses they lead to.' },
-  { href: '/scholarships', icon: 'cap', title: 'Scholarships', text: 'Funding portals and what to check.' },
-  { href: '/news', icon: 'news', title: 'Saved news', text: 'Bookmark stories to read later on this device.' },
-];
-const aboutTools = [
-  { href: '/colleges', icon: 'building', title: 'Discover', text: 'Courses, colleges and study destinations.' },
-  { href: '/compare', icon: 'compare', title: 'Compare', text: 'Fees and placements side by side, with data years.' },
-  { href: '/eligibility', icon: 'eligibility', title: 'Check', text: 'Academic requirements to confirm.' },
-  { href: '/budget', icon: 'wallet', title: 'Plan', text: 'A first-year budget beyond tuition.' },
-];
-
-export const dynamicParams = false;
-export function generateStaticParams() { return Object.keys(sitePages).filter((slug) => !featureRoutes.has(slug)).map((slug) => ({ slug })); }
 export async function generateMetadata({ params }) {
-  const { slug } = await params;
-  const page = findPage(slug);
+  const { slug, page, pages, site } = await load(params);
+  if (!pages) return { title: 'Temporarily unavailable | Gyaan Vidhya', robots: { index: false, follow: true } };
   if (!page) notFound();
-  return { title: `${page.title} | NSEDU`, description: page.description, ...(page.draft || (slug === 'contact' && site.contactIsTemporary) ? { robots: { index: false, follow: true } } : {}) };
+  return { title: `${page.title} | Gyaan Vidhya`, description: page.description, ...(page.draft || (slug === 'contact' && site?.contactIsTemporary !== false) ? { robots: { index: false, follow: true } } : {}) };
 }
 
 export default async function InformationPage({ params }) {
-  const { slug } = await params;
-  const page = findPage(slug);
+  const { slug, page, pages, site } = await load(params);
+  if (!pages) return <main id="main" tabIndex={-1}>
+    <PageIntro compact eyebrow="Gyaan Vidhya" icon="support" title="Temporarily unavailable" current="Unavailable" description="This page could not be loaded right now. Please refresh in a moment." />
+  </main>;
   if (!page) notFound();
-  const group = groupFor(slug);
+  const group = groupFor(slug, { pages, site });
   const sections = page.sections.map((section) => ({ ...section, id: slugify(section.title) }));
   const isHelp = slug === 'help';
   const isContact = slug === 'contact';
+  const temporary = site?.contactIsTemporary !== false;
 
   let stats = [];
   if (slug === 'about') {
@@ -81,7 +65,7 @@ export default async function InformationPage({ params }) {
   return <main id="main" tabIndex={-1}>
     <PageIntro compact eyebrow={page.category} icon={group.icon} title={page.title} current={page.title} crumbs={group.crumbs} description={page.description}
       stats={stats} statsNote={stats.length ? 'In the illustrative directory · institutions are fictional.' : undefined}
-      meta={isContact && site.contactIsTemporary ? 'Support channels are not active yet in this preview.' : undefined} />
+      meta={isContact && temporary ? 'Support channels are not active yet in this preview.' : undefined} />
 
     <div className={`container ${styles.body} ${showToc ? styles.withToc : ''}`}>
       <nav className={styles.sideNav} aria-label={group.title}>
@@ -101,7 +85,7 @@ export default async function InformationPage({ params }) {
           </form>
           <section id="topics" className={styles.block} aria-labelledby="topics-title">
             <h2 id="topics-title" className={styles.blockTitle}>Browse by topic</h2>
-            <ul className={styles.cardGrid}>{helpTopics.map((topic) => <li key={topic.href}><CardLink {...topic} /></li>)}</ul>
+            <ul className={styles.cardGrid}>{pages.helpTopics.map((topic) => <li key={topic.href}><CardLink {...topic} /></li>)}</ul>
           </section>
           <section id="faqs" className={styles.block} aria-labelledby="faqs-title">
             <h2 id="faqs-title" className={styles.blockTitle}>Frequently asked</h2>
@@ -119,21 +103,18 @@ export default async function InformationPage({ params }) {
           {isContact && <section id="channels" className={styles.block} aria-labelledby="channels-title">
             <h2 id="channels-title" className={styles.blockTitle}>Ways to reach us</h2>
             <ul className={styles.cardGrid}>
-              <li><CardLink href="/help" icon="guidesLifebuoy" title="Help centre & FAQs" text="Answers about using the tools and the sample data." /></li>
-              <li><CardLink href="/report-correction" icon="edit" title="Report a correction" text="What to include so an issue can be checked." /></li>
-              <li><CardLink href="/sources-and-editorial" icon="book" title="Sources & editorial" text="Where information comes from and how it is labelled." /></li>
-              <li><CardLink href="/accessibility" icon="guidesAccess" title="Accessibility barrier" text="How to describe a problem using the site." /></li>
-              <li className={styles.wide}><div className={styles.channel}>
+              {pages.contactCards.map((card) => <li key={card.href}><CardLink {...card} /></li>)}
+              {site && <li className={styles.wide}><div className={styles.channel}>
                 <span className={styles.channelIcon}><Icon name="mail" /></span>
-                <div><h3>Email support {site.contactIsTemporary && <span className={styles.status}><Icon name="guidesClock" />Not active yet</span>}</h3>
-                  {site.contactIsTemporary ? <p className={styles.address}>{site.supportEmail}</p> : <a className={styles.address} href={`mailto:${site.supportEmail}`}>{site.supportEmail}</a>}
-                  <p className={styles.small}>{site.contactIsTemporary ? 'Temporary address for the design preview. Email support is not active yet.' : 'Include the relevant page and a short description of your question.'}</p></div>
-              </div></li>
-              <li id="social-profiles" className={styles.wide}><div className={styles.channel}>
+                <div><h3>Email support {temporary && <span className={styles.status}><Icon name="guidesClock" />Not active yet</span>}</h3>
+                  {temporary ? <p className={styles.address}>{site.supportEmail}</p> : <a className={styles.address} href={`mailto:${site.supportEmail}`}>{site.supportEmail}</a>}
+                  <p className={styles.small}>{temporary ? 'Temporary address for the design preview. Email support is not active yet.' : 'Include the relevant page and a short description of your question.'}</p></div>
+              </div></li>}
+              {site && <li id="social-profiles" className={styles.wide}><div className={styles.channel}>
                 <span className={styles.channelIcon}><Icon name="people" /></span>
                 <div><h3>Official social profiles</h3><p className={styles.small}>Follow our education updates when the official profiles are available.</p>
                   <ul className={styles.profiles}>{site.socials.map((social) => <li key={social.name}><Icon name={social.icon} />{social.href ? <a href={social.href} target="_blank" rel="noopener noreferrer">{social.name}<span className="sr-only"> (opens in a new tab)</span></a> : <span>{social.name}<small>Coming soon</small></span>}</li>)}</ul></div>
-              </div></li>
+              </div></li>}
             </ul>
           </section>}
           {sections.map((section, index) => <section key={section.id} id={section.id} className={styles.section} aria-labelledby={`${section.id}-title`}>
@@ -146,7 +127,7 @@ export default async function InformationPage({ params }) {
           </section>)}
           {slug === 'about' && <section className={styles.block} aria-labelledby="about-tools-title">
             <h2 id="about-tools-title" className={styles.blockTitle}>What you can do today</h2>
-            <ul className={styles.cardGrid}>{aboutTools.map((tool) => <li key={tool.href}><CardLink {...tool} /></li>)}</ul>
+            <ul className={styles.cardGrid}>{pages.aboutTools.map((tool) => <li key={tool.href}><CardLink {...tool} /></li>)}</ul>
           </section>}
         </>}
 

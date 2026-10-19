@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { loadViewer } from '../../middleware/auth.js';
 import { listColleges, listCourses, listExams, listLocations, listScholarships, platformStats, searchCatalog } from './catalog-service.js';
 
 const noStore = (_request, response, next) => {
@@ -13,7 +14,11 @@ catalogRouter.get('/exams', async (_request, response) => response.json({ items:
 catalogRouter.get('/colleges', async (_request, response) => response.json({ items: await listColleges() }));
 catalogRouter.get('/locations', async (_request, response) => response.json(await listLocations()));
 catalogRouter.get('/scholarships', async (_request, response) => response.json({ items: await listScholarships() }));
-catalogRouter.get('/search', async (request, response) => response.json(await searchCatalog(request.query.q)));
+// Course and exam matches are public; university matches need a student or staff session.
+catalogRouter.get('/search', async (request, response) => {
+  const result = await searchCatalog(request.query.q);
+  response.json(await loadViewer(request) ? result : { ...result, colleges: [], collegesRequireLogin: true });
+});
 
 export const platformRouter = Router();
 platformRouter.use(noStore);

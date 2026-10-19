@@ -6,9 +6,9 @@ export const COMPARE_KEY = 'nsedu:compare';
 export const COMPARE_MAX = 3;
 const CHANNEL_KEY = 'nsedu:login-channel';
 
-// Only claims that are true for NSEDU today.
+// Only claims that are true for Gyaan Vidhya today.
 export const accountBenefits = [
-  { icon: 'lock', title: 'No password, ever', short: 'No password', text: 'A one-time code to your mobile or email logs you in.' },
+  { icon: 'lock', title: 'No password, ever', short: 'No password', text: 'A one-time code to your email logs you in.' },
   { icon: 'dashboard', title: 'Your student space', short: 'Student space', text: 'Comparisons, saved news and preferences together.' },
   { icon: 'location', title: 'Set course and city once', short: 'Course & city once', text: 'Pages open with your picks on this device.' },
   { icon: 'scales', title: 'Pick up your comparisons', short: 'Your comparisons', text: `Up to ${COMPARE_MAX} colleges per course, kept on this device.` },
@@ -32,7 +32,7 @@ export const quickTools = [
 ];
 
 export function readChannel() {
-  try { return window.localStorage.getItem(CHANNEL_KEY) === 'email' ? 'email' : 'phone'; } catch { return 'phone'; }
+  try { return window.localStorage.getItem(CHANNEL_KEY) === 'phone' ? 'phone' : 'email'; } catch { return 'email'; }
 }
 export function rememberChannel(channel) {
   try { window.localStorage.setItem(CHANNEL_KEY, channel); } catch { /* storage unavailable */ }

@@ -47,6 +47,25 @@ export async function requireStudent(request, response, next) {
   next();
 }
 
+// Signed-in student or console staff. Used to gate the university directory.
+export async function loadViewer(request) {
+  const student = await loadStudent(request);
+  if (student) return { student, admin: null };
+  const admin = await loadAdmin(request);
+  return admin ? { student: null, admin } : null;
+}
+
+export async function requireStudentOrAdmin(request, response, next) {
+  const viewer = await loadViewer(request);
+  if (!viewer) {
+    if (request.cookies?.[STUDENT_COOKIE]) clearStudentCookie(response);
+    throw new HttpError(401, 'Sign in to search and view universities.', { loginRequired: true });
+  }
+  request.student = viewer.student;
+  request.admin = viewer.admin;
+  next();
+}
+
 export async function optionalStudent(request, _response, next) {
   request.student = await loadStudent(request);
   next();

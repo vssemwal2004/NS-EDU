@@ -84,7 +84,7 @@ export default function MegaColleges({ id, onNavigate }) {
             {stream.programmes.slice(0, 4).map((row) => <li key={row.id}><Link href={collegesHref(row.courseId, row.city)} onClick={onNavigate} className={styles.programme}>
               <span className={styles.thumb} aria-hidden="true"><CollegeArtwork row={row} /></span>
               <span><strong>{row.name}</strong><small>{courseName(row.courseId)} · {row.city}</small></span>
-              <span className={styles.rating} title="Demo rating, not a review score"><Icon name="star" />{row.demoRating.toFixed(1)}<span className="sr-only"> demo rating</span></span>
+              {row.demoRating != null && <span className={styles.rating} title="Demo rating, not a review score"><Icon name="star" />{row.demoRating.toFixed(1)}<span className="sr-only"> demo rating</span></span>}
             </Link></li>)}
           </ul>
           {/* The colleges page filters by one course, so the link names that course rather than the stream total. */}
@@ -111,7 +111,7 @@ export default function MegaColleges({ id, onNavigate }) {
       <div className={styles.panelFoot}>
         <Link href={`/courses?field=${encodeURIComponent(stream.field)}`} onClick={onNavigate} className={styles.footLink}>All {stream.field} courses<Icon name="arrow" /></Link>
         <Link href="/locations" onClick={onNavigate} className={styles.footLink}>Browse all locations<Icon name="arrow" /></Link>
-        <p>Counts from NSEDU&rsquo;s illustrative catalogue</p>
+        <p>Counts from Gyaan Vidhya&rsquo;s illustrative catalogue</p>
       </div>
     </div>
   </div>;

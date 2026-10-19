@@ -6,11 +6,12 @@ import styles from './Home.module.css';
 
 // Every figure is counted from the catalogue at render time (admin edits flow through).
 export default function StatStrip() {
-  const { courses, colleges, exams, cityNames, stateNames } = useCatalog();
+  const { courses, colleges, exams, cityNames, stateNames, stats: totals } = useCatalog();
+  const universities = totals?.institutions ?? new Set(colleges.map((row) => row.collegeId)).size;
   const stats = [
+    { value: new Intl.NumberFormat('en-IN').format(universities), label: 'universities & colleges', action: 'search the university directory', href: '/universities', icon: 'building' },
     { value: courses.length, label: 'courses', action: 'browse courses', href: '/courses', icon: 'book' },
-    { value: new Set(colleges.map((row) => row.collegeId)).size, label: 'sample institutions', action: 'browse colleges', href: '/colleges', icon: 'building' },
-    { value: colleges.length, label: 'sample programmes', action: 'compare fees and placements', href: '/colleges', icon: 'cap' },
+    { value: colleges.length, label: 'programmes with fees', action: 'compare fees and placements', href: '/colleges', icon: 'cap' },
     { value: exams.length, label: 'exam guides', action: 'open exam guides', href: '/exams', icon: 'document' },
     { value: cityNames.length + stateNames.length, label: 'cities & states', action: 'browse destinations', href: '/locations', icon: 'location' },
   ];
@@ -18,7 +19,7 @@ export default function StatStrip() {
     <div className={`container ${styles.statsInner}`}>
       <div className={styles.statsIntro}>
         <h2 id="home-stats-title">At a glance</h2>
-        <p>Illustrative sample catalogue · institutions are fictional. <Link href="/sources-and-editorial">How we use sources</Link></p>
+        <p>Fee and placement figures are illustrative until verified. <Link href="/sources-and-editorial">How we use sources</Link></p>
       </div>
       <ul className={styles.statList}>
         {stats.map((stat) => <li key={stat.label}>

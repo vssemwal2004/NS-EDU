@@ -138,7 +138,7 @@ export default function CompareView({ initialCourse = '', initialList = '' }) {
             <p className={styles.slotFacts}><span>{formatTuition(only.annualTuitionInr)}/yr</span><span className={styles.illustrative}>Illustrative</span></p>
           </div>
           <div className={styles.singleActions}>
-            <Link className="button button--primary" href={`/colleges/${only.collegeId}`}>View college<Icon name="arrow" /></Link>
+            <Link className="button button--primary" href={`/universities/${only.collegeId}`}>View college<Icon name="arrow" /></Link>
             <Link className="button button--ghost" href={`/colleges?course=${course.id}`}>Browse {course.name} colleges</Link>
           </div>
         </article>

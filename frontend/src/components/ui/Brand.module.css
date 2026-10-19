@@ -1,0 +1,2 @@
+/* Height drives the size so the logo never distorts; callers set --brand-height. */
+.logo { display: block; width: auto; max-width: 100%; height: var(--brand-height, 56px); object-fit: contain; }

@@ -1,6 +1,62 @@
-# NSEDU — Student Platform
+# Gyaan Vidhya — University Discovery & Admissions Platform
 
-Last updated: 9 October 2026 (IST)
+Last updated: 18 October 2026 (IST)
+
+> Formerly "NSEDU". Sections below the "Earlier history" marker describe earlier rounds and keep the old name where it was historically accurate. Internal identifiers (`nsedu_*` cookies, the `nsedu` database, browser-storage keys, npm package names) were deliberately kept so existing sessions and data keep working.
+
+## What changed in this round
+
+| Area | Summary | Where |
+| --- | --- | --- |
+| Brand | New Gyaan Vidhya logo (full lockup, emblem, white variants, favicon/app icons, web manifest) in the header, footer, admin rail, admin sign-in and student login panel. | `frontend/public/brand/`, `frontend/src/components/ui/Brand.js`, `frontend/src/app/{icon,apple-icon}.png` |
+| 20k+ university directory | `institutions` collection extended into a full university schema (type, category, ownership, NAAC/NIRF, approvals, streams, courses, contact, logo, source, verification, field locks). Prefix-indexed search (edge n-grams in one multikey index), 15 indexes, in-memory TTL caches, server pagination and facets. Public `/universities` + `/universities/[slug]`; `/colleges/[id]` permanently redirects. | `backend/src/modules/universities/`, `frontend/src/features/universities/`, `frontend/src/app/(site)/universities/` |
+| Admin at scale | Universities screen searches 20k records via the same index, filters (verification/type/state/visibility/source), never preloads the directory (server-searched pickers). Admin edits lock fields against importer/scraper overwrites. | `backend/src/modules/admin/resource*.js`, `frontend/src/features/admin/ResourceForm.js` |
+| Data collection | Bulk CSV/JSON import with dry run, review queue, robots.txt-compliant scraper with a MongoDB job queue. | `backend/src/scraper/README.md`, `/admin/data/*` |
+| Apply flow | Students apply to any university in four steps; every submission becomes a structured lead for admins/employees. | `/apply`, `/admin/leads` |
+| Dynamic content | Student-facing copy, guides, tool settings and image references live in MongoDB (`site_content`) and are edited in **Admin → Site content**. | `backend/src/modules/content/` |
+| Images | Cloudinary media library (direct signed browser uploads) and a one-command migration of the site images. | `backend/src/lib/cloudinary.js`, `/admin/media`, `npm run images:migrate` |
+| Production basics | Security headers + CSP, compression, request ids + JSON access logs, global rate limit, liveness/readiness checks, fail-fast production config, graceful shutdown, error pages, robots.txt, sitemaps for every university, Dockerfiles, docker-compose and CI. | see "Operations" below |
+
+### Measured performance (20,000 synthetic universities, MongoDB Atlas, cold cache)
+
+`npm run benchmark:universities --workspace backend` loads 20k records into a throwaway database, times the queries and drops it. Last run from a developer laptop (most of each figure is network latency to Atlas):
+
+| Operation | Time |
+| --- | --- |
+| Import 20,000 records (batched upsert) | 70.8 s (~3.5 ms/record) |
+| Re-import 2,000 unchanged records | 2.3 s |
+| List page 1 / page 400 | 198 ms / 256 ms |
+| Name search "saraswati vidya" | 188 ms |
+| State + stream + NAAC filter | 186 ms |
+| Typeahead suggest | 125 ms |
+| Facets (whole directory / with cities) | 313 ms / 323 ms |
+| Same list served from the API cache | 11 ms |
+
+### Operations
+
+Local development uses the dedicated MongoDB instance at `127.0.0.1:27018`. Its
+database files are stored in `D:\\MongoDB\\NS-EDU\\data`; `backend/.env.local`
+overrides only the local MongoDB connection and remains ignored by Git. The
+existing `backend/.env` remains the fallback for secrets and deployment values.
+
+```bash
+npm install
+npm run mongo:start                       # also runs automatically before npm run dev
+npm run mongo:status
+npm run seed                               # indexes, catalogue + content defaults, search keys
+npm run dev                                # web :3000, API :4100
+npm run mongo:stop                        # clean local database shutdown
+npm run images:migrate --workspace backend -- --dry-run      # then without --dry-run, then --delete-local
+npm run benchmark:universities --workspace backend
+docker compose up --build                  # production-like stack (API + web) against your Atlas cluster
+```
+
+- **Health:** `GET /api/health` (liveness, no DB) and `GET /api/health/ready` (DB ping) — use the second for load-balancer checks.
+- **Production config:** with `NODE_ENV=production` the API refuses to start without `MONGODB_URI`, a 32+ character `JWT_SECRET`, and a real OTP provider (`OTP_DELIVERY=console` prints login codes to logs; `ALLOW_CONSOLE_OTP=true` overrides it for staging only).
+- **Scaling notes:** caches and rate limits are per API process (60 s staleness across instances at most). For more than one API instance, move rate limits to Redis or the load balancer. The search design works on any MongoDB; Atlas Search would add typo tolerance later without changing the API contract.
+- **Logs:** one JSON line per request in production (no query strings, so search terms and tokens are not logged); every response carries `X-Request-Id`, and 500 responses return it for support.
+
+## Earlier history
 
 ## Platform architecture — separate routes, student login and admin console
 

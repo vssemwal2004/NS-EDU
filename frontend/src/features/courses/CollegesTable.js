@@ -74,12 +74,12 @@ export default function CollegesTable({ course, rows }) {
         return <tr key={row.id}>
           <th scope="row" className={styles.collegeCell}>
             <CollegeArtwork row={row} className={styles.thumb} />
-            <span><Link href={`/colleges/${row.collegeId}`}>{row.name}</Link><small><Icon name="location" />{[row.city, row.state].filter(Boolean).join(', ')}</small></span>
+            <span><Link href={`/universities/${row.collegeId}`}>{row.name}</Link><small><Icon name="location" />{[row.city, row.state].filter(Boolean).join(', ')}</small></span>
           </th>
           <td data-label="Annual tuition"><strong>{formatTuition(row.annualTuitionInr)}</strong><small>per year · {row.tuitionYear}</small></td>
           <td data-label="Median salary" data-empty={row.medianSalaryLpa == null || undefined}>{row.medianSalaryLpa == null ? 'Not reported' : formatSalary(row.medianSalaryLpa)}</td>
           <td data-label="Highest salary" data-empty={row.highestSalaryLpa == null || undefined}>{row.highestSalaryLpa == null ? 'Not reported' : formatSalary(row.highestSalaryLpa)}</td>
-          <td data-label="Demo rating"><span className={styles.rating}><Icon name="star" />{row.demoRating.toFixed(1)}</span><small>demo</small></td>
+          <td data-label="Demo rating">{row.demoRating != null ? <><span className={styles.rating}><Icon name="star" />{row.demoRating.toFixed(1)}</span><small>demo</small></> : <span>—</span>}</td>
           <td className={styles.compareCell}>
             <button type="button" className={styles.compareToggle} aria-pressed={picked} onClick={() => toggleCompare(row)}>
               <Icon name={picked ? 'check' : 'plus'} />{picked ? 'Added' : 'Compare'}<span className="sr-only"> {row.name}</span>

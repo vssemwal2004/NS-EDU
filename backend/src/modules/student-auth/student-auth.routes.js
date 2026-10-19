@@ -6,9 +6,10 @@ import { signSession } from '../../lib/jwt.js';
 import { createRateLimiter } from '../../lib/rate-limit.js';
 import { assertValid } from '../../lib/validation.js';
 import { requireStudent } from '../../middleware/auth.js';
+import { describeMailError } from '../../lib/mailer.js';
 import {
   CHANNELS, OTP_MAX_ATTEMPTS, OTP_RESEND_SECONDS, OTP_TTL_SECONDS,
-  codeMatches, deliverOtp, exposesDevCode, generateCode, hashCode, normalizeIdentifier,
+  codeMatches, deliverOtp, enabledChannels, exposesDevCode, generateCode, hashCode, normalizeIdentifier, phoneEnabled,
 } from './otp.js';
 
 const WINDOW_MS = 15 * 60 * 1000;
@@ -37,8 +38,11 @@ function limit(limiter, key, message) {
   }
 }
 
+const PHONE_DISABLED = 'Sign-in with a mobile number is not available yet. Please use your email address.';
+
 function readIdentity(fields, body) {
   const data = assertValid(fields, body);
+  if (data.channel === 'phone' && !phoneEnabled()) throw new HttpError(400, PHONE_DISABLED, { fields: { channel: PHONE_DISABLED } });
   const identifier = normalizeIdentifier(data.channel, data.identifier);
   if (identifier.error) throw new HttpError(400, identifier.error, { fields: { identifier: identifier.error } });
   return { ...data, identifier: identifier.value };
@@ -83,13 +87,20 @@ studentAuthRouter.post('/otp/request', async (request, response) => {
     await deliverOtp({ channel, identifier, code });
   } catch (error) {
     await codes.deleteOne({ channel, identifier });
-    console.error('OTP delivery failed:', error.message);
-    throw new HttpError(503, 'We could not send the code right now. Please try again shortly.');
+    // A failed send must not cost the student their resend slot.
+    resendCooldown.delete(key);
+    console.error(`[OTP] ${channel} delivery failed (request ${request.id}): ${describeMailError(error)}`);
+    throw new HttpError(503, "We couldn't send the code right now. Please try again in a minute.");
   }
   response.json({
     ok: true, channel, identifier, expiresInSeconds: OTP_TTL_SECONDS, resendInSeconds: OTP_RESEND_SECONDS,
-    ...(exposesDevCode() ? { devCode: code } : {}),
+    ...(exposesDevCode(channel) ? { devCode: code } : {}),
   });
+});
+
+studentAuthRouter.get('/config', (_request, response) => {
+  response.set('Cache-Control', 'public, max-age=300');
+  response.json({ channels: enabledChannels(), otpTtlSeconds: OTP_TTL_SECONDS, resendSeconds: OTP_RESEND_SECONDS });
 });
 
 studentAuthRouter.post('/otp/verify', async (request, response) => {

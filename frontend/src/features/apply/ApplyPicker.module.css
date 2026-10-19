@@ -1,0 +1,4 @@
+.picker { display: grid; gap: var(--lux-space-2); min-width: 0; }
+.label { color: var(--lux-ink); font-size: var(--lux-small); font-weight: 600; }
+.hint { color: var(--lux-text-muted); font-size: var(--lux-caption); }
+.picker[aria-busy] .hint { color: var(--lux-wine); font-weight: 600; }

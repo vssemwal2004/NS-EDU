@@ -1,19 +1,21 @@
 import { test, expect } from '@playwright/test';
 import { calculateBudgetEstimate, findAffordableColleges, getBudgetAssumptions, parseBudgetAmount } from '../src/lib/budget.js';
+// The default `budget` content entry (served from MongoDB at runtime).
+import config from '../../backend/src/modules/content/defaults/budget.js';
 
 const section = (page) => page.locator('#college-budget');
 const testRecord = { id: 'test', courseId: 'btech', tuitionYear: '2026–27', annualTuitionInr: 240000 };
 
 test('budget arithmetic keeps refundable costs, missing costs and input validation distinct', () => {
-  const assumptions = getBudgetAssumptions('hostel');
-  const result = calculateBudgetEstimate(testRecord, assumptions, '4,00,000');
+  const assumptions = getBudgetAssumptions(config, 'hostel');
+  const result = calculateBudgetEstimate(config, testRecord, assumptions, '4,00,000');
   expect(result).toMatchObject({ tuition: 240000, living: 96000, other: 39000, total: 375000, difference: 25000, state: 'within' });
-  expect(calculateBudgetEstimate(testRecord, assumptions, '375000').state).toBe('exact');
-  expect(calculateBudgetEstimate(testRecord, assumptions, '300000')).toMatchObject({ difference: -75000, state: 'over' });
-  expect(calculateBudgetEstimate(testRecord, assumptions, '').difference).toBeNull();
-  expect(calculateBudgetEstimate(testRecord, { ...assumptions, meals: '' }, '400000')).toMatchObject({ total: null, state: 'incomplete', invalidFields: ['meals'] });
-  expect(calculateBudgetEstimate({ ...testRecord, annualTuitionInr: null }, assumptions, '400000').total).toBeNull();
-  expect(calculateBudgetEstimate(testRecord, getBudgetAssumptions('home'), '400000').living).toBe(24000);
+  expect(calculateBudgetEstimate(config, testRecord, assumptions, '375000').state).toBe('exact');
+  expect(calculateBudgetEstimate(config, testRecord, assumptions, '300000')).toMatchObject({ difference: -75000, state: 'over' });
+  expect(calculateBudgetEstimate(config, testRecord, assumptions, '').difference).toBeNull();
+  expect(calculateBudgetEstimate(config, testRecord, { ...assumptions, meals: '' }, '400000')).toMatchObject({ total: null, state: 'incomplete', invalidFields: ['meals'] });
+  expect(calculateBudgetEstimate(config, { ...testRecord, annualTuitionInr: null }, assumptions, '400000').total).toBeNull();
+  expect(calculateBudgetEstimate(config, testRecord, getBudgetAssumptions(config, 'home'), '400000').living).toBe(24000);
   for (const raw of ['', '-1', 'NaN', 'Infinity', '1e6', '4,,00,000', '1.5', '100000001', '0']) expect(parseBudgetAmount(raw)).toBeNull();
   for (const raw of ['4,00,000', '400000', '400,000']) expect(parseBudgetAmount(raw)).toBe(400000);
   expect(parseBudgetAmount('0', { allowZero: true })).toBe(0);
@@ -21,7 +23,7 @@ test('budget arithmetic keeps refundable costs, missing costs and input validati
 
 test('affordable matches include full costs and reject other courses, years and missing tuition', () => {
   const records = [testRecord, { ...testRecord, id: 'tuition-only-match', annualTuitionInr: 350000 }, { ...testRecord, id: 'missing', annualTuitionInr: null }, { ...testRecord, id: 'old-year', tuitionYear: '2025–26' }, { ...testRecord, id: 'different-course', courseId: 'mba' }];
-  const matches = findAffordableColleges(records, { courseId: 'btech', tuitionYear: '2026–27', assumptions: getBudgetAssumptions('hostel'), budget: '400000' });
+  const matches = findAffordableColleges(config, records, { courseId: 'btech', tuitionYear: '2026–27', assumptions: getBudgetAssumptions(config, 'hostel'), budget: '400000' });
   expect(matches.map(({ record }) => record.id)).toEqual(['test']);
 });
 

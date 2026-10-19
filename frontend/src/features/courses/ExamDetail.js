@@ -2,7 +2,7 @@ import Link from 'next/link';
 import Icon from '@/components/ui/Icon';
 import CollegeArtwork from '@/features/landing/CollegeArtwork';
 import { formatTuition } from '@/lib/college-catalog';
-import { EXAM_NOTES, LEVEL_LABEL, courseLevel, courseStats, examLevel, formatLakh, formatRange, hostname, lpaRange, plural, relatedCourses } from './data';
+import { LEVEL_LABEL, courseLevel, courseStats, examLevel, formatLakh, formatRange, hostname, lpaRange, plural, relatedCourses } from './data';
 import DetailHero from './DetailHero';
 import PickLink from './PickLink';
 import SectionNav from './SectionNav';
@@ -17,7 +17,7 @@ const CHECKLIST = [
 ];
 
 export default function ExamDetail({ exam, catalog }) {
-  const level = examLevel(exam.id);
+  const level = examLevel(exam);
   const host = hostname(exam.href);
   const courses = relatedCourses(exam, catalog.courses).map((course) => ({ course, stats: courseStats(course.id, catalog.colleges) }));
   const programmes = courses.reduce((sum, item) => sum + item.stats.programmes, 0);
@@ -53,7 +53,7 @@ export default function ExamDetail({ exam, catalog }) {
         {courses.length > 0 && <a className="button button--outline" href="#courses">Related courses</a>}
       </>}
     >
-      {EXAM_NOTES[exam.id] && <p className={styles.heroNote}><Icon name="coursesInfo" />{EXAM_NOTES[exam.id]}</p>}
+      {exam.note && <p className={styles.heroNote}><Icon name="coursesInfo" />{exam.note}</p>}
     </DetailHero>
     <SectionNav items={nav} />
 
@@ -63,7 +63,7 @@ export default function ExamDetail({ exam, catalog }) {
         <div className={styles.overviewGrid}>
           <div className={styles.prose}>
             <p className={styles.lead}>{exam.summary}</p>
-            <p>NSEDU’s exam guides are starting points. They link you to the official source, show the courses the exam is commonly used for, and the sample colleges in our catalogue that offer those courses.</p>
+            <p>Gyaan Vidhya’s exam guides are starting points. They link you to the official source, show the courses the exam is commonly used for, and the sample colleges in our catalogue that offer those courses.</p>
             <p className={styles.note}><Icon name="coursesInfo" />Course links are a general guide, not a list of participating institutions. Whether a college or programme uses {exam.name} is decided by that institution for each cycle.</p>
           </div>
           <aside className={styles.sideStack} aria-label="What this guide does not include">
@@ -104,7 +104,7 @@ export default function ExamDetail({ exam, catalog }) {
           <Link className={styles.courseCard} href={`/courses/${course.id}`}>
             <span className={styles.examIcon}><Icon name={course.icon} /></span>
             <span className={styles.courseCardBody}>
-              <span className={styles.examMeta}>{course.field}{courseLevel(course.id) && ` · ${LEVEL_LABEL[courseLevel(course.id)]}`}</span>
+              <span className={styles.examMeta}>{course.field}{courseLevel(course) && ` · ${LEVEL_LABEL[courseLevel(course)]}`}</span>
               <strong>{course.name}</strong>
               {course.fullName && <span className={styles.courseFull}>{course.fullName}</span>}
               <span className={styles.courseFacts}>{stats.programmes ? <>
@@ -137,7 +137,7 @@ export default function ExamDetail({ exam, catalog }) {
           </div>
           <ul className={styles.miniList}>{stats.rows.slice(0, PER_COURSE).map((row) => <li key={row.id}>
             <CollegeArtwork row={row} className={styles.thumb} />
-            <span><Link href={`/colleges/${row.collegeId}`}>{row.name}</Link><small>{[row.city, row.state].filter(Boolean).join(', ')} · {formatTuition(row.annualTuitionInr)}/yr · {row.demoRating.toFixed(1)} demo rating</small></span>
+            <span><Link href={`/universities/${row.collegeId}`}>{row.name}</Link><small>{[row.city, row.state].filter(Boolean).join(', ')} · {formatTuition(row.annualTuitionInr)}/yr{row.demoRating != null && ` · ${row.demoRating.toFixed(1)} demo rating`}</small></span>
           </li>)}</ul>
           {stats.programmes > PER_COURSE && <PickLink course={course.id} className="text-link" href={`/colleges?course=${course.id}`}>See all {stats.programmes} {course.name} colleges<Icon name="arrow" /></PickLink>}
         </div>)}</div> : <div className={styles.emptyCard}>

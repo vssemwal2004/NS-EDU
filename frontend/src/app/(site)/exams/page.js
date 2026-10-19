@@ -1,7 +1,7 @@
 import PageIntro from '@/components/layout/PageIntro';
 import ExamsDirectory from '@/features/courses/ExamsDirectory';
 
-export const metadata = { title: 'Entrance exam guides — official sources & related courses | NSEDU', description: 'Official links and starting points for major entrance exams in India, with the courses each exam is commonly used for.' };
+export const metadata = { title: 'Entrance exam guides — official sources & related courses | Gyaan Vidhya', description: 'Official links and starting points for major entrance exams in India, with the courses each exam is commonly used for.' };
 
 const text = (value) => (Array.isArray(value) ? value[0] : value) || '';
 

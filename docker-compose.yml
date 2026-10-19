@@ -1,0 +1,33 @@
+# Local production-like stack: `docker compose up --build`, then open http://localhost:3000.
+# MongoDB is external (Atlas): set MONGODB_URI and the other secrets in backend/.env.
+# Behind a real domain, put a TLS-terminating reverse proxy or load balancer in front of `web`.
+services:
+  api:
+    build: { context: ., dockerfile: backend/Dockerfile }
+    env_file: backend/.env
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 4100
+      TRUST_PROXY: "1"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4100/api/health/ready"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  web:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        API_URL: http://api:4100
+        NEXT_PUBLIC_SITE_URL: ${SITE_URL:-http://localhost:3000}
+    environment:
+      API_URL: http://api:4100
+      NEXT_PUBLIC_SITE_URL: ${SITE_URL:-http://localhost:3000}
+    ports: ["3000:3000"]
+    depends_on:
+      api: { condition: service_healthy }
+    restart: unless-stopped

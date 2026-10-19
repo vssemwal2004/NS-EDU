@@ -1,50 +1,29 @@
-// Public site navigation. Groups with `panel` render catalogue-driven mega menus
-// (components/layout/header); groups with `items` render the compact panel.
+// Public information architecture, shared by the header, the mobile menu sheet and the search panel.
+// `menu` items open a light dropdown on desktop; everything else is a plain link.
+// `match` lists the path prefixes that mark an item as the current section.
+
+export const toolLinks = [
+  { label: 'Check eligibility', href: '/eligibility', icon: 'eligibility', description: 'Match your marks and subjects' },
+  { label: 'Plan your budget', href: '/budget', icon: 'wallet', description: 'Tuition, stay and one-time costs' },
+  { label: 'Admission checklist', href: '/admission-checklist', icon: 'document', description: 'Documents to prepare early' },
+  { label: 'Career guidance', href: '/career-guidance', icon: 'trend', description: 'Courses, careers and next steps' },
+];
+
 export const primaryNavigation = [
-  { label: 'Colleges', href: '/colleges', match: ['/colleges', '/locations'], panel: 'colleges' },
-  { label: 'Courses', href: '/courses', match: ['/courses'], panel: 'courses' },
-  { label: 'Exams', href: '/exams', match: ['/exams'], panel: 'exams' },
-  { label: 'Compare', href: '/compare', match: ['/compare'], badge: 'compare' },
-  { label: 'Scholarships', href: '/scholarships', match: ['/scholarships'] },
-  { label: 'Career guidance', href: '/career-guidance', match: ['/career-guidance'] },
-  { label: 'Resources', href: '/eligibility', match: ['/eligibility', '/budget', '/admission-checklist', '/news', '/sources-and-editorial'], items: [
-    { label: 'Check eligibility', href: '/eligibility', icon: 'eligibility', description: 'Match your academic profile' },
-    { label: 'Check college budget', href: '/budget', icon: 'wallet', description: 'Tuition, stay and other costs' },
-    { label: 'Admission checklist', href: '/admission-checklist', icon: 'document', description: 'Prepare before you apply' },
-    { label: 'Scholarships & funding', href: '/scholarships', icon: 'spark', description: 'Official scholarship portals' },
-    { label: 'Education news', href: '/news', icon: 'news', description: 'Latest updates and articles' },
-    { label: 'Exam guides', href: '/exams', icon: 'compass', description: 'Official entrance exam links' },
-    { label: 'Sources & editorial', href: '/sources-and-editorial', icon: 'book', description: 'How NSEDU uses its sources' },
-  ], feature: { eyebrow: 'Plan ahead', title: 'Can you afford it?', text: 'See tuition, living and one-time costs together.', href: '/budget', action: 'Check budget' } },
+  { id: 'universities', label: 'Universities', href: '/universities', icon: 'building', match: ['/universities', '/colleges', '/apply', '/search', '/locations'] },
+  { id: 'courses', label: 'Courses', href: '/courses', icon: 'layers', match: ['/courses'], menu: 'courses' },
+  { id: 'exams', label: 'Exams', href: '/exams', icon: 'document', match: ['/exams'], menu: 'exams' },
+  { id: 'compare', label: 'Compare', href: '/compare', icon: 'scales', match: ['/compare'], badge: 'compare' },
+  { id: 'tools', label: 'Tools', href: '/eligibility', icon: 'compass', match: toolLinks.map((link) => link.href), menu: 'tools' },
+  { id: 'scholarships', label: 'Scholarships', href: '/scholarships', icon: 'spark', match: ['/scholarships'] },
+  { id: 'news', label: 'News', href: '/news', icon: 'news', match: ['/news'] },
 ];
 
-export const utilityLinks = [
-  { label: 'Education news', href: '/news', icon: 'news' },
-  { label: 'Help centre', href: '/help', icon: 'support' },
-];
-
-// Course-aware tools; the header appends ?course=<id> for the active stream or preference.
-export const courseTools = [
-  { label: 'Compare colleges', href: '/compare', icon: 'scales', description: 'Up to three side by side' },
-  { label: 'Check eligibility', href: '/eligibility', icon: 'eligibility', description: 'Marks and subject check' },
-  { label: 'Plan your budget', href: '/budget', icon: 'wallet', description: 'Tuition, stay and extras' },
-];
-
-// Mobile drawer groups that are not catalogue-driven.
-export const drawerGroups = [
-  { title: 'Student tools', icon: 'compass', links: [
-    { label: 'Compare colleges', href: '/compare', icon: 'scales', course: true },
-    { label: 'Check eligibility', href: '/eligibility', icon: 'eligibility', course: true },
-    { label: 'Plan your budget', href: '/budget', icon: 'wallet', course: true },
-    { label: 'Admission checklist', href: '/admission-checklist', icon: 'document' },
-    { label: 'Scholarships & funding', href: '/scholarships', icon: 'spark' },
-    { label: 'Career guidance', href: '/career-guidance', icon: 'trend' },
-  ] },
-  { title: 'Resources', icon: 'book', links: [
-    { label: 'Education news', href: '/news', icon: 'news' },
-    { label: 'Help centre & FAQs', href: '/help', icon: 'support' },
-    { label: 'Sources & editorial', href: '/sources-and-editorial', icon: 'book' },
-  ] },
+// Quiet links at the foot of the mobile menu sheet.
+export const supportLinks = [
+  { label: 'Help centre', href: '/help' },
+  { label: 'About us', href: '/about' },
+  { label: 'Contact', href: '/contact' },
 ];
 
 // Streams without a fitting course icon get a clearer one here.

@@ -1,0 +1,83 @@
+/* The one OTP form, shared by /login and the login popup. Sized by its container. */
+.root { display: grid; gap: var(--lux-space-5); min-width: 0; }
+
+.heading { display: grid; gap: var(--lux-space-2); }
+.stepTag { display: inline-flex; align-items: center; gap: var(--lux-space-2); color: var(--lux-bronze-ink); font-size: var(--lux-caption); font-weight: 700; letter-spacing: var(--lux-tracking-eyebrow); text-transform: uppercase; }
+.stepTag span { position: relative; width: 28px; height: 2px; border-radius: 2px; background: var(--lux-border-strong); overflow: hidden; }
+.stepTag span::after { content: ''; position: absolute; inset: 0 50% 0 0; background: var(--lux-champagne); transition: inset var(--lux-dur-3) var(--lux-ease-out); }
+.stepTag span[data-on]::after { inset: 0; }
+.title { font-family: var(--lux-font-display); font-weight: 400; font-size: clamp(1.75rem, 1.4rem + 1.3vw, 2.375rem); line-height: 1.08; letter-spacing: var(--lux-tracking-display); color: var(--lux-heading); }
+.lead { color: var(--lux-text-muted); font-size: 1rem; line-height: 1.55; }
+.lead strong { color: var(--lux-ink); font-weight: 600; overflow-wrap: anywhere; }
+
+.form { display: grid; gap: var(--lux-space-4); }
+
+.segmented { position: relative; display: grid; grid-template-columns: 1fr 1fr; margin: 0; padding: 4px; border: 1px solid var(--lux-border); border-radius: var(--lux-radius-pill); background: var(--lux-sand); }
+.segmented::before { content: ''; position: absolute; inset: 4px calc(50% + 2px) 4px 4px; border-radius: var(--lux-radius-pill); background: var(--lux-surface-raised); box-shadow: var(--lux-shadow-soft); transition: inset var(--lux-dur-2) var(--lux-ease-out); }
+.segmented[data-active="phone"]::before { inset: 4px 4px 4px calc(50% + 2px); }
+.segment { position: relative; z-index: 1; display: flex; align-items: center; justify-content: center; gap: var(--lux-space-2); min-height: 44px; border-radius: var(--lux-radius-pill); color: var(--lux-text-muted); font-size: var(--lux-small); font-weight: 600; cursor: pointer; }
+.segment:has(input:checked) { color: var(--lux-wine); }
+.segment:has(input:focus-visible) { outline: 2px solid var(--lux-focus); outline-offset: 2px; }
+.segment :global(.icon) { width: 18px; height: 18px; }
+
+.field { display: grid; gap: var(--lux-space-2); }
+.label { color: var(--lux-ink); font-size: var(--lux-small); font-weight: 600; }
+.inputWrap { display: flex; align-items: center; gap: var(--lux-space-3); min-height: 56px; padding: 0 var(--lux-space-4); border: 1px solid var(--lux-border-input); border-radius: var(--lux-radius-md); background: var(--lux-surface-raised); transition: border-color var(--lux-dur-2), box-shadow var(--lux-dur-2); }
+.inputWrap:hover { border-color: var(--lux-bronze); }
+.inputWrap:focus-within { border-color: var(--lux-wine); box-shadow: var(--lux-focus-ring); }
+.inputWrap[data-invalid] { border-color: var(--lux-danger); }
+.inputWrap > :global(.icon) { width: 20px; height: 20px; color: var(--lux-bronze-ink); }
+.inputWrap input { flex: 1; min-width: 0; height: 54px; border: 0; background: transparent; color: var(--lux-ink); font-size: 1.0625rem; outline: none; }
+.inputWrap input::placeholder { color: var(--lux-text-subtle); opacity: 1; }
+.prefix { padding-right: var(--lux-space-3); border-right: 1px solid var(--lux-border); color: var(--lux-ink); font-weight: 600; }
+
+.suggest { justify-self: start; min-height: 36px; padding: 0 var(--lux-space-3); border: 1px dashed var(--lux-champagne); border-radius: var(--lux-radius-pill); background: var(--lux-champagne-soft); color: var(--lux-ink); font-size: var(--lux-small); }
+.suggest strong { color: var(--lux-wine); }
+
+.error { display: flex; align-items: flex-start; gap: var(--lux-space-2); padding: var(--lux-space-3); border-radius: var(--lux-radius-md); background: var(--lux-danger-soft); color: var(--lux-danger); font-size: var(--lux-small); font-weight: 600; line-height: 1.45; }
+.error :global(.icon) { width: 18px; height: 18px; margin-top: 1px; }
+
+.primary { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: var(--lux-space-2); width: 100%; min-height: 56px; padding: 0 var(--lux-space-5); border: 0; border-radius: var(--lux-radius-pill); background: linear-gradient(135deg, var(--lux-wine), var(--lux-wine-deep)); color: #FFFFFF; font-size: 1rem; font-weight: 600; letter-spacing: .01em; text-decoration: none; box-shadow: 0 14px 30px -14px rgb(114 36 59 / 75%), inset 0 1px 0 rgb(255 255 255 / 12%); transition: transform var(--lux-dur-1), box-shadow var(--lux-dur-2), opacity var(--lux-dur-2); }
+.primary:hover:not(:disabled) { box-shadow: 0 18px 34px -14px rgb(114 36 59 / 85%), inset 0 0 0 1px rgb(201 164 106 / 55%); }
+.primary:active:not(:disabled) { transform: translateY(1px); }
+.primary:disabled { opacity: .62; cursor: not-allowed; }
+.primary :global(.icon) { width: 19px; height: 19px; }
+.spinner { width: 18px; height: 18px; border: 2px solid rgb(255 255 255 / 35%); border-top-color: #FFFFFF; border-radius: 50%; animation: otp-spin .8s linear infinite; }
+@keyframes otp-spin { to { transform: rotate(360deg); } }
+
+.inlineLink { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; margin-left: var(--lux-space-2); padding: 0 var(--lux-space-1); border: 0; background: transparent; color: var(--lux-wine); font-size: var(--lux-small); font-weight: 600; text-decoration: underline; text-underline-offset: 4px; vertical-align: middle; }
+.inlineLink :global(.icon) { width: 16px; height: 16px; }
+.inlineLink:disabled { opacity: .5; }
+
+/* Six-box OTP field (OtpInput). */
+.otp { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: clamp(6px, 2vw, 10px); margin: 0; padding: 0; border: 0; min-width: 0; }
+.otp input { width: 100%; min-width: 0; height: clamp(52px, 14vw, 62px); padding: 0; border: 1px solid var(--lux-border-input); border-radius: var(--lux-radius-md); background: var(--lux-surface-raised); color: var(--lux-ink); font-family: var(--lux-font-display); font-size: clamp(1.5rem, 1.2rem + 1.2vw, 1.875rem); text-align: center; caret-color: var(--lux-wine); transition: border-color var(--lux-dur-2), box-shadow var(--lux-dur-2), background-color var(--lux-dur-2); }
+.otp input:focus { outline: none; border-color: var(--lux-wine); box-shadow: var(--lux-focus-ring); }
+.otp input[data-filled="true"] { border-color: var(--lux-bronze); background: var(--lux-ivory); }
+.otp[data-invalid="true"] input { border-color: var(--lux-danger); }
+.otp:disabled input { opacity: .6; }
+
+.timers { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--lux-space-2) var(--lux-space-4); color: var(--lux-text-muted); font-size: var(--lux-small); }
+.timers > span { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; }
+.timers strong { color: var(--lux-ink); font-variant-numeric: tabular-nums; }
+.timers :global(.icon) { width: 17px; height: 17px; color: var(--lux-bronze-ink); }
+.timers .inlineLink { margin-left: 0; }
+.hint { color: var(--lux-text-subtle); font-size: var(--lux-caption); }
+
+.devCode { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--lux-space-2); padding: var(--lux-space-3) var(--lux-space-4); border: 1px dashed var(--lux-champagne); border-radius: var(--lux-radius-md); background: var(--lux-champagne-soft); font-size: var(--lux-small); }
+.devCode code { font-size: 1rem; font-weight: 700; letter-spacing: .12em; }
+.devCode button { min-height: 44px; padding: 0 var(--lux-space-4); border: 1px solid var(--lux-bronze); border-radius: var(--lux-radius-pill); background: var(--lux-surface-raised); color: var(--lux-wine); font-weight: 600; }
+
+.done { display: grid; justify-items: center; gap: var(--lux-space-3); padding: var(--lux-space-5) 0; color: var(--lux-text-muted); text-align: center; outline: none; }
+.done svg { width: 64px; height: 64px; fill: none; stroke: var(--lux-success); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.done circle { stroke: var(--lux-success-soft); stroke-width: 4; }
+.done path { stroke-dasharray: 40; stroke-dashoffset: 40; animation: otp-draw var(--lux-dur-3) var(--lux-ease-out) forwards; }
+.done strong { color: var(--lux-ink); }
+@keyframes otp-draw { to { stroke-dashoffset: 0; } }
+
+.blocked { display: flex; gap: var(--lux-space-3); padding: var(--lux-space-4); border-radius: var(--lux-radius-md); background: var(--lux-danger-soft); color: var(--lux-danger); outline: none; }
+.blocked :global(.icon) { flex: none; }
+
+.legal { display: flex; gap: var(--lux-space-2); color: var(--lux-text-subtle); font-size: var(--lux-caption); line-height: 1.5; }
+.legal :global(.icon) { flex: none; width: 15px; height: 15px; margin-top: 2px; color: var(--lux-bronze); }
+.legal a { color: var(--lux-wine); font-weight: 600; }

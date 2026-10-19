@@ -7,7 +7,7 @@ import { countByPlace } from '@/features/home/placeCounts';
 import { getCatalog } from '@/lib/api/catalog';
 import styles from '@/features/home/Destinations.module.css';
 
-export const metadata = { title: 'Study destinations | NSEDU', description: 'Browse every city and state, see how many sample programmes each has, and open its colleges.' };
+export const metadata = { title: 'Study destinations | Gyaan Vidhya', description: 'Browse every city and state, see how many sample programmes each has, and open its colleges.' };
 
 export default async function LocationsPage({ searchParams }) {
   const [{ q = '', type = 'all', has = '', sort = 'az' }, catalog] = await Promise.all([searchParams, getCatalog()]);

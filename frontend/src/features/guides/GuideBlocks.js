@@ -39,7 +39,7 @@ export function FieldExplorer({ courses, colleges }) {
   })}</div>;
 }
 
-// Official exam websites plus NSEDU's exam guide for each.
+// Official exam websites plus Gyaan Vidhya's exam guide for each.
 export function ExamLinks({ exams }) {
   return <ul className={styles.exams}>{exams.map((exam) => <li key={exam.id}>
     <span className={styles.fieldIcon}><Icon name={exam.icon} /></span>

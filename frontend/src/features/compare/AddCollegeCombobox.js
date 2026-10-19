@@ -51,7 +51,7 @@ export default function AddCollegeCombobox({ id, label, courseName, options, onS
         onMouseDown={(event) => event.preventDefault()} onMouseMove={() => index !== current && setActive(index)} onClick={() => choose(row)}>
         <span aria-hidden="true"><CollegeArtwork row={row} className={styles.optionThumb} /></span>
         <span className={styles.optionText}><strong>{row.name}</strong><small>{row.city} · {formatTuition(row.annualTuitionInr)}/yr</small></span>
-        <span className={styles.optionRating}>{row.demoRating.toFixed(1)}<small>demo</small></span>
+        {row.demoRating != null && <span className={styles.optionRating}>{row.demoRating.toFixed(1)}<small>demo</small></span>}
       </li>)}
     </ul>
     {open && !matches.length && <p className={styles.comboEmpty} role="status">No {courseName} colleges match “{query.trim()}”</p>}

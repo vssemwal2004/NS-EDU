@@ -176,3 +176,5 @@
   .tool strong { align-self: end; font-size: 1.15rem; }
   .tool > :global(.icon):last-child { left: auto; right: var(--space-4); bottom: auto; top: calc(50% - 10px); }
 }
+
+.unavailable { display: flex; align-items: center; gap: 10px; padding-block: 40px 64px; color: var(--color-muted); }

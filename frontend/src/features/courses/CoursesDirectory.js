@@ -17,7 +17,7 @@ const SORTS = [
 const LEVELS = [{ value: '', label: 'All levels', short: 'All' }, { value: 'UG', label: LEVEL_LABEL.UG, short: 'UG' }, { value: 'PG', label: LEVEL_LABEL.PG, short: 'PG' }];
 
 function matches(course, terms) {
-  const text = [course.name, course.fullName, course.field, course.summary, LEVEL_LABEL[courseLevel(course.id)]].join(' ').toLowerCase();
+  const text = [course.name, course.fullName, course.field, course.summary, LEVEL_LABEL[courseLevel(course)]].join(' ').toLowerCase();
   return terms.every((term) => text.includes(term));
 }
 
@@ -33,7 +33,7 @@ export default function CoursesDirectory({ initialField = '', initialLevel = '',
   const fields = useMemo(() => [...new Set(courses.map((course) => course.field))].sort(), [courses]);
   const terms = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
   const searched = courses.filter((course) => matches(course, terms));
-  const inLevel = searched.filter((course) => !level || courseLevel(course.id) === level);
+  const inLevel = searched.filter((course) => !level || courseLevel(course) === level);
   const inField = searched.filter((course) => !field || course.field === field);
   const visible = inLevel.filter((course) => !field || course.field === field);
 
@@ -64,7 +64,7 @@ export default function CoursesDirectory({ initialField = '', initialLevel = '',
         <SearchBox label="Search courses" value={query} placeholder="Search a course or field, e.g. design" onChange={(value) => update({ q: value })} />
         <div className={styles.segmented} role="group" aria-label="Degree level">
           {LEVELS.map((item) => {
-            const count = inField.filter((course) => !item.value || courseLevel(course.id) === item.value).length;
+            const count = inField.filter((course) => !item.value || courseLevel(course) === item.value).length;
             return <button key={item.value || 'all'} type="button" aria-pressed={level === item.value} onClick={() => update({ level: item.value })}>
               <span className={styles.segmentLong}>{item.label}</span><span className={styles.segmentShort} aria-hidden="true">{item.short}</span><span className={styles.count}>{count}</span>
             </button>;
@@ -92,7 +92,7 @@ export default function CoursesDirectory({ initialField = '', initialLevel = '',
 }
 
 function CourseCard({ course, stats, onPick }) {
-  const level = courseLevel(course.id);
+  const level = courseLevel(course);
   const { programmes, tuition, salary } = stats;
   return <>
     <div className={styles.cardHead}>

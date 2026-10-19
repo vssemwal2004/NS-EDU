@@ -2,8 +2,8 @@
 import { useMemo } from 'react';
 import Link from 'next/link';
 import Icon from '@/components/ui/Icon';
-import { fieldIcons } from '@/data/landing';
 import { useCatalog } from '@/providers/CatalogProvider';
+import { useContent } from '@/providers/ContentProvider';
 import { usePreferences } from '@/providers/PreferencesProvider';
 import { BandHeading } from './HomeParts';
 import { plural } from './placeCounts';
@@ -15,6 +15,7 @@ const VISIBLE = 8;
 export default function StreamBand() {
   const { courses, colleges } = useCatalog();
   const { setCourse } = usePreferences();
+  const fieldIcons = useContent('landing')?.fieldIcons ?? {};
   const streams = useMemo(() => {
     const perCourse = colleges.reduce((counts, row) => counts.set(row.courseId, (counts.get(row.courseId) || 0) + 1), new Map());
     const byField = new Map();

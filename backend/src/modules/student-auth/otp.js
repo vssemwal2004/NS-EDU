@@ -1,5 +1,6 @@
 import { createHmac, randomInt, timingSafeEqual } from 'node:crypto';
 import { env, requireJwtSecret } from '../../config/env.js';
+import { sendOtpEmail } from '../../lib/mailer.js';
 import { isEmail } from '../../lib/validation.js';
 
 export const OTP_TTL_SECONDS = 300;
@@ -34,13 +35,24 @@ export function maskIdentifier(channel, identifier) {
   return `${local.slice(0, 1)}***@${domain}`;
 }
 
-export const exposesDevCode = () => !env.isProduction && env.otpDelivery === 'console';
+// Phone sign-in exists only once an SMS provider is configured (SMS_PROVIDER); none is wired yet.
+export const phoneEnabled = () => Boolean(env.smsProvider);
+export const enabledChannels = () => (phoneEnabled() ? ['email', 'phone'] : ['email']);
+const deliveryOf = (channel) => (channel === 'phone' ? env.smsProvider : env.otpDelivery);
 
-// Single delivery seam: plug an email/SMS provider in here.
+export const exposesDevCode = (channel = 'email') => !env.isProduction && deliveryOf(channel) === 'console';
+
+// Single delivery seam: email goes through SMTP (or the dev console); plug an SMS provider in here.
 export async function deliverOtp({ channel, identifier, code }) {
-  if (env.otpDelivery === 'console') {
+  const delivery = deliveryOf(channel);
+  if (delivery === 'console') {
     console.log(`[OTP] ${channel} ${maskIdentifier(channel, identifier)} code=${code}`);
-    return;
+    return { delivery };
   }
-  throw new Error(`OTP delivery "${env.otpDelivery}" is not configured.`);
+  if (channel === 'email' && delivery === 'smtp') {
+    const { messageId } = await sendOtpEmail({ to: identifier, code, ttlMinutes: OTP_TTL_SECONDS / 60 });
+    console.log(`[OTP] email sent to ${maskIdentifier(channel, identifier)} messageId=${messageId}`);
+    return { delivery, messageId };
+  }
+  throw new Error(`OTP delivery "${delivery || 'none'}" is not configured for ${channel}.`);
 }

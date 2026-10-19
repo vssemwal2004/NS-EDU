@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import Brand from '@/components/ui/Brand';
 import Icon from '@/components/ui/Icon';
 import { adminNavigation, findAdminPage } from '@/data/admin-navigation';
 import { AdminSessionProvider, useAdminSession } from './AdminSession';
@@ -14,8 +15,8 @@ function Sidebar({ open, onNavigate }) {
   const { admin, logout } = useAdminSession();
   return <aside className={styles.sidebar} data-open={open} aria-label="Admin navigation">
     <div className={styles.sidebarBrand}>
-      <span className={styles.brandMark}><Icon name="cap" /></span>
-      <span className={styles.label}><strong>NSEDU</strong><small>Admin console</small></span>
+      <span className={styles.brandMark}><Brand variant="mark" tone="light" /></span>
+      <span className={styles.label}><strong>Gyaan Vidhya</strong><small>Admin console</small></span>
     </div>
     <nav className={styles.sidebarNav}>
       {adminNavigation.map((group) => ({ ...group, items: group.items.filter((item) => !item.adminOnly || admin?.role !== 'employee') })).filter((group) => group.items.length).map((group) => <div key={group.label} className={styles.group}>
@@ -44,10 +45,10 @@ function Workspace({ children }) {
   const { admin, status } = useAdminSession();
   const [open, setOpen] = useState(false);
   const page = findAdminPage(pathname);
-  const employeeOutsideWorkspace = admin?.role === 'employee' && !['/admin/reference-students', '/admin/reference-students/new'].includes(pathname);
+  const employeeOutsideWorkspace = admin?.role === 'employee' && !['/admin/reference-students', '/admin/reference-students/new', '/admin/leads'].includes(pathname) && !pathname.startsWith('/admin/leads/');
   useEffect(() => { if (employeeOutsideWorkspace) router.replace('/admin/reference-students'); }, [employeeOutsideWorkspace, router]);
   if (status === 'loading') return <div className={styles.splash} role="status"><span className={styles.splashMark}><Icon name="cap" /></span><p>Opening the admin console…</p></div>;
-  if (status === 'unavailable') return <div className={styles.splash} role="alert"><span className={styles.splashMark}><Icon name="shield" /></span><p>The NSEDU API is not reachable. Start the backend and reload this page.</p><button type="button" className="button button--primary" onClick={() => window.location.reload()}>Reload</button></div>;
+  if (status === 'unavailable') return <div className={styles.splash} role="alert"><span className={styles.splashMark}><Icon name="shield" /></span><p>The Gyaan Vidhya API is not reachable. Start the backend and reload this page.</p><button type="button" className="button button--primary" onClick={() => window.location.reload()}>Reload</button></div>;
   if (!admin) return null;
   if (employeeOutsideWorkspace) return <div className={styles.splash} role="status"><p>Opening your students…</p></div>;
   return <div className={styles.shell}>

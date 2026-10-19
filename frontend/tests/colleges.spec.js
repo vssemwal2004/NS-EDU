@@ -40,7 +40,7 @@ test.describe('college listing', () => {
     const first = cards(page).first();
     await expect(first.getByRole('heading', { level: 3 })).toHaveText('Northfield Institute of Technology');
     await expect(first).toContainText('4.3/ 5 demo rating');
-    await expect(first.getByRole('link', { name: /^View college\s*:\s*Northfield Institute of Technology$/ })).toHaveAttribute('href', '/colleges/northfield-tech');
+    await expect(first.getByRole('link', { name: /^View college\s*:\s*Northfield Institute of Technology$/ })).toHaveAttribute('href', '/universities/northfield-tech');
     await results(page).getByRole('button', { name: 'Show 3 more colleges' }).click();
     await expect(cards(page)).toHaveCount(11);
     await expect(page.locator('#card-northfield-design')).toBeFocused();
@@ -154,7 +154,9 @@ test.describe('college listing', () => {
 test.describe('college profile', () => {
   test('a profile renders its facts, course table and compare toggles', async ({ page }) => {
     await open(page, '/colleges/northfield-tech');
+    await expect(page).toHaveURL(/\/universities\/northfield-tech$/);
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Northfield Institute of Technology');
+    await expect(page.locator('#profile-hero').getByRole('link', { name: 'Apply now' })).toHaveAttribute('href', '/apply?university=northfield-tech');
     await expect(page.getByRole('navigation', { name: 'Breadcrumb' }).locator('[aria-current="page"]')).toHaveText('Northfield');
     await expect(page.locator('#profile-hero')).toContainText('Illustrative data');
     await expect(page.locator('#profile-hero')).toContainText('Bengaluru, Karnataka');
@@ -168,8 +170,8 @@ test.describe('college profile', () => {
     await expect(table.locator('#course-btech')).toContainText('1/3 B.Tech picked');
     expect(await page.evaluate(() => JSON.parse(window.localStorage.getItem('nsedu:compare')))).toEqual({ btech: ['northfield-tech-btech'] });
     await expect(page.locator('#similar').getByRole('heading', { level: 3 }).first()).toBeVisible();
-    await page.locator('#similar').getByRole('link', { name: /^View college\s*:\s*Central Institute of Technology$/ }).click();
-    await expect(page).toHaveURL(/\/colleges\/central-tech$/);
+    await page.locator('#similar').getByRole('link', { name: /^View profile\s*:\s*Central Institute of Technology$/ }).click();
+    await expect(page).toHaveURL(/\/universities\/central-tech$/);
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Central Institute of Technology');
   });
 
@@ -177,6 +179,6 @@ test.describe('college profile', () => {
     const response = await page.goto('/colleges/not-a-real-college');
     expect(response.status()).toBe(404);
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Let’s get you back on course.');
-    await expect(page.getByRole('link', { name: 'Back to NSEDU' })).toHaveAttribute('href', '/');
+    await expect(page.getByRole('link', { name: 'Back to Gyaan Vidhya' })).toHaveAttribute('href', '/');
   });
 });

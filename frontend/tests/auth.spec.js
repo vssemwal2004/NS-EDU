@@ -160,7 +160,7 @@ test.describe('student login', () => {
     await expect(verify).toContainText('Development preview');
     await expect(verify.locator('code')).toHaveText('123 456');
     await verify.getByRole('button', { name: 'Fill code' }).click();
-    const profile = page.getByRole('dialog', { name: 'Welcome to NSEDU' });
+    const profile = page.getByRole('dialog', { name: 'Welcome to Gyaan Vidhya' });
     await expect(profile).toContainText('Verified · +91 98••• ••210');
     expect(posted(state, '/api/auth/otp/verify')).toEqual([{ channel: 'phone', identifier: '+919876543210', code: validCode }]);
     await expect(profile.getByLabel('Your name')).toBeFocused();
@@ -195,10 +195,10 @@ test.describe('student login', () => {
     await page.goto('/');
     await expect(loginButton(page)).toBeVisible();
     await page.getByRole('button', { name: 'Open navigation' }).click();
-    await page.getByRole('dialog', { name: 'NSEDU', exact: true }).getByRole('button', { name: 'Log in to NSEDU' }).click();
+    await page.getByRole('dialog', { name: 'Gyaan Vidhya', exact: true }).getByRole('button', { name: 'Log in to Gyaan Vidhya' }).click();
     const dialog = page.getByRole('dialog', { name: 'Log in to your student space' });
     await expect(dialog).toBeVisible();
-    await expect(page.getByRole('dialog', { name: 'NSEDU', exact: true })).toBeHidden();
+    await expect(page.getByRole('dialog', { name: 'Gyaan Vidhya', exact: true })).toBeHidden();
     await expect(dialog.getByRole('button', { name: 'Close login' })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     await dialog.getByRole('button', { name: 'Close login' }).click();

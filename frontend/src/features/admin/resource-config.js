@@ -4,13 +4,14 @@ const yesNo = (value) => value ? 'Yes' : 'No';
 // Table columns per resource. Forms are generated from the backend field metadata instead.
 export const resourceColumns = {
   institutions: [
-    { field: 'name', label: 'College', primary: true, secondary: (item) => item.shortName },
+    { field: 'name', label: 'University', primary: true, secondary: (item) => [item.shortName, item.type].filter(Boolean).join(' · ') },
     { field: 'city', label: 'Location', format: (_, item) => [item.city, item.state].filter(Boolean).join(', ') },
-    { field: 'demoRating', label: 'Rating', format: (value) => Number(value).toFixed(1) },
+    { field: 'verification', label: 'Status', format: (value) => value || 'unverified' },
+    { field: 'source', label: 'Source', format: (value) => value?.kind || 'seed' },
     { field: 'active', label: 'Visible', badge: true },
   ],
   programmes: [
-    { field: 'institutionSlug', label: 'Programme', primary: true, refLabel: 'institutions', secondary: (item, refs) => refs.courses?.[item.courseSlug] || item.courseSlug },
+    { field: 'institutionSlug', label: 'Programme', primary: true, labelField: 'institutionName', refLabel: 'institutions', secondary: (item, refs) => refs.courses?.[item.courseSlug] || item.courseSlug },
     { field: 'annualTuitionInr', label: 'Tuition / yr', format: (value) => inr.format(value) },
     { field: 'medianSalaryLpa', label: 'Median', format: (value) => value === null || value === undefined ? '—' : `${value} LPA` },
     { field: 'tuitionYear', label: 'Year' },

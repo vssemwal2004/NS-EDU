@@ -12,6 +12,10 @@ import { assignStudent, listStudents, updateStudent } from './students.js';
 import { referenceStudentsRouter } from './reference-students.routes.js';
 import { accountStudentsRouter } from './account-students.routes.js';
 import { bulkAssignStudents } from './employee-assignments.js';
+import { dataOpsRouter } from './data-ops.routes.js';
+import { mediaRouter } from './media.routes.js';
+import { leadsRouter } from '../applications/leads.routes.js';
+import { adminContentRouter } from '../content/content.routes.js';
 
 export const adminRouter = Router();
 adminRouter.use(requireAdmin, requireReadyStaff);
@@ -22,8 +26,12 @@ adminRouter.use((_request, response, next) => {
 
 adminRouter.use('/reference-students', referenceStudentsRouter);
 adminRouter.use('/account-students', accountStudentsRouter);
+adminRouter.use('/leads', leadsRouter);
 adminRouter.use(requireOwnerAdmin);
 
+adminRouter.use('/data-ops', dataOpsRouter);
+adminRouter.use('/media', mediaRouter);
+adminRouter.use('/content', adminContentRouter);
 adminRouter.get('/dashboard', async (_request, response) => response.json(await getDashboard()));
 adminRouter.get('/resources', (_request, response) => response.json({ resources: describeResources() }));
 

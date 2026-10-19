@@ -4,14 +4,23 @@ export const adminNavigation = [
     { label: 'Dashboard', href: '/admin/dashboard', icon: 'dashboard', adminOnly: true, description: 'Platform activity at a glance' },
   ] },
   { label: 'Catalogue', items: [
-    { label: 'Colleges', href: '/admin/institutions', icon: 'building', resource: 'institutions', adminOnly: true, description: 'Institutions shown to students' },
+    { label: 'Universities', href: '/admin/institutions', icon: 'building', resource: 'institutions', adminOnly: true, description: 'Search, edit and publish 20k+ universities and colleges' },
     { label: 'Programmes', href: '/admin/programmes', icon: 'layers', resource: 'programmes', adminOnly: true, description: 'Course offerings, fees and placements' },
     { label: 'Courses', href: '/admin/courses', icon: 'book', resource: 'courses', adminOnly: true, description: 'Course directory and popular courses' },
     { label: 'Exams', href: '/admin/exams', icon: 'document', resource: 'exams', adminOnly: true, description: 'Entrance exam guides' },
   ] },
+  { label: 'Data', items: [
+    { label: 'Data overview', href: '/admin/data', icon: 'chart', adminOnly: true, description: 'Coverage, review backlog and scraper status' },
+    { label: 'Import universities', href: '/admin/data/import', icon: 'document', adminOnly: true, description: 'Bulk CSV or JSON import with a dry run' },
+    { label: 'Scraper', href: '/admin/data/scraper', icon: 'guidesGlobe', adminOnly: true, description: 'Official-website crawl sources and job queue' },
+    { label: 'Review queue', href: '/admin/data/review', icon: 'collegesCheckCircle', adminOnly: true, description: 'Verify, publish or hide imported and scraped records' },
+  ] },
   { label: 'Locations', items: [
     { label: 'Cities', href: '/admin/cities', icon: 'location', resource: 'cities', adminOnly: true, description: 'City destinations and featured tiles' },
     { label: 'States', href: '/admin/states', icon: 'map', resource: 'states', adminOnly: true, description: 'State destinations and featured tiles' },
+  ] },
+  { label: 'Admissions', items: [
+    { label: 'Leads', href: '/admin/leads', icon: 'eligibility', description: 'Applications submitted through the Apply flow' },
   ] },
   { label: 'Students & funding', items: [
     { label: 'Student accounts', href: '/admin/students', icon: 'people', adminOnly: true, description: 'Student accounts and access' },
@@ -21,6 +30,8 @@ export const adminNavigation = [
   ] },
   { label: 'System', items: [
     { label: 'Add employee', href: '/admin/employees', icon: 'people', adminOnly: true, description: 'Create employee accounts' },
+    { label: 'Site content', href: '/admin/content', icon: 'edit', adminOnly: true, description: 'Page copy, homepage, tools and site images' },
+    { label: 'Media library', href: '/admin/media', icon: 'layers', adminOnly: true, description: 'Images stored on Cloudinary' },
     { label: 'Settings', href: '/admin/settings', icon: 'settings', adminOnly: true, description: 'Your session and platform status' },
   ] },
 ];

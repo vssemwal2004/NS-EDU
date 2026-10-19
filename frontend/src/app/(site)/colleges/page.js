@@ -2,7 +2,7 @@ import PageIntro from '@/components/layout/PageIntro';
 import CollegeListing from '@/features/colleges/CollegeListing';
 import { getCatalog } from '@/lib/api/catalog';
 
-export const metadata = { title: 'Colleges by course, location & fees | NSEDU', description: 'Filter illustrative colleges by stream, course, location, annual tuition and demo rating, then compare fees and placements.' };
+export const metadata = { title: 'Colleges by course, location & fees | Gyaan Vidhya', description: 'Filter illustrative colleges by stream, course, location, annual tuition and demo rating, then compare fees and placements.' };
 
 const text = (value) => String((Array.isArray(value) ? value[0] : value) || '');
 const KEYS = ['course', 'location', 'field', 'fee', 'rating', 'sort', 'q'];

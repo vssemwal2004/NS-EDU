@@ -32,7 +32,7 @@ export default function MegaExams({ id, onNavigate }) {
               </div>
               <p className={styles.examSummary}>{exam.summary}</p>
               {related.length > 0 ? <div className={styles.examRelated}>
-                <span>{field} courses on NSEDU</span>
+                <span>{field} courses on Gyaan Vidhya</span>
                 <ul>{related.map((course) => <li key={course.id}><Link href={collegesHref(course.id)} onClick={onNavigate}>{course.name}</Link></li>)}</ul>
               </div> : <p className={styles.examHint}>Check the official site for participating universities and programmes.</p>}
               <div className={styles.examLinks}>
@@ -57,7 +57,7 @@ export default function MegaExams({ id, onNavigate }) {
     </aside>
     <div className={`${styles.panelFoot} ${styles.panelFootWide}`}>
       <Link href="/exams" onClick={onNavigate} className={styles.footLink}>All exam guides<Icon name="arrow" /></Link>
-      <p>NSEDU links to official exam websites. It does not publish exam dates or cutoffs.</p>
+      <p>Gyaan Vidhya links to official exam websites. It does not publish exam dates or cutoffs.</p>
     </div>
   </div>;
 }

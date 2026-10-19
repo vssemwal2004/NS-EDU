@@ -1,6 +1,9 @@
 import { test, expect } from '@playwright/test';
 import { displayNewsImage, filterEducationStories, readSavedNews, safeNewsImage, validEducationStory } from '../src/lib/education-news.js';
-import { newsImagePolicy } from '../src/data/news-image-policy.js';
+// The default `news` content entry (served from MongoDB at runtime).
+import config from '../../backend/src/modules/content/defaults/news.js';
+
+const newsImagePolicy = config.imagePolicy;
 
 const makeStory = (id, title, category, type = 'news', day = 7) => ({ id, title, category, type, description: 'Education reporting for students.', source: 'The Indian Express', sourceId: 'indian-express', url: `https://indianexpress.com/article/education/${id}/`, imageUrl: null, publishedAt: `2026-10-0${day}T08:00:00Z` });
 const stories = [
@@ -25,13 +28,13 @@ async function openNews(page) {
 }
 
 test('untrusted links and malformed browser bookmarks are rejected while arbitrary education topics remain searchable', () => {
-  expect(validEducationStory(stories[0])).toBe(true);
-  expect(validEducationStory({ ...stories[0], url: 'https://indianexpress.com/article/sports/other/' })).toBe(false);
-  expect(validEducationStory({ ...stories[0], url: 'javascript:alert(1)' })).toBe(false);
+  expect(validEducationStory(stories[0], config)).toBe(true);
+  expect(validEducationStory({ ...stories[0], url: 'https://indianexpress.com/article/sports/other/' }, config)).toBe(false);
+  expect(validEducationStory({ ...stories[0], url: 'javascript:alert(1)' }, config)).toBe(false);
   expect(safeNewsImage('https://evil.example/cover.jpg')).toBeNull();
-  expect(displayNewsImage('https://images.indianexpress.com/2026/10/unreviewed.jpg')).toBeNull();
-  expect(displayNewsImage(newsImagePolicy.reviewedUrls[0])).toBe(newsImagePolicy.reviewedUrls[0]);
-  expect(readSavedNews({ getItem: () => '{broken' })).toEqual([]);
+  expect(displayNewsImage('https://images.indianexpress.com/2026/10/unreviewed.jpg', config)).toBeNull();
+  expect(displayNewsImage(newsImagePolicy.reviewedUrls[0], config)).toBe(newsImagePolicy.reviewedUrls[0]);
+  expect(readSavedNews({ getItem: () => '{broken' }, config)).toEqual([]);
   expect(filterEducationStories(stories, { query: 'regional' }).map((story) => story.id)).toEqual(['regional']);
   expect(filterEducationStories(stories, { category: 'learning', type: 'article' }).map((story) => story.id)).toEqual(['article-two']);
 });

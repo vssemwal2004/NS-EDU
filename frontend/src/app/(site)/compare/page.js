@@ -13,9 +13,9 @@ export async function generateMetadata({ searchParams }) {
   const programme = catalog.courses.find((item) => item.id === listParam(course));
   const ids = listParam(c).split(',').filter(Boolean);
   const rows = ids.map((id) => catalog.colleges.find((row) => row.id === id && row.courseId === programme?.id)).filter(Boolean).slice(0, 3);
-  if (rows.length > 1) return { title: `${joinNames(rows)}: ${programme.name} comparison | NSEDU`, description };
-  if (programme) return { title: `Compare ${programme.name} colleges | NSEDU`, description };
-  return { title: 'Compare colleges | NSEDU', description };
+  if (rows.length > 1) return { title: `${joinNames(rows)}: ${programme.name} comparison | Gyaan Vidhya`, description };
+  if (programme) return { title: `Compare ${programme.name} colleges | Gyaan Vidhya`, description };
+  return { title: 'Compare colleges | Gyaan Vidhya', description };
 }
 
 export default async function ComparePage({ searchParams }) {

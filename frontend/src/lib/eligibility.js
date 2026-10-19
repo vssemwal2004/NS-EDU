@@ -1,4 +1,14 @@
-import { eligibilityDemoProfiles, qualificationOptions } from '@/data/eligibility';
+// Pure helpers for the eligibility checker. `config` is the admin-edited `eligibility` content entry
+// (stages, qualifications, subjects, years and FICTIONAL sample rules per course id).
+
+export const initialEligibilityAnswers = {
+  stage: '', qualification: '', completion: '', courseId: '', admissionYear: '',
+  subjects: [], grading: 'percentage', marks: '', cgpaScale: '10',
+  examStatus: '', examId: '', examName: '', scoreType: 'percentile', score: '',
+};
+
+// Sample rule for a course id, or null. Admin-edited rules may omit subjects.
+export const profileFor = (config, id) => (config && Object.hasOwn(config.profiles, id) ? { subjects: [], ...config.profiles[id] } : null);
 
 export function qualificationFor(answers) {
   if (answers.stage === 'school-studying') return { id: 'class12', completed: false };
@@ -6,8 +16,8 @@ export function qualificationFor(answers) {
   return { id: answers.qualification, completed: answers.completion === 'completed' };
 }
 
-export function eligibilitySteps(answers) {
-  const profile = eligibilityDemoProfiles[answers.courseId];
+export function eligibilitySteps(answers, config) {
+  const profile = profileFor(config, answers.courseId);
   return ['stage', ...(['college', 'other'].includes(answers.stage) ? ['qualification'] : []), 'course', 'year',
     ...(profile?.subjects.length ? ['subjects'] : []), 'marks', 'exam', ...(answers.examStatus === 'result' ? ['exam-details'] : []), 'review'];
 }
@@ -33,11 +43,11 @@ export function validateEligibilityStep(step, answers) {
   return '';
 }
 
-export function reviewEligibility(answers) {
-  const profile = eligibilityDemoProfiles[answers.courseId];
-  if (!profile || answers.admissionYear !== '2026–27') return { state: 'unverified', title: 'Your details are ready for review', description: 'Programme rules for your chosen admission year are needed before we can assess these details.', rows: [] };
+export function reviewEligibility(answers, config) {
+  const profile = profileFor(config, answers.courseId);
+  if (!profile || answers.admissionYear !== config.ruleYear) return { state: 'unverified', title: 'Your details are ready for review', description: 'Programme rules for your chosen admission year are needed before we can assess these details.', rows: [] };
   const qualification = qualificationFor(answers);
-  const qualificationName = qualificationOptions.find((item) => item.id === qualification.id)?.label || 'Not provided';
+  const qualificationName = config.qualifications.find((item) => item.id === qualification.id)?.label || 'Not provided';
   const qualificationMatches = profile.qualification === 'degree'
     ? ['degree', 'engineering-degree', 'postgraduate'].includes(qualification.id)
     : qualification.id === profile.qualification;

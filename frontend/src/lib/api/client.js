@@ -9,6 +9,10 @@ export class ApiError extends Error {
   }
 }
 
+// Fired when a student request comes back 401 so StudentAuthProvider can drop the stale session.
+export const SESSION_EXPIRED_EVENT = 'gv:session-expired';
+const silent401 = /^\/(auth\/|admin\/)/;
+
 export async function api(path, { method = 'GET', body, signal } = {}) {
   let response;
   try {
@@ -22,11 +26,12 @@ export async function api(path, { method = 'GET', body, signal } = {}) {
     });
   } catch (error) {
     if (error.name === 'AbortError') throw error;
-    throw new ApiError('Unable to reach NSEDU. Check your connection and try again.', 0);
+    throw new ApiError('Unable to reach Gyaan Vidhya. Check your connection and try again.', 0);
   }
   if (response.status === 204) return null;
   const data = await response.json().catch(() => null);
   if (!response.ok) {
+    if (response.status === 401 && !silent401.test(path)) window.dispatchEvent(new window.Event(SESSION_EXPIRED_EVENT));
     const fallback = response.status >= 500 ? 'Something went wrong on our side. Please try again.' : 'The request could not be completed.';
     throw new ApiError(data?.error || fallback, response.status, data?.fields || null, data || {});
   }

@@ -40,7 +40,7 @@ export default function SearchResults({ query, tab = 'all', results, failed, cat
     <section className={styles.empty} aria-labelledby="start-title">
       <span className={styles.emptyIcon}><Icon name="search" /></span>
       <h2 id="start-title">Start with a course, college, exam or city</h2>
-      <p>Search matches course names, institution names, cities and entrance exams in the NSEDU catalogue.</p>
+      <p>Search matches course names, institution names, cities and entrance exams in the Gyaan Vidhya catalogue.</p>
       <Popular catalog={catalog} />
     </section>
     <Browse catalog={catalog} />
@@ -175,13 +175,13 @@ function CollegeCard({ college, query, rows, courseName }) {
     {rows[0]?.art ? <CollegeArtwork row={rows[0]} className={styles.thumb} /> : <span className={styles.cardIcon}><Icon name="building" /></span>}
     <div className={styles.cardBody}>
       <p className={styles.cardMeta}><span className={styles.type}>Institution</span><Icon name="location" /><span>{highlight(place, query)}</span></p>
-      <h3><Link href={`/colleges/${college.id}`}>{highlight(college.name, query)}</Link></h3>
+      <h3><Link href={`/universities/${college.id}`}>{highlight(college.name, query)}</Link></h3>
       <ul className={styles.tags} aria-label="Courses offered">{college.courses.map((id) => <li key={id}>{courseName(id)}</li>)}</ul>
       <div className={styles.cardFoot}>
         {fees.length > 0 && <span className={styles.fact}><Icon name="coursesRupee" />{lakhRange(Math.min(...fees), Math.max(...fees))} / yr</span>}
         <span className={styles.illustrative}>Illustrative data</span>
         {hint && <span className={styles.matched}>Matched in {hint}</span>}
-        <Link className={styles.cardLink} href={`/colleges/${college.id}`}>Profile<span className="sr-only">: {college.name}</span><Icon name="arrow" /></Link>
+        <Link className={styles.cardLink} href={`/universities/${college.id}`}>Profile<span className="sr-only">: {college.name}</span><Icon name="arrow" /></Link>
       </div>
     </div>
   </article>;

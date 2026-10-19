@@ -56,7 +56,7 @@ export function buildCatalogNav({ courses = [], colleges = [], exams = [], citie
       topCourse: streamCourses[0].id,
       cities: citySummaries(rows, cityNames),
       exams: exams.filter((exam) => exam.field === field),
-      programmes: rows.toSorted((a, b) => b.demoRating - a.demoRating || a.annualTuitionInr - b.annualTuitionInr),
+      programmes: rows.toSorted((a, b) => (b.demoRating ?? 0) - (a.demoRating ?? 0) || a.annualTuitionInr - b.annualTuitionInr),
       fees: range(rows.map((row) => row.annualTuitionInr)),
       salary: range(rows.map((row) => row.medianSalaryLpa).filter((value) => value != null)),
     };

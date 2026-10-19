@@ -1,30 +1,10 @@
 // Shared, pure helpers for the course and exam pages (used by server pages and client components).
 
-// Degree level by course id. General knowledge about Indian degrees, not catalogue data:
-// courses an admin adds later get level null (no badge, listed only under "All").
-export const COURSE_LEVELS = {
-  btech: 'UG', bcom: 'UG', bca: 'UG', mbbs: 'UG', bdes: 'UG', llb: 'UG', bba: 'UG', bpharm: 'UG',
-  nursing: 'UG', ba: 'UG', bams: 'UG', bhms: 'UG', bds: 'UG', bhm: 'UG',
-  mba: 'PG', mtech: 'PG',
-};
+// Course `level` and exam `level` / `courseSlugs` / `note` are catalogue fields edited in the admin console.
 export const LEVEL_LABEL = { UG: 'Undergraduate', PG: 'Postgraduate' };
 
-// Which courses an exam is commonly used for. General knowledge — verify against each official bulletin.
-// Exams missing here fall back to same field (and same level when known).
-export const EXAM_COURSES = {
-  jee: ['btech'],
-  neet: ['mbbs', 'bds', 'bams', 'bhms'],
-  cuet: ['ba', 'bcom', 'bba', 'bca'],
-  cat: ['mba'],
-};
-export const EXAM_LEVELS = { jee: 'UG', neet: 'UG', cuet: 'UG', cat: 'PG' };
-
-export const EXAM_NOTES = {
-  cuet: 'Participating universities decide which programmes use CUET UG scores — check each university.',
-};
-
-export const courseLevel = (id) => COURSE_LEVELS[id] || null;
-export const examLevel = (id) => EXAM_LEVELS[id] || null;
+export const courseLevel = (course) => (LEVEL_LABEL[course?.level] ? course.level : null);
+export const examLevel = (exam) => (LEVEL_LABEL[exam?.level] ? exam.level : null);
 
 export function median(values) {
   if (!values.length) return null;
@@ -53,19 +33,20 @@ export function courseStats(courseId, colleges) {
   };
 }
 
+// Exams with `courseSlugs` list their courses explicitly; others match courses in the same field (and level when known).
 export function relatedCourses(exam, courses) {
-  const ids = EXAM_COURSES[exam.id];
-  if (ids) return ids.map((id) => courses.find((course) => course.id === id)).filter(Boolean);
-  const level = examLevel(exam.id);
-  return courses.filter((course) => course.field === exam.field && (!level || courseLevel(course.id) === level));
+  const ids = exam.courseSlugs;
+  if (ids?.length) return ids.map((id) => courses.find((course) => course.id === id)).filter(Boolean);
+  const level = examLevel(exam);
+  return courses.filter((course) => course.field === exam.field && (!level || courseLevel(course) === level));
 }
 
 export function relatedExams(course, exams) {
   return exams.filter((exam) => {
-    const ids = EXAM_COURSES[exam.id];
-    if (ids) return ids.includes(course.id);
-    const level = examLevel(exam.id);
-    return exam.field === course.field && (!level || level === courseLevel(course.id));
+    const ids = exam.courseSlugs;
+    if (ids?.length) return ids.includes(course.id);
+    const level = examLevel(exam);
+    return exam.field === course.field && (!level || level === courseLevel(course));
   });
 }
 

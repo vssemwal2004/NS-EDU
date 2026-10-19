@@ -65,7 +65,8 @@ export default function ResourceManager({ resource, startCreating = false }) {
   const refs = useMemo(() => meta ? [...new Set(meta.fields.filter((field) => field.type === 'reference').map((field) => field.ref))] : [], [meta]);
   const needsLabels = resource === 'programmes' ? ['institutions', 'courses'] : [];
   useEffect(() => {
-    const wanted = [...new Set([...refs, ...needsLabels])];
+    // Universities are searched on demand (see ReferenceSearch); only small reference lists are preloaded.
+    const wanted = [...new Set([...refs, ...needsLabels])].filter((name) => name !== 'institutions');
     if (!wanted.length) return undefined;
     const controller = new AbortController();
     Promise.all(wanted.map((name) => request(`/${name}?limit=100&sort=name`, { signal: controller.signal }).then((data) => [name, data.items.map((item) => ({ value: item.slug, label: item.name }))])))
@@ -136,7 +137,7 @@ export default function ResourceManager({ resource, startCreating = false }) {
       </nav>}
     </div>
 
-    <AdminDrawer open={Boolean(editor && meta)} onClose={() => setEditor(null)} title={editor?.mode === 'edit' ? `Edit ${meta?.singular}` : `New ${meta?.singular}`} subtitle={editor?.mode === 'edit' ? titleOf(editor.item, columns, refLabels) : `Add a ${meta?.singular} to the NSEDU catalogue.`}>
+    <AdminDrawer open={Boolean(editor && meta)} onClose={() => setEditor(null)} title={editor?.mode === 'edit' ? `Edit ${meta?.singular}` : `New ${meta?.singular}`} subtitle={editor?.mode === 'edit' ? titleOf(editor.item, columns, refLabels) : `Add a ${meta?.singular} to the Gyaan Vidhya catalogue.`}>
       {editor && meta && <ResourceForm key={editor.item?.id || 'new'} meta={meta} mode={editor.mode} item={editor.item} refOptions={refOptions} onSubmit={save} onCancel={() => setEditor(null)} />}
     </AdminDrawer>
 
@@ -157,13 +158,13 @@ const capitalize = (text = '') => text.charAt(0).toUpperCase() + text.slice(1);
 function titleOf(item, columns, refLabels) {
   const primary = columns.find((column) => column.primary);
   const value = item?.[primary.field];
-  return (primary.refLabel ? refLabels[primary.refLabel]?.[value] : null) || value || 'this record';
+  return (primary.labelField && item?.[primary.labelField]) || (primary.refLabel ? refLabels[primary.refLabel]?.[value] : null) || value || 'this record';
 }
 function renderCell(column, item, refLabels, onToggle) {
   const value = item[column.field];
   if (column.badge) return <button type="button" className={styles.badge} data-on={value !== false} onClick={onToggle} title="Toggle visibility">{value !== false ? 'Visible' : 'Hidden'}</button>;
   if (column.primary) {
-    const title = (column.refLabel ? refLabels[column.refLabel]?.[value] : null) || value;
+    const title = (column.labelField && item[column.labelField]) || (column.refLabel ? refLabels[column.refLabel]?.[value] : null) || value;
     const secondary = column.secondary?.(item, refLabels);
     return <div className={styles.primaryCell}><strong>{title}</strong>{secondary && <small>{secondary}</small>}</div>;
   }

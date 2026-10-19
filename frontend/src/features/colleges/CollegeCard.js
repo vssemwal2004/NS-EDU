@@ -23,7 +23,7 @@ export default function CollegeCard({ group, courseById, budgetCourse, compare, 
   const { rows } = group;
   const summary = summarize(rows);
   const single = rows.length === 1;
-  const href = `/colleges/${group.id}`;
+  const href = `/universities/${group.id}`;
   const titleId = `college-${group.id}`;
   const pickerId = `compare-picker-${group.id}`;
   const chips = chipsOpen ? rows : rows.slice(0, CHIP_PREVIEW);
@@ -48,7 +48,7 @@ export default function CollegeCard({ group, courseById, budgetCourse, compare, 
       <h3 id={titleId}><Link href={href}>{group.name}</Link></h3>
       <p className={styles.meta}>
         <span><Icon name="location" />{placeName(group)}</span>
-        <span className={styles.rating}><Icon name="star" /><strong>{group.demoRating.toFixed(1)}</strong><small>/ 5 demo rating</small></span>
+        {group.demoRating != null && <span className={styles.rating}><Icon name="star" /><strong>{group.demoRating.toFixed(1)}</strong><small>/ 5 demo rating</small></span>}
       </p>
     </div>
     <div className={styles.cardBody}>

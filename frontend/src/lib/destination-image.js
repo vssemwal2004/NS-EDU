@@ -1,11 +1,6 @@
-import { getImageProps } from 'next/image';
+import { mediaImage } from './hero-image';
 
-// Twelve art windows and the decoration share one optimized, cached download.
-export function getDestinationImage() {
-  return getImageProps({
-    src: '/images/study-destinations-reference.png',
-    width: 900,
-    height: 445,
-    alt: '',
-  }).props.src;
+// Twelve art windows and the decoration share one optimized, cached download of `media.destinationsArt`.
+export function getDestinationImage(art) {
+  return mediaImage(art, 900)?.src || null;
 }

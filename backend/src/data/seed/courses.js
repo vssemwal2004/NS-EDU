@@ -18,4 +18,7 @@ const courses = [
   { slug: 'bhm', name: 'BHM', icon: 'people', field: 'Hospitality', fullName: '', summary: 'Explore hospitality programmes and compare practical learning opportunities.' },
 ];
 
-export const seedCourses = courses.map((course, order) => ({ ...course, popular: order < 6, order, active: true }));
+// Degree level: general knowledge about Indian degrees, not institution data.
+const PG = new Set(['mba', 'mtech']);
+
+export const seedCourses = courses.map((course, order) => ({ ...course, level: PG.has(course.slug) ? 'PG' : 'UG', popular: order < 6, order, active: true }));

@@ -9,8 +9,8 @@ async function findExam(params) {
 
 export async function generateMetadata({ params }) {
   const { exam } = await findExam(params);
-  if (!exam) return { title: 'Exam guide not found | NSEDU' };
-  return { title: `${exam.name} — official source & related courses | NSEDU`, description: exam.summary };
+  if (!exam) return { title: 'Exam guide not found | Gyaan Vidhya' };
+  return { title: `${exam.name} — official source & related courses | Gyaan Vidhya`, description: exam.summary };
 }
 
 export default async function ExamPage({ params }) {

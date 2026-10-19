@@ -1,11 +1,15 @@
+'use client';
 import { useId } from 'react';
 import { getHeroImage } from '@/lib/hero-image';
+import { useContent } from '@/providers/ContentProvider';
 
 // The approved hero visual supplies the original campus sketch, curves and photo.
 // Its UI is removed with a feathered mask; all page content remains real components.
 export default function CampusArtwork({ className }) {
   const id = useId();
-  const source = getHeroImage();
+  const hero = useContent('media')?.hero;
+  const source = getHeroImage(hero ?? null);
+  if (!source) return null;
   return <>
     <link rel="preload" href={source.src} as="image" />
     <svg className={className} viewBox="0 120 1672 564" preserveAspectRatio="xMaxYMin slice" role="img" aria-label={source.alt}>
@@ -22,7 +26,7 @@ export default function CampusArtwork({ className }) {
           </g>
         </mask>
       </defs>
-      <image href={source.src} x="0" y="0" width="1672" height="941" mask={`url(#${id})`} />
+      <image href={source.src} x="0" y="0" width={hero.width} height={hero.height} mask={`url(#${id})`} />
     </svg>
   </>;
 }

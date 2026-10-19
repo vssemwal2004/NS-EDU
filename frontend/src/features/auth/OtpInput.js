@@ -1,6 +1,6 @@
 'use client';
 import { useRef } from 'react';
-import styles from './LoginDrawer.module.css';
+import styles from './OtpLoginForm.module.css';
 
 const LENGTH = 6;
 

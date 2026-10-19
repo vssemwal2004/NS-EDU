@@ -31,7 +31,7 @@ export default function SettingsView() {
         <button type="button" className="button button--outline" onClick={logout}><Icon name="logout" />Log out of the console</button>
       </section>
       <section className={styles.card} aria-labelledby="status-title">
-        <header className={styles.cardHeader}><div><h3 id="status-title">Platform status</h3><p>Live checks against the NSEDU API</p></div></header>
+        <header className={styles.cardHeader}><div><h3 id="status-title">Platform status</h3><p>Live checks against the Gyaan Vidhya API</p></div></header>
         <dl className={styles.health}>
           <div><dt><Icon name="trend" />API</dt><dd className={styles.smallValue}><span className={styles.status} data-status={health.state === 'down' ? 'blocked' : 'active'}>{health.state === 'checking' ? 'Checking…' : health.state === 'ok' ? 'Online' : 'Unreachable'}</span></dd></div>
           {stats && Object.entries(stats).map(([key, value]) => <div key={key}><dt><Icon name="layers" />Published {key}</dt><dd>{value}</dd></div>)}

@@ -1,0 +1,30 @@
+.combo { position: relative; min-width: 0; }
+.field { display: flex; align-items: center; gap: var(--lux-space-3); min-height: 58px; padding-inline: var(--lux-space-4) 6px; border: 1px solid var(--lux-border-input); border-radius: var(--lux-radius-md); background: var(--lux-surface-raised); transition: border-color var(--lux-dur-2), box-shadow var(--lux-dur-2); }
+.combo[data-size="small"] .field { min-height: 44px; padding-inline: 12px 4px; border-radius: 10px; }
+.field:hover { border-color: var(--lux-bronze); }
+.field:focus-within { border-color: var(--lux-wine); box-shadow: var(--lux-focus-ring); }
+.field[data-invalid="true"] { border-color: var(--lux-danger); background: var(--lux-danger-soft); }
+.field[data-selected="true"] { border-color: var(--lux-success); }
+.field > :global(.icon) { width: 20px; height: 20px; color: var(--lux-bronze-ink); }
+.field[data-selected="true"] > :global(.icon) { color: var(--lux-wine); }
+.field input { flex: 1; min-width: 0; height: 48px; border: 0; background: transparent; color: var(--lux-ink); font-size: 1rem; font-weight: 500; outline: none; text-overflow: ellipsis; }
+.combo[data-size="small"] .field input { height: 40px; font-size: var(--lux-small); }
+.field input::placeholder { color: var(--lux-text-subtle); opacity: 1; font-weight: 400; }
+.picked { display: grid; place-items: center; flex: none; width: 24px; height: 24px; border-radius: 50%; background: var(--lux-success-soft); color: var(--lux-success); }
+.picked :global(.icon) { width: 14px; height: 14px; stroke-width: 2.6; }
+.clear { display: grid; place-items: center; flex: none; width: 44px; height: 44px; border: 0; border-radius: 10px; background: transparent; color: var(--lux-text-muted); }
+.combo[data-size="small"] .clear { width: 36px; height: 36px; }
+.clear:hover { background: var(--lux-sand); color: var(--lux-wine); }
+.clear :global(.icon) { width: 16px; height: 16px; }
+.listbox, .status { position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 20; margin: 0; border: 1px solid var(--lux-border); border-radius: var(--lux-radius-lg); background: var(--lux-surface-raised); box-shadow: var(--lux-shadow-float); }
+.listbox { max-height: min(340px, 50dvh); padding: 6px; overflow-y: auto; list-style: none; overscroll-behavior: contain; }
+.listbox li { display: flex; align-items: center; gap: var(--lux-space-3); min-height: 52px; padding: 8px 10px; border-radius: 10px; cursor: pointer; }
+.listbox li[aria-selected="true"], .listbox li:hover { background: var(--lux-blush-soft); }
+.optionIcon { display: grid; place-items: center; flex: none; width: 34px; height: 34px; border-radius: 10px; background: var(--lux-sand); color: var(--lux-wine); }
+.optionIcon :global(.icon) { width: 17px; height: 17px; }
+.optionText { display: grid; min-width: 0; }
+.optionText strong { overflow: hidden; color: var(--lux-ink); font-size: var(--lux-small); font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.optionText small { overflow: hidden; color: var(--lux-text-muted); font-size: var(--lux-caption); text-overflow: ellipsis; white-space: nowrap; }
+.status { display: flex; align-items: center; gap: var(--lux-space-2); padding: var(--lux-space-3) var(--lux-space-4); color: var(--lux-text-muted); font-size: var(--lux-small); }
+.spinner { flex: none; width: 14px; height: 14px; border: 2px solid var(--lux-border); border-top-color: var(--lux-wine); border-radius: 50%; animation: combo-spin .7s linear infinite; }
+@keyframes combo-spin { to { transform: rotate(360deg); } }

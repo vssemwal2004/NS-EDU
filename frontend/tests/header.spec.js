@@ -10,7 +10,7 @@ const mainNav = (page) => page.getByRole('navigation', { name: 'Main navigation'
 const group = (page, name) => mainNav(page).locator(`[data-group="${name}"]`);
 const searchTrigger = (page) => page.getByRole('banner').locator('[aria-controls="header-search"]');
 const fitsWidth = (page) => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
-const drawer = (page) => page.getByRole('dialog', { name: 'NSEDU', exact: true });
+const drawer = (page) => page.getByRole('dialog', { name: 'Gyaan Vidhya', exact: true });
 // Parks the pointer on the utility bar, outside every mega-menu item, so hover-intent menus close.
 const parkPointer = (page) => page.mouse.move(8, 6);
 const signUpControls = /create account|sign ?up|register/i;
@@ -30,7 +30,7 @@ test('header links route to their pages and mark only the active one', async ({ 
   const nav = mainNav(page);
   await expect(nav.locator('[aria-current="page"]')).toHaveCount(0);
   await expect(nav.locator('[data-active="true"]')).toHaveCount(0);
-  for (const [name, path, heading] of [['Compare', '/compare', 'Compare colleges side by side'], ['Scholarships', '/scholarships', 'Scholarships & funding'], ['Career guidance', '/career-guidance', 'Find your direction']]) {
+  for (const [name, path, heading] of [['Compare', '/compare', 'Compare colleges side by side'], ['Scholarships', '/scholarships', 'Scholarships & funding'], ['Universities', '/universities', 'Find your university']]) {
     await nav.getByRole('link', { name, exact: true }).click();
     await expect(page).toHaveURL(new RegExp(`${path}$`));
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(heading);
@@ -38,13 +38,13 @@ test('header links route to their pages and mark only the active one', async ({ 
     await expect(nav.locator('[aria-current="page"]')).toHaveCount(1);
     await expect(nav.locator('[data-active="true"]')).toHaveCount(0);
   }
-  for (const [path, active] of [['/colleges', 'Colleges'], ['/locations', 'Colleges'], ['/courses/btech', 'Courses'], ['/exams/jee', 'Exams'], ['/budget', 'Resources'], ['/news', 'Resources']]) {
+  for (const [path, active] of [['/colleges', 'Colleges'], ['/locations', 'Colleges'], ['/courses/btech', 'Courses'], ['/exams/jee', 'Exams'], ['/budget', 'Resources'], ['/news', 'Resources'], ['/career-guidance', 'Resources']]) {
     await open(page, path);
     await expect(group(page, active)).toHaveAttribute('data-active', 'true');
     await expect(nav.locator('[data-active="true"]')).toHaveCount(1);
     await expect(nav.locator('[aria-current="page"]')).toHaveCount(0);
   }
-  await page.getByRole('banner').getByRole('link', { name: 'NSEDU home' }).click();
+  await page.getByRole('banner').getByRole('link', { name: 'Gyaan Vidhya home' }).click();
   await expect(page).toHaveURL(/\/$/);
   await expect(nav.locator('[aria-current="page"]')).toHaveCount(0);
   await expect(nav.locator('[data-active="true"]')).toHaveCount(0);
@@ -116,7 +116,7 @@ test('header search shows live results, supports the keyboard and Enter opens th
   await expect(trigger).toHaveAccessibleName('Search');
   await trigger.click();
   await expect(trigger).toHaveAttribute('aria-expanded', 'true');
-  const panel = page.getByRole('dialog', { name: 'Search NSEDU' });
+  const panel = page.getByRole('dialog', { name: 'Search Gyaan Vidhya' });
   const input = panel.getByRole('combobox', { name: 'Search colleges, courses, exams and cities' });
   await expect(input).toBeFocused();
   await expect(panel.getByRole('link', { name: /^B\.Tech/ }).first()).toHaveAttribute('href', '/colleges?course=btech');
@@ -187,7 +187,7 @@ test('mobile drawer offers search, preference, grouped navigation and login, and
   const trigger = page.getByRole('button', { name: 'Open navigation' });
   await trigger.click();
   await expect(drawer(page)).toBeVisible();
-  await expect(drawer(page).getByRole('button', { name: 'Log in to NSEDU' })).toBeVisible();
+  await expect(drawer(page).getByRole('button', { name: 'Log in to Gyaan Vidhya' })).toBeVisible();
   const streams = drawer(page).locator('details').filter({ has: page.locator('summary', { hasText: 'Design' }) });
   await streams.locator('summary').click();
   await streams.getByRole('link', { name: /^B\.Des colleges/ }).click();
@@ -207,8 +207,8 @@ test('mobile drawer offers search, preference, grouped navigation and login, and
   await expect(trigger).toBeFocused();
   expect(await fitsWidth(page)).toBe(true);
   await trigger.click();
-  await drawer(page).getByRole('searchbox', { name: 'Search NSEDU' }).fill('MBA');
-  await drawer(page).getByRole('searchbox', { name: 'Search NSEDU' }).press('Enter');
+  await drawer(page).getByRole('searchbox', { name: 'Search Gyaan Vidhya' }).fill('MBA');
+  await drawer(page).getByRole('searchbox', { name: 'Search Gyaan Vidhya' }).press('Enter');
   await expect(page).toHaveURL(/\/search\?q=MBA$/);
   await expect(drawer(page)).toBeHidden();
   await trigger.click();
@@ -237,7 +237,7 @@ test('accounts start from Log in; there is no Create account or sign-up control 
   for (const role of ['button', 'link']) await expect(page.getByRole(role, { name: signUpControls })).toHaveCount(0);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.getByRole('button', { name: 'Open navigation' }).click();
-  await expect(drawer(page).getByRole('button', { name: 'Log in to NSEDU' })).toBeVisible();
+  await expect(drawer(page).getByRole('button', { name: 'Log in to Gyaan Vidhya' })).toBeVisible();
   for (const role of ['button', 'link']) await expect(drawer(page).getByRole(role, { name: signUpControls })).toHaveCount(0);
 });
 

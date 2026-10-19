@@ -90,7 +90,7 @@ export function createEducationNewsService({ fetcher = fetch, clock = Date.now, 
     const now = clock();
     const sourceStates = await Promise.all(sources.map(async (source) => {
       try {
-        const response = await fetcher(source.url, { signal: AbortSignal.timeout(7000), redirect: 'error', headers: { Accept: 'application/rss+xml, application/xml, text/xml', 'User-Agent': 'NSEDU/0.1 (education RSS reader)' } });
+        const response = await fetcher(source.url, { signal: AbortSignal.timeout(7000), redirect: 'error', headers: { Accept: 'application/rss+xml, application/xml, text/xml', 'User-Agent': 'Gyaan Vidhya/0.1 (education RSS reader)' } });
         if (!response.ok) throw new Error('Publisher unavailable');
         const articles = parseEducationFeed(await readBounded(response), source, now);
         cache.set(source.id, { articles, updatedAt: now });

@@ -2,15 +2,18 @@ import Link from 'next/link';
 import Icon from '@/components/ui/Icon';
 import GuideChecklist from './GuideChecklist';
 import GuideToc from './GuideToc';
-import { guides, scopeNote, slugify, tools as toolList } from './data';
+import { slugify } from './data';
 import styles from './Guides.module.css';
 
 const pad = (index) => String(index + 1).padStart(2, '0');
 
 // Editorial guide layout: sticky TOC | numbered steps + FAQs + tools | sticky checklist.
 // One DOM; grid areas reorder it for tablet and mobile.
-export default function GuidePage({ guide, sections, note }) {
-  const config = guides[guide];
+// `content` is the admin-edited `guides` entry; `sections` are the page steps (copy plus catalogue blocks).
+export default function GuidePage({ guide, content, sections }) {
+  const config = content.guides[guide];
+  const { note } = config;
+  const toolList = content.tools;
   const steps = sections.map((section) => ({ ...section, id: section.id || slugify(section.title) }));
   const toc = [
     ...steps.map((step, index) => ({ id: step.id, label: step.toc || step.title, number: pad(index) })),
@@ -53,14 +56,14 @@ export default function GuidePage({ guide, sections, note }) {
 
       <section id="keep-planning" className={styles.block} aria-labelledby="keep-planning-title">
         <header className={styles.blockHead}><p className={styles.kicker}>Keep planning</p><h2 id="keep-planning-title">Tools that work with this guide</h2></header>
-        <ul className={styles.tools}>{config.tools.map((key) => { const tool = toolList[key]; return <li key={key}>
+        <ul className={styles.tools}>{config.tools.filter((key) => toolList[key]).map((key) => { const tool = toolList[key]; return <li key={key}>
           <Link className={styles.tool} href={tool.href}><span className={styles.toolIcon}><Icon name={tool.icon} /></span><strong>{tool.title}</strong><span>{tool.text}</span><Icon name="arrow" /></Link>
         </li>; })}</ul>
       </section>
 
       <aside className={styles.note} aria-label="About this guide">
         <Icon name="coursesInfo" />
-        <div><strong>What NSEDU does not do yet</strong><p>{scopeNote}{note && ` ${note}`}</p></div>
+        <div><strong>What Gyaan Vidhya does not do yet</strong><p>{content.scopeNote}{note && ` ${note}`}</p></div>
       </aside>
     </div>
   </div>;
@@ -69,4 +72,9 @@ export default function GuidePage({ guide, sections, note }) {
 export function GuideLink({ href, label }) {
   if (!href.startsWith('https:')) return <Link className="text-link" href={href}>{label}<Icon name="arrow" /></Link>;
   return <a className="text-link" href={href} target="_blank" rel="noopener noreferrer">{label}<Icon name="external" /><span className="sr-only"> (opens in a new tab)</span></a>;
+}
+
+// Shown when the guide content cannot be loaded (API unavailable); no bundled copy is used.
+export function GuideUnavailable() {
+  return <div className={`container ${styles.unavailable}`} role="status"><Icon name="coursesInfo" /><p>This guide is temporarily unavailable. Please refresh in a moment.</p></div>;
 }

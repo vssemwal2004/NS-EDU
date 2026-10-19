@@ -9,7 +9,7 @@ import SectionNav from './SectionNav';
 import styles from './Detail.module.css';
 
 export default function CourseDetail({ course, catalog }) {
-  const level = courseLevel(course.id);
+  const level = courseLevel(course);
   const stats = courseStats(course.id, catalog.colleges);
   const { rows, programmes, institutions, tuition, salary, tuitionYear, placementYear } = stats;
   const exams = relatedExams(course, catalog.exams);
@@ -50,11 +50,11 @@ export default function CourseDetail({ course, catalog }) {
 
     <div className={`container ${styles.body}`}>
       <section id="overview" className={styles.block} aria-labelledby="overview-title">
-        <header className={styles.blockHead}><p className={styles.kicker}>01 · Overview</p><h2 id="overview-title">About {course.name} on NSEDU</h2></header>
+        <header className={styles.blockHead}><p className={styles.kicker}>01 · Overview</p><h2 id="overview-title">About {course.name} on Gyaan Vidhya</h2></header>
         <div className={styles.overviewGrid}>
           <div className={styles.prose}>
             <p className={styles.lead}>{course.summary}</p>
-            <h3>What NSEDU lists for {course.name}</h3>
+            <h3>What Gyaan Vidhya lists for {course.name}</h3>
             <ul className={styles.checks}>
               {programmes ? <>
                 <li><Icon name="coursesCheckCircle" />{plural(programmes, 'sample programme')} at {plural(institutions, 'institution')} across {plural(stats.cities, 'city', 'cities')}.</li>
@@ -73,7 +73,7 @@ export default function CourseDetail({ course, catalog }) {
             </div>
             <div className={styles.sideCard}>
               <h3>More in {course.field}</h3>
-              {siblings.length ? <ul className={styles.pillList}>{siblings.map((item) => <li key={item.id}><Link href={`/courses/${item.id}`}><Icon name={item.icon} />{item.name}{courseLevel(item.id) && <small>{courseLevel(item.id)}</small>}</Link></li>)}</ul>
+              {siblings.length ? <ul className={styles.pillList}>{siblings.map((item) => <li key={item.id}><Link href={`/courses/${item.id}`}><Icon name={item.icon} />{item.name}{courseLevel(item) && <small>{courseLevel(item)}</small>}</Link></li>)}</ul>
                 : <p>{course.name} is the only {course.field} course in the catalogue right now.</p>}
               <Link className="text-link" href={`/courses?field=${encodeURIComponent(course.field)}`}>All {course.field} courses<Icon name="arrow" /></Link>
             </div>
@@ -152,7 +152,7 @@ export default function CourseDetail({ course, catalog }) {
       <section className={styles.block} aria-labelledby="faq-title">
         <header className={styles.blockHead}><p className={styles.kicker}>Questions</p><h2 id="faq-title">Before you rely on this page</h2></header>
         <div className={styles.faq}>
-          <details><summary>Are these real colleges?<Icon name="chevron" /></summary><p>No. The institutions on NSEDU are fictional sample records with illustrative fees, salaries and demo ratings, used to show how the tools work. Always use each institution’s official information.</p></details>
+          <details><summary>Are these real colleges?<Icon name="chevron" /></summary><p>No. The institutions on Gyaan Vidhya are fictional sample records with illustrative fees, salaries and demo ratings, used to show how the tools work. Always use each institution’s official information.</p></details>
           <details><summary>Where do I confirm eligibility for {course.name}?<Icon name="chevron" /></summary><p>In the official prospectus or admission notice of each institution. The <PickLink course={course.id} href={`/eligibility?course=${course.id}`}>eligibility checker</PickLink> lists what to confirm.</p></details>
           <details><summary>How do I compare total costs?<Icon name="chevron" /></summary><p>Tuition is only one part. Use <PickLink course={course.id} href={`/compare?course=${course.id}`}>Compare</PickLink> for fees side by side and the <PickLink course={course.id} href={`/budget?course=${course.id}`}>budget planner</PickLink> for living costs.</p></details>
           <details><summary>Which entrance exam do I need?<Icon name="chevron" /></summary><p>It depends on the institution and admission cycle. {exams.length ? <>Start with the linked guide{exams.length > 1 ? 's' : ''} ({exams.map((exam, index) => <span key={exam.id}>{index > 0 && ', '}<Link href={`/exams/${exam.id}`}>{exam.name}</Link></span>)}) and</> : 'Check'} each college’s official admission page.</p></details>
@@ -163,7 +163,7 @@ export default function CourseDetail({ course, catalog }) {
 }
 
 function ExamCard({ exam }) {
-  const level = examLevel(exam.id);
+  const level = examLevel(exam);
   const host = hostname(exam.href);
   return <article className={styles.examCard}>
     <span className={styles.examIcon}><Icon name={exam.icon} /></span>

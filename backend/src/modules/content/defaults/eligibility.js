@@ -1,0 +1,50 @@
+// Eligibility checker options and FICTIONAL sample rules (not real admission requirements).
+export default {
+  stages: [
+    {
+      id: 'school-studying',
+      label: 'Studying in Class 12',
+      titleLines: ['Studying in', 'Class 12'],
+      description: 'I am currently in Class 12 and planning my next step.',
+      art: 'notebook',
+    },
+    {
+      id: 'school-completed',
+      label: 'Class 12 completed',
+      titleLines: ['Class 12', 'completed'],
+      description: 'I have completed Class 12 through my school board.',
+      art: 'certificate',
+    },
+    {
+      id: 'college',
+      label: 'College student / graduate',
+      titleLines: ['College student /', 'graduate'],
+      description: 'I am pursuing or have completed a degree.',
+      art: 'graduation',
+    },
+  ],
+  qualifications: [
+    { id: 'class12', label: 'Class 12 / equivalent' },
+    { id: 'diploma', label: 'Diploma' },
+    { id: 'engineering-degree', label: 'Engineering bachelor’s degree' },
+    { id: 'degree', label: 'Another bachelor’s degree' },
+    { id: 'postgraduate', label: 'Postgraduate degree' },
+    { id: 'other', label: 'Another qualification' },
+  ],
+  subjects: ['Physics', 'Chemistry', 'Mathematics', 'Biology', 'English', 'Commerce', 'Computer Science', 'Other'],
+  admissionYears: ['2026–27', '2027–28', '2028–29'],
+  ruleYear: '2026–27',
+  profiles: {
+    btech: { qualification: 'class12', minimum: 50, subjects: ['Physics', 'Chemistry', 'Mathematics'], basis: 'PCM aggregate (%)' },
+    bcom: { qualification: 'class12', minimum: 45, subjects: [], basis: 'Class 12 aggregate (%)' },
+    bba: { qualification: 'class12', minimum: 45, subjects: [], basis: 'Class 12 aggregate (%)' },
+    ba: { qualification: 'class12', minimum: 40, subjects: [], basis: 'Class 12 aggregate (%)' },
+    bca: { qualification: 'class12', minimum: 50, subjects: ['Mathematics'], basis: 'Class 12 aggregate (%)' },
+    bdes: { qualification: 'class12', minimum: 45, subjects: [], basis: 'Class 12 aggregate (%)' },
+    bhm: { qualification: 'class12', minimum: 45, subjects: [], basis: 'Class 12 aggregate (%)' },
+    bpharm: { qualification: 'class12', minimum: 50, subjects: ['Physics', 'Chemistry', 'Biology'], basis: 'PCB aggregate (%)' },
+    mba: { qualification: 'degree', minimum: 50, subjects: [], basis: 'Bachelor’s degree aggregate (%)' },
+    mtech: { qualification: 'engineering-degree', minimum: 55, subjects: [], basis: 'Bachelor’s degree aggregate (%)' },
+    llb: { qualification: 'degree', minimum: 45, subjects: [], basis: 'Bachelor’s degree aggregate (%)' },
+  },
+};

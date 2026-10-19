@@ -2,25 +2,25 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import Icon from '@/components/ui/Icon';
-import { educationTopics } from '@/data/education-news';
 import { displayNewsImage, filterEducationStories, newsDate, readSavedNews, safeNewsImage, savedNewsKey, validEducationStory } from '@/lib/education-news';
+import { useContent } from '@/providers/ContentProvider';
 import styles from './EducationNews.module.css';
 
 function NewsBackdrop() {
   return <div className={styles.backdrop} aria-hidden="true"><div className={styles.printGrid} /><svg viewBox="0 0 300 190" fill="none"><path d="M34 28h150v127H34zM184 50h45v105H67M51 45h91M51 55h114M51 114h40m-40 10h113m-113 10h90M108 73h55v29h-55ZM51 73h43v29H51zM212 163h58m-20-98v68m-10-55 10-13 10 13" /><path d="M242 28h31v31h-31zM250 39h14m-14 9h8M8 116h13m-7-6v13" /></svg><span className={styles.marginMark}>DISCOVER / UNDERSTAND / PLAN</span></div>;
 }
 
-function StoryCover({ story, featured = false }) {
+function StoryCover({ story, featured = false, config }) {
   const [broken, setBroken] = useState(false);
-  const src = displayNewsImage(story.imageUrl);
-  const topic = educationTopics.find((item) => item.id === story.category);
+  const src = displayNewsImage(story.imageUrl, config);
+  const topic = config.topics.find((item) => item.id === story.category);
   return <div className={`${styles.cover} ${featured ? styles.featureCover : ''}`} data-news-cover>{src && !broken ? <Image src={src} alt="" fill loading="lazy" sizes={featured ? '(max-width: 600px) 68px, (max-width: 1000px) 100px, 150px' : '(max-width: 600px) 68px, 100px'} onError={() => setBroken(true)} /> : <div className={styles.coverFallback} data-news-image-fallback><Icon name={topic?.icon || 'news'} /><span>{topic?.label || 'Education'}</span><i /></div>}</div>;
 }
 
-function Story({ story, featured, saved, onSave }) {
-  const label = educationTopics.find((item) => item.id === story.category)?.label || 'Education';
+function Story({ story, featured, saved, onSave, config }) {
+  const label = config.topics.find((item) => item.id === story.category)?.label || 'Education';
   return <article className={`${styles.story} ${featured ? styles.featured : ''}`} data-news-story data-story-type={story.type}>
-    <a className={styles.coverLink} href={story.url} target="_blank" rel="noopener noreferrer" aria-label={`Read ${story.title} on ${story.source} (opens in a new tab)`}><StoryCover key={story.imageUrl} story={story} featured={featured} /></a>
+    <a className={styles.coverLink} href={story.url} target="_blank" rel="noopener noreferrer" aria-label={`Read ${story.title} on ${story.source} (opens in a new tab)`}><StoryCover key={story.imageUrl} story={story} featured={featured} config={config} /></a>
     <div className={styles.storyBody}><span className={styles.topicLabel}>{label}{story.type === 'article' && <span> / Article</span>}</span><h4><a href={story.url} target="_blank" rel="noopener noreferrer">{story.title}<span className="sr-only"> (opens publisher in a new tab)</span></a></h4>{featured && story.description && <p className={styles.excerpt}>{story.description}</p>}<div className={styles.metadata}><span>{story.source}</span><span aria-hidden="true">·</span><time dateTime={story.publishedAt} title={`${newsDate(story.publishedAt, true)} IST`}>{newsDate(story.publishedAt)}</time></div></div>
     <div className={styles.storyActions}><button type="button" className={styles.save} aria-pressed={saved} aria-label={`${saved ? 'Unsave' : 'Save'} ${story.title}`} onClick={() => onSave(story)}><Icon name={saved ? 'bookmarkFilled' : 'bookmark'} /></button></div>
   </article>;
@@ -28,7 +28,16 @@ function Story({ story, featured, saved, onSave }) {
 
 const initialFeed = { status: 'idle', articles: [], sources: [], updatedAt: null };
 
+// Topics and the cover-image policy are admin-edited content (`news`); stories come from /api/education-news.
 export default function EducationNews() {
+  const config = useContent('news');
+  if (!config) return <section id="education-news" className={styles.section} aria-labelledby="education-news-title" data-news-section>
+    <div className={`container ${styles.container}`}><header className={styles.heading}><div className={styles.headingCopy}><h2 id="education-news-title">Education news</h2><p className={styles.description} role="status">Education updates are temporarily unavailable. Please refresh in a moment.</p></div></header></div>
+  </section>;
+  return <NewsDesk config={config} />;
+}
+
+function NewsDesk({ config }) {
   const sectionRef = useRef(null);
   const requestRef = useRef(null);
   const [feed, setFeed] = useState(initialFeed);
@@ -51,7 +60,7 @@ export default function EducationNews() {
       const response = await window.fetch('/api/education-news', { signal: controller.signal, cache: 'no-store' });
       const payload = await response.json();
       if (!response.ok || !Array.isArray(payload.articles) || !['ready', 'partial'].includes(payload.status)) throw new Error('News unavailable');
-      setFeed({ ...payload, articles: payload.articles.filter(validEducationStory).map((record) => ({ ...record, imageUrl: safeNewsImage(record.imageUrl) })) });
+      setFeed({ ...payload, articles: payload.articles.filter((record) => validEducationStory(record, config)).map((record) => ({ ...record, imageUrl: safeNewsImage(record.imageUrl) })) });
     } catch {
       if (controller.signal.reason === 'unmount') return;
       setFeed((previous) => ({ ...previous, status: previous.articles.length ? 'offline' : 'unavailable' }));
@@ -60,7 +69,7 @@ export default function EducationNews() {
       requestRef.current = null;
       if (controller.signal.reason !== 'unmount') setLoading(false);
     }
-  }, []);
+  }, [config]);
 
   useEffect(() => {
     let active = false;
@@ -78,12 +87,12 @@ export default function EducationNews() {
     let mounted = true;
     Promise.resolve().then(() => {
       if (!mounted) return;
-      try { setSaved(readSavedNews(window.localStorage)); } catch { /* Restricted browser storage. */ }
+      try { setSaved(readSavedNews(window.localStorage, config)); } catch { /* Restricted browser storage. */ }
     });
-    const sync = (event) => { if (event.key === savedNewsKey) { try { setSaved(readSavedNews(window.localStorage)); } catch { /* Ignore unavailable storage. */ } } };
+    const sync = (event) => { if (event.key === savedNewsKey) { try { setSaved(readSavedNews(window.localStorage, config)); } catch { /* Ignore unavailable storage. */ } } };
     window.addEventListener('storage', sync);
     return () => { mounted = false; window.removeEventListener('storage', sync); };
-  }, []);
+  }, [config]);
 
   function changeView(value) { setView(value); setLimit(3); }
   function changeCategory(value) { setCategory(value); setLimit(3); }
@@ -117,16 +126,16 @@ export default function EducationNews() {
         <nav className={styles.views} aria-label="Education content">{[['all', 'Overview'], ['news', 'News'], ['articles', 'Articles'], ['saved', 'Saved']].map(([id, label]) => <button key={id} type="button" aria-pressed={view === id} onClick={() => changeView(id)}>{id === 'saved' && <Icon name="bookmark" />}{label}{id === 'saved' && saved.length > 0 && <span>{saved.length}</span>}</button>)}</nav>
         <div className={styles.searchAndSort}><label className={styles.search}><Icon name="search" /><span className="sr-only">Search education updates</span><input type="search" value={query} onChange={(event) => { setQuery(event.target.value); setLimit(3); }} maxLength={100} placeholder="Search any education topic" /></label><label className={styles.sort}><span className="sr-only">Sort education updates</span><select value={sort} onChange={(event) => { setSort(event.target.value); setLimit(3); }}><option value="newest">Newest first</option><option value="oldest">Oldest first</option></select><Icon name="chevron" /></label></div>
       </div>
-      <div className={styles.topics}><nav aria-label="Education topics">{educationTopics.map((topic) => <button key={topic.id} type="button" aria-pressed={category === topic.id} onClick={() => changeCategory(topic.id)}>{topic.label}</button>)}</nav><span className={styles.topicHint} aria-hidden="true"><Icon name="arrow" /></span></div>
+      <div className={styles.topics}><nav aria-label="Education topics">{config.topics.map((topic) => <button key={topic.id} type="button" aria-pressed={category === topic.id} onClick={() => changeCategory(topic.id)}>{topic.label}</button>)}</nav><span className={styles.topicHint} aria-hidden="true"><Icon name="arrow" /></span></div>
       <div className={styles.contentGrid}>
         <div className={styles.newsColumn}>
           <div className={styles.columnHeading}><h3>{heading}</h3>{(hasFeed || view === 'saved') && <span>{records.length} {records.length === 1 ? 'story' : 'stories'}</span>}</div>
           {view === 'saved' && <p className={styles.savedHelp}>Your reading list stays in this browser.</p>}
-          {!records.length && (feed.status === 'idle' || loading) && view !== 'saved' ? <div className={styles.skeleton} role="status" aria-label="Loading education updates">{[1, 2, 3].map((id) => <div key={id}><i /><span><b /><b /><b /></span></div>)}</div> : records.length ? <div className={styles.stories}>{records.slice(0, limit).map((record, index) => <Story key={record.id} story={record} featured={index === 0} saved={savedIds.has(record.id)} onSave={toggleSave} />)}</div> : <div className={styles.empty}><Icon name={view === 'saved' ? 'bookmark' : 'news'} /><h4>{emptyTitle}</h4><p>{emptyHelp}</p>{(query || category !== 'all') && <button className="button button--outline" type="button" onClick={() => { setQuery(''); changeCategory('all'); }}>Clear filters</button>}</div>}
+          {!records.length && (feed.status === 'idle' || loading) && view !== 'saved' ? <div className={styles.skeleton} role="status" aria-label="Loading education updates">{[1, 2, 3].map((id) => <div key={id}><i /><span><b /><b /><b /></span></div>)}</div> : records.length ? <div className={styles.stories}>{records.slice(0, limit).map((record, index) => <Story key={record.id} story={record} featured={index === 0} saved={savedIds.has(record.id)} onSave={toggleSave} config={config} />)}</div> : <div className={styles.empty}><Icon name={view === 'saved' ? 'bookmark' : 'news'} /><h4>{emptyTitle}</h4><p>{emptyHelp}</p>{(query || category !== 'all') && <button className="button button--outline" type="button" onClick={() => { setQuery(''); changeCategory('all'); }}>Clear filters</button>}</div>}
           {records.length > limit && <button className={styles.more} type="button" onClick={() => setLimit((value) => value + 6)}>Show more {view === 'articles' ? 'articles' : view === 'saved' ? 'saved stories' : 'updates'}<Icon name="arrow" /></button>}
         </div>
         <aside className={styles.readingColumn} aria-label={view === 'all' ? 'Education articles' : 'Explore education topics'}>
-          {view === 'all' ? <><div className={styles.columnHeading}><h3>Read & understand</h3><button type="button" className={styles.viewArticles} onClick={() => changeView('articles')}>All articles<Icon name="arrow" /></button></div>{reading.length ? <div className={styles.reading}>{reading.map((record) => <Story key={record.id} story={record} saved={savedIds.has(record.id)} onSave={toggleSave} />)}</div> : <p className={styles.readingEmpty}>{loading || feed.status === 'idle' ? 'Finding useful reads…' : 'No articles for this topic yet. Try All education.'}</p>}</> : <><div className={styles.columnHeading}><h3>Across education</h3></div><div className={styles.topicDirectory}>{educationTopics.slice(1).map((topic) => <button key={topic.id} type="button" aria-pressed={category === topic.id} onClick={() => changeCategory(topic.id)}><span><Icon name={topic.icon} />{topic.label}</span><Icon name="arrow" /></button>)}</div></>}
+          {view === 'all' ? <><div className={styles.columnHeading}><h3>Read & understand</h3><button type="button" className={styles.viewArticles} onClick={() => changeView('articles')}>All articles<Icon name="arrow" /></button></div>{reading.length ? <div className={styles.reading}>{reading.map((record) => <Story key={record.id} story={record} saved={savedIds.has(record.id)} onSave={toggleSave} config={config} />)}</div> : <p className={styles.readingEmpty}>{loading || feed.status === 'idle' ? 'Finding useful reads…' : 'No articles for this topic yet. Try All education.'}</p>}</> : <><div className={styles.columnHeading}><h3>Across education</h3></div><div className={styles.topicDirectory}>{config.topics.filter((topic) => topic.id !== 'all').map((topic) => <button key={topic.id} type="button" aria-pressed={category === topic.id} onClick={() => changeCategory(topic.id)}><span><Icon name={topic.icon} />{topic.label}</span><Icon name="arrow" /></button>)}</div></>}
           <div className={styles.readingNote}><Icon name="book" /><div><strong>A little clarity goes a long way.</strong><p>Explore the story behind the headline. Save what matters to you.</p></div></div>
         </aside>
       </div>

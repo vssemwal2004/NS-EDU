@@ -3,8 +3,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import HeroPhoto from './HeroPhoto';
 import Icon from '@/components/ui/Icon';
-import { fields, shortcuts } from '@/data/landing';
 import { useCatalog } from '@/providers/CatalogProvider';
+import { useContent } from '@/providers/ContentProvider';
 import { usePreferences } from '@/providers/PreferencesProvider';
 import SearchBox from './SearchBox';
 import CampusArtwork from './CampusArtwork';
@@ -18,6 +18,7 @@ export default function LandingFirstScreen() {
   const router = useRouter();
   const { courses } = useCatalog();
   const { setCourse } = usePreferences();
+  const { fields = [], shortcuts = [] } = useContent('landing') ?? {};
   const popular = courses.filter((course) => course.popular).slice(0, 6);
   function search({ type, query }) {
     router.push(query ? `${searchRoutes[type]}?q=${encodeURIComponent(query)}` : searchRoutes[type]);

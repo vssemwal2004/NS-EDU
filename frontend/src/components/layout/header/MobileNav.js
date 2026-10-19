@@ -23,7 +23,7 @@ export default function MobileNav({ pathname, onSearch, onNavigate }) {
 
   return <div id="mobile-navigation" className={styles.drawerNav}>
     <form role="search" className={styles.search} onSubmit={(event) => { event.preventDefault(); onSearch(new FormData(event.currentTarget).get('q')?.toString().trim() || ''); }}>
-      <Icon name="search" /><label className="sr-only" htmlFor="mobile-search">Search NSEDU</label>
+      <Icon name="search" /><label className="sr-only" htmlFor="mobile-search">Search Gyaan Vidhya</label>
       <input id="mobile-search" name="q" type="search" placeholder="Colleges, courses, exams or cities" maxLength={120} autoComplete="off" enterKeyHint="search" />
       <button type="submit" className={styles.searchGo} aria-label="Search"><Icon name="arrow" /></button>
     </form>
@@ -64,10 +64,10 @@ export default function MobileNav({ pathname, onSearch, onNavigate }) {
 
     <div className={styles.account}>
       {student
-        ? <><p><span className={styles.avatar} aria-hidden="true">{(student.name || student.email || 'S')[0].toUpperCase()}</span><span><strong>{student.name || 'NSEDU student'}</strong><small>{student.email || student.phone}</small></span></p>
+        ? <><p><span className={styles.avatar} aria-hidden="true">{(student.name || student.email || 'S')[0].toUpperCase()}</span><span><strong>{student.name || 'Gyaan Vidhya student'}</strong><small>{student.email || student.phone}</small></span></p>
           <div className={styles.accountActions}><Link className="button button--outline" href="/account" onClick={onNavigate}>My account</Link><button className="button button--ghost" type="button" onClick={() => { onNavigate(); signOut(); }}>Log out</button></div></>
         : <><p className={styles.accountText}>Log in with a one-time code to manage your student profile.</p>
-          <button className="button button--primary" type="button" onClick={() => { onNavigate(); openLogin(); }}><Icon name="user" />Log in to NSEDU</button></>}
+          <button className="button button--primary" type="button" onClick={() => { onNavigate(); openLogin(); }}><Icon name="user" />Log in to Gyaan Vidhya</button></>}
     </div>
     <p className={styles.note}>A thoughtful choice starts here.</p>
   </div>;

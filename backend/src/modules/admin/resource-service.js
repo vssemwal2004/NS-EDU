@@ -2,12 +2,19 @@ import { collection, COLLECTIONS, toObjectId } from '../../db/collections.js';
 import { HttpError } from '../../lib/http-error.js';
 import { pagination, queryString } from '../../lib/query.js';
 import { assertValid, escapeRegex } from '../../lib/validation.js';
+import { invalidateCatalogCache } from '../catalog/catalog-service.js';
+import { queryKeys } from '../universities/normalize.js';
+import { invalidateUniversityCaches } from '../universities/university-service.js';
 import { generateSlug, resources } from './resources.js';
 
 const capitalize = (value) => value.charAt(0).toUpperCase() + value.slice(1);
 const plural = (count, word) => `${count} ${word}${count === 1 ? '' : 's'}`;
 
-export const serializeItem = ({ _id, ...rest }) => ({ id: _id.toString(), ...rest });
+// Public catalogue and university reads are cached in memory; every admin write clears them.
+export const invalidatePublicCaches = () => { invalidateCatalogCache(); invalidateUniversityCaches(); };
+
+// Derived search keys are internal; they never leave the API.
+export const serializeItem = ({ _id, searchPrefixes: _keys, ...rest }) => ({ id: _id.toString(), ...rest });
 
 export function getResource(name) {
   if (!Object.hasOwn(resources, name)) throw new HttpError(404, 'Unknown resource');
@@ -15,7 +22,7 @@ export function getResource(name) {
 }
 
 function sortSpec(resource, sort) {
-  const title = resource.titleField;
+  const title = resource.sortField ?? resource.titleField;
   const specs = {
     order: { order: 1, [title]: 1 },
     name: { [title]: 1 },
@@ -56,17 +63,40 @@ function conflict(resource, error) {
   return new HttpError(409, `A ${resource.singular} with this ${label} already exists`, { fields: { [field]: 'Already in use' } });
 }
 
+// Equality filters declared on the resource: an option list, 'boolean' or free 'string'.
+function listFilter(resource, query) {
+  const filter = {};
+  for (const [key, kind] of Object.entries(resource.filters ?? {})) {
+    const raw = queryString(query[key], 80);
+    if (!raw) continue;
+    if (kind === 'boolean') { if (raw === 'true' || raw === 'false') filter[key] = raw === 'true' ? { $ne: false } : false; }
+    else if (Array.isArray(kind)) { if (kind.includes(raw)) filter[key] = raw; }
+    else filter[key] = raw;
+  }
+  return filter;
+}
+
+function searchFilter(resource, q) {
+  if (!q) return {};
+  if (resource.searchMode === 'prefixes') {
+    const keys = queryKeys(q);
+    // Slugs and exact ids are matched too, so a pasted slug always finds its record.
+    return keys.length ? { $or: [{ searchPrefixes: { $all: keys } }, { slug: q.toLowerCase() }] } : {};
+  }
+  return { $or: resource.searchFields.map((field) => ({ [field]: { $regex: escapeRegex(q), $options: 'i' } })) };
+}
+
 export async function listItems(name, query) {
   const resource = getResource(name);
   const { page, limit, skip } = pagination(query);
   const q = queryString(query.q);
-  const filter = q ? { $or: resource.searchFields.map((field) => ({ [field]: { $regex: escapeRegex(q), $options: 'i' } })) } : {};
+  const filter = { ...listFilter(resource, query), ...searchFilter(resource, q) };
   const items = await collection(name);
   const [docs, total] = await Promise.all([
-    items.find(filter).sort(sortSpec(resource, queryString(query.sort, 20))).skip(skip).limit(limit).toArray(),
+    items.find(filter, { projection: resource.listProjection }).sort(sortSpec(resource, queryString(query.sort, 20))).skip(skip).limit(limit).toArray(),
     items.countDocuments(filter),
   ]);
-  return { items: docs.map(serializeItem), total, page, limit };
+  return { items: (resource.decorate ? await resource.decorate(docs) : docs).map(serializeItem), total, page, limit };
 }
 
 export async function getItem(name, id) {
@@ -82,10 +112,11 @@ export async function createItem(name, body) {
   }
   await checkReferences(resource, data);
   const now = new Date();
-  const doc = { ...data, createdAt: now, updatedAt: now };
+  const doc = { ...data, ...resource.beforeWrite?.(data, null), createdAt: now, updatedAt: now };
   try {
     await (await collection(name)).insertOne(doc);
   } catch (error) { throw conflict(resource, error); }
+  invalidatePublicCaches();
   return serializeItem(doc);
 }
 
@@ -105,11 +136,16 @@ export async function updateItem(name, id, body) {
   }
   await checkReferences(resource, data);
   if (!Object.keys(data).length) return serializeItem(existing);
+  const changed = Object.keys(data).filter((key) => JSON.stringify(existing[key]) !== JSON.stringify(data[key]));
+  const lock = (resource.lockOnEdit ?? []).filter((key) => changed.includes(key));
+  const update = { $set: { ...data, ...resource.beforeWrite?.(data, existing), updatedAt: new Date() } };
+  if (lock.length) update.$addToSet = { lockedFields: { $each: lock } };
   let updated;
   try {
-    updated = await (await collection(name)).findOneAndUpdate({ _id: existing._id }, { $set: { ...data, updatedAt: new Date() } }, { returnDocument: 'after' });
+    updated = await (await collection(name)).findOneAndUpdate({ _id: existing._id }, update, { returnDocument: 'after' });
   } catch (error) { throw conflict(resource, error); }
   if (!updated) throw new HttpError(404, `${capitalize(resource.singular)} not found`);
+  invalidatePublicCaches();
   return serializeItem(updated);
 }
 
@@ -119,4 +155,5 @@ export async function deleteItem(name, id) {
   const count = await countReferences(resource, existing.slug);
   if (count) throw new HttpError(409, `Remove its ${plural(count, 'programme')} first`);
   await (await collection(name)).deleteOne({ _id: existing._id });
+  invalidatePublicCaches();
 }

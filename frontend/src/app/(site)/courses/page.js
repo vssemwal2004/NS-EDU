@@ -3,7 +3,7 @@ import CoursesDirectory from '@/features/courses/CoursesDirectory';
 import IntroStats from '@/features/courses/IntroStats';
 import { getCatalog } from '@/lib/api/catalog';
 
-export const metadata = { title: 'Courses by field & level — fees, colleges & exams | NSEDU', description: 'Explore undergraduate and postgraduate courses by field, compare sample fees and placements, then find colleges and check eligibility.' };
+export const metadata = { title: 'Courses by field & level — fees, colleges & exams | Gyaan Vidhya', description: 'Explore undergraduate and postgraduate courses by field, compare sample fees and placements, then find colleges and check eligibility.' };
 
 const text = (value) => (Array.isArray(value) ? value[0] : value) || '';
 

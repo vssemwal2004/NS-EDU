@@ -44,7 +44,7 @@ export default function AccountControl() {
       <span className={styles.avatar} aria-hidden="true">{initials(student)}</span><span className={styles.accountName}>{displayName(student)}</span><Icon name="chevron" />
     </button>
     {open && <div id="header-account-menu" className={styles.accountMenu} role="menu" aria-label="Account" onKeyDown={onMenuKey}>
-      <p className={styles.accountMeta} role="presentation"><strong>{student.name || 'NSEDU student'}</strong><span>{student.email || student.phone}</span></p>
+      <p className={styles.accountMeta} role="presentation"><strong>{student.name || 'Gyaan Vidhya student'}</strong><span>{student.email || student.phone}</span></p>
       <Link role="menuitem" tabIndex={-1} href="/account" onClick={close}><Icon name="user" />My account</Link>
       <Link role="menuitem" tabIndex={-1} href="/compare" onClick={close}><Icon name="scales" />My comparisons</Link>
       <button role="menuitem" tabIndex={-1} type="button" onClick={() => { close(); signOut(); }}><Icon name="logout" />Log out</button>

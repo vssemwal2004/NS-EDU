@@ -12,6 +12,7 @@ import { useCatalog } from '@/providers/CatalogProvider';
 import { usePreferences } from '@/providers/PreferencesProvider';
 import { useStudentAuth } from '@/providers/StudentAuthProvider';
 import styles from '@/features/auth/Account.module.css';
+import MyApplications from '@/features/apply/MyApplications';
 
 const dateFormat = new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 const memberSince = (student) => student?.createdAt && Number.isFinite(Date.parse(student.createdAt)) ? dateFormat.format(new Date(student.createdAt)) : '';
@@ -224,7 +225,7 @@ function SignedIn({ student }) {
         <span className={styles.avatar} aria-hidden="true">{initials(student) || <Icon name="phone" />}</span>
         <div className={styles.profileText}>
           <p className={styles.eyebrow}><Icon name="dashboard" />Student space</p>
-          <h1 id="account-title">{first ? <>Welcome back, <em>{first}</em></> : <>Welcome to <em>NSEDU</em></>}</h1>
+          <h1 id="account-title">{first ? <>Welcome back, <em>{first}</em></> : <>Welcome to <em>Gyaan Vidhya</em></>}</h1>
           <ul className={styles.metaList}>
             <li><Icon name={student.phone ? 'phone' : 'mail'} />{contact}</li>
             <li className={styles.metaChip}><Icon name="loginBadge" />Signed in with {channel}</li>
@@ -250,6 +251,7 @@ function SignedIn({ student }) {
 
       <div className={styles.columns}>
         <div className={styles.stack}>
+          <MyApplications />
           <Card id="comparisons" title="Your comparisons" icon="scales" action={<Link className="text-link" href="/compare">Open Compare<Icon name="arrow" /></Link>}>
             <p className={styles.cardText}>Lists you started on Compare colleges, kept on this device. Up to {COMPARE_MAX} colleges per course.</p>
             {lists === undefined ? <span className={`${styles.skeleton} ${styles.skeletonCard}`} aria-hidden="true" />

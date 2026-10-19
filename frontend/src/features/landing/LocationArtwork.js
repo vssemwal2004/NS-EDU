@@ -1,17 +1,29 @@
+'use client';
 import { useId } from 'react';
 import { getDestinationImage } from '@/lib/destination-image';
+import { useContent } from '@/providers/ContentProvider';
 import styles from './LocationDiscovery.module.css';
 
+// Crops are windows into `media.destinationsArt` (1784 × 882 by default).
+function useDestinationArt() {
+  const art = useContent('media')?.destinationsArt;
+  const src = getDestinationImage(art);
+  return src ? { src, width: art.width, height: art.height } : null;
+}
+
 export function DestinationArt({ destination, className }) {
+  const art = useDestinationArt();
+  if (!art) return null;
   return <svg className={className} viewBox={destination.crop.join(' ')} preserveAspectRatio="xMidYMid slice" role="img" aria-label={`${destination.landmark} — illustrative ${destination.name} landmark`}>
-    <image href={getDestinationImage()} x="0" y="0" width="1784" height="882" />
+    <image href={art.src} x="0" y="0" width={art.width} height={art.height} />
   </svg>;
 }
 
 export function LocationBackdrop({ className }) {
   const id = useId();
+  const art = useDestinationArt();
   return <div className={className} aria-hidden="true">
-    <svg className={styles.campusSketch} viewBox="1315 0 469 122" focusable="false">
+    {art && <svg className={styles.campusSketch} viewBox="1315 0 469 122" focusable="false">
       <defs>
         <linearGradient id={`${id}-fade`} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="white" />
@@ -20,12 +32,12 @@ export function LocationBackdrop({ className }) {
         </linearGradient>
         <mask id={`${id}-mask`}><rect x="1315" y="0" width="469" height="122" fill={`url(#${id}-fade)`} /></mask>
       </defs>
-      <image href={getDestinationImage()} x="0" y="0" width="1784" height="882" mask={`url(#${id}-mask)`} />
-    </svg>
-    <svg className={styles.treeSketch} viewBox="0 770 80 112" focusable="false">
+      <image href={art.src} x="0" y="0" width={art.width} height={art.height} mask={`url(#${id}-mask)`} />
+    </svg>}
+    {art && <svg className={styles.treeSketch} viewBox="0 770 80 112" focusable="false">
       <defs><clipPath id={`${id}-tree`}><rect x="0" y="770" width="45" height="112" /></clipPath></defs>
-      <image href={getDestinationImage()} x="0" y="0" width="1784" height="882" clipPath={`url(#${id}-tree)`} />
-    </svg>
+      <image href={art.src} x="0" y="0" width={art.width} height={art.height} clipPath={`url(#${id}-tree)`} />
+    </svg>}
     <svg className={styles.contours} viewBox="0 0 1784 882" preserveAspectRatio="none" focusable="false">
       <g fill="none" stroke="var(--color-art)" strokeWidth="1" opacity=".32">
         <path d="M-15 70Q85 65 165-12M-15 82Q100 74 185-12M1380-12Q1580 92 1800 70" />

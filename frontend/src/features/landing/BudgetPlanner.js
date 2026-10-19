@@ -3,7 +3,7 @@ import { useRef, useState } from 'react';
 import Icon from '@/components/ui/Icon';
 import Dialog from '@/components/ui/Dialog';
 import { useCatalog } from '@/providers/CatalogProvider';
-import { budgetCostFields, budgetDefaults, livingOptions } from '@/data/budget';
+import { useContent } from '@/providers/ContentProvider';
 import { calculateBudgetEstimate, findAffordableColleges, formatBudgetCurrency as money, formatBudgetInput, getBudgetAssumptions, parseBudgetAmount } from '@/lib/budget';
 import { SectionBackdrop, BudgetHeaderGraphic, BudgetResultGraphic } from './SectionVisuals';
 import styles from './BudgetPlanner.module.css';
@@ -11,7 +11,17 @@ import styles from './BudgetPlanner.module.css';
 const costLabel = (value) => value === null ? 'Not available' : money(value);
 const amountHelp = 'Enter whole rupees from 0 to 10,00,00,000.';
 
-export default function BudgetPlanner({ records, course, onCourseChange, onScholarships }) {
+// `budget` content: pre-selected programme, starting budget, living options and cost rows.
+export default function BudgetPlanner(props) {
+  const config = useContent('budget');
+  if (!config) return <section id="college-budget" className={styles.section} aria-labelledby="budget-title" data-budget-section>
+    <div className={`container ${styles.container}`}><div className={styles.heading}><div><h2 id="budget-title">Budget check</h2><p className={styles.description} role="status">The budget planner is temporarily unavailable. Please refresh in a moment.</p></div></div></div>
+  </section>;
+  return <Planner {...props} config={config} />;
+}
+
+function Planner({ records, course, onCourseChange, onScholarships, config }) {
+  const { defaults: budgetDefaults, livingOptions, costFields: budgetCostFields } = config;
   const { courses } = useCatalog();
   const [selectedId, setSelectedId] = useState(budgetDefaults.collegeId);
   const [livingId, setLivingId] = useState(budgetDefaults.livingId);
@@ -20,12 +30,12 @@ export default function BudgetPlanner({ records, course, onCourseChange, onSchol
   const [showMatches, setShowMatches] = useState(false);
   const detailsRef = useRef(null);
   const budgetRef = useRef(null);
-  const available = records.filter((record) => record.courseId === (course || 'btech'));
+  const available = records.filter((record) => record.courseId === (course || records.find((row) => row.id === budgetDefaults.collegeId)?.courseId));
   const record = available.find((row) => row.id === selectedId) || available[0];
   const courseName = courses.find((item) => item.id === record?.courseId)?.name || 'this course';
-  const assumptions = getBudgetAssumptions(livingId, overrides[livingId]);
-  const estimate = calculateBudgetEstimate(record, assumptions, budget);
-  const matches = showMatches ? findAffordableColleges(records, { courseId: record?.courseId, tuitionYear: record?.tuitionYear, assumptions, budget }) : [];
+  const assumptions = getBudgetAssumptions(config, livingId, overrides[livingId]);
+  const estimate = calculateBudgetEstimate(config, record, assumptions, budget);
+  const matches = showMatches ? findAffordableColleges(config, records, { courseId: record?.courseId, tuitionYear: record?.tuitionYear, assumptions, budget }) : [];
   const canExplore = record && estimate.total !== null && estimate.budget !== null;
   const budgetError = budget.trim() === '' ? 'Add your first-year budget to see how it compares.' : estimate.budget === null ? 'Enter a budget from ₹1 to ₹10,00,00,000 in whole rupees.' : '';
   const groups = [
@@ -64,7 +74,7 @@ export default function BudgetPlanner({ records, course, onCourseChange, onSchol
     <SectionBackdrop variant="budget" />
     <div className={`container ${styles.container}`}>
       <div className={styles.heading}>
-        <div><p className={`eyebrow section-label`}><Icon name="wallet" />NSEDU / Budget check</p><h2 id="budget-title">Can this college fit <span className="section-title-accent">your budget?</span></h2><p className={styles.description}>See your first-year cost, including living expenses.</p></div>
+        <div><p className={`eyebrow section-label`}><Icon name="wallet" />Gyaan Vidhya / Budget check</p><h2 id="budget-title">Can this college fit <span className="section-title-accent">your budget?</span></h2><p className={styles.description}>See your first-year cost, including living expenses.</p></div>
         <BudgetHeaderGraphic className={styles.desk} />
       </div>
       <form className={styles.planner} onSubmit={explore} noValidate>

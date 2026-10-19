@@ -9,13 +9,14 @@ process.env.JWT_SECRET = randomBytes(32).toString('hex');
 process.env.ADMIN_EMAIL = 'admin@nsedu.test';
 process.env.ADMIN_PASSWORD = 'correct-horse-battery';
 process.env.OTP_DELIVERY = 'console';
+process.env.SMS_PROVIDER = 'console';
 process.env.NODE_ENV = 'test';
 
 const ADMIN = { email: 'admin@nsedu.test', password: 'correct-horse-battery' };
-const COLLEGE_KEYS = ['annualTuitionInr', 'art', 'city', 'collegeId', 'courseId', 'demoRating', 'highestSalaryLpa', 'id', 'isIllustrative', 'medianSalaryLpa', 'name', 'placementYear', 'shortName', 'state', 'tuitionYear'];
+const COLLEGE_KEYS = ['annualTuitionInr', 'art', 'city', 'collegeId', 'courseId', 'demoRating', 'highestSalaryLpa', 'id', 'isIllustrative', 'logoUrl', 'medianSalaryLpa', 'name', 'placementYear', 'shortName', 'state', 'tuitionYear'];
 
 describe('auth, catalog and admin API', { skip }, () => {
-  let server; let base; let db; let closeDb; let resetRateLimits;
+  let server; let base; let db; let closeDb; let resetRateLimits; let env; let mailer;
   let adminCookie; let studentCookie; let studentId;
 
   async function api(path, { method = 'GET', body, cookie, headers = {} } = {}) {
@@ -40,11 +41,14 @@ describe('auth, catalog and admin API', { skip }, () => {
 
   before(async () => {
     mock.method(console, 'log', () => {});
-    const [{ app }, collections, rateLimit, { hashPassword }] = await Promise.all([
+    const [{ app }, collections, rateLimit, { hashPassword }, config, mail] = await Promise.all([
       import('../src/app.js'), import('../src/db/collections.js'), import('../src/lib/rate-limit.js'), import('../src/lib/password.js'),
+      import('../src/config/env.js'), import('../src/lib/mailer.js'),
     ]);
     ({ closeDb } = collections);
     ({ resetRateLimits } = rateLimit);
+    ({ env } = config);
+    mailer = mail;
     db = await collections.getDb();
     await db.collection('admins').insertOne({ email: ADMIN.email, name: 'Test Admin', role: 'admin', passwordHash: await hashPassword(ADMIN.password), createdAt: new Date(), lastLoginAt: null });
     server = app.listen(0, '127.0.0.1');
@@ -123,7 +127,9 @@ describe('auth, catalog and admin API', { skip }, () => {
     const changed = await api('/api/admin/auth/change-password', { method: 'POST', cookie: staffCookie, body: { currentPassword: employee.password, newPassword: 'New!SecurePass9' } });
     assert.equal(changed.status, 200);
     assert.equal(changed.body.admin.mustChangePassword, false);
-    assert.equal((await api('/api/admin/dashboard', { cookie: staffCookie })).status, 200);
+    // After the password change the employee reaches their workspace; the dashboard stays administrator-only.
+    assert.equal((await api('/api/admin/reference-students', { cookie: staffCookie })).status, 200);
+    assert.equal((await api('/api/admin/dashboard', { cookie: staffCookie })).status, 403);
     assert.equal((await api('/api/admin/employees', { method: 'POST', cookie: staffCookie, body: { ...employee, email: 'other@example.com' } })).status, 403);
     assert.equal((await api('/api/admin/auth/login', { method: 'POST', body: { email: employee.email, password: employee.password } })).status, 401);
     assert.equal((await api('/api/admin/auth/login', { method: 'POST', body: { email: employee.email, password: 'New!SecurePass9' } })).status, 200);
@@ -277,6 +283,54 @@ describe('auth, catalog and admin API', { skip }, () => {
     adminCookie = admin;
   });
 
+  test('the university directory needs a student or staff session; the featured set is public', async () => {
+    const now = new Date();
+    const institution = (slug, name, popularity, extra = {}) => ({
+      slug, name, nameKey: name.toLowerCase(), city: 'Pune', state: 'Maharashtra', type: 'university', category: 'engineering',
+      popularity, active: true, verification: 'verified', searchPrefixes: [slug.split('-')[0]], createdAt: now, updatedAt: now, ...extra,
+    });
+    const docs = [
+      institution('gate-alpha-university', 'Gate Alpha University', 5),
+      institution('gate-beta-university', 'Gate Beta University', 9),
+      institution('gate-gamma-university', 'Gate Gamma University', 5),
+      institution('gate-hidden-university', 'Gate Hidden University', 99, { active: false }),
+    ];
+    await db.collection('institutions').insertMany(docs);
+    await db.collection('programmes').insertOne({ slug: 'gate-beta-btech', institutionSlug: 'gate-beta-university', courseSlug: 'btech', annualTuitionInr: 150000, tuitionYear: '2026–27', active: true });
+    try {
+      const paths = ['/api/universities', '/api/universities/suggest?q=gate', '/api/universities/facets', '/api/universities/sitemap', '/api/universities/gate-alpha-university'];
+      for (const path of paths) {
+        const anonymous = await api(path);
+        assert.equal(anonymous.status, 401, path);
+        assert.equal(anonymous.body.loginRequired, true, path);
+        assert.equal(anonymous.headers.get('cache-control'), 'no-store', path);
+        for (const cookie of [studentCookie, adminCookie]) {
+          const allowed = await api(path, { cookie });
+          assert.equal(allowed.status, 200, `${path} ${cookie.split('=')[0]}`);
+          assert.equal(allowed.headers.get('cache-control'), 'private, max-age=60', path);
+        }
+      }
+      assert.equal((await api('/api/universities', { headers: { authorization: `Bearer ${tokenOf(adminCookie)}` } })).status, 200, 'admin bearer token');
+      assert.equal((await api('/api/universities', { cookie: 'nsedu_student=forged.token.value' })).status, 401);
+      assert.equal((await api('/api/universities/gate-hidden-university', { cookie: studentCookie })).status, 404);
+
+      const featured = await api('/api/universities/featured?limit=2');
+      assert.equal(featured.status, 200);
+      assert.match(featured.headers.get('cache-control'), /^public, max-age=300/);
+      assert.deepEqual(featured.body.items.map((item) => item.id), ['gate-beta-university', 'gate-alpha-university'], 'popularity, then name; hidden excluded');
+      assert.deepEqual(featured.body.items[0].programmes, { count: 1, feeMin: 150000, feeMax: 150000, courseIds: ['btech'], tuitionYear: '2026–27' });
+      assert.equal(featured.body.items[1].programmes, null);
+      assert.equal(featured.body.items[0].searchPrefixes, undefined);
+      assert.equal((await api('/api/universities/featured?limit=500')).body.limit, 12);
+      assert.equal((await api('/api/universities/featured?limit=abc')).body.limit, 8);
+      assert.deepEqual((await api('/api/universities/featured')).body.items.map((item) => item.id), ['gate-beta-university', 'gate-alpha-university', 'gate-gamma-university']);
+    } finally {
+      await db.collection('institutions').deleteMany({ slug: { $in: docs.map((doc) => doc.slug) } });
+      await db.collection('programmes').deleteMany({ institutionSlug: /^gate-/ });
+      (await import('../src/modules/universities/university-service.js')).invalidateUniversityCaches();
+    }
+  });
+
   test('phone OTP validates numbers, enforces resend cooldown and limits wrong attempts', async () => {
     for (const identifier of ['12345', '5876543210', '+1 9876543210']) {
       const invalid = await api('/api/auth/otp/request', { method: 'POST', body: { channel: 'phone', identifier } });
@@ -302,6 +356,59 @@ describe('auth, catalog and admin API', { skip }, () => {
     assert.deepEqual([locked.status, locked.body], [429, { error: 'Too many incorrect attempts. Request a new code.' }]);
     const expired = await api('/api/auth/otp/verify', { method: 'POST', body: { ...body, code: requested.body.devCode } });
     assert.deepEqual([expired.status, expired.body], [400, { error: 'This code has expired. Request a new one.' }]);
+  });
+
+  test('auth config lists phone only while an SMS provider is configured', async () => {
+    const enabled = await api('/api/auth/config');
+    assert.deepEqual(enabled.body, { channels: ['email', 'phone'], otpTtlSeconds: 300, resendSeconds: 30 });
+    assert.match(enabled.headers.get('cache-control'), /^public/);
+    env.smsProvider = '';
+    try {
+      assert.deepEqual((await api('/api/auth/config')).body.channels, ['email']);
+      for (const path of ['/api/auth/otp/request', '/api/auth/otp/verify']) {
+        const denied = await api(path, { method: 'POST', body: { channel: 'phone', identifier: '9876543210', code: '123456' } });
+        assert.equal(denied.status, 400);
+        assert.match(denied.body.error, /mobile number is not available/);
+        assert.ok(denied.body.fields.channel);
+      }
+    } finally { env.smsProvider = 'console'; }
+  });
+
+  test('SMTP delivery sends the branded email and hides provider failures behind a 503', async () => {
+    const sent = [];
+    const original = { delivery: env.otpDelivery, from: env.smtp.from };
+    env.otpDelivery = 'smtp';
+    env.smtp.from = 'no-reply@nsedu.test';
+    mailer.setMailTransport({ sendMail: async (message) => { sent.push(message); return { messageId: '<stub@nsedu.test>', accepted: [message.to], rejected: [] }; } });
+    try {
+      const ok = await api('/api/auth/otp/request', { method: 'POST', body: { channel: 'email', identifier: 'mail.user@example.com' } });
+      assert.equal(ok.status, 200);
+      assert.equal(ok.body.devCode, undefined, 'codes are never returned when emailed');
+      assert.equal(sent.length, 1);
+      assert.equal(sent[0].to, 'mail.user@example.com');
+      assert.deepEqual(sent[0].from, { name: 'Gyaan Vidhya', address: 'no-reply@nsedu.test' });
+      const code = /\b(\d{6})\b/.exec(sent[0].subject)[1];
+      assert.ok(sent[0].html.includes(code) && sent[0].text.includes(code.slice(0, 3)));
+      const verified = await api('/api/auth/otp/verify', { method: 'POST', body: { channel: 'email', identifier: 'mail.user@example.com', code } });
+      assert.equal(verified.status, 200);
+
+      const errors = mock.method(console, 'error', () => {});
+      mailer.setMailTransport({ sendMail: async () => { throw Object.assign(new Error('Invalid login: 535 secret-detail'), { code: 'EAUTH', responseCode: 535, command: 'AUTH PLAIN' }); } });
+      const failed = await api('/api/auth/otp/request', { method: 'POST', body: { channel: 'email', identifier: 'mail.fail@example.com' } });
+      assert.deepEqual([failed.status, failed.body], [503, { error: "We couldn't send the code right now. Please try again in a minute." }]);
+      assert.equal(await db.collection('otp_codes').countDocuments({ identifier: 'mail.fail@example.com' }), 0);
+      const logged = errors.mock.calls.map((call) => call.arguments.join(' ')).join('\n');
+      assert.match(logged, /EAUTH 535 AUTH PLAIN/);
+      assert.doesNotMatch(logged, /secret-detail|mail\.fail/);
+      errors.mock.restore();
+      // A failed send does not start the resend cooldown.
+      mailer.setMailTransport({ sendMail: async (message) => ({ messageId: '<retry@nsedu.test>', accepted: [message.to], rejected: [] }) });
+      assert.equal((await api('/api/auth/otp/request', { method: 'POST', body: { channel: 'email', identifier: 'mail.fail@example.com' } })).status, 200);
+    } finally {
+      mailer.setMailTransport(null);
+      env.otpDelivery = original.delivery;
+      env.smtp.from = original.from;
+    }
   });
 
   test('OTP sends are limited per identifier and per IP', async () => {
@@ -362,7 +469,9 @@ describe('auth, catalog and admin API', { skip }, () => {
 
   test('programmes reference real records and protect referenced institutions', async () => {
     const post = (resource, body) => api(`/api/admin/${resource}`, { method: 'POST', cookie: adminCookie, body });
-    const institution = (await post('institutions', { name: 'Test Institute', shortName: 'Test', city: 'Pune', state: '', demoRating: '4.5', art: [1, 2, 3, 4] })).body.item;
+    const created = await post('institutions', { name: 'Test Institute', shortName: 'Test', city: 'Pune', state: '', demoRating: '4.5', art: [1, 2, 3, 4] });
+    assert.equal(created.status, 201, JSON.stringify(created.body));
+    const institution = created.body.item;
     assert.equal(institution.state, null);
     assert.equal(institution.demoRating, 4.5);
     const course = (await post('courses', { name: 'B.Tech', slug: 'btech', field: 'Engineering', icon: 'gear', fullName: 'Bachelor of Technology', popular: true })).body.item;
@@ -386,22 +495,25 @@ describe('auth, catalog and admin API', { skip }, () => {
     assert.equal(colleges.headers.get('cache-control'), 'no-store');
     assert.deepEqual(colleges.body.items, [{
       id: 'test-institute-btech', collegeId: 'test-institute', courseId: 'btech', name: 'Test Institute', shortName: 'Test',
-      city: 'Pune', state: null, demoRating: 4.5, art: [1, 2, 3, 4], annualTuitionInr: 200000, medianSalaryLpa: 7.5,
-      highestSalaryLpa: null, tuitionYear: '2026–27', placementYear: '2024–25', isIllustrative: true,
+      city: 'Pune', state: null, demoRating: 4.5, art: [1, 2, 3, 4], logoUrl: '', annualTuitionInr: 200000, medianSalaryLpa: 7.5,
+      highestSalaryLpa: null, tuitionYear: '2026–27', placementYear: '2024–25', isIllustrative: false,
     }]);
     assert.deepEqual(Object.keys(colleges.body.items[0]).sort(), COLLEGE_KEYS);
 
     const courses = await api('/api/catalog/courses');
     assert.deepEqual(courses.body.items, [{ id: 'btech', name: 'B.Tech', fullName: 'Bachelor of Technology', field: 'Engineering', icon: 'gear', summary: '', popular: true }]);
-    const search = await api('/api/catalog/search?q=%20TEST%20inst');
-    assert.deepEqual(search.body.colleges, [{ id: 'test-institute', name: 'Test Institute', city: 'Pune', state: null, courses: ['btech'] }]);
-    assert.deepEqual((await api('/api/catalog/search?q=(')).body, { query: '(', courses: [], exams: [], colleges: [] });
-    assert.deepEqual((await api('/api/catalog/search')).body, { query: '', courses: [], exams: [], colleges: [] });
+    const search = await api('/api/catalog/search?q=%20TEST%20inst', { cookie: adminCookie });
+    assert.deepEqual(search.body.colleges, [{ id: 'test-institute', name: 'Test Institute', city: 'Pune', state: null, type: 'university', courses: ['btech'] }]);
+    assert.equal(search.body.collegesRequireLogin, undefined);
+    const anonymous = await api('/api/catalog/search?q=%20TEST%20inst');
+    assert.deepEqual([anonymous.body.colleges, anonymous.body.collegesRequireLogin], [[], true]);
+    assert.deepEqual((await api('/api/catalog/search?q=(', { cookie: adminCookie })).body, { query: '(', courses: [], exams: [], colleges: [] });
+    assert.deepEqual((await api('/api/catalog/search')).body, { query: '', courses: [], exams: [], colleges: [], collegesRequireLogin: true });
 
     await api(`/api/admin/courses/${course.id}`, { method: 'PATCH', cookie: adminCookie, body: { active: false } });
     assert.deepEqual((await api('/api/catalog/colleges')).body.items, []);
     const stats = await api('/api/platform/stats');
-    assert.deepEqual(stats.body, { courses: 0, exams: 0, institutions: 1, programmes: 1, cities: 0, states: 0, scholarships: 0 });
+    assert.deepEqual(stats.body, { courses: 0, exams: 0, institutions: 1, programmes: 1, cities: 0, states: 0, scholarships: 0, statesWithInstitutions: 0 });
 
     assert.equal((await api(`/api/admin/programmes/${programme.body.item.id}`, { method: 'DELETE', cookie: adminCookie })).status, 204);
     assert.equal((await api(`/api/admin/institutions/${institution.id}`, { method: 'DELETE', cookie: adminCookie })).status, 204);

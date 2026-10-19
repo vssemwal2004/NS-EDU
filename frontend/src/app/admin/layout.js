@@ -1,5 +1,5 @@
 export const metadata = {
-  title: { default: 'Admin console | NSEDU', template: '%s | NSEDU Admin' },
+  title: { default: 'Admin console | Gyaan Vidhya', template: '%s | Gyaan Vidhya Admin' },
   robots: { index: false, follow: false },
 };
 

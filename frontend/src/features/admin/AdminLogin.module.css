@@ -3,10 +3,8 @@
 
 .showcase { position: relative; display: flex; flex-direction: column; gap: var(--space-8); padding: clamp(1.75rem, 3.5vw, 3.25rem); overflow: hidden; background: var(--admin-showcase-background); color: var(--admin-text-on-wine-muted); }
 .linework { position: absolute; left: -60px; bottom: -40px; width: 560px; stroke: #FFFFFF; stroke-width: 1.2; opacity: .08; pointer-events: none; }
-.brand { position: relative; display: flex; align-items: center; gap: var(--space-3); color: var(--color-surface); }
-.brand strong { display: block; font-family: var(--font-heading); font-size: 1.6rem; font-weight: 400; line-height: 1; }
-.brand small { color: var(--admin-text-on-wine-muted); font-size: .6875rem; letter-spacing: .14em; text-transform: uppercase; }
-.brandMark { display: grid; place-items: center; width: 44px; height: 44px; border: 1px solid rgb(255 255 255 / 24%); border-radius: 14px; background: rgb(255 255 255 / 10%); }
+.brand { --brand-height: 64px; position: relative; display: flex; align-items: center; gap: var(--space-4); color: var(--color-surface); }
+.brand small { padding-left: var(--space-4); border-left: 1px solid rgb(255 255 255 / 28%); color: var(--admin-text-on-wine-muted); font-size: .6875rem; letter-spacing: .14em; text-transform: uppercase; }
 .showcaseBody { position: relative; flex: 1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, .9fr); align-items: center; gap: clamp(1.5rem, 3vw, 3rem); }
 .eyebrow { display: inline-flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-4); padding: 6px 12px; border: 1px solid rgb(255 255 255 / 22%); border-radius: var(--radius-pill); background: rgb(255 255 255 / 8%); color: var(--color-surface); font-size: .6875rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; }
 .eyebrow :global(.icon) { width: 15px; height: 15px; }

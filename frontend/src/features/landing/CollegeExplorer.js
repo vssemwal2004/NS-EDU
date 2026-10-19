@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useCatalog } from '@/providers/CatalogProvider';
-import { collegeCourseTabs, collegeDemo } from '@/data/colleges';
+import { useContent } from '@/providers/ContentProvider';
 import { FEE_LIMITS, SORT_OPTIONS, filterCollegeRecords, formatTuition, formatSalary } from '@/lib/college-catalog';
 import { COMPARE_MAX, compareHref, useCompare } from '@/features/colleges/compareStore';
 import Icon from '@/components/ui/Icon';
@@ -10,15 +10,24 @@ import Dialog from '@/components/ui/Dialog';
 import CollegeArtwork from './CollegeArtwork';
 import styles from './CollegeExplorer.module.css';
 
-const tabName = (item) => item.id === 'llb' ? 'Law' : item.id === 'nursing' ? 'Nursing' : item.name;
-
 function Placement({ row }) {
   return <div className={styles.placement}>{row.medianSalaryLpa === null ? <span>Not provided</span> : <><span><small>Median</small><strong>{formatSalary(row.medianSalaryLpa)}</strong></span><span><small>Highest</small><strong>{formatSalary(row.highestSalaryLpa)}</strong></span></>}</div>;
 }
 
 // Course-wise preview (homepage). Compare picks go to the shared nsedu:compare store used by /colleges and /compare.
-export default function CollegeExplorer({ records, course, onCourseChange, initialLocation = '' }) {
+// Tabs and year labels are admin-edited content (`explorer`); rows come from the catalogue.
+export default function CollegeExplorer(props) {
   const { courses } = useCatalog();
+  const config = useContent('explorer');
+  if (!config || !courses.length) return <section id="course-colleges" className={styles.section} aria-labelledby="college-section-title" data-college-section>
+    <div className="container"><div className={styles.heading}><div><h2 id="college-section-title">Course-wise colleges in India</h2><p role="status">College listings are temporarily unavailable. Please refresh in a moment.</p></div></div></div>
+  </section>;
+  return <Explorer {...props} courses={courses} config={config} />;
+}
+
+function Explorer({ records, course, onCourseChange, initialLocation = '', courses, config }) {
+  const { courseTabs: collegeCourseTabs, tabLabels = {}, tuitionYear, placementYear } = config;
+  const tabName = (item) => (Object.hasOwn(tabLabels, item.id) && tabLabels[item.id]) || item.name;
   const compare = useCompare(records);
   const primaryCourses = collegeCourseTabs.map((id) => courses.find((item) => item.id === id)).filter(Boolean);
   const additionalCourses = courses.filter((item) => !primaryCourses.includes(item) && records.some((row) => row.courseId === item.id));
@@ -72,16 +81,16 @@ export default function CollegeExplorer({ records, course, onCourseChange, initi
       </div>
       <div id="college-results" role="tabpanel" aria-label={`${currentCourse.name} sample colleges`} tabIndex={0}>
         {preview.length ? <table className={styles.table} role="table" aria-label={`${currentCourse.name} college comparison preview`}>
-          <thead role="rowgroup"><tr role="row"><th scope="col" className={styles.number}>#</th><th scope="col">College</th><th scope="col">Annual tuition<small>{collegeDemo.tuitionYear}</small></th><th scope="col">Placements<small>{collegeDemo.placementYear}</small></th><th scope="col">Demo rating</th><th scope="col">Actions</th></tr></thead>
+          <thead role="rowgroup"><tr role="row"><th scope="col" className={styles.number}>#</th><th scope="col">College</th><th scope="col">Annual tuition<small>{tuitionYear}</small></th><th scope="col">Placements<small>{placementYear}</small></th><th scope="col">Demo rating</th><th scope="col">Actions</th></tr></thead>
           <tbody role="rowgroup">{preview.map((row, index) => {
             const picked = compare.has(row.id);
             return <tr key={row.id} role="row" data-college-id={row.id} data-selected={picked}>
               <td role="cell" className={styles.number}><span aria-label={`List position ${index + 1}`}>{index + 1}</span></td>
-              <td role="cell" className={styles.collegeCell}><div className={styles.collegeIdentity}><CollegeArtwork row={row} className={styles.thumbnail} /><div><Link className={styles.collegeName} href={`/colleges/${row.collegeId}`}>{row.name}</Link><p>{row.city}{row.state ? `, ${row.state}` : ''}<span className={styles.courseTag}>{currentCourse.name}</span></p></div></div></td>
+              <td role="cell" className={styles.collegeCell}><div className={styles.collegeIdentity}><CollegeArtwork row={row} className={styles.thumbnail} /><div><Link className={styles.collegeName} href={`/universities/${row.collegeId}`}>{row.name}</Link><p>{row.city}{row.state ? `, ${row.state}` : ''}<span className={styles.courseTag}>{currentCourse.name}</span></p></div></div></td>
               <td role="cell" className={styles.feeCell}><span className={styles.mobileLabel}>Annual tuition</span><strong>{formatTuition(row.annualTuitionInr)}</strong><small>per year</small></td>
               <td role="cell" className={styles.salaryCell}><span className={styles.mobileLabel}>Placements</span><Placement row={row} /></td>
-              <td role="cell" className={styles.ratingCell}><span className={styles.mobileLabel}>Demo rating</span><span className={styles.rating}><Icon name="star" /><strong>{row.demoRating.toFixed(1)}</strong><small>/ 5</small></span></td>
-              <td role="cell" className={styles.actionsCell}><div className={styles.rowActions}><label className={styles.compareCheck}><input type="checkbox" checked={picked} onChange={() => toggleCompare(row)} aria-label={`Compare ${row.name}`} />Compare</label><Link className="button button--primary" href={`/colleges/${row.collegeId}#courses`}>View details<span className="sr-only">: {row.name}</span><Icon name="arrow" /></Link><Link className={`text-link ${styles.apply}`} href="/admission-checklist"><span className="sr-only">Admission </span>Checklist<Icon name="arrow" /></Link></div></td>
+              <td role="cell" className={styles.ratingCell}><span className={styles.mobileLabel}>Demo rating</span>{row.demoRating != null ? <span className={styles.rating}><Icon name="star" /><strong>{row.demoRating.toFixed(1)}</strong><small>/ 5</small></span> : <span>—</span>}</td>
+              <td role="cell" className={styles.actionsCell}><div className={styles.rowActions}><label className={styles.compareCheck}><input type="checkbox" checked={picked} onChange={() => toggleCompare(row)} aria-label={`Compare ${row.name}`} />Compare</label><Link className="button button--primary" href={`/universities/${row.collegeId}#courses`}>View details<span className="sr-only">: {row.name}</span><Icon name="arrow" /></Link><Link className={`text-link ${styles.apply}`} href="/admission-checklist"><span className="sr-only">Admission </span>Checklist<Icon name="arrow" /></Link></div></td>
             </tr>;
           })}</tbody>
         </table> : <div className={styles.empty}><Icon name="search" /><h3>No sample colleges match these filters</h3><p>Try another location or budget for {currentCourse.name}.</p><button className="button button--outline" onClick={resetFilters}>Reset filters</button></div>}

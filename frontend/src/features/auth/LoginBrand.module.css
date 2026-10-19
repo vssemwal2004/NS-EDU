@@ -1,0 +1,36 @@
+.brand { position: relative; isolation: isolate; display: flex; flex-direction: column; gap: var(--lux-space-6); min-width: 0; padding: clamp(1.75rem, 1rem + 3vw, 3.5rem); overflow: hidden; background: var(--lux-surface-dark-glow), var(--lux-oxblood); color: var(--lux-text-on-dark); }
+.ornament { position: absolute; z-index: -1; right: -12%; bottom: -6%; width: min(78%, 420px); stroke: rgb(201 164 106 / 32%); stroke-width: 1.2; }
+.ornament circle { fill: var(--lux-champagne); stroke: none; opacity: .7; }
+.logo { width: 148px; height: auto; }
+.copy { display: grid; gap: var(--lux-space-3); }
+.eyebrow { display: inline-flex; align-items: center; gap: var(--lux-space-2); color: var(--lux-champagne); font-size: var(--lux-caption); font-weight: 700; letter-spacing: var(--lux-tracking-eyebrow); text-transform: uppercase; }
+.eyebrow span { width: 28px; height: 1px; background: var(--lux-champagne); }
+.title { max-width: 15ch; font-family: var(--lux-font-display); font-weight: 400; font-size: clamp(2rem, 1.4rem + 2.2vw, 3.25rem); line-height: 1.04; letter-spacing: var(--lux-tracking-display); color: var(--lux-text-on-dark); text-wrap: balance; }
+.title em { color: var(--lux-champagne); }
+.points { display: grid; gap: var(--lux-space-4); margin: 0; padding: 0; list-style: none; }
+.points li { display: grid; grid-template-columns: 40px 1fr; gap: var(--lux-space-3); align-items: start; }
+.pointIcon { display: grid; place-items: center; width: 40px; height: 40px; border: 1px solid rgb(201 164 106 / 40%); border-radius: 50%; color: var(--lux-champagne); }
+.pointIcon :global(.icon) { width: 19px; height: 19px; }
+.points strong { display: block; color: var(--lux-text-on-dark); font-size: .9375rem; font-weight: 600; line-height: 1.35; }
+.points small { display: block; margin-top: 2px; color: var(--lux-text-on-dark-muted); font-size: var(--lux-small); line-height: 1.5; }
+.foot { display: flex; align-items: center; gap: var(--lux-space-2); margin-top: auto; padding-top: var(--lux-space-4); border-top: 1px solid var(--lux-border-dark); color: var(--lux-text-on-dark-muted); font-size: var(--lux-caption); }
+.foot :global(.icon) { width: 16px; height: 16px; color: var(--lux-champagne); }
+
+/* Popup: a slimmer column with two points. */
+.brand[data-variant="dialog"] { gap: var(--lux-space-5); padding: var(--lux-space-6) var(--lux-space-5); }
+.brand[data-variant="dialog"] .logo { width: 128px; }
+.brand[data-variant="dialog"] .title { font-size: 1.875rem; }
+.brand[data-variant="dialog"] .points li:nth-child(n + 3) { display: none; }
+
+/* Phones: the page variant becomes a compact band above the form. */
+@media (max-width: 860px) {
+  .brand[data-variant="page"] { gap: var(--lux-space-4); padding: var(--lux-space-5) var(--lux-gutter) var(--lux-space-6); }
+  .brand[data-variant="page"] .logo { width: 116px; }
+  .brand[data-variant="page"] .title { max-width: 18ch; font-size: clamp(1.75rem, 1.3rem + 2.4vw, 2.25rem); }
+  .brand[data-variant="page"] .points { grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); gap: var(--lux-space-3); }
+  .brand[data-variant="page"] .points li:nth-child(n + 3), .brand[data-variant="page"] .foot { display: none; }
+  .brand[data-variant="page"] .ornament { width: 260px; right: -60px; bottom: -40px; }
+}
+@media (max-width: 720px) {
+  .brand[data-variant="dialog"] { display: none; }
+}

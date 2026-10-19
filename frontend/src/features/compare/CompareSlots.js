@@ -32,7 +32,7 @@ export default function CompareSlots({ course, rows, selected, onAdd, onRemove, 
             <h3 id={`slot-${row.id}`}>{row.name}</h3>
             <p className={styles.slotCity}><Icon name="location" />{row.city}{row.state ? `, ${row.state}` : ''}</p>
             <p className={styles.slotFacts}><span>{formatTuition(row.annualTuitionInr)}/yr</span><span className={styles.illustrative}>Illustrative</span></p>
-            <Link className={`text-link ${styles.slotLink}`} href={`/colleges/${row.collegeId}`}>View college<Icon name="arrow" /></Link>
+            <Link className={`text-link ${styles.slotLink}`} href={`/universities/${row.collegeId}`}>View college<Icon name="arrow" /></Link>
           </div>
           <button type="button" className={`icon-button ${styles.slotRemove}`} aria-label={`Remove ${row.name} from comparison`} onClick={() => onRemove(row)}><Icon name="close" /></button>
         </article>

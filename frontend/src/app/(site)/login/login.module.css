@@ -1,0 +1,10 @@
+.page { position: relative; padding: clamp(0rem, -1rem + 4vw, 3rem) var(--lux-gutter) clamp(2rem, 1rem + 4vw, 5rem); background: radial-gradient(ellipse 60% 50% at 100% 0%, var(--lux-blush-soft), transparent 70%), var(--lux-surface-page); outline: none; }
+.frame { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); max-width: 1180px; min-height: min(680px, calc(100dvh - var(--lux-header-height) - 6rem)); margin-inline: auto; border-radius: var(--lux-radius-xl); background: var(--lux-surface-raised); box-shadow: var(--lux-shadow-float), 0 0 0 1px var(--lux-border); overflow: hidden; }
+.panel { display: grid; align-items: center; min-width: 0; padding: clamp(1.5rem, 1rem + 3vw, 4rem); }
+.formWrap { width: 100%; max-width: 440px; margin-inline: auto; }
+
+@media (max-width: 860px) {
+  .page { padding: 0 0 var(--lux-space-6); background: var(--lux-surface-page); }
+  .frame { grid-template-columns: minmax(0, 1fr); min-height: 0; border-radius: 0; box-shadow: none; background: transparent; }
+  .panel { position: relative; margin-top: calc(var(--lux-space-4) * -1); padding: var(--lux-space-6) var(--lux-gutter) var(--lux-space-5); border-radius: var(--lux-radius-xl) var(--lux-radius-xl) 0 0; background: var(--lux-surface-page); }
+}

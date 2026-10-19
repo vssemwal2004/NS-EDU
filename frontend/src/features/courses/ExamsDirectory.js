@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import Icon from '@/components/ui/Icon';
 import { useCatalog } from '@/providers/CatalogProvider';
-import { EXAM_NOTES, examLevel, hostname, plural, relatedCourses } from './data';
+import { examLevel, hostname, plural, relatedCourses } from './data';
 import { FieldChips, LevelBadge, SearchBox, syncUrl } from './Filters';
 import styles from './Listing.module.css';
 
@@ -39,7 +39,7 @@ export default function ExamsDirectory({ initialQuery = '', initialField = '' })
       <span className={styles.calloutIcon}><Icon name="shield" /></span>
       <div>
         <h2 id="exam-callout-title">Official bulletins first</h2>
-        <p>NSEDU does not reproduce exam dates, patterns, fees or cut-offs. Each guide points you to the official website, where the latest information bulletin is the only source to rely on.</p>
+        <p>Gyaan Vidhya does not reproduce exam dates, patterns, fees or cut-offs. Each guide points you to the official website, where the latest information bulletin is the only source to rely on.</p>
       </div>
     </aside>
 
@@ -49,7 +49,7 @@ export default function ExamsDirectory({ initialQuery = '', initialField = '' })
     </div>
 
     {visible.length ? <div className={styles.examGrid}>{visible.map((exam) => {
-      const level = examLevel(exam.id);
+      const level = examLevel(exam);
       const host = hostname(exam.href);
       return <article key={exam.id} id={exam.id} className={styles.examCard} aria-labelledby={`${exam.id}-title`}>
         <div className={styles.cardHead}>
@@ -61,7 +61,7 @@ export default function ExamsDirectory({ initialQuery = '', initialField = '' })
           </div>
         </div>
         <p className={styles.cardText}>{exam.summary}</p>
-        {EXAM_NOTES[exam.id] && <p className={styles.examNote}><Icon name="coursesInfo" />{EXAM_NOTES[exam.id]}</p>}
+        {exam.note && <p className={styles.examNote}><Icon name="coursesInfo" />{exam.note}</p>}
         <div className={styles.examCourses}>
           <p>Commonly used for</p>
           {related[exam.id].length ? <ul>{related[exam.id].map((course) => <li key={course.id}><Link href={`/courses/${course.id}`}>{course.name}</Link></li>)}</ul> : <span className={styles.muted}>No linked course in the catalogue yet</span>}
