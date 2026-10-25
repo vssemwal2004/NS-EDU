@@ -2,8 +2,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import Icon from '@/components/ui/Icon';
 import { useStudentAuth } from '@/providers/StudentAuthProvider';
-import { useAuthConfig } from './auth-config';
-import LoginBrand from './LoginBrand';
+import LoginArt from './LoginArt';
 import OtpLoginForm from './OtpLoginForm';
 import styles from './LoginDrawer.module.css';
 
@@ -12,13 +11,14 @@ const reasons = {
   apply: { title: 'Log in to apply', lead: 'Verify your email once. Your quick-apply form opens right after.' },
   compare: { title: 'Log in to compare', lead: 'Comparisons use the full university directory, which is open to signed-in students.' },
   directory: { title: 'Log in to explore', lead: 'The full university directory is open to signed-in students. It takes one email code.' },
+  account: { title: 'Your student space', lead: 'Log in to see your applications and saved preferences.' },
 };
 
-// The login popup: a centred dialog on larger screens, a bottom sheet on phones.
-// Native <dialog> + showModal() gives the focus trap, Escape and an inert page behind it.
+// The one login surface on the site: always this popup, over whatever page the student is on
+// (/login itself opens it over the homepage). A centred dialog on larger screens, a bottom sheet
+// on phones. Native <dialog> + showModal() gives the focus trap, Escape and an inert page behind it.
 export default function LoginDrawer() {
   const { loginOpen, loginReason, closeLogin, completeLogin } = useStudentAuth();
-  const config = useAuthConfig(loginOpen);
   const id = useId();
   const dialog = useRef(null);
   const timer = useRef(0);
@@ -53,13 +53,14 @@ export default function LoginDrawer() {
     onPointerDown={(event) => { pressedBackdrop.current = event.target === event.currentTarget; }}
     onClick={(event) => { if (pressedBackdrop.current && event.target === event.currentTarget) close(); pressedBackdrop.current = false; }}>
     {session.count > 0 && <div className={styles.shell}>
-      <LoginBrand variant="dialog" minutes={Math.round(config.otpTtlSeconds / 60)} />
+      <LoginArt />
       <div className={styles.main}>
-        <span className={styles.handle} aria-hidden="true" />
-        <button type="button" className={styles.close} aria-label="Close login" onClick={close}><Icon name="close" /></button>
         <OtpLoginForm key={session.count} active={loginOpen} titleId={`${id}-title`} title={copy.title} lead={copy.lead}
           onSuccess={verified} onLinkClick={close} doneText="Continuing where you left off…" />
       </div>
+      {/* Pinned to the dialog's corner: over the form on desktop, over the drawing on a phone sheet. */}
+      <span className={styles.handle} aria-hidden="true" />
+      <button type="button" className={styles.close} aria-label="Close login" onClick={close}><Icon name="close" /></button>
     </div>}
   </dialog>;
 }

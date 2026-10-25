@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import Icon from '@/components/ui/Icon';
 import { loginHref } from '@/features/auth/gated-routes';
-import { countByPlace } from '@/features/home/placeCounts';
+import { countByPlace, mergePlaceCount } from '@/features/home/placeCounts';
 import { ArtWindow, Postcard, Stamp } from '@/features/newsroom/Postcards';
 import { getCatalog } from '@/lib/api/catalog';
 import { getSharedContent } from '@/lib/api/content';
@@ -23,11 +23,14 @@ function artFor(entry) {
 export default async function LocationsPage() {
   const [catalog, { media }, student] = await Promise.all([getCatalog(), getSharedContent(), getStudentSession()]);
   const art = artFor(media?.destinationsArt);
-  const counts = countByPlace(catalog.colleges);
+  const programmeCounts = countByPlace(catalog.colleges);
+  // Institution totals come from the directory records; the sample programme rows add the fee line.
+  const counts = new Map([...catalog.cities, ...catalog.states].map((place) => [place.name, mergePlaceCount(place, programmeCounts)]));
   const split = (places) => [places.filter((place) => art && place.crop), places.filter((place) => !(art && place.crop)).toSorted(byName)];
   const [cityCards, cityStamps] = split(catalog.cities);
   const [stateCards, stateStamps] = split(catalog.states);
-  const placesWithInstitutions = [...catalog.cities, ...catalog.states].filter((place) => counts.get(place.name)?.institutions).length;
+  const totals = catalog.locationTotals ?? { cities: 0, states: 0 };
+  const number = (value) => new Intl.NumberFormat('en-IN').format(value ?? 0);
   const illustrative = catalog.colleges.some((row) => row.isIllustrative);
   const fan = [cityCards[2], stateCards[3], cityCards[5]].filter(Boolean);
   const empty = !catalog.cities.length && !catalog.states.length;
@@ -41,9 +44,9 @@ export default async function LocationsPage() {
           <h1 id="locations-title" className={`lux-display-1 ${styles.heroTitle}`}>Where in India will <span>you study?</span></h1>
           <p className="lux-lead">Choose a city or state to open its universities. From there, narrow the list by course, fees and approvals.</p>
           {!empty && <dl className={styles.facts}>
-            <div><dt>Cities</dt><dd>{catalog.cities.length}</dd></div>
-            <div><dt>States</dt><dd>{catalog.states.length}</dd></div>
-            <div><dt>With institutions listed</dt><dd>{placesWithInstitutions}</dd></div>
+            <div><dt>Cities &amp; districts</dt><dd>{number(totals.cities)}</dd></div>
+            <div><dt>States &amp; UTs</dt><dd>{number(totals.states)}</dd></div>
+            <div><dt>Institutions listed</dt><dd>{number(catalog.stats?.institutions)}</dd></div>
           </dl>}
           {!empty && <nav className={styles.jump} aria-label="On this page">
             <a className="lux-chip" href="#cities"><Icon name="building" />Cities</a>
@@ -101,7 +104,7 @@ export default async function LocationsPage() {
             <Link className="lux-button lux-button--outline" href="/budget">Check living costs</Link>
           </div>
         </div>
-        <p className={styles.footnote}>Counts come from the Gyaan Vidhya catalogue{illustrative ? ', which currently includes illustrative sample institutions' : ''}. Landmarks are illustrations, not photographs.</p>
+        <p className={styles.footnote}>Institution counts come from the Gyaan Vidhya directory and are not a ranking; programme counts come from the curated fee catalogue{illustrative ? ', which still includes illustrative sample institutions' : ''}. Landmarks are illustrations, not photographs.</p>
       </section>
     </>}
   </main>;

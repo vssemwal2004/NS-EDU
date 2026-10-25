@@ -1,23 +1,31 @@
-.dialog { width: min(880px, calc(100% - 48px)); max-width: none; max-height: min(720px, calc(100dvh - 48px)); margin: auto; padding: 0; border: 0; border-radius: var(--lux-radius-xl); background: var(--lux-ivory); color: var(--lux-ink); box-shadow: var(--lux-shadow-float), 0 0 0 1px rgb(201 164 106 / 28%); overflow: hidden; overscroll-behavior: contain; }
-.dialog::backdrop { background: rgb(31 20 24 / 58%); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+.dialog { width: min(940px, calc(100% - 48px)); max-width: none; max-height: min(680px, calc(100dvh - 48px)); margin: auto; padding: 0; border: 0; border-radius: var(--lux-radius-xl); background: var(--lux-ivory); color: var(--lux-ink); box-shadow: 0 40px 100px -30px rgb(31 20 24 / 60%), 0 0 0 1px rgb(201 164 106 / 28%); overflow: hidden; overscroll-behavior: contain; }
+.dialog::backdrop { background: rgb(31 20 24 / 55%); backdrop-filter: blur(6px) saturate(1.1); -webkit-backdrop-filter: blur(6px) saturate(1.1); }
 .dialog[open] { animation: login-in var(--lux-dur-3) var(--lux-ease-out) both; }
 .dialog[open]::backdrop { animation: lux-fade-in var(--lux-dur-2) ease both; }
 @keyframes login-in { from { opacity: 0; transform: translateY(14px) scale(.985); } to { opacity: 1; transform: none; } }
 
-.shell { display: grid; grid-template-columns: minmax(0, 320px) minmax(0, 1fr); max-height: inherit; }
-.main { position: relative; min-width: 0; max-height: min(720px, calc(100dvh - 48px)); padding: var(--lux-space-7) clamp(1.5rem, 1rem + 2.5vw, 3rem) var(--lux-space-6); overflow-y: auto; }
+/* Drawing on the left, the form on the right; both columns share the dialog's full height. */
+.shell { position: relative; display: grid; grid-template-columns: minmax(0, 420px) minmax(0, 1fr); height: min(680px, calc(100dvh - 48px)); }
+.main { display: grid; align-content: center; min-width: 0; min-height: 0; padding: var(--lux-space-8) clamp(1.75rem, 1rem + 3vw, 3.5rem) var(--lux-space-7); overflow-y: auto; }
 .handle { display: none; }
-.close { position: absolute; top: var(--lux-space-4); right: var(--lux-space-4); display: grid; place-items: center; width: 44px; height: 44px; border: 1px solid var(--lux-border); border-radius: 50%; background: var(--lux-surface-raised); color: var(--lux-wine); transition: background-color var(--lux-dur-2), border-color var(--lux-dur-2); }
-.close:hover { background: var(--lux-sand); border-color: var(--lux-border-strong); }
+.close { position: absolute; z-index: 2; top: var(--lux-space-4); right: var(--lux-space-4); display: grid; place-items: center; width: 44px; height: 44px; border: 1px solid var(--lux-border); border-radius: 50%; background: var(--lux-surface-raised); color: var(--lux-wine); cursor: pointer; transition: background-color var(--lux-dur-2), border-color var(--lux-dur-2), transform var(--lux-dur-2); }
+.close:hover { background: var(--lux-sand); border-color: var(--lux-border-strong); transform: rotate(90deg); }
+.close:focus-visible { outline: 2px solid var(--lux-focus); outline-offset: 2px; }
 .close :global(.icon) { width: 20px; height: 20px; }
 
-/* Phones: bottom sheet, thumb-reachable, the brand column is hidden (LoginBrand.module.css). */
+/* Tablets: a narrower drawing column. */
+@media (max-width: 900px) {
+  .shell { grid-template-columns: minmax(0, 320px) minmax(0, 1fr); }
+}
+
+/* Phones: a bottom sheet. The drawing becomes a short band at the top and the whole sheet scrolls. */
 @media (max-width: 720px) {
   .dialog { width: 100%; max-height: calc(100dvh - var(--lux-safe-top) - 12px); margin: auto 0 0; border-radius: var(--lux-radius-xl) var(--lux-radius-xl) 0 0; }
   .dialog[open] { animation: login-sheet var(--lux-dur-3) var(--lux-ease-out) both; }
-  .shell { grid-template-columns: minmax(0, 1fr); }
-  .main { max-height: calc(100dvh - var(--lux-safe-top) - 12px); padding: var(--lux-space-6) var(--lux-gutter) calc(var(--lux-space-5) + var(--lux-safe-bottom)); }
-  .handle { position: absolute; top: 10px; left: 50%; display: block; width: 40px; height: 4px; border-radius: 4px; background: var(--lux-border-strong); transform: translateX(-50%); }
-  .close { top: var(--lux-space-3); right: var(--lux-space-3); }
+  .shell { grid-template-columns: minmax(0, 1fr); height: auto; max-height: calc(100dvh - var(--lux-safe-top) - 12px); overflow-y: auto; overscroll-behavior: contain; }
+  .main { display: block; padding: var(--lux-space-6) var(--lux-gutter) calc(var(--lux-space-5) + var(--lux-safe-bottom)); overflow: visible; }
+  .handle { position: absolute; z-index: 2; top: 10px; left: 50%; display: block; width: 40px; height: 4px; border-radius: 4px; background: rgb(255 255 255 / 55%); transform: translateX(-50%); }
+  .close { top: var(--lux-space-3); right: var(--lux-space-3); border-color: rgb(255 255 255 / 30%); background: rgb(255 255 255 / 14%); color: #FFFFFF; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+  .close:hover { background: rgb(255 255 255 / 24%); }
 }
 @keyframes login-sheet { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }

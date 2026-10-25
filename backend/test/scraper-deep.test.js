@@ -1,9 +1,32 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  aboutDeep, activitiesFrom, admissionNoteFrom, campusFrom, durationIn, entranceExamsFrom,
-  facilitiesFrom, galleryCandidates, levelOf, placementsFrom, programmeRows, rupeesIn,
+  aboutDeep, activitiesFrom, admissionNoteFrom, awardsFrom, campusFrom, durationIn, entranceExamsFrom,
+  facilitiesFrom, galleryCandidates, isCredibleAward, levelOf, placementsFrom, programmeRows, rupeesIn,
 } from '../src/scraper/deep.js';
+
+// Lines a real crawl stored as "awards" before the test was tightened: a welcome note, a mission
+// statement, an event report and a faculty bio. None of them may pass, while real awards still do.
+test('awards are real awards, not prose that mentions excellence', () => {
+  const prose = [
+    'I welcome you to be a part of our School striving towards excellence in education and research.',
+    'To become a center of excellence in skill development and groom the Engineering professional to cope up with change.',
+    'Teachers Day Celebration at DBUU Honored the Spirit of Knowledge, Dedication, Guidance, and Academic Excellence Among Faculty Members.',
+    'She is Editor and Reviewer in many journals. She is awarded for Project.',
+  ];
+  for (const line of prose) assert.equal(isCredibleAward(line), false, line);
+  const real = [
+    'Awarded the Best University Award 2024 by the State Government of Uttarakhand.',
+    'Accredited with NAAC A+ grade in 2023 (second cycle).',
+    'Ranked 45 in the NIRF University category, 2025.',
+  ];
+  for (const line of real) assert.equal(isCredibleAward(line), true, line);
+  const page = { category: 'about', lines: [...prose, ...real] };
+  assert.deepEqual(awardsFrom([page]).map((row) => row.title), [real[1], real[2], real[0]].toSorted((a, b) => {
+    const year = (text) => Number(/\b(20\d\d)\b/.exec(text)?.[1] ?? 0);
+    return year(b) - year(a);
+  }));
+});
 import { parsePage } from '../src/scraper/extract.js';
 import { INSTITUTION_FIELDS, IMPORTABLE_FIELDS, MACHINE_FIELDS } from '../src/modules/universities/schema.js';
 import { validate } from '../src/lib/validation.js';
@@ -85,7 +108,10 @@ institute's dedication to shaping the leaders of tomorrow through a contemporary
     assert.equal(durationIn('8 semesters'), 4);
     assert.equal(durationIn('18 months'), 1.5);
     assert.equal(durationIn('full time'), null);
-    assert.deepEqual(['B.Tech CSE', 'M.Tech', 'Ph.D in Physics', 'Diploma in Civil'].map(levelOf), ['UG', 'PG', 'PhD', 'Diploma']);
+    assert.deepEqual(
+      ['B.Tech CSE', 'B. Pharmacy', 'M.Tech', 'M. Pharmacy', 'Ph.D in Physics', 'Diploma in Civil'].map(levelOf),
+      ['UG', 'UG', 'PG', 'PG', 'PhD', 'Diploma'],
+    );
   });
 
   test('programme rows carry level, duration and only unambiguous per-year fees', () => {
@@ -94,9 +120,10 @@ institute's dedication to shaping the leaders of tomorrow through a contemporary
     assert.deepEqual(rows[0], { name: 'B.Tech Computer Science and Engineering', sourcePage: `${SITE}/programmes`, level: 'UG', durationYears: 4, annualFeeInr: 125_000 });
     assert.equal(rows[1].annualFeeInr, 90_000, 'an "Annual Fee" column makes the amount per year');
     assert.equal(rows[2].annualFeeInr, undefined, 'a total course fee is never stored as an annual fee');
-    assert.equal(rows[2].feeNote, 'Total course fee Rs. 1,50,000');
+    assert.equal(rows[2].totalFeeInr, 150_000, 'it is kept as what it is: the fee for the whole programme');
     assert.deepEqual(rows[3], { name: 'MBA', sourcePage: `${SITE}/programmes`, level: 'PG' });
-    assert.equal(programmeRows([page('programmes')], Array.from({ length: 200 }, (_, index) => `MBA ${index}`)).length, 60);
+    assert.equal(programmeRows([], ['Bachelor of Architecture Duration: 5 Years'])[0].name, 'Bachelor of Architecture');
+    assert.equal(programmeRows([page('programmes')], Array.from({ length: 600 }, (_, index) => `MBA ${index}`)).length, 500);
   });
 
   test('placement figures come from the placement page only, with the year they belong to', () => {
@@ -122,6 +149,24 @@ institute's dedication to shaping the leaders of tomorrow through a contemporary
     const header = `<p>Average package 5 LPA.</p><img src="/img/site-logo.png" alt="Wipro">`;
     assert.equal(placementsFrom([{ ...parsePage(header, SITE), category: 'placement' }]).recruiters, undefined,
       'a header logo is not a recruiter wall, whatever its alt text says');
+
+    const cards = `<h2>Summer Placements 2024-26</h2>
+      <div>6.0 L</div><div>Highest International Stipend</div>
+      <div>2.73 L</div><div>Average Stipend</div>
+      <div>2.50 L</div><div>Median Stipend</div>
+      <h2>Final Placements 2023-25</h2>
+      <div>1.23 Cr</div><div>Highest International CTC</div>
+      <div>72 L</div><div>Highest Domestic CTC</div>
+      <div>31.30 L</div><div>Average CTC</div>
+      <div>26 L</div><div>Median CTC</div>
+      <img class="partner-logo" src="/partners/icon-1.png" alt="Icon 1">
+      <img class="partner-logo" src="/partners/fame.png" alt="Fame Partner">`;
+    const stacked = placementsFrom([{ ...parsePage(cards, `${SITE}/industry-connect`), category: 'placement' }]);
+    assert.deepEqual(
+      [stacked.year, stacked.highestPackageLpa, stacked.averagePackageLpa, stacked.medianPackageLpa, stacked.recruiters],
+      [2025, 123, 31.3, 26, undefined],
+      'responsive stat cards pair salary amounts with labels, prefer the final-placement year, and ignore stipends and page icons',
+    );
   });
 
   test('facilities, activities and campus details are only what the site names', () => {

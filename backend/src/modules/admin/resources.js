@@ -1,7 +1,7 @@
 import { collection, COLLECTIONS } from '../../db/collections.js';
 import { slugify } from '../../lib/validation.js';
 import { derivedFields } from '../universities/normalize.js';
-import { IMPORTABLE_FIELDS, INSTITUTION_FIELDS, INSTITUTION_TYPES, LEGACY_INSTITUTION_FIELDS, VERIFICATION } from '../universities/schema.js';
+import { IMPORTABLE_FIELDS, INSTITUTION_FIELDS, INSTITUTION_TYPES, LEGACY_INSTITUTION_FIELDS, PROGRAMME_LEVELS, VERIFICATION } from '../universities/schema.js';
 
 export const ICONS = ['cap', 'chart', 'bars', 'people', 'document', 'book', 'science', 'medical', 'palette', 'scales', 'laptop', 'commerce', 'gear', 'building', 'compass'];
 
@@ -15,7 +15,7 @@ const crop = { name: 'crop', label: 'Artwork crop', type: 'numberArray4', nullab
 // One registry drives validation, list search, the admin form metadata and slug rules.
 export const resources = {
   courses: {
-    label: 'Courses', singular: 'course', titleField: 'name', uniqueField: 'slug', searchFields: ['name', 'fullName', 'field', 'slug'],
+    label: 'Courses', singular: 'course', titleField: 'name', uniqueField: 'slug', searchFields: ['name', 'fullName', 'field', 'slug', 'aliases'],
     referencedBy: 'courseSlug', slugFrom: (doc) => doc.name,
     fields: [
       { name: 'name', label: 'Short name', type: 'string', required: true, maxLength: 80 },
@@ -24,7 +24,8 @@ export const resources = {
       { name: 'field', label: 'Field of study', type: 'string', required: true, maxLength: 60 },
       icon,
       { name: 'summary', label: 'Summary', type: 'text', maxLength: 400 },
-      level,
+      { ...level, options: PROGRAMME_LEVELS, help: 'UG, PG, Diploma or PhD. Integrated programmes entered after class 12 are UG.' },
+      { name: 'aliases', label: 'Other spellings', type: 'stringList', maxItems: 30, maxLength: 120, help: 'Comma separated names institutions print for this course, e.g. "B.Sc Agri, B.Sc (Hons) Agriculture". Used to link institutions\' programmes to it.' },
       { name: 'popular', label: 'Popular course', type: 'boolean', default: false },
       order, active,
     ],

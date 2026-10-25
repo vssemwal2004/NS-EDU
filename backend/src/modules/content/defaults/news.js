@@ -1,4 +1,7 @@
-// Education news topics (ids match the feed classifier) and the reviewed-cover image policy.
+// Education news topics (ids match the feed classifier) and the cover-image policy.
+// `publisher` shows the thumbnail each publisher puts in its own feed (hosts are still limited to
+// the three publishers in next.config.mjs). `reviewed` shows only the URLs listed below — the feeds
+// rotate within days, so a reviewed list goes stale and every story loses its picture.
 export default {
   topics: [
     { id: 'all', label: 'All education', icon: 'news' },
@@ -10,11 +13,7 @@ export default {
     { id: 'policy', label: 'Education policy', icon: 'document' },
   ],
   imagePolicy: {
-    mode: 'reviewed',
-    reviewedUrls: [
-      'https://etimg.etb2bimg.com/thumb/img-size-108414/134766315.cms',
-      'https://etimg.etb2bimg.com/thumb/img-size-14738/134766198.cms',
-      'https://etimg.etb2bimg.com/thumb/img-size-207852/134764718.cms',
-    ],
+    mode: 'publisher',
+    reviewedUrls: [],
   },
 };

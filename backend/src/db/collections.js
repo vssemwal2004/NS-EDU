@@ -23,6 +23,7 @@ export const COLLECTIONS = Object.freeze({
   siteContent: 'site_content',
   media: 'media',
   studentEvents: 'student_events',
+  consentEvents: 'consent_events',
 });
 
 let ready;

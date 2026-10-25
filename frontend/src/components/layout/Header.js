@@ -19,7 +19,9 @@ const isTyping = (target) => /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName) ||
 function useMenus() {
   const { courses = [], exams = [] } = useCatalog();
   return {
-    courses: { columns: 2, items: courses.map((course) => ({ href: `/courses/${encodeURIComponent(course.id)}`, label: course.name, description: course.fullName || course.field, icon: course.icon })), footer: { href: '/courses', label: 'All courses' } },
+    // The catalogue holds every Indian degree (100+); the menu shows the first sixteen in catalogue
+    // order — the most sought-after — and links to the full guide.
+    courses: { columns: 2, items: courses.slice(0, 16).map((course) => ({ href: `/courses/${encodeURIComponent(course.id)}`, label: course.name, description: course.fullName || course.field, icon: course.icon })), footer: { href: '/courses', label: courses.length > 16 ? `All ${courses.length} courses` : 'All courses' } },
     exams: { items: exams.map((exam) => ({ href: `/exams/${encodeURIComponent(exam.id)}`, label: exam.name, description: `${exam.field} entrance exam`, icon: exam.icon })), footer: { href: '/exams', label: 'All exam guides' } },
     tools: { items: toolLinks },
   };

@@ -2,7 +2,7 @@ import Form from 'next/form';
 import Link from 'next/link';
 import Icon from '@/components/ui/Icon';
 import CourseCard from './CourseCard';
-import { LEVEL_LABEL, courseLevel, courseStats, matchesTerms, plural, streamsOf } from './data';
+import { LEVEL_LABEL, courseLevel, matchesTerms, plural, streamsOf } from './data';
 import styles from './Courses.module.css';
 import tones from './tones.module.css';
 
@@ -25,7 +25,8 @@ function mosaicLayout(streams) {
 }
 
 export default function CoursesIndex({ catalog, field, level, query }) {
-  const { courses, colleges } = catalog;
+  const { courses } = catalog;
+  const offeredAt = catalog.stats?.courseCounts ?? {};
   const streams = streamsOf(courses);
   const layout = mosaicLayout(streams);
   const activeField = streams.some((stream) => stream.name === field) ? field : '';
@@ -35,8 +36,9 @@ export default function CoursesIndex({ catalog, field, level, query }) {
 
   const searched = courses.filter((course) => matchesTerms([course.name, course.fullName, course.field, course.summary, LEVEL_LABEL[courseLevel(course)]].join(' '), query));
   const inField = searched.filter((course) => !activeField || course.field === activeField);
+  // Popular first, then the courses most institutions offer.
   const visible = inField.filter((course) => !activeLevel || courseLevel(course) === activeLevel)
-    .toSorted((a, b) => Number(Boolean(b.popular)) - Number(Boolean(a.popular)));
+    .toSorted((a, b) => Number(Boolean(b.popular)) - Number(Boolean(a.popular)) || (offeredAt[b.id] ?? 0) - (offeredAt[a.id] ?? 0));
   const state = { field: activeField, level: activeLevel, q: query };
   const filtered = Boolean(activeField || activeLevel || query);
 
@@ -118,7 +120,7 @@ export default function CoursesIndex({ catalog, field, level, query }) {
         <p className={styles.result} role="status">{plural(visible.length, 'course')}{activeLevel && ` · ${LEVEL_LABEL[activeLevel]}`}{activeField && ` · ${activeField}`}{query && ` · matching “${query}”`}</p>
 
         {visible.length ? <ul className={styles.grid}>
-          {visible.map((course) => <li key={course.id}><CourseCard course={course} stats={courseStats(course.id, colleges)} /></li>)}
+          {visible.map((course) => <li key={course.id}><CourseCard course={course} institutions={offeredAt[course.id] ?? 0} /></li>)}
         </ul> : <div className={`lux-state ${styles.empty}`}>
           <Icon name="search" />
           <p className="lux-title">No courses match</p>
@@ -126,7 +128,7 @@ export default function CoursesIndex({ catalog, field, level, query }) {
           {filtered && <Link className="lux-button lux-button--outline" scroll={false} href="/courses">Clear filters</Link>}
         </div>}
 
-        <p className={styles.footnote}><Icon name="coursesInfo" />Levels are a general classification. Fees come from illustrative sample programmes in the catalogue, not a ranking — confirm every detail with the institution.</p>
+        <p className={styles.footnote}><Icon name="coursesInfo" />Levels are a general classification. Institution counts and fees come from the programmes institutions publish on their own websites — confirm every detail with the institution.</p>
       </div>
     </section>
   </main>;

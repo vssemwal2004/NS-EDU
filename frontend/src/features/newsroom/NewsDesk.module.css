@@ -61,6 +61,11 @@
 .plate > :global(.icon) { width: clamp(56px, 9vw, 96px); height: clamp(56px, 9vw, 96px); stroke-width: 1; }
 .plateMark { position: absolute; top: 28px; left: 30px; font-size: var(--lux-caption); font-weight: 700; letter-spacing: var(--lux-tracking-eyebrow); text-transform: uppercase; }
 .plateTopic { position: absolute; bottom: 24px; left: 30px; right: 30px; font-family: var(--lux-font-display); font-size: clamp(1.25rem, 1rem + 1vw, 1.875rem); color: var(--lux-text-on-dark); }
+/* Grid stories use the photographs' 16:9 so a plate sits in line with its neighbours. */
+.plate[data-size="column"] { aspect-ratio: 16 / 9; }
+.plate[data-size="column"]::after { inset: 10px; }
+.plate[data-size="column"] > :global(.icon) { width: 40px; height: 40px; }
+.plate[data-size="column"] .plateTopic { bottom: 16px; left: 20px; right: 20px; font-size: 1.125rem; }
 .leadBody { display: grid; gap: var(--lux-space-3); }
 .leadTitle { margin: 0; font-family: var(--lux-font-display); font-weight: 400; font-size: clamp(1.875rem, 1.25rem + 2.3vw, 3.25rem); line-height: 1.06; letter-spacing: -.02em; color: var(--lux-ink); text-wrap: balance; }
 .dek { max-width: 62ch; color: var(--lux-text-muted); font-size: var(--lux-lead); line-height: 1.55; text-wrap: pretty; }

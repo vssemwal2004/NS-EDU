@@ -513,23 +513,38 @@ describe('auth, catalog and admin API', { skip }, () => {
     await api(`/api/admin/courses/${course.id}`, { method: 'PATCH', cookie: adminCookie, body: { active: false } });
     assert.deepEqual((await api('/api/catalog/colleges')).body.items, []);
     const stats = await api('/api/platform/stats');
-    assert.deepEqual(stats.body, { courses: 0, exams: 0, institutions: 1, programmes: 1, cities: 0, states: 0, scholarships: 0, statesWithInstitutions: 0 });
+    // No institution here lists a course, so the per-course and per-field offering counts are empty.
+    assert.deepEqual(stats.body, { courses: 0, exams: 0, institutions: 1, programmes: 1, cities: 0, states: 0, scholarships: 0, statesWithInstitutions: 0, courseCounts: {}, fieldCounts: {} });
 
     assert.equal((await api(`/api/admin/programmes/${programme.body.item.id}`, { method: 'DELETE', cookie: adminCookie })).status, 204);
     assert.equal((await api(`/api/admin/institutions/${institution.id}`, { method: 'DELETE', cookie: adminCookie })).status, 204);
   });
 
-  test('locations are sorted featured first and expose crops', async () => {
+  test('locations are sorted featured first, expose crops and count the institutions in each', async () => {
     const post = (resource, body) => api(`/api/admin/${resource}`, { method: 'POST', cookie: adminCookie, body });
     await post('cities', { name: 'Kolkata', order: 0 });
     await post('cities', { name: 'Pune', landmark: 'Shaniwar Wada', crop: [1, 2, 3, 4], featured: true, order: 5 });
+    await post('states', { name: 'Maharashtra', featured: true });
     const duplicate = await post('cities', { name: 'Pune' });
     assert.deepEqual([duplicate.status, duplicate.body.fields], [409, { name: 'Already in use' }]);
+    // The directory names places by district, so a tile matches its leading word anywhere in the
+    // record's city / district / state — and counts a record that matches twice only once.
+    const inPune = await post('institutions', { name: 'Pune Example College', city: 'Pune City', district: 'Pune', state: 'Maharashtra' });
+    const elsewhere = await post('institutions', { name: 'Nagpur Example College', city: 'Nagpur', state: 'Maharashtra' });
+    assert.equal(inPune.status, 201, JSON.stringify(inPune.body));
+
     const locations = await api('/api/catalog/locations');
     assert.deepEqual(locations.body.cities, [
-      { name: 'Pune', landmark: 'Shaniwar Wada', crop: [1, 2, 3, 4], featured: true },
-      { name: 'Kolkata', landmark: '', crop: null, featured: false },
+      { name: 'Pune', landmark: 'Shaniwar Wada', crop: [1, 2, 3, 4], featured: true, institutions: 1 },
+      { name: 'Kolkata', landmark: '', crop: null, featured: false, institutions: 0 },
     ]);
+    assert.deepEqual(locations.body.states, [{ name: 'Maharashtra', landmark: '', crop: null, featured: true, institutions: 2 }]);
+    // Totals describe the whole directory, not the curated tiles: Pune City, Pune and Nagpur.
+    assert.deepEqual(locations.body.totals, { cities: 3, states: 1 });
+
+    for (const created of [inPune, elsewhere]) {
+      assert.equal((await api(`/api/admin/institutions/${created.body.item.id}`, { method: 'DELETE', cookie: adminCookie })).status, 204);
+    }
   });
 
   test('dashboard counts students and admins can block a student', async () => {

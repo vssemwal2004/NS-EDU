@@ -1,9 +1,10 @@
 import Link from 'next/link';
 import Icon from '@/components/ui/Icon';
-import CollegeOffers from './CollegeOffers';
+import { formatCount } from '@/features/universities/labels';
+import CourseInstitutions from './CourseInstitutions';
 import ExamTicket from './ExamTicket';
 import PickLink from './PickLink';
-import { LEVEL_LABEL, courseLevel, courseStats, formatLakh, formatRange, isDarkTone, lpaRange, plural, relatedCourses, relatedExams, streamTone } from './data';
+import { LEVEL_LABEL, courseLevel, formatLakh, formatRange, isDarkTone, plural, relatedCourses, relatedExams, streamTone } from './data';
 import styles from './CourseDetail.module.css';
 import tones from './tones.module.css';
 
@@ -23,12 +24,13 @@ function RangeBar({ spread, format }) {
   </div>;
 }
 
-export default function CourseDetail({ course, catalog }) {
+export default function CourseDetail({ course, catalog, offerings = null, filters = {} }) {
   const level = courseLevel(course);
   const tone = streamTone(course.field);
   const dark = isDarkTone(tone);
-  const stats = courseStats(course.id, catalog.colleges);
-  const { rows, programmes, institutions, cities, tuition, salary, tuitionYear, placementYear } = stats;
+  const stats = offerings?.stats ?? null;
+  const institutions = stats?.institutions ?? 0;
+  const annual = stats?.annualFee ?? null;
   const exams = relatedExams(course, catalog.exams);
   const siblings = catalog.courses.filter((item) => item.field === course.field && item.id !== course.id);
   const fieldHref = `/courses?field=${encodeURIComponent(course.field)}#all-courses`;
@@ -51,7 +53,7 @@ export default function CourseDetail({ course, catalog }) {
           {course.fullName && <p className={styles.full}>{course.fullName}</p>}
           <p className={styles.lead}>{course.summary}</p>
           <div className={styles.actions}>
-            {programmes > 0 && <a className={`lux-button ${dark ? 'lux-button--light' : 'lux-button--primary'} lux-button--lg`} href="#colleges">Colleges offering {course.name}<Icon name="arrow" /></a>}
+            {institutions > 0 && <a className={`lux-button ${dark ? 'lux-button--light' : 'lux-button--primary'} lux-button--lg`} href="#colleges">Where to study {course.name}<Icon name="arrow" /></a>}
             <PickLink course={course.id} className={`lux-button lux-button--lg ${dark ? styles.onDark : 'lux-button--outline'}`} href={toolHref.eligibility}><Icon name="eligibility" />Check eligibility</PickLink>
           </div>
         </div>
@@ -59,22 +61,26 @@ export default function CourseDetail({ course, catalog }) {
         <aside className={styles.glance} aria-labelledby="glance-title">
           <div className={styles.glanceHead}>
             <h2 id="glance-title">At a glance</h2>
-            {programmes > 0 && <span className={styles.tag}>Illustrative data</span>}
+            {annual && <span className={styles.tag}>Published fees</span>}
           </div>
           <dl className={styles.facts}>
             <div><dt>Level</dt><dd>{level ? LEVEL_LABEL[level] : 'Not classified'}</dd></div>
-            <div><dt>Listed colleges</dt><dd>{programmes ? plural(programmes, 'programme') : 'None yet'}{programmes > 0 && <small>at {plural(institutions, 'institution')} in {plural(cities, 'city', 'cities')}</small>}</dd></div>
+            <div><dt>Offered at</dt><dd>{institutions ? `${formatCount(institutions)} ${institutions === 1 ? 'institution' : 'institutions'}` : stats ? 'None listed yet' : '—'}{stats?.states.length > 0 && <small>in {plural(stats.states.length, 'state')} and UTs</small>}</dd></div>
             <div className={styles.wide}>
-              <dt>Annual tuition{tuitionYear && <> · fees {tuitionYear}</>}</dt>
-              <dd>{tuition ? formatRange(tuition.min, tuition.max, formatLakh) : 'No fee data yet'}{tuition && programmes > 1 && <small>median {formatLakh(tuition.median)}</small>}</dd>
-              <RangeBar spread={tuition} format={formatLakh} />
+              <dt>Annual fee · median</dt>
+              <dd>{annual ? formatLakh(annual.median) : 'Not published yet'}
+                {annual && annual.count > 3 && <small>half of them between {formatRange(annual.p25, annual.p75, formatLakh)} a year</small>}
+              </dd>
+              <RangeBar spread={annual} format={formatLakh} />
             </div>
-            <div className={styles.wide}>
-              <dt>Median salary{salary && placementYear && <> · placements {placementYear}</>}</dt>
-              <dd>{salary ? lpaRange(salary) : 'Not reported'}{salary && <small>{salary.reported} of {programmes} sample {programmes === 1 ? 'college reports' : 'colleges report'}</small>}</dd>
-            </div>
+            {(stats?.annualFeePublic || stats?.annualFeePrivate) && <>
+              <div><dt>Public · median</dt><dd>{stats.annualFeePublic ? formatLakh(stats.annualFeePublic.median) : '—'}{stats.annualFeePublic && <small>{plural(stats.annualFeePublic.count, 'institution')}</small>}</dd></div>
+              <div><dt>Private · median</dt><dd>{stats.annualFeePrivate ? formatLakh(stats.annualFeePrivate.median) : '—'}{stats.annualFeePrivate && <small>{plural(stats.annualFeePrivate.count, 'institution')}</small>}</dd></div>
+            </>}
           </dl>
-          <p className={styles.glanceNote}>{programmes ? 'From sample institutions in the catalogue — illustrative figures, not a ranking.' : 'No sample colleges list this course yet.'}</p>
+          <p className={styles.glanceNote}>{annual
+            ? `From the annual fees ${plural(annual.count, 'institution')} publish on their own websites. Fees change every session — confirm with the institution.`
+            : institutions ? 'No institution offering this course publishes an annual fee we could read yet.' : 'No institution in the directory lists this course yet.'}</p>
         </aside>
       </div>
     </header>
@@ -102,19 +108,12 @@ export default function CourseDetail({ course, catalog }) {
             <p className="lux-eyebrow">Colleges offering</p>
             <h2 id="colleges-title" className="lux-display-3">Where to study {course.name}</h2>
           </div>
-          <p>Sample institutions with illustrative fees, salaries and demo ratings. Apply in under a minute, or pick up to three to compare.</p>
+          <p>Every institution whose own website lists {course.name}, with each programme it runs and the fee it publishes for it — per year, per semester or for the whole programme, exactly as printed.</p>
         </header>
-        {programmes ? <>
-          <CollegeOffers course={{ id: course.id, name: course.name }} rows={rows} />
-          <div className={styles.blockLinks}>
-            <PickLink course={course.id} className="lux-link" href={`/colleges?course=${course.id}`}>All {course.name} colleges and fees<Icon name="arrow" /></PickLink>
-            <PickLink course={course.id} className="lux-link" href={`/budget?course=${course.id}`}>Estimate the full cost<Icon name="arrow" /></PickLink>
-          </div>
-        </> : <div className={`lux-state ${styles.empty}`}>
-          <Icon name="building" />
-          <p className="lux-title">No sample colleges list {course.name} yet</p>
-          <p>Search the university directory, or check your eligibility while the catalogue grows.</p>
-          <Link className="lux-button lux-button--outline" href="/universities">Search universities</Link>
+        <CourseInstitutions course={course} offerings={offerings} filters={filters} />
+        {institutions > 0 && <div className={styles.blockLinks}>
+          <PickLink course={course.id} className="lux-link" href={`/universities?course=${course.id}`}>Filter {course.name} institutions in the directory<Icon name="arrow" /></PickLink>
+          <PickLink course={course.id} className="lux-link" href={`/budget?course=${course.id}`}>Estimate the full cost<Icon name="arrow" /></PickLink>
         </div>}
       </section>
 
@@ -152,7 +151,7 @@ export default function CourseDetail({ course, catalog }) {
     <section className={`lux-container ${styles.faq}`} aria-labelledby="faq-title">
       <h2 id="faq-title" className="lux-title">Before you rely on this page</h2>
       <div className={styles.faqList}>
-        <details><summary>Are these real colleges?<Icon name="chevron" /></summary><p>The colleges on this page are sample institutions with illustrative fees, salaries and demo ratings, used to show how the tools work. Always rely on each institution’s official information.</p></details>
+        <details><summary>Where do these fees come from?<Icon name="chevron" /></summary><p>From each institution’s own website or fee document, linked next to every figure. Each fee is shown for the period the institution printed it for and is never converted. Fees change every session, so confirm the current figure with the institution before you pay.</p></details>
         <details><summary>Where do I confirm eligibility for {course.name}?<Icon name="chevron" /></summary><p>In the official prospectus or admission notice of each institution. The <PickLink course={course.id} href={toolHref.eligibility}>eligibility checker</PickLink> lists what to confirm.</p></details>
         <details><summary>Which entrance exam do I need?<Icon name="chevron" /></summary><p>It depends on the institution and the admission cycle. {exams.length > 0 && <>Start with {exams.map((exam, index) => <span key={exam.id}>{index > 0 && ', '}<Link href={`/exams/${exam.id}`}>{exam.name}</Link></span>)}, then confirm on </>}{exams.length ? 'each' : 'Check each'} college’s official admission page.</p></details>
       </div>

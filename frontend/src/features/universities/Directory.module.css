@@ -98,6 +98,7 @@
 .resultsCount { margin: var(--lux-space-2) 0 0; color: var(--lux-text-muted); font-size: var(--lux-small); }
 .resultsCount strong { color: var(--lux-ink); }
 
+.headSide { display: flex; align-items: center; gap: var(--lux-space-3) var(--lux-space-4); flex-wrap: wrap; justify-content: flex-end; }
 .chips { display: flex; align-items: center; gap: var(--lux-space-2) var(--lux-space-3); flex-wrap: wrap; }
 .chips ul { display: flex; flex-wrap: wrap; gap: var(--lux-space-2); margin: 0; padding: 0; list-style: none; }
 .chip { display: inline-flex; align-items: center; gap: var(--lux-space-2); min-height: 44px; padding: 0 var(--lux-space-2) 0 var(--lux-space-4); border: 1px solid var(--lux-border-strong); border-radius: var(--lux-radius-pill); background: var(--lux-surface-raised); color: var(--lux-ink); font: 600 var(--lux-small)/1.2 var(--lux-font-body); cursor: pointer; transition: border-color var(--lux-dur-2); }

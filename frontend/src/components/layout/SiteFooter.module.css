@@ -29,6 +29,10 @@
 .footer .bottom .backTop { display: inline-flex; align-items: center; gap: var(--lux-space-2); min-height: 44px; color: var(--lux-text-on-dark); white-space: nowrap; }
 .backTop :global(.icon) { width: 15px; height: 15px; color: var(--lux-champagne); }
 .backTop:hover { text-decoration: underline; text-underline-offset: 4px; }
+.bottomLinks { display: flex; align-items: center; gap: var(--lux-space-2) var(--lux-space-5); flex-wrap: wrap; }
+.cookieSettings { min-height: 44px; padding: 0; border: 0; background: none; color: var(--lux-text-on-dark); font: inherit; cursor: pointer; }
+.cookieSettings:hover { text-decoration: underline; text-underline-offset: 4px; }
+.cookieSettings:focus-visible { outline: 2px solid var(--lux-champagne); outline-offset: 2px; }
 
 @media (pointer: coarse) { .footer .group li a { min-height: 44px; } }
 @media (max-width: 960px) {

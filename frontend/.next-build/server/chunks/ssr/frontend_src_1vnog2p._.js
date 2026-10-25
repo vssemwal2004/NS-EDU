@@ -1,3 +1,0 @@
-module.exports=[16098,a=>{"use strict";a.s(["default",()=>b]);let b=(0,a.i(11857).registerClientReference)(function(){throw Error("Attempted to call the default export of [project]/frontend/src/features/admin/AdminShell.js from the server, but it's on the client. It's not possible to invoke a client function from the server, it can only be rendered as a Component or passed to props of a Client Component.")},"[project]/frontend/src/features/admin/AdminShell.js","default")},51866,a=>{"use strict";var b=a.i(16098);a.n(b)},65155,a=>{"use strict";var b=a.i(7997),c=a.i(51866);a.s(["default",0,function({children:a}){return(0,b.jsx)(c.default,{children:a})}])},82284,function(a){a.n(a.i(65155))}];
-
-//# sourceMappingURL=frontend_src_1vnog2p._.js.map

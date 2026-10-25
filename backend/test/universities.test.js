@@ -64,6 +64,35 @@ describe('universities service', { skip }, () => {
     assert.equal(hidden.inserted, 1);
   });
 
+  test('constituent colleges on one hostname stay separate records', async () => {
+    const source = { kind: 'import', name: 'Test list' };
+    const group = await service.upsertUniversities([
+      { name: 'Delta Institute of Technology', city: 'Anand', state: 'Gujarat', website: 'https://www.delta.ac.in/dit' },
+      { name: 'Delta College of Pharmacy', city: 'Anand', state: 'Gujarat', website: 'https://www.delta.ac.in/dcp' },
+    ], { source, publish: false }); // kept out of the public facets the next test counts
+    assert.equal(group.inserted, 2, 'one hostname, two paths, two institutions');
+    const pharmacy = await db.collection('institutions').findOne({ slug: 'delta-college-of-pharmacy' });
+    assert.equal(pharmacy.name, 'Delta College of Pharmacy', 'the sibling record keeps its own name');
+
+    // A later pass over the same site (scheme/www/trailing slash drift) still updates that record.
+    const again = await service.upsertUniversities([
+      { name: 'Delta College of Pharmacy, Anand', city: 'Anand', state: 'Gujarat', website: 'http://delta.ac.in/dcp/', naacGrade: 'B' },
+    ], { source: { kind: 'scrape', name: 'Official website' } });
+    assert.equal(again.updated, 1);
+    assert.equal(again.inserted, 0);
+    assert.equal((await db.collection('institutions').findOne({ _id: pharmacy._id })).naacGrade, 'B');
+
+    // A scraper job names its institution, so an extracted name never lands on a sibling college.
+    const targeted = await service.upsertUniversities([
+      { slug: 'delta-institute-of-technology', name: 'Delta Group of Institutions', city: 'Anand', state: 'Gujarat', website: 'https://www.delta.ac.in/', about: 'Group site.' },
+    ], { source: { kind: 'scrape', name: 'Official website' } });
+    assert.equal(targeted.updated, 1);
+    assert.equal(targeted.inserted, 0);
+    const sibling = await db.collection('institutions').findOne({ _id: pharmacy._id });
+    assert.match(sibling.name, /College of Pharmacy/, 'the sibling college was not renamed to the group');
+    assert.equal(sibling.about, undefined, 'and did not take the group site’s text');
+  });
+
   test('public list, suggest, facets and detail only show visible records', async () => {
     service.invalidateUniversityCaches();
     const list = await service.listUniversities({ q: 'alph uni' });

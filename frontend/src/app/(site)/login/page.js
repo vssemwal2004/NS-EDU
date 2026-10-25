@@ -1,9 +1,8 @@
 import { redirect } from 'next/navigation';
-import LoginBrand from '@/features/auth/LoginBrand';
-import LoginScreen from '@/features/auth/LoginScreen';
+import LoginRoute from '@/features/auth/LoginRoute';
 import { safeNext } from '@/features/auth/gated-routes';
+import HomePage from '@/features/home/HomePage';
 import { getStudentSession } from '@/lib/api/session';
-import styles from './login.module.css';
 
 export const metadata = {
   title: 'Log in | Gyaan Vidhya',
@@ -11,16 +10,13 @@ export const metadata = {
   robots: { index: false, follow: false },
 };
 
-// /login?next=<same-origin path>. Already signed in → straight to `next`.
+// /login?next=<same-origin path>. Login is always the popup: this route shows the homepage with the
+// popup open on top of it. Already signed in → straight to `next`.
 export default async function LoginPage({ searchParams }) {
   const next = safeNext((await searchParams).next);
   if (await getStudentSession()) redirect(next);
-  return <main id="main" tabIndex={-1} className={styles.page}>
-    <div className={styles.frame}>
-      <LoginBrand variant="page" />
-      <section className={styles.panel} aria-label="Log in">
-        <div className={styles.formWrap}><LoginScreen next={next} /></div>
-      </section>
-    </div>
-  </main>;
+  return <>
+    <HomePage />
+    <LoginRoute next={next} />
+  </>;
 }

@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { env } from '../../config/env.js';
 import { COLLECTIONS, getDb } from '../../db/collections.js';
 import { HttpError } from '../../lib/http-error.js';
+import { allowsPersonalisation } from '../consent/consent.js';
 
 /**
  * Student activity capture.
@@ -72,19 +73,28 @@ export const visitorCookieOptions = () => ({
   httpOnly: true, sameSite: 'lax', secure: env.isProduction, path: '/', maxAge: VISITOR_MAX_AGE_SECONDS * 1000,
 });
 
-/** Reads the first-party visitor id, minting and setting one when it is missing or malformed. */
+/**
+ * Reads the first-party visitor id, minting and setting one when it is missing or malformed —
+ * but only for a visitor who accepted personalisation cookies. Everyone else gets no id at all
+ * (request.visitorId is null), so nothing about them can be stored or linked.
+ */
 export function withVisitor(request, response, next) {
+  if (!allowsPersonalisation(request)) { request.visitorId = null; next(); return; }
   const current = request.cookies?.[VISITOR_COOKIE];
   request.visitorId = UUID_PATTERN.test(current ?? '') ? current : randomUUID();
   if (request.visitorId !== current) response.cookie(VISITOR_COOKIE, request.visitorId, visitorCookieOptions());
   next();
 }
 
-/** Validates, caps and stores a batch. Unknown or empty events are dropped silently, not rejected. */
+/**
+ * Validates, caps and stores a batch. Unknown or empty events are dropped silently, not rejected.
+ * Without personalisation consent (no visitor id) the batch is validated and then dropped whole.
+ */
 export async function recordEvents(body, { studentId = null, visitorId }) {
   const list = Array.isArray(body?.events) ? body.events : Array.isArray(body) ? body : null;
   if (!list) throw new HttpError(400, 'Send { events: [...] }');
   if (list.length > MAX_EVENTS_PER_REQUEST) throw new HttpError(400, `Send at most ${MAX_EVENTS_PER_REQUEST} events per request`);
+  if (!visitorId) return { accepted: 0, dropped: list.length, consent: false };
   const now = new Date();
   const docs = [];
   for (const raw of list) {

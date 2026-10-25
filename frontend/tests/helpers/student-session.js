@@ -1,6 +1,8 @@
 // Test-only: mints a signed student session cookie straight from the backend modules,
 // the same way backend/src/modules/student-auth does after OTP verification.
 // Used by the gated-route specs so they never need a real OTP email.
+import { setTimeout as sleep } from 'node:timers/promises';
+
 const backend = new URL('../../../backend/src/', import.meta.url);
 const mod = (p) => import(new URL(p, backend).href);
 
@@ -29,11 +31,28 @@ export async function mintStudentSession(email = TEST_EMAIL) {
   };
 }
 
+// Activity rows this student produced. Batches leave the browser every 5s or on pagehide, so a
+// caller polls: close the page first, then wait for the beacon to land.
+export async function studentEvents(email = TEST_EMAIL, { type, query, timeoutMs = 15000 } = {}) {
+  const { collection, COLLECTIONS } = await mod('db/collections.js');
+  const student = await (await collection(COLLECTIONS.students)).findOne({ email });
+  if (!student) return [];
+  const events = await collection(COLLECTIONS.studentEvents);
+  const filter = { studentId: student._id, ...(type && { type }), ...(query && { query }) };
+  for (const deadline = Date.now() + timeoutMs; Date.now() < deadline;) {
+    const rows = await events.find(filter).sort({ at: -1 }).toArray();
+    if (rows.length) return rows;
+    await sleep(400);
+  }
+  return [];
+}
+
 export async function cleanupStudentSession(email = TEST_EMAIL) {
   const { collection, COLLECTIONS } = await mod('db/collections.js');
   const students = await collection(COLLECTIONS.students);
   const student = await students.findOne({ email });
   if (student) {
+    await (await collection(COLLECTIONS.studentEvents)).deleteMany({ studentId: student._id });
     const applications = await collection(COLLECTIONS.applications);
     const ids = (await applications.find({ studentId: student._id }, { projection: { _id: 1 } }).toArray()).map((d) => d._id);
     await (await collection(COLLECTIONS.applicationNotes)).deleteMany({ applicationId: { $in: ids } });

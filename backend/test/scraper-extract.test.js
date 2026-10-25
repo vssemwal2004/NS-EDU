@@ -62,7 +62,7 @@ describe('page extraction', () => {
     assert.deepEqual(streamsFrom([...programmes, 'School of Law']), ['Engineering', 'Management', 'Pharmacy', 'Nursing', 'Law', 'Design', 'Computer Applications']);
     assert.deepEqual(streamsFrom(['B.Sc Physics', 'BA LLB', 'BAMS']), ['Medical', 'Law', 'Science', 'Arts & Humanities']);
     assert.deepEqual(matchCourseSlugs([...programmes, 'B. Tech (AI)', 'BAMS', 'BA LLB'], COURSES), ['btech', 'mtech', 'mba', 'bba', 'bca', 'bpharm', 'nursing', 'bdes', 'ba']);
-    assert.equal(programmesFrom(Array.from({ length: 300 }, (_, index) => `MBA Batch ${index}`)).length, 200);
+    assert.equal(programmesFrom(Array.from({ length: 600 }, (_, index) => `MBA Batch ${index}`)).length, 500);
   });
 
   test('address, PIN, state and city from a contact block', () => {

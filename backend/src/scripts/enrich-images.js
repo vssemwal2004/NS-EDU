@@ -15,19 +15,25 @@ import { pipelineFor } from '../scraper/worker.js';
 
 const IMAGE_PAGES = ['campus', 'about'];
 
-async function selectInstitutions({ slugs = [], state = '', limit = 50, mode = 'missing' }) {
+async function selectInstitutions({ slugs = [], sourceUrl = '', state = '', limit = 50, mode = 'missing' }) {
   const filter = { website: { $nin: [null, ''] } };
   if (slugs.length) filter.slug = { $in: slugs };
   if (state) filter.state = state;
   // "missing" skips anything that already has photographs of ours; "all" redoes them.
   if (mode === 'missing' && !slugs.length) filter.$or = [{ gallery: { $exists: false } }, { gallery: { $size: 0 } }];
-  return (await getDb()).collection(COLLECTIONS.institutions)
+  const docs = await (await getDb()).collection(COLLECTIONS.institutions)
     .find(filter, { projection: { slug: 1, name: 1, city: 1, state: 1, website: 1, coverUrl: 1, lockedFields: 1 } })
     .sort({ nirfRank: 1, popularity: -1, _id: 1 }).limit(Math.max(1, limit)).toArray();
+  if (sourceUrl) {
+    const crawlWebsite = normalizeWebsite(sourceUrl);
+    if (!crawlWebsite || docs.length !== 1) throw new Error('The alternate official source URL is invalid or did not select exactly one institution');
+    docs[0].crawlWebsite = crawlWebsite;
+  }
+  return docs;
 }
 
 async function gatherCandidates(doc, { fetcher, config }) {
-  const website = normalizeWebsite(doc.website);
+  const website = normalizeWebsite(doc.crawlWebsite ?? doc.website);
   if (!website) throw new CrawlError('No usable website', { code: 'http', permanent: true });
   const domain = registrableDomain(new URL(website).hostname);
   const home = await fetcher.getPage(website, { domain });
@@ -43,12 +49,12 @@ async function gatherCandidates(doc, { fetcher, config }) {
 }
 
 /**
- * @param {{ slugs?: string[], state?: string, limit?: number, mode?: 'missing'|'all', want?: number,
+ * @param {{ slugs?: string[], sourceUrl?: string, state?: string, limit?: number, mode?: 'missing'|'all', want?: number,
  *           concurrency?: number, dryRun?: boolean, log?: Function, signal?: AbortSignal }} options
  */
-export async function enrichImages({ slugs = [], state = '', limit = 50, mode = 'missing', want, concurrency, dryRun = false, log = () => {}, signal } = {}) {
+export async function enrichImages({ slugs = [], sourceUrl = '', state = '', limit = 50, mode = 'missing', want, concurrency, dryRun = false, log = () => {}, signal } = {}) {
   const config = scraperConfig();
-  const docs = await selectInstitutions({ slugs, state, limit, mode });
+  const docs = await selectInstitutions({ slugs, sourceUrl, state, limit, mode });
   const fetcher = createFetcher({ config, signal });
   const images = pipelineFor(fetcher, { config, log });
   const perInstitution = Math.max(1, Math.min(want ?? config.maxImages ?? 6, 8));
@@ -68,11 +74,12 @@ export async function enrichImages({ slugs = [], state = '', limit = 50, mode = 
         if (!stored.length) { summary.empty += 1; log(`[none] ${doc.slug} — nothing passed the checks`); continue; }
         const gallery = stored.map(({ bytes: _bytes, originalBytes: _originalBytes, ...row }) => row);
         const record = {
-          slug: doc.slug, name: doc.name, city: doc.city, state: doc.state, website: doc.website, gallery, sourceUrl: doc.website,
+          slug: doc.slug, name: doc.name, city: doc.city, state: doc.state, website: doc.website, gallery,
+          sourceUrl: doc.crawlWebsite ?? doc.website,
           // An existing cover an admin chose is left alone; upsertUniversities also honours locks.
           ...(doc.coverUrl ? {} : { coverUrl: gallery[0].url }),
         };
-        const result = await upsertUniversities([record], { source: { kind: 'scrape', name: 'Official website (photographs)', url: doc.website }, publish: false });
+        const result = await upsertUniversities([record], { source: { kind: 'scrape', name: 'Official website (photographs)', url: doc.crawlWebsite ?? doc.website }, publish: false });
         if (result.items[0]?.action === 'updated' || result.items[0]?.action === 'unchanged') summary.updated += 1;
         else summary.failed += 1;
         summary.stored += gallery.length;
@@ -80,7 +87,7 @@ export async function enrichImages({ slugs = [], state = '', limit = 50, mode = 
         log(`[ok] ${doc.slug} — ${gallery.length} photographs`);
       } catch (error) {
         summary.failed += 1;
-        log(`[failed] ${doc.slug} <${doc.website}> — ${error.message}`);
+        log(`[failed] ${doc.slug} <${doc.crawlWebsite ?? doc.website}> — ${error.message}`);
       }
     }
   }

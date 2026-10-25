@@ -1,6 +1,8 @@
 import { parse } from 'node-html-parser';
 import { foldText } from '../modules/universities/normalize.js';
-import { aboutDeep, activitiesFrom, admissionNoteFrom, awardsFrom, campusFrom, entranceExamsFrom, facilitiesFrom, galleryCandidates, placementsFrom, programmeRows } from './deep.js';
+import {
+  aboutDeep, activitiesFrom, admissionNoteFrom, awardsFrom, campusFrom, entranceExamsFrom, facilitiesFrom, galleryCandidates, placementHistoryFrom, placementsFrom, programmeRows,
+} from './deep.js';
 import { INSTITUTION_CATEGORIES, INSTITUTION_TYPES, NAAC_GRADES } from '../modules/universities/schema.js';
 import { APPROVAL_RULES, DEGREE_PATTERN, STREAM_RULES, canonicalState, stateFromPin, statesIn } from './india.js';
 import { isSameSite, resolveUrl } from './urls.js';
@@ -9,7 +11,9 @@ import { isSameSite, resolveUrl } from './urls.js';
 const CURRENT_YEAR = new Date().getFullYear();
 const ORG_TYPES = ['CollegeOrUniversity', 'EducationalOrganization', 'School', 'Organization'];
 const SKIP_EXTENSIONS = /\.(pdf|jpe?g|png|gif|svg|webp|ico|zip|rar|7z|docx?|xlsx?|pptx?|csv|mp4|mp3|avi|mov)$/i;
-const PRIVATE_SECTIONS = /faculty-?(list|members?|profiles?|directory)|staff|people|our-?team|alumni|login|sign-?in|portal|erp|lms|webmail|tender|careers?|jobs?|recruit|vacanc|news|events?|gallery|blog|notices?|circulars?|results?|download/i;
+// A photo gallery is followed (as a campus page) because it is where the campus photographs are;
+// pictures of people are still refused by the gallery picker.
+const PRIVATE_SECTIONS = /faculty-?(list|members?|profiles?|directory)|staff|people|our-?team|alumni|login|sign-?in|portal|erp|lms|webmail|tender|careers?|jobs?|recruit(?!ers)|vacanc|news|events?|blog|notices?|circulars?|results?|download/i;
 const PERSONAL_TITLE = /(?:^|[\s,(])(Dr|Prof|Mr|Mrs|Ms|Miss|Shri|Smt|Sh|Er)\.?\s+[A-Z]/;
 const GENERIC_MAILBOX = /^(info|information|contact|contactus|enquiry|enquiries|inquiry|inquiries|admissions?|admission\.?cell|admissions?\.?office|registrar|registry|office|mail|helpdesk|reception|academics?|admin|query|queries)\d*$/i;
 // 6-digit PIN, also written "400 076"; never a run of digits inside a phone number.
@@ -28,8 +32,19 @@ export const LINK_CATEGORIES = [
   ['accreditation', /naac|nirf|accreditation|approvals?|recognitions?|rankings?|iqac|mandatory-?disclosure|aicte|ugc/i],
   // "career", "jobs" and "recruitment" are vacancy pages and are excluded by PRIVATE_SECTIONS above.
   ['placement', /placements?|training-?(and|&|-)-?placement|\btpo\b/i],
-  ['campus', /campus|facilit|infrastructure|hostels?|librar|sports|student-?life|amenit|laborator/i],
+  // Fee structures are usually their own page (and often the AICTE mandatory disclosure), so they
+  // need their own category — programme pages rarely print the amounts.
+  // Word-bounded: "feedback" is not a fee page, and the misspelling "tution" sits inside
+  // "institution" and "constitution".
+  ['fees', /(?<![a-z])fees?(?![a-z])|fee-?(structure|details|schedule)|(?<![a-z])tui?tion|(?<![a-z])charges(?![a-z])|(admission|course|academic|programme|program)-?fees?(?![a-z])/i],
+  ['campus', /campus|facilit|infrastructure|hostels?|librar|sports|student-?life|amenit|laborator|photo-?gallery|gallery|virtual-?tour/i],
 ];
+
+// "Pay your fees" opens a payment gateway: it carries the word but never the amounts, and taking it
+// as the fee page costs the one slot the real fee structure needed.
+export const CATEGORY_EXCLUSIONS = {
+  fees: /\bpayments?\b|\bpay[-_\s]*(online|now|here|fees?|your)\b|razorpay|billdesk|payu|ccavenue|eazypay|paytm|\bchallan\b|refund|receipt/i,
+};
 
 // ---------------------------------------------------------------------------------------------
 // Parsing
@@ -70,8 +85,47 @@ function postalAddressOf(org) {
   };
 }
 
-export function parsePage(html, pageUrl) {
+// Modern sites (Next.js, Nuxt) ship a page's data as JSON inside script tags and draw the table
+// only after a click, so neither the HTML nor a rendered page shows it. The JSON's own strings and
+// numbers, in document order, read like the page's text ("B.Tech CSE", "Tuition Fee Per Semester",
+// 213800) and the section reader in deep.js can use them. Object keys and small numbers (row spans,
+// ids) are dropped. Only read for fee and placement pages, and capped in size.
+const EMBEDDED_SCRIPT = /__next_f|__NEXT_DATA__|__NUXT__|window\.__INITIAL_STATE__/;
+// String literals of any length: a Next.js stream chunk is one long string holding the JSON.
+const JSON_TOKEN = /"((?:[^"\\]|\\.)+)"(\s*:)?|(?<![\w.])(\d{4,9}(?:\.\d{1,2})?)(?![\w.])/g;
+function tokensOf(text, out, limit) {
+  for (const match of text.matchAll(JSON_TOKEN)) {
+    if (out.length >= limit) return;
+    if (match[3]) { out.push(match[3]); continue; }
+    if (match[2]) continue; // an object key
+    let value;
+    try { value = JSON.parse(`"${match[1]}"`); } catch { continue; }
+    // A string holding more JSON (the RSC stream is JSON inside a JS string) is read one level down.
+    // React Server Components stream rows as `4:I[...]` / `5:{...}`, so any longer string carrying
+    // quoted JSON is tokenised again rather than kept as text.
+    if (value.length > 40 && /[[{]/.test(value) && /"[^"]*"\s*[:,\]]/.test(value)) { tokensOf(value, out, limit); continue; }
+    for (const part of String(value).split(/\r?\n/)) {
+      const line = clean(part);
+      if (line.length >= 2 && line.length <= 200 && /[a-z]/i.test(line) && !/^(\$|[a-z]+:[A-Za-z0-9_-]+$|https?:|\/)/.test(line)) out.push(line);
+    }
+  }
+}
+function embeddedLinesOf(root, { maxBytes = 3 * 1024 * 1024, limit = 20_000 } = {}) {
+  const out = [];
+  let budget = maxBytes;
+  for (const script of root.querySelectorAll('script')) {
+    const text = script.rawText ?? '';
+    const isData = script.getAttribute('type') === 'application/json' || script.getAttribute('id') === '__NEXT_DATA__' || EMBEDDED_SCRIPT.test(text);
+    if (!isData || text.length > budget) continue;
+    budget -= text.length;
+    tokensOf(text, out, limit);
+  }
+  return out;
+}
+
+export function parsePage(html, pageUrl, { embedded = false } = {}) {
   const root = parse(String(html ?? ''), { comment: false });
+  const embeddedLines = embedded ? embeddedLinesOf(root) : [];
   const jsonLd = jsonLdNodes(root);
   const meta = (selector) => clean(root.querySelector(selector)?.getAttribute('content'));
   const head = {
@@ -83,30 +137,75 @@ export function parsePage(html, pageUrl) {
     touchIcon: root.querySelector('link[rel~="apple-touch-icon"]')?.getAttribute('href') ?? root.querySelector('link[rel="apple-touch-icon-precomposed"]')?.getAttribute('href') ?? '',
   };
   const links = root.querySelectorAll('a[href]').map((anchor) => ({ href: anchor.getAttribute('href'), text: clean(anchor.text) || clean(anchor.getAttribute('title')), node: anchor }));
-  const logoImages = root.querySelectorAll('img').filter((img) => !/naac|nirf|ugc|aicte|partner|accredit|award|sponsor|recruit/i.test(`${img.getAttribute('src') ?? ''} ${img.getAttribute('alt') ?? ''}`) && /logo/i.test(`${img.getAttribute('src') ?? ''} ${img.getAttribute('alt') ?? ''} ${img.getAttribute('class') ?? ''} ${img.getAttribute('id') ?? ''}`))
+  // A page carries many files called "…logo.png": the institution's crest sits in the masthead,
+  // while sponsor, telecom and payment-partner logos sit in strips further down. Masthead images
+  // are listed first so logoFrom can prefer them; one real run took an advertiser's logo as a
+  // college crest without this.
+  const inMasthead = (node) => {
+    for (let parent = node.parentNode, depth = 0; parent && depth < 8; parent = parent.parentNode, depth += 1) {
+      const tag = String(parent.tagName ?? '').toLowerCase();
+      if (tag === 'header' || tag === 'nav') return true;
+      if (tag === 'footer' || tag === 'main') return false;
+      if (/\b(header|masthead|navbar|nav-?bar|topbar|top-?bar|brand|site-?logo|logo-?(wrap|area|box))\b/i.test(`${parent.getAttribute?.('class') ?? ''} ${parent.getAttribute?.('id') ?? ''}`)) return true;
+    }
+    return false;
+  };
+  const logoNodes = root.querySelectorAll('img').filter((img) => !/naac|nirf|ugc|aicte|partner|accredit|award|sponsor|recruit|\bads?\b|advert/i.test(`${img.getAttribute('src') ?? ''} ${img.getAttribute('alt') ?? ''}`)
+    && /logo/i.test(`${img.getAttribute('src') ?? ''} ${img.getAttribute('alt') ?? ''} ${img.getAttribute('class') ?? ''} ${img.getAttribute('id') ?? ''}`));
+  const logoImages = [...logoNodes.filter(inMasthead), ...logoNodes.filter((img) => !inMasthead(img))]
     .map((img) => img.getAttribute('src') || img.getAttribute('data-src') || '').filter(Boolean);
   // Every image with its markup hints, for the gallery picker. Lazy-loaded sites keep the real
   // file in a data- attribute and leave src as a 1px placeholder.
-  const images = root.querySelectorAll('img').map((img) => ({
-    src: img.getAttribute('data-src') || img.getAttribute('data-lazy-src') || img.getAttribute('data-original') || img.getAttribute('src') || '',
-    alt: clean(img.getAttribute('alt')),
-    width: Number.parseInt(img.getAttribute('width'), 10) || 0,
-    height: Number.parseInt(img.getAttribute('height'), 10) || 0,
-    hint: `${img.getAttribute('class') ?? ''} ${img.getAttribute('id') ?? ''}`,
-  })).filter((image) => image.src && !image.src.startsWith('data:')).slice(0, 300);
+  // A <picture> keeps the desktop photograph in <source srcset> and often only a narrow mobile crop
+  // in its <img>, so sources are read too, and from any srcset the largest candidate is taken.
+  const largestOf = (srcset) => {
+    const candidates = String(srcset ?? '').split(/,\s+(?=\S)/).map((part) => part.trim().split(/\s+/))
+      .filter(([url]) => url && !url.startsWith('data:'))
+      .map(([url, size = '1x']) => ({ url, size: Number.parseFloat(size) * (size.endsWith('w') ? 1 : 1000) || 0 }));
+    return candidates.sort((a, b) => b.size - a.size)[0]?.url ?? '';
+  };
+  const imageOf = (node, fallbackAlt = '') => ({
+    src: largestOf(node.getAttribute('data-srcset') || node.getAttribute('srcset')) || node.getAttribute('data-src') || node.getAttribute('data-lazy-src')
+      || node.getAttribute('data-original') || node.getAttribute('src') || '',
+    alt: clean(node.getAttribute('alt')) || fallbackAlt,
+    width: Number.parseInt(node.getAttribute('width'), 10) || 0,
+    height: Number.parseInt(node.getAttribute('height'), 10) || 0,
+    hint: `${node.getAttribute('class') ?? ''} ${node.getAttribute('id') ?? ''}`,
+  });
+  const sources = root.querySelectorAll('picture source').map((source) => imageOf(source, clean(source.parentNode?.querySelector('img')?.getAttribute('alt'))));
+  const images = [...sources, ...root.querySelectorAll('img').map((img) => imageOf(img))]
+    .filter((image) => image.src && !image.src.startsWith('data:') && !/\/blank\.gif$|spacer\.gif$/i.test(image.src)).slice(0, 300);
   for (const node of root.querySelectorAll('script, style, noscript, template, svg, iframe')) node.remove();
   const body = root.querySelector('body') ?? root;
   // Fee and course tables, kept as cells so a programme row can be read with its duration and fee.
-  const tables = body.querySelectorAll('table').slice(0, 40).map((table) => {
-    const rows = table.querySelectorAll('tr').slice(0, 200).map((row) => row.querySelectorAll('th, td').map((cell) => clean(cell.text)));
-    return { headers: rows[0] ?? [], rows: rows.filter((row) => row.length > 1) };
+  // The heading just above a table usually names it ("Fee Structure 2025-26 (per annum)",
+  // "Placement Record 2024-25"), which is the only place the period or the season is written.
+  // Page builders wrap a table in a figure or a div or two ("wp-block-table"), and the heading is
+  // then a sibling of the wrapper, so the search climbs while the table is its wrapper's only child.
+  const titleAbove = (table) => {
+    for (let anchor = table, level = 0; anchor && level < 3; anchor = anchor.parentNode, level += 1) {
+      for (let node = anchor.previousElementSibling, steps = 0; node && steps < 3; node = node.previousElementSibling, steps += 1) {
+        const text = clean(node.text);
+        if (text && text.length <= 160 && /^(h[1-6]|p|strong|b|div|span|caption|label)$/i.test(node.tagName ?? '')) return text;
+        if (text.length > 160) return '';
+      }
+      if (!/^(div|figure|section|center)$/i.test(anchor.parentNode?.tagName ?? '') || clean(anchor.parentNode.text).length > clean(anchor.text).length + 40) return '';
+    }
+    return '';
+  };
+  const cellsOf = (row) => row.childNodes.filter((node) => /^(td|th)$/i.test(node.tagName ?? '')).map((cell) => clean(cell.text));
+  // A table holding other tables lays the page out; its rows are the inner tables flattened into
+  // one cell, so only the innermost tables are read, each from its own rows.
+  const tables = body.querySelectorAll('table').filter((table) => !table.querySelector('table')).slice(0, 40).map((table) => {
+    const rows = table.querySelectorAll('tr').filter((row) => row.closest('table') === table).slice(0, 500).map(cellsOf);
+    return { headers: rows[0] ?? [], rows: rows.filter((row) => row.length > 1), caption: clean(table.querySelector('caption')?.text).slice(0, 200), title: titleAbove(table) };
   }).filter((table) => table.rows.length);
   const lines = body.structuredText.split('\n').map(clean).filter(Boolean);
   const shortTexts = body.querySelectorAll('li, td, th, a, option, h2, h3, h4, h5, h6, strong, dt, dd, p, span')
     .map((node) => clean(node.text)).filter((text) => text.length >= 2 && text.length <= 140);
   const headings = body.querySelectorAll('h1, h2, h3, h4, nav a, header a').map((node) => clean(node.text)).filter((text) => text.length <= 120);
   const paragraphs = body.querySelectorAll('p').map((node) => clean(node.text));
-  return { url: pageUrl, jsonLd, organization: organizationOf(jsonLd), head, links, logoImages, images, tables, lines, shortTexts, headings, paragraphs };
+  return { url: pageUrl, jsonLd, organization: organizationOf(jsonLd), head, links, logoImages, images, tables, lines, shortTexts, headings, paragraphs, embeddedLines };
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -127,10 +226,13 @@ export function pickLinks(page, { domain, maxLinks, exclude = [] }) {
     const haystack = `${decode(url.pathname + url.search).replace(/[_/=&?]+/g, '-')} ${link.text}`;
     if (PRIVATE_SECTIONS.test(haystack)) continue;
     const category = LINK_CATEGORIES.find(([, pattern]) => pattern.test(haystack))?.[0];
-    if (!category) continue;
+    if (!category || CATEGORY_EXCLUSIONS[category]?.test(haystack)) continue;
     seen.add(key);
     const depth = url.pathname.split('/').filter(Boolean).length;
-    const score = 10 - Math.min(depth, 6) + (LINK_CATEGORIES.find(([name]) => name === category)[1].test(link.text) ? 3 : 0);
+    // A page that names the structure ("fee structure", "fee details") beats one that merely says
+    // "fees", which is as often a notice as a table of amounts.
+    const specific = category === 'fees' && /structure|detail|particular|schedule|tuition/i.test(haystack) ? 2 : 0;
+    const score = 10 - Math.min(depth, 6) + specific + (LINK_CATEGORIES.find(([name]) => name === category)[1].test(link.text) ? 3 : 0);
     candidates.push({ url: url.toString(), category, score });
   }
   candidates.sort((a, b) => b.score - a.score);
@@ -214,11 +316,13 @@ export function approvalsFrom(lines) {
 }
 
 const NOT_A_PROGRAMME = /admission|fee|syllabus|result|notice|brochure|apply|download|scholarship|time ?table|exam|calendar|eligibility|placement|alumni|seats?\b|merit|list\b|counsel|cut-?off|schedule|notification|\blast date|form\b|prospectus|guideline|ranking|news|life cycle/i;
-export function programmesFrom(texts, limit = 200) {
+export function programmesFrom(texts, limit = 500) {
   const seen = new Set();
   const programmes = [];
   for (const raw of texts) {
-    const text = clean(raw).replace(/(?<=[a-z)])New$/, '').replace(/[\s:–—-]+$/, '');
+    const text = clean(raw).replace(/(?<=[a-z)])New$/, '')
+      .replace(/\s+(?:course\s+)?duration\s*[:\-]\s*\d+(?:\.\d+)?\s*(?:years?|yrs?|semesters?|months?)\b.*$/i, '')
+      .replace(/[\s:–—-]+$/, '');
     if (text.length < 2 || text.length > 140 || !DEGREE_PATTERN.test(text) || NOT_A_PROGRAMME.test(text)) continue;
     const key = foldText(text);
     if (seen.has(key)) continue;
@@ -237,22 +341,41 @@ export function streamsFrom(texts) {
   return STREAM_RULES.map(([stream]) => stream).filter((stream) => found.has(stream));
 }
 
-// A catalogue course matches when the programme name starts with its name or full name, ignoring
-// dots and spacing: "B. Tech (CSE)" and "Bachelor of Technology" both match B.Tech.
+// A catalogue course matches when the programme name starts with its name, full name or one of its
+// aliases, ignoring dots and spacing: "B. Tech (CSE)" and "Bachelor of Technology" both match B.Tech.
+// The longest match wins, so "B.Sc Nursing" is the nursing degree, not B.Sc.
 const tokens = (text) => String(text ?? '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().split(' ').filter(Boolean);
-export function matchCourseSlugs(programmes, courses, limit = 60) {
-  const keys = courses.flatMap((course) => [course.name, course.fullName].map((text) => tokens(text).join('')).filter((key) => key.length >= 2).map((key) => ({ slug: course.slug, key })));
+// Connectors and plurals vary between sites ("Bachelor in Computer Application", "Banking &
+// Insurance"); both sides of a comparison drop them, so they never decide a match.
+const CONNECTORS = new Set(['of', 'in', 'and', 'the', 'with', 'for']);
+const matchWords = (text) => tokens(text).filter((word) => !CONNECTORS.has(word)).map((word) => (word.length > 4 && word.endsWith('s') ? word.slice(0, -1) : word));
+export function courseMatcher(courses) {
+  const byKey = new Map();
+  for (const course of courses) {
+    for (const text of [course.name, course.fullName, ...(course.aliases ?? [])]) {
+      const key = matchWords(text).join('');
+      if (key.length >= 2 && !byKey.has(key)) byKey.set(key, course.slug);
+    }
+  }
+  const longest = Math.max(0, ...[...byKey.keys()].map((key) => key.length));
+  /** The catalogue slug for one programme name, or '' when no course matches. */
+  return (programme) => {
+    let prefix = '';
+    let match = '';
+    for (const word of matchWords(programme)) {
+      prefix += word;
+      if (prefix.length > longest) break;
+      if (byKey.has(prefix)) match = byKey.get(prefix);
+    }
+    return match;
+  };
+}
+export function matchCourseSlugs(programmes, courses, limit = 150) {
+  const match = typeof courses === 'function' ? courses : courseMatcher(courses);
   const slugs = new Set();
   for (const programme of programmes) {
-    const words = tokens(programme);
-    for (const { slug, key } of keys) {
-      let prefix = '';
-      for (const word of words) {
-        prefix += word;
-        if (prefix === key) { slugs.add(slug); break; }
-        if (prefix.length >= key.length) break;
-      }
-    }
+    const slug = match(programme);
+    if (slug) slugs.add(slug);
   }
   return [...slugs].slice(0, limit);
 }
@@ -339,11 +462,15 @@ export function phoneFrom(page) {
   return '';
 }
 
+// Only https is usable: the site's Content-Security-Policy allows `img-src https:`, so a plain-http
+// logo is a guaranteed broken image on every profile and card. Storing none is the honest result.
 export function logoFrom(page) {
-  const candidates = [urlOf(page.organization?.logo), ...page.logoImages, page.head.touchIcon, page.head.ogImage];
+  // og:image is the page's share banner — a wide photograph or a poster. Squeezed into the 60px
+  // crest slot it reads as a smear, so the monogram is the better answer when no crest was found.
+  const candidates = [urlOf(page.organization?.logo), ...page.logoImages, page.head.touchIcon];
   for (const candidate of candidates) {
     const url = candidate && resolveUrl(candidate, page.url);
-    if (url && url.toString().length <= 500) return url.toString();
+    if (url && url.protocol === 'https:' && url.toString().length <= 500) return url.toString();
   }
   return '';
 }
@@ -414,17 +541,24 @@ export function buildRecord({ home, pages, source, domain, website, courses = []
   facts.approvals = approvalsFrom(lines(['accreditation', 'about']));
   facts.coursesOffered = programmesFrom(prefer(['programmes', 'admission']).flatMap((page) => page.shortTexts));
   facts.streams = streamsFrom([...facts.coursesOffered, ...all.flatMap((page) => page.headings)]);
-  facts.courseSlugs = matchCourseSlugs(facts.coursesOffered, courses);
+  const courseOf = courseMatcher(courses);
   facts.logoUrl = logoFrom(home);
   const aboutPage = byCategory('about')[0];
   // A 2–4 sentence factual summary from the about page; the old one-paragraph extract is the fallback.
-  const deepAbout = aboutDeep(prefer(['about']));
+  // About pages, then the home page — never campus or programme pages, whose paragraphs describe a
+  // library or a department rather than the institution.
+  const deepAbout = aboutDeep([...byCategory('about'), home], { name: clean(source.name) || siteName });
   facts.about = deepAbout.about || (aboutPage && aboutFrom(aboutPage)) || aboutFrom(home, { paragraphs: false });
   facts.aboutSource = deepAbout.about ? deepAbout.aboutSource : '';
   facts.admissionUrl = admissionUrlFrom(all, domain);
-  facts.programmesOffered = programmeRows(prefer(['programmes', 'admission']), facts.coursesOffered);
+  facts.programmesOffered = programmeRows(prefer(['fees', 'programmes', 'admission']), facts.coursesOffered).map((row) => {
+    const courseSlug = courseOf(row.name);
+    return courseSlug ? { ...row, courseSlug } : row;
+  });
+  facts.courseSlugs = matchCourseSlugs([...facts.coursesOffered, ...facts.programmesOffered.map((row) => row.name)], courseOf);
   const placements = placementsFrom(all, { institutionName: clean(source.name) || siteName });
   if (placements) facts.placements = placements;
+  facts.placementHistory = placementHistoryFrom(all);
   facts.facilities = facilitiesFrom(all);
   facts.activities = activitiesFrom(all);
   const campus = campusFrom(all);
@@ -449,7 +583,7 @@ export function buildRecord({ home, pages, source, domain, website, courses = []
   };
   if (siteName && source.name && foldText(siteName) !== foldText(source.name) && siteName.length <= 200) record.aliases = [siteName];
   for (const key of ['address', 'pincode', 'establishedYear', 'naacGrade', 'nirfRank', 'nirfYear', 'approvals', 'streams', 'courseSlugs', 'coursesOffered',
-    'logoUrl', 'about', 'aboutSource', 'admissionUrl', 'programmesOffered', 'placements', 'facilities', 'activities', 'campus', 'admissionNote', 'entranceExams', 'awards', 'email', 'phone']) {
+    'logoUrl', 'about', 'aboutSource', 'admissionUrl', 'programmesOffered', 'placements', 'placementHistory', 'facilities', 'activities', 'campus', 'admissionNote', 'entranceExams', 'awards', 'email', 'phone']) {
     record[key] = facts[key];
   }
   const filled = (value) => !(value === '' || value === null || value === undefined || (Array.isArray(value) && !value.length)

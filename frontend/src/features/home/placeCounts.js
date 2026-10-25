@@ -19,6 +19,13 @@ export const emptyCount = { programmes: 0, institutions: 0, courseIds: [] };
 export const plural = (count, word, many = `${word}s`) => `${count} ${count === 1 ? word : many}`;
 export const programmeLabel = ({ programmes }) => programmes ? `${plural(programmes, 'sample programme')}` : 'No sample colleges yet';
 
+// A destination tile shows how many directory institutions it covers (`place.institutions`, counted
+// by the API over the real records) and keeps the curated sample-programme count beside it.
+export const mergePlaceCount = (place, counts) => ({ ...emptyCount, ...counts.get(place.name), institutions: place.institutions ?? 0 });
+export const institutionLabel = ({ institutions }) => institutions
+  ? `${new Intl.NumberFormat('en-IN').format(institutions)} ${institutions === 1 ? 'institution' : 'institutions'}`
+  : 'No institutions listed yet';
+
 export function placeHref(name, course) {
   return `/colleges?${new URLSearchParams({ location: name, ...(course ? { course } : {}) })}`;
 }

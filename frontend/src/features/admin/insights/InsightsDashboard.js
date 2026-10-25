@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Icon from '@/components/ui/Icon';
 import { useAdminSession } from '../AdminSession';
 import { ColumnChart, RankedBars } from '../BarChart';
+import ConsentPanel from './ConsentPanel';
 import dash from '../Dashboard.module.css';
 import styles from './Insights.module.css';
 
@@ -49,9 +50,10 @@ export default function InsightsDashboard() {
   return <div className={styles.page} aria-busy={loading}>
     <div className={styles.intro}>
       <p className={styles.privacy}><Icon name="shield" />
-        This activity is collected to improve search results and university recommendations. It is visible to
-        administrators only. Searches, filters and the universities opened are stored — never IP addresses,
-        browsers or full web addresses — and rows are deleted automatically after {data?.retentionDays ?? 180} days.
+        This activity is collected only from visitors who chose “Accept all” in the cookie banner, to improve search
+        results and university recommendations. It is visible to administrators only. Searches, filters and the
+        universities opened are stored — never IP addresses, browsers or full web addresses — and rows are deleted
+        automatically after {data?.retentionDays ?? 180} days.
       </p>
       <div className={styles.windows} role="group" aria-label="Time window">
         {WINDOWS.map((value) => <button key={value} type="button" className={styles.window} aria-pressed={days === value}
@@ -69,6 +71,8 @@ export default function InsightsDashboard() {
         <span>{tile.label}</span><strong>{data ? count(tile.value) : '…'}</strong><small>{tile.note}</small>
       </div>)}
     </section>
+
+    <ConsentPanel days={days} />
 
     <div className={styles.row}>
       <section className={dash.card} aria-labelledby="active-title">

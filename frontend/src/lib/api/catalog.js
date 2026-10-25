@@ -43,7 +43,7 @@ export const getCatalog = cache(async function getCatalog() {
     load('/catalog/courses', (data) => data.items, []),
     load('/catalog/exams', (data) => data.items, []),
     load('/catalog/colleges', (data) => data.items, []),
-    load('/catalog/locations', (data) => data, { cities: [], states: [] }),
+    load('/catalog/locations', (data) => data, { cities: [], states: [], totals: { cities: 0, states: 0 } }),
     load('/catalog/scholarships', (data) => data.items, []),
     load('/platform/stats', (data) => data, null),
   ]);
@@ -53,10 +53,25 @@ export const getCatalog = cache(async function getCatalog() {
     colleges: colleges.value,
     cities: locations.value.cities,
     states: locations.value.states,
+    // Every city/state the 9k-record directory covers, not just the curated destination tiles.
+    locationTotals: locations.value.totals ?? { cities: 0, states: 0 },
     scholarships: scholarships.value,
     stats: stats.value,
     live: [courses, exams, colleges, locations, scholarships].every((item) => item.live),
   };
+});
+
+// Where one course is taught and the fees institutions publish for it. The counts and fee spread are
+// public; the named institutions come back only with a student session (requiresLogin otherwise).
+// null when the API is unreachable, so the page can still render the course itself.
+export const getCourseOfferings = cache(async function getCourseOfferings(slug, query = '') {
+  try {
+    return await getJson(`/catalog/courses/${encodeURIComponent(slug)}/offerings${query ? `?${query}` : ''}`, { student: true, timeout: 6000 });
+  } catch (error) {
+    unstable_rethrow(error);
+    console.warn(`[catalog] Offerings for ${slug} unavailable: ${error.message}`);
+    return null;
+  }
 });
 
 // University directory (20k+ records): always paginated and filtered on the server.

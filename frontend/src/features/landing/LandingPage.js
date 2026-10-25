@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import HeroPhoto from './HeroPhoto';
 import Icon from '@/components/ui/Icon';
-import { isGatedPath, loginHref } from '@/features/auth/gated-routes';
+import { isGatedPath } from '@/features/auth/gated-routes';
 import { useCatalog } from '@/providers/CatalogProvider';
 import { useContent } from '@/providers/ContentProvider';
 import { usePreferences } from '@/providers/PreferencesProvider';
@@ -17,32 +17,40 @@ const searchRoutes = { Colleges: '/universities', Courses: '/courses', Exams: '/
 
 // Approved first screen: hero + popular courses + tool shortcuts. At ≥1101px it fills
 // the viewport below the approved header height. The homepage composition is features/home/HomePage.js.
+// The hero says one thing and offers one action: a headline, a single line of lead, the search
+// and a trust line counted live from the directory. Decorative quotes and the field-icon grid were
+// removed — the popular-course chips directly below already offer browsing by field.
 export default function LandingFirstScreen() {
   const router = useRouter();
-  const { status } = useStudentAuth();
-  const { courses } = useCatalog();
+  const { status, openLogin } = useStudentAuth();
+  const { courses, stats: totals, locationTotals } = useCatalog();
   const { setCourse } = usePreferences();
-  const { fields = [], shortcuts = [] } = useContent('landing') ?? {};
+  const { shortcuts = [] } = useContent('landing') ?? {};
   const popular = courses.filter((course) => course.popular).slice(0, 6);
+  const number = new Intl.NumberFormat('en-IN');
+  // Counted from the directory at render time; a figure that is not available is left out, not guessed.
+  const trust = [
+    totals?.institutions > 0 && `${number.format(totals.institutions)} institutions`,
+    locationTotals?.states > 0 && `${locationTotals.states} states & UTs`,
+    'Free for students',
+  ].filter(Boolean);
   function search({ type, query }) {
     const target = query ? `${searchRoutes[type]}?q=${encodeURIComponent(query)}` : searchRoutes[type];
-    // Signed-out visitors skip the proxy round trip; /login returns them here via ?next=.
-    router.push(status === 'signed-out' && isGatedPath(searchRoutes[type]) ? loginHref(target) : target);
+    // Signed out, a college search opens the login popup over this page and runs once verified.
+    if (status === 'signed-out' && isGatedPath(searchRoutes[type])) { openLogin({ reason: 'directory', onSuccess: () => router.push(target) }); return; }
+    router.push(target);
   }
   return <div className={styles.firstScreen} data-first-screen>
     <section className={styles.hero} aria-labelledby="hero-title">
       <CampusArtwork className={styles.artwork} />
       <div className={`container ${styles.heroInner}`}>
-        <div className={styles.heroContent}>
-          <h1 id="hero-title">Find a college that<br className={styles.desktopBreak} /> fits your future.</h1>
-          <p className={styles.heroDescription}>Explore India’s top colleges, courses and career paths — with clarity, not confusion.</p>
-          <SearchBox onBrowse={search} />
-          <nav className={styles.fields} aria-label="Explore by field">{fields.map((field) => <Link key={field.label} href={`/courses?field=${encodeURIComponent(field.label)}`}><span className={styles.fieldIcon}><Icon name={field.icon} /></span><span>{field.label}</span></Link>)}</nav>
-        </div>
         <div className={`${styles.heroVisual} ${styles.compactPhoto}`}><HeroPhoto className={styles.heroImage} /></div>
-        <p className={styles.centerQuote} aria-hidden="true">A brighter<br />India<br />begins<br />with you.<span /></p>
-        <p className={styles.leftQuote} aria-hidden="true">Different<br />Journeys<br />A Brighter<br />India</p>
-        <p className={styles.rightQuote} aria-hidden="true">Knowledge<br />today.<br />A brighter<br />tomorrow.<span /></p>
+        <div className={styles.heroContent}>
+          <h1 id="hero-title">Find the college that<br className={styles.desktopBreak} /> fits your future.</h1>
+          <p className={styles.heroDescription}>Compare colleges, fees and placements — then apply in minutes.</p>
+          <SearchBox onBrowse={search} />
+          <ul className={styles.trust} aria-label="About Gyaan Vidhya">{trust.map((item) => <li key={item}><Icon name="check" />{item}</li>)}</ul>
+        </div>
       </div>
     </section>
     <section className={`container ${styles.discovery}`} aria-label="Popular courses and student resources">

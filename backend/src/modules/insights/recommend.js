@@ -50,8 +50,10 @@ export function buildSignals(events, now = Date.now()) {
 
 // A handful of indexed lookups (state, city, streams, courseSlugs, searchPrefixes), each capped,
 // instead of one scan: the candidate pool stays small whatever the viewer has been doing.
-async function candidatePool(signals, limit) {
+async function candidatePool(signals, limit, course = '') {
   const collection = (await getDb()).collection(COLLECTIONS.institutions);
+  // A chosen course narrows every lookup, so the pool only holds institutions that offer it.
+  const scope = course ? { ...PUBLIC_FILTER, courseSlugs: course } : PUBLIC_FILTER;
   const filters = [
     ...top(signals.cities, 3).map(([city]) => ({ city })),
     ...top(signals.states, 2).map(([state]) => ({ state })),
@@ -59,15 +61,16 @@ async function candidatePool(signals, limit) {
     ...top(signals.courses, 3).map(([course]) => ({ courseSlugs: course })),
     ...top(signals.searches, 3).map(([keys]) => ({ searchPrefixes: { $all: keys.split(' ') } })),
   ];
-  const sets = await Promise.all(filters.map((filter) => collection
-    .find({ ...PUBLIC_FILTER, ...filter }, { projection: PROJECTION }).sort(SORT).limit(PER_QUERY_LIMIT).toArray()));
+  // A filter on the course itself would be the whole pool again, so it is not repeated.
+  const sets = await Promise.all(filters.filter((filter) => !(course && filter.courseSlugs === course)).map((filter) => collection
+    .find({ ...filter, ...scope }, { projection: PROJECTION }).sort(SORT).limit(PER_QUERY_LIMIT).toArray()));
   const pool = new Map();
   for (const doc of sets.flat()) pool.set(doc.slug, doc);
   // Always keep a sensible floor so a brand-new (or very narrow) viewer still gets a full set.
   if (pool.size < limit * 3) {
     const [ranked, popular] = await Promise.all([
-      collection.find({ ...PUBLIC_FILTER, nirfRank: { $type: 'number' } }, { projection: PROJECTION }).sort({ nirfRank: 1, _id: 1 }).limit(limit * 3).toArray(),
-      collection.find(PUBLIC_FILTER, { projection: PROJECTION }).sort(SORT).limit(limit * 3).toArray(),
+      collection.find({ ...scope, nirfRank: { $type: 'number' } }, { projection: PROJECTION }).sort({ nirfRank: 1, _id: 1 }).limit(limit * 3).toArray(),
+      collection.find(scope, { projection: PROJECTION }).sort(SORT).limit(limit * 3).toArray(),
     ]);
     for (const doc of [...ranked, ...popular]) pool.set(doc.slug, doc);
   }
@@ -137,23 +140,25 @@ async function courseNamesFor(slugs) {
 
 /**
  * Ranked, explained suggestions for one viewer (student or anonymous visitor).
- * @param {{ studentId?: import('mongodb').ObjectId|null, visitorId: string, limit?: number, exclude?: string }} viewer
+ * `course` (a course slug) limits the suggestions to institutions offering that course.
+ * @param {{ studentId?: import('mongodb').ObjectId|null, visitorId: string|null, limit?: number, exclude?: string, course?: string }} viewer
  */
-export async function recommendUniversities({ studentId = null, visitorId, limit = 8, exclude = '' }) {
+export async function recommendUniversities({ studentId = null, visitorId, limit = 8, exclude = '', course = '' }) {
   const size = Math.min(Math.max(Number.parseInt(limit, 10) || 8, 1), MAX_LIMIT);
-  const key = `s:${studentId ?? ''}|v:${visitorId}|${size}|${exclude}`;
+  const key = `s:${studentId ?? ''}|v:${visitorId ?? ''}|${size}|${exclude}|${course}`;
   return cache.wrap(key, async () => {
     const since = new Date(Date.now() - WINDOW_DAYS * 86_400_000);
     // A student who searched before signing in keeps those results: both ids are theirs, on this device.
-    const filter = studentId ? { $or: [{ studentId }, { visitorId }] } : { visitorId };
+    // A viewer without personalisation consent has no visitor id, and only their account (if any) counts.
+    const owners = [studentId && { studentId }, visitorId && { visitorId }].filter(Boolean);
     const [events, applied] = await Promise.all([
-      (await eventsCollection()).find({ ...filter, at: { $gte: since } }).sort({ at: -1 }).limit(MAX_EVENTS_READ).toArray(),
+      owners.length ? (await eventsCollection()).find({ $or: owners, at: { $gte: since } }).sort({ at: -1 }).limit(MAX_EVENTS_READ).toArray() : [],
       appliedSlugs(studentId),
     ]);
     const signals = buildSignals(events);
     for (const slug of applied) signals.applied.add(slug);
     const [pool, courseNames] = await Promise.all([
-      candidatePool(signals, size),
+      candidatePool(signals, size, course),
       courseNamesFor([...new Set(events.map((event) => event.courseSlug).filter(Boolean))]),
     ]);
     const weight = {

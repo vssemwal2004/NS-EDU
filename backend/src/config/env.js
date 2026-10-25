@@ -1,12 +1,16 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { parseEnv } from 'node:util';
 
-// Load backend/.env regardless of the working directory (e.g. `node server.js` from src/).
-// Only missing keys are filled: values already in the environment always win, which keeps
-// test overrides such as a throwaway MONGODB_DATABASE intact.
-const envFile = new URL('../../.env', import.meta.url);
-if (existsSync(envFile)) {
-  for (const [key, value] of Object.entries(parseEnv(readFileSync(envFile, 'utf8')))) {
+// Load backend/.env and backend/.env.local regardless of the working directory (e.g. `node
+// server.js` from src/, or a test helper that imports these modules without node's --env-file).
+// Precedence matches the --env-file-if-exists chain in package.json: the real environment wins
+// over .env.local, which wins over .env. That keeps throwaway test overrides such as
+// MONGODB_DATABASE intact, and stops an entry point without --env-file silently reaching for the
+// hosted database when .env.local points at the local one.
+for (const name of ['.env.local', '.env']) {
+  const file = new URL(`../../${name}`, import.meta.url);
+  if (!existsSync(file)) continue;
+  for (const [key, value] of Object.entries(parseEnv(readFileSync(file, 'utf8')))) {
     if (process.env[key] === undefined) process.env[key] = value;
   }
 }

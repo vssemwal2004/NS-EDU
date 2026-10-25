@@ -31,14 +31,16 @@ export default function OfferedProgrammes({ rows, withFees }) {
           <strong>{row.name}</strong>
           {row.meta && <small>{row.meta}</small>}
         </div>
-        <span className={styles.offeredFee} data-missing={row.fee ? undefined : true}>
-          {row.fee ? <>{row.fee}<small>a year</small></> : row.feeNote || 'Fee not published'}
+        <span className={styles.offeredFee} data-missing={row.fees.length ? undefined : true}>
+          {row.fees.length ? row.fees.map((fee) => <span key={fee.label}>{fee.value}<small>{fee.label}</small></span>) : row.feeNote || 'Fee not published'}
         </span>
       </li>)}
     </ul> : <p className={styles.notice}><Icon name="uniInfo" />No programme matches “{query}”.</p>}
     {!all && !needle && matches.length > PAGE && <button type="button" className="lux-button lux-button--ghost lux-button--sm" onClick={() => setAll(true)}>
       Show all {matches.length} programmes<Icon name="chevron" />
     </button>}
-    {!withFees && rows.length > 0 && <p className={styles.footnote}>Fees for these programmes are not published on the institution’s website.</p>}
+    {rows.length > 0 && <p className={styles.footnote}>{withFees
+      ? 'Each fee is shown for the period the institution prints it for — a year, a semester or the whole programme — and is never converted. Hostel and other charges are not included.'
+      : 'A fee appears only when the source states what period it is for; other figures keep the source wording.'}</p>}
   </div>;
 }

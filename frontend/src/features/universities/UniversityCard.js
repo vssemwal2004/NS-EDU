@@ -2,16 +2,14 @@ import Link from 'next/link';
 import Icon from '@/components/ui/Icon';
 import ApplyButton from '@/features/apply/ApplyButton';
 import CompareToggle from '@/features/compare/CompareToggle';
-import { kindOf, lakhRange, monogram, nirfOf, ownershipOf, placeOf, sourceNote } from './labels';
+import { CampusPhoto, UniversityLogo } from './Imagery';
+import { feeOf, kindOf, nirfOf, ownershipOf, placeOf, secondStatOf, sourceNote } from './labels';
 import styles from './Directory.module.css';
+import listing from './Listing.module.css';
 
-// Logos are remote URLs from many hosts (official sites, Cloudinary), so a plain sized <img> is used.
-export function UniversityLogo({ item, size = 'md', className = '' }) {
-  const px = size === 'lg' ? 112 : size === 'sm' ? 44 : 60;
-  return <span className={`${styles.logo} ${className}`} data-size={size} data-fallback={item.logoUrl ? undefined : true} aria-hidden="true">
-    {item.logoUrl ? <img src={item.logoUrl} alt="" width={px} height={px} loading="lazy" decoding="async" referrerPolicy="no-referrer" /> : monogram(item.name)}
-  </span>;
-}
+// Remote imagery (and its fallbacks) lives in Imagery.js; it is re-exported here because the
+// profile and the recommendation rail have always imported the crest from this module.
+export { UniversityLogo, CampusPhoto, secureImage } from './Imagery';
 
 export const applyTarget = (item) => ({ id: item.id, name: item.name, city: item.city, state: item.state || '', logoUrl: item.logoUrl || '' });
 
@@ -22,10 +20,23 @@ export function SourceTag({ item, className = '' }) {
   </span>;
 }
 
-export default function UniversityCard({ item, courseNames = {}, headingLevel = 3 }) {
+// One figure in the card's stat strip; an absent one is named, never filled in.
+function Stat({ label, fact, empty }) {
+  return <div className={listing.stat} data-empty={fact ? undefined : true}>
+    <dt>{label}</dt>
+    <dd>{fact ? <>{fact.value}<small>{fact.note}</small></> : empty}</dd>
+  </div>;
+}
+
+// `reason` is the recommendation engine's explanation ("Because you searched MBA in Pune"); it is
+// passed only where the list really is personalised, never as decoration.
+export default function UniversityCard({ item, courseNames = {}, headingLevel = 3, reason = '' }) {
   const Heading = `h${headingLevel}`;
   const href = `/universities/${item.id}`;
-  const fees = item.programmes;
+  const preview = item.preview ?? null;
+  const photo = preview?.photoUrl || item.coverUrl || '';
+  const fee = feeOf(item);
+  const second = secondStatOf(item);
   const kind = [kindOf(item), ownershipOf(item)].filter(Boolean).join(' · ');
   const badges = [
     item.naacGrade && { key: 'naac', icon: 'uniMedal', label: `NAAC ${item.naacGrade}` },
@@ -33,9 +44,12 @@ export default function UniversityCard({ item, courseNames = {}, headingLevel = 
     ...item.approvals.slice(0, 3).map((approval) => ({ key: approval, icon: 'uniVerified', label: approval })),
     item.establishedYear && { key: 'est', icon: 'uniCalendar', label: `Est. ${item.establishedYear}` },
   ].filter(Boolean);
-  const courses = fees?.courseIds?.map((id) => courseNames[id] || id) || [];
+  const courses = preview?.topProgrammes?.length ? preview.topProgrammes
+    : item.programmes?.courseIds?.map((id) => courseNames[id] || id) || [];
 
   return <article className={styles.card} aria-labelledby={`uni-${item.id}`}>
+    {photo && <div className={listing.cardFrame}><CampusPhoto src={photo} /></div>}
+    {reason && <p className={listing.reason}><Icon name="spark" />{reason}</p>}
     <div className={styles.cardTop}>
       <UniversityLogo item={item} />
       <div className={styles.cardTitle}>
@@ -49,14 +63,20 @@ export default function UniversityCard({ item, courseNames = {}, headingLevel = 
       {badges.map((badge) => <li key={badge.key}><Icon name={badge.icon} />{badge.label}</li>)}
     </ul>}
 
-    {item.streams.length > 0 && <p className={styles.streams}><span className="sr-only">Streams: </span>
-      {item.streams.slice(0, 4).join(' · ')}{item.streams.length > 4 && <span className={styles.more}> +{item.streams.length - 4}</span>}
-    </p>}
+    {preview?.tagline ? <p className={listing.tagline}>{preview.tagline}</p>
+      : item.streams.length > 0 && <p className={styles.streams}><span className="sr-only">Streams: </span>
+        {item.streams.slice(0, 4).join(' · ')}{item.streams.length > 4 && <span className={styles.more}> +{item.streams.length - 4}</span>}
+      </p>}
 
-    {fees && fees.feeMin != null && <div className={styles.feeWell}>
-      <p><span>Annual tuition{fees.tuitionYear ? ` · ${fees.tuitionYear}` : ''}</span><strong>{lakhRange(fees.feeMin, fees.feeMax)}</strong></p>
-      {courses.length > 0 && <small>{fees.count === 1 ? '1 programme' : `${fees.count} programmes`}: {courses.slice(0, 4).join(', ')}{courses.length > 4 ? ` +${courses.length - 4}` : ''}</small>}
-    </div>}
+    {courses.length > 0 && <ul className={listing.courses} aria-label="Programmes offered">
+      {courses.slice(0, 3).map((course) => <li key={course}>{course}</li>)}
+      {courses.length > 3 && <li data-more="true">+{courses.length - 3} more</li>}
+    </ul>}
+
+    <dl className={listing.cardStats}>
+      <Stat label="Fees" fact={fee} empty="Not published" />
+      <Stat label={second.label} fact={second.fact} empty={second.empty} />
+    </dl>
 
     <div className={styles.cardFoot}>
       <SourceTag item={item} />

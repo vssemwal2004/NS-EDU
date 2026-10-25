@@ -2,18 +2,24 @@
 // Usage: npm run scrape --workspace backend -- <command> [options]
 //   import-sources <file.csv|file.json> [--list "Name"]   add/update crawl sources from a seed list
 //   enqueue [--all | --stale-days N | --never] [--limit N] [--list "Name"]   queue one job per active source
+//   enqueue-quality [--limit N]                         queue the N university profiles with the most content gaps
+//   quality-watch [--limit N] [--poll-seconds N] [--once]  enqueue the next quality batch after the current one ends
 //   work [--concurrency N] [--max-jobs N] [--watch]         lease and crawl jobs until none are due
-//   enrich-images [--limit N] [--slug a,b] [--state S] [--all] [--want N] [--concurrency N] [--dry-run]
+//   enrich-images [--limit N] [--slug a,b] [--source-url URL] [--state S] [--all] [--want N] [--concurrency N] [--dry-run]
 //                                                           (re)process campus photographs only
 //   status                                                  queue counts and the latest run
 //   retry-failed | cancel-queued                            queue maintenance
+//
+// The npm script caps V8's old space at 1 GB. Without a cap a watching worker grows towards the
+// default heap limit (a quarter of RAM) because nothing forces a major collection between jobs, and
+// a long crawl is then killed by the machine rather than finishing. Run it through `npm run scrape`.
 import { readFile } from 'node:fs/promises';
 import { basename, extname } from 'node:path';
 import { env } from '../config/env.js';
-import { closeDb } from '../db/collections.js';
+import { COLLECTIONS, closeDb, getDb } from '../db/collections.js';
 import { compressionRatio } from '../lib/image-pipeline.js';
 import { scraperConfig } from '../scraper/config.js';
-import { cancelJobs, enqueueSources, queueStats, retryJobs } from '../scraper/queue.js';
+import { cancelJobs, enqueueQualitySources, enqueueSources, queueStats, retryJobs } from '../scraper/queue.js';
 import { importSources, parseSeedList } from '../scraper/sources.js';
 import { runWorker } from '../scraper/worker.js';
 import { enrichImages } from './enrich-images.js';
@@ -80,11 +86,54 @@ async function workCommand() {
   if (stats.images) console.log(`Images: ${describeImages(stats.images)}.`);
 }
 
+async function enqueueQualityCommand() {
+  const limit = positiveInt(option('limit'), 'limit') ?? 100;
+  const result = await enqueueQualitySources({ limit, createdBy: `quality-reenrichment-batch-${new Date().toISOString()}` });
+  console.log(result.runId
+    ? `Run ${result.runId}: ${result.queued}/${result.selected} quality jobs queued; gaps in selection: ${Object.entries(result.gaps).map(([field, count]) => `${field}=${count}`).join(', ')}.`
+    : 'Nothing queued: every eligible incomplete profile already has an open job, or no incomplete sourced profile remains.');
+}
+
+async function qualityWatchCommand() {
+  const limit = positiveInt(option('limit'), 'limit') ?? 100;
+  const pollSeconds = positiveInt(option('poll-seconds'), 'poll-seconds') ?? 60;
+  let stopping = false;
+  const stop = () => { stopping = true; };
+  process.once('SIGINT', stop);
+  process.once('SIGTERM', stop);
+  do {
+    const database = await getDb();
+    const latest = await database.collection(COLLECTIONS.scrapeRuns).findOne(
+      { createdBy: { $regex: '^quality-reenrichment-batch-' } },
+      { sort: { createdAt: -1, _id: -1 }, projection: { _id: 1, createdBy: 1, total: 1 } },
+    );
+    const open = latest ? await database.collection(COLLECTIONS.scrapeJobs).countDocuments({
+      runId: latest._id, status: { $in: ['queued', 'running'] },
+    }) : 0;
+    if (open) {
+      console.log(`${new Date().toISOString()} quality run ${latest._id} still has ${open}/${latest.total ?? '?'} open jobs.`);
+    } else {
+      const result = await enqueueQualitySources({
+        limit,
+        createdBy: `quality-reenrichment-batch-${new Date().toISOString()}`,
+      });
+      console.log(result.runId
+        ? `${new Date().toISOString()} started quality run ${result.runId}: ${result.queued}/${result.selected} jobs.`
+        : `${new Date().toISOString()} no eligible incomplete sourced profile is currently available.`);
+    }
+    if (flag('once') || stopping) break;
+    await new Promise((resolve) => setTimeout(resolve, pollSeconds * 1000));
+  } while (!stopping);
+}
+
 async function enrichImagesCommand() {
   const controller = new AbortController();
   process.on('SIGINT', () => controller.abort(new Error('Stopped')));
+  const slugs = (option('slug') ?? '').split(',').map((part) => part.trim()).filter(Boolean);
+  const sourceUrl = option('source-url') ?? '';
+  if (sourceUrl && slugs.length !== 1) throw new Error('--source-url requires exactly one --slug');
   const summary = await enrichImages({
-    slugs: (option('slug') ?? '').split(',').map((part) => part.trim()).filter(Boolean),
+    slugs, sourceUrl,
     state: option('state') ?? '',
     limit: positiveInt(option('limit'), 'limit') ?? 50,
     want: positiveInt(option('want'), 'want'),
@@ -110,6 +159,8 @@ async function statusCommand() {
 const commands = {
   'import-sources': importCommand,
   enqueue: enqueueCommand,
+  'enqueue-quality': enqueueQualityCommand,
+  'quality-watch': qualityWatchCommand,
   work: workCommand,
   'enrich-images': enrichImagesCommand,
   status: statusCommand,
@@ -119,7 +170,7 @@ const commands = {
 
 try {
   if (!commands[command]) {
-    console.log('Commands: import-sources <file>, enqueue [--all|--stale-days N|--never] [--limit N], work [--concurrency N] [--max-jobs N] [--watch], enrich-images [--limit N] [--slug a,b] [--all] [--dry-run], status, retry-failed, cancel-queued');
+    console.log('Commands: import-sources <file>, enqueue [--all|--stale-days N|--never] [--limit N], enqueue-quality [--limit N], quality-watch [--limit N] [--poll-seconds N] [--once], work [--concurrency N] [--max-jobs N] [--watch], enrich-images [--limit N] [--slug a,b] [--source-url URL] [--all] [--dry-run], status, retry-failed, cancel-queued');
     process.exitCode = command ? 1 : 0;
   } else {
     await commands[command]();

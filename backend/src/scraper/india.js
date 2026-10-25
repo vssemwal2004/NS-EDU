@@ -71,7 +71,7 @@ export function statesIn(text) {
 export const DEGREE_PATTERN = new RegExp(String.raw`^(?:${[
   String.raw`B\.?\s?Tech`, String.raw`M\.?\s?Tech`, String.raw`B\.?\s?E\.?(?=\s|\(|$)`, String.raw`M\.?\s?E\.?(?=\s|\(|$)`,
   String.raw`B\.?\s?Sc\.?`, String.raw`M\.?\s?Sc\.?`, String.raw`B\.?\s?Com\.?`, String.raw`M\.?\s?Com\.?`,
-  String.raw`B\.?\s?A\.?(?=\s|\(|$|,)`, String.raw`M\.?\s?A\.?(?=\s|\(|$|,)`, 'BBA', 'MBA', 'BCA', 'MCA', 'PGDM', String.raw`PG\s?Diploma`,
+  String.raw`[BM]\.\s?[BC]\.\s?A\.?`, String.raw`B\.?\s?A\.?(?=\s|\(|$|,)`, String.raw`M\.?\s?A\.?(?=\s|\(|$|,)`, 'BBA', 'MBA', 'BCA', 'MCA', 'PGDM', String.raw`PG\s?Diploma`,
   String.raw`B\.?\s?Des\.?`, String.raw`M\.?\s?Des\.?`, String.raw`B\.?\s?Arch\.?`, String.raw`M\.?\s?Arch\.?`, String.raw`B\.?\s?Plan\.?`, String.raw`M\.?\s?Plan\.?`,
   String.raw`B\.?\s?Pharm(?:a|acy)?\.?`, String.raw`M\.?\s?Pharm(?:a|acy)?\.?`, String.raw`Pharm\.?\s?D\.?`, String.raw`D\.?\s?Pharm(?:a|acy)?\.?`,
   'MBBS', 'BDS', 'MDS', String.raw`M\.?D\.?(?=\s|\(|$)`, String.raw`M\.?S\.?(?=\s|\(|$)`, 'BAMS', 'BHMS', 'BUMS', 'BNYS', 'BPT', 'MPT', 'BMLT', 'DMLT', 'BOT',

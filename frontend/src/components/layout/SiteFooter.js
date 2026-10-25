@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import Brand from '@/components/ui/Brand';
 import Icon from '@/components/ui/Icon';
+import { CookieSettingsButton } from '@/features/consent/CookieConsent';
 import { getSharedContent } from '@/lib/api/content';
 import styles from './SiteFooter.module.css';
 
@@ -38,7 +39,10 @@ export default async function SiteFooter() {
       <div className={styles.bottom}>
         <p>© {new Date().getFullYear()} {name}. All rights reserved.</p>
         {copy?.trustNote && <p className={styles.note}>{copy.trustNote}</p>}
-        <a href="#top" className={styles.backTop}>Back to top<Icon name="arrowUp" /></a>
+        <div className={styles.bottomLinks}>
+          <CookieSettingsButton className={styles.cookieSettings} />
+          <a href="#top" className={styles.backTop}>Back to top<Icon name="arrowUp" /></a>
+        </div>
       </div>
     </div>
   </footer>;

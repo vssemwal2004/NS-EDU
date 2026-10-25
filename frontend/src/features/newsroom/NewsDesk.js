@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import Icon from '@/components/ui/Icon';
-import { displayNewsImage, filterEducationStories, newsDate, readSavedNews, SAVED_NEWS_LIMIT, savedNewsKey, usableEducationFeed } from '@/lib/education-news';
+import { displayNewsImage, filterEducationStories, isThumbnailOnly, newsDate, readSavedNews, SAVED_NEWS_LIMIT, savedNewsKey, usableEducationFeed } from '@/lib/education-news';
 import styles from './NewsDesk.module.css';
 
 const PAGE = 12;
@@ -83,7 +83,11 @@ export default function NewsDesk({ config, initialFeed, today }) {
   const savedIds = new Set(saved.map((record) => record.id));
   const news = records.filter((record) => record.type === 'news');
   const reads = records.filter((record) => record.type === 'article');
-  const lead = news.slice(0, 3).find((record) => record.description) || news[0];
+  // A thumbnail-only publisher photo pixelates across the lead slot; a full-size one wins, with a
+  // summary if possible.
+  const fullSize = news.slice(0, 10).filter((record) => displayNewsImage(record.imageUrl, config) && !isThumbnailOnly(record.imageUrl));
+  const lead = fullSize.find((record) => record.description) || fullSize[0]
+    || news.slice(0, 3).find((record) => record.description) || news[0];
   const rest = news.filter((record) => record !== lead);
   const brief = rest.slice(0, 5);
   const columns = rest.slice(5);
@@ -193,14 +197,14 @@ function SaveButton({ story, savedIds, onSave }) {
   return <button type="button" className={styles.save} aria-pressed={saved} aria-label={`${saved ? 'Unsave' : 'Save'} ${story.title}`} onClick={() => onSave(story)}><Icon name={saved ? 'bookmarkFilled' : 'bookmark'} /></button>;
 }
 
-// Publisher photos appear only when the image policy allows them; otherwise a typographic plate.
+// Publisher photos appear when the image policy allows them; otherwise a typographic plate, so every
+// story in the grid keeps the same rhythm instead of some columns starting with a bare headline.
 function Cover({ story, config, topicOf, lead = false }) {
   const [broken, setBroken] = useState(false);
   const src = displayNewsImage(story.imageUrl, config);
   const topic = topicOf(story.category);
   if (src && !broken) return <div className={styles.cover}><Image src={src} alt="" fill sizes={lead ? '(max-width: 640px) 100vw, (max-width: 1100px) 92vw, 760px' : '(max-width: 640px) 100vw, 360px'} onError={() => setBroken(true)} /></div>;
-  if (!lead) return null;
-  return <div className={`${styles.cover} ${styles.plate}`} aria-hidden="true"><span className={styles.plateMark}>The Education Desk</span><Icon name={topic?.icon || 'news'} /><span className={styles.plateTopic}>{topic?.label || 'Education'}</span></div>;
+  return <div className={`${styles.cover} ${styles.plate}`} data-size={lead ? 'lead' : 'column'} aria-hidden="true">{lead && <span className={styles.plateMark}>The Education Desk</span>}<Icon name={topic?.icon || 'news'} /><span className={styles.plateTopic}>{topic?.label || 'Education'}</span></div>;
 }
 
 function LeadStory({ story, savedIds, onSave, config, topicOf }) {

@@ -8,7 +8,7 @@
 .desk { flex-shrink: 0; margin-block: -6px; }
 .planner { position: relative; background: var(--budget-card-background); border: var(--card-border); border-radius: var(--budget-card-radius); box-shadow: var(--budget-card-shadow); padding: var(--budget-card-padding); }
 .planner::before { content: ''; position: absolute; top: -1px; left: 28px; width: 72px; height: 3px; background: var(--color-primary); border-radius: var(--radius-pill); }
-.controls { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: var(--budget-layout-gap); padding-bottom: var(--space-4); border-bottom: var(--card-border); align-items: start; }
+.controls { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--budget-layout-gap); padding-bottom: var(--space-4); border-bottom: var(--card-border); align-items: start; }
 .control { min-width: 0; }
 .control > label { display: block; font-size: var(--text-caption); font-weight: 600; color: var(--color-accent); letter-spacing: .06em; text-transform: uppercase; margin-bottom: var(--space-2); }
 .selectWrap { position: relative; }
@@ -84,8 +84,7 @@
 .empty p { color: var(--color-muted); font-size: var(--text-small); }
 .adjust { margin-top: var(--space-4); }
 @media (max-width: 1100px) {
-  .controls { grid-template-columns: 1.2fr 1fr; gap: var(--space-3); }
-  .controls > div:first-child { grid-column: 1 / -1; }
+  .controls { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); }
   .heading { min-height: var(--budget-heading-height); }
   .summary { gap: var(--budget-layout-gap); }
   .groups { padding-right: var(--budget-layout-gap); }
@@ -100,7 +99,6 @@
   .heading h2 { padding-right: 72px; }
   .description { font-size: var(--budget-description-size); }
   .controls { grid-template-columns: 1fr; gap: var(--space-3); }
-  .controls > div:first-child { grid-column: auto; }
   .selectWrap select, .currencyInput input { font-size: var(--budget-mobile-control-size); }
   .planner { padding: var(--budget-mobile-card-padding); }
   .summary { grid-template-columns: 1fr; padding-top: var(--space-3); gap: var(--space-4); }

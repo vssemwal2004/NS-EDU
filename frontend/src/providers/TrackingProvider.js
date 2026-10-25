@@ -1,12 +1,14 @@
 'use client';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef } from 'react';
+import { hasPersonalisationConsent } from './ConsentProvider';
 
 /**
  * Batches the small activity events that power recommendations and the admin insights screen.
  *
  * - At most one request every 5 seconds, sent on an idle callback, with at most 20 events in it.
  * - A pending batch is flushed with navigator.sendBeacon when the tab is hidden or closed.
- * - Do Not Track is honoured: nothing is queued and nothing is sent.
+ * - Nothing is queued or sent unless the visitor chose "Accept all" in the cookie banner
+ *   (the server enforces the same rule). Do Not Track is honoured on top of that.
  * - Failures are silent. Tracking never blocks, retries or surfaces an error to the viewer.
  * Only the declared fields travel: type, query, institutionSlug, state, city, stream, courseSlug,
  * results, the route (never its query string) and a timestamp.
@@ -47,7 +49,8 @@ export function TrackingProvider({ children, enabled = true }) {
   }, []);
 
   const track = useCallback((event) => {
-    if (!enabled || !event?.type || doNotTrack()) return;
+    // Consent is checked per event, from the cookie itself (see hasPersonalisationConsent).
+    if (!enabled || !event?.type || doNotTrack() || !hasPersonalisationConsent()) return;
     const body = clean(event);
     if (!Object.keys(body).some((key) => key !== 'type')) return;
     if (queue.current.length >= MAX_QUEUE) queue.current.shift();

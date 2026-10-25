@@ -11,6 +11,7 @@ import { api } from '@/lib/api/client';
 import { formatTuition } from '@/lib/college-catalog';
 import { newsDate, readSavedNews, savedNewsKey } from '@/lib/education-news';
 import { useCatalog } from '@/providers/CatalogProvider';
+import { useContent } from '@/providers/ContentProvider';
 import { usePreferences } from '@/providers/PreferencesProvider';
 import { useStudentAuth } from '@/providers/StudentAuthProvider';
 import styles from '@/app/(site)/account/account.module.css';
@@ -42,9 +43,12 @@ function useComparisonLists() {
     });
   }, [raw, colleges, findCourse]);
 }
+// Saved stories are re-validated against the current topic list, so the `news` content is required:
+// without it every story fails validation and the panel wrongly reads "Nothing saved yet".
 function useSavedNews() {
   const raw = useStoredString(savedNewsKey);
-  return useMemo(() => raw === undefined ? undefined : readSavedNews({ getItem: () => raw }), [raw]);
+  const config = useContent('news');
+  return useMemo(() => raw === undefined ? undefined : config ? readSavedNews({ getItem: () => raw }, config) : [], [raw, config]);
 }
 
 function Panel({ id, eyebrow, title, icon, action, children, className = '' }) {

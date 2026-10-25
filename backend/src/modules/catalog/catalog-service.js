@@ -21,7 +21,7 @@ const toExam = (exam) => ({
   id: exam.slug, name: exam.name, field: exam.field ?? '', icon: exam.icon ?? 'cap', summary: exam.summary ?? '', href: exam.href,
   ...(exam.level && { level: exam.level }), ...(exam.courseSlugs?.length && { courseSlugs: exam.courseSlugs }), ...(exam.note && { note: exam.note }),
 });
-const toLocation = (place) => ({ name: place.name, landmark: place.landmark ?? '', crop: place.crop ?? null, featured: Boolean(place.featured) });
+const toLocation = (place, institutions = 0) => ({ name: place.name, landmark: place.landmark ?? '', crop: place.crop ?? null, featured: Boolean(place.featured), institutions });
 const matching = (fields, q) => ({ $or: fields.map((field) => ({ [field]: { $regex: escapeRegex(q), $options: 'i' } })) });
 
 async function find(name, filter = {}, options = {}) {
@@ -35,10 +35,54 @@ export const listExams = () => cache.wrap('exams', async () => (await find(COLLE
 export const listScholarships = () => cache.wrap('scholarships', async () => (await find(COLLECTIONS.scholarships, {}, { sort: { order: 1, label: 1, _id: 1 } }))
   .map((item) => ({ id: item.slug, label: item.label, href: item.href, description: item.description ?? '' })));
 
+// How many directory institutions sit in each curated destination.
+// The AISHE source names places by district, which rarely equals the destination tile's name:
+// Bengaluru's records sit in "Bengaluru Urban"/"Bengaluru Rural" and Delhi's in "North", "South
+// West" … with state "Delhi". So a tile matches on its leading word appearing as a whole word in
+// the record's city, district or state. Counting runs over distinct city/district/state triples
+// (about 1,500 of them), so a record that matches on two of the three is still counted once.
+const placeWords = (value) => String(value ?? '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+
+function placeMatcher(name) {
+  const full = placeWords(name);
+  const lead = full.split(' ')[0];
+  if (!lead) return () => false;
+  const word = new RegExp(`(^| )${lead}( |$)`);
+  return (triple) => triple.some((value) => value === full || word.test(value));
+}
+
+async function placeTriples() {
+  const rows = await (await getDb()).collection(COLLECTIONS.institutions).aggregate([
+    { $match: PUBLIC_FILTER },
+    { $group: { _id: { city: '$city', district: '$district', state: '$state' }, count: { $sum: 1 } } },
+  ]).toArray();
+  return rows.map((row) => ({
+    count: row.count,
+    triple: [row._id.city, row._id.district, row._id.state].map(placeWords).filter(Boolean),
+    state: placeWords(row._id.state),
+  }));
+}
+
+const countFor = (triples, name) => {
+  const matches = placeMatcher(name);
+  return triples.reduce((total, row) => (matches(row.triple) ? total + row.count : total), 0);
+};
+
 export const listLocations = () => cache.wrap('locations', async () => {
   const sort = { featured: -1, order: 1, name: 1, _id: 1 };
-  const [cities, states] = await Promise.all([find(COLLECTIONS.cities, {}, { sort }), find(COLLECTIONS.states, {}, { sort })]);
-  return { cities: cities.map(toLocation), states: states.map(toLocation) };
+  const [cities, states, triples] = await Promise.all([
+    find(COLLECTIONS.cities, {}, { sort }), find(COLLECTIONS.states, {}, { sort }), placeTriples(),
+  ]);
+  return {
+    cities: cities.map((place) => toLocation(place, countFor(triples, place.name))),
+    // A state tile is an exact match: "Punjab" must not pick up "Punjabi University".
+    states: states.map((place) => toLocation(place, triples.reduce((total, row) => (row.state === placeWords(place.name) ? total + row.count : total), 0))),
+    // What the directory actually covers, which is far wider than the curated destination tiles.
+    totals: {
+      cities: new Set(triples.flatMap((row) => row.triple.filter((value) => value !== row.state))).size,
+      states: new Set(triples.map((row) => row.state).filter(Boolean)).size,
+    },
+  };
 });
 
 // Programme rows whose institution and course are both visible, in seed/admin order.
@@ -105,13 +149,33 @@ export async function searchCatalog(rawQuery) {
   });
 }
 
+// How many directory institutions offer each course, and each field of study. A field counts an
+// institution once even when it offers several of the field's courses (B.Tech and M.Tech).
+// Counts only — no institution details — so they are safe on the public homepage.
+async function offeringCounts(db) {
+  const institutions = db.collection(COLLECTIONS.institutions);
+  const [courses, perCourse] = await Promise.all([
+    db.collection(COLLECTIONS.courses).find(activeFilter, { projection: { slug: 1, field: 1 } }).toArray(),
+    institutions.aggregate([
+      { $match: { ...PUBLIC_FILTER, 'courseSlugs.0': { $exists: true } } },
+      { $unwind: '$courseSlugs' },
+      { $group: { _id: '$courseSlugs', count: { $sum: 1 } } },
+    ]).toArray(),
+  ]);
+  const byField = new Map();
+  for (const course of courses) if (course.field) byField.set(course.field, [...(byField.get(course.field) ?? []), course.slug]);
+  const fields = await Promise.all([...byField].map(async ([field, slugs]) => [field, await institutions.countDocuments({ ...PUBLIC_FILTER, courseSlugs: { $in: slugs } })]));
+  return { courseCounts: Object.fromEntries(perCourse.map((row) => [row._id, row.count])), fieldCounts: Object.fromEntries(fields) };
+}
+
 export const platformStats = () => cache.wrap('stats', async () => {
   const db = await getDb();
   const names = ['courses', 'exams', 'programmes', 'cities', 'states', 'scholarships'];
-  const [counts, institutions, statesCovered] = await Promise.all([
+  const [counts, institutions, statesCovered, offerings] = await Promise.all([
     Promise.all(names.map((name) => db.collection(name).countDocuments(activeFilter))),
     db.collection(COLLECTIONS.institutions).countDocuments(PUBLIC_FILTER),
     db.collection(COLLECTIONS.institutions).distinct('state', PUBLIC_FILTER),
+    offeringCounts(db),
   ]);
-  return { ...Object.fromEntries(names.map((name, index) => [name, counts[index]])), institutions, statesWithInstitutions: statesCovered.filter(Boolean).length };
+  return { ...Object.fromEntries(names.map((name, index) => [name, counts[index]])), institutions, statesWithInstitutions: statesCovered.filter(Boolean).length, ...offerings };
 });

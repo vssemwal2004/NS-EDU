@@ -2,12 +2,18 @@ import Link from 'next/link';
 import Icon from '@/components/ui/Icon';
 import styles from './Locations.module.css';
 
-const plural = (count, word, many = `${word}s`) => `${count}\u00a0${count === 1 ? word : many}`;
+// `shown` lets a large count carry thousands separators while the plural still follows the number.
+const plural = (count, word, many = `${word}s`, shown = count) => `${shown}\u00a0${count === 1 ? word : many}`;
+const number = new Intl.NumberFormat('en-IN');
 
 export const placeHref = (place, kind) => `/universities?${new URLSearchParams({ [kind === 'city' ? 'city' : 'state']: place.name })}`;
 
+// Institutions come from the directory; the programme count is the curated fee catalogue and is
+// usually zero, so it only appears where there is something to show.
 export function countLine(count) {
-  return count?.institutions ? `${plural(count.institutions, 'institution')} · ${plural(count.programmes, 'programme')}` : 'No catalogue institutions yet';
+  if (!count?.institutions) return 'No catalogue institutions yet';
+  const listed = plural(count.institutions, 'institution', 'institutions', number.format(count.institutions));
+  return count.programmes ? `${listed} · ${plural(count.programmes, 'programme')}` : listed;
 }
 
 // One window into the shared destination artwork (`media.destinationsArt`); crops are in its pixel space.
@@ -40,7 +46,7 @@ export function Stamp({ place, kind, count }) {
       <span className={styles.stampInner}>
         <span className={styles.stampKind}>{kind === 'city' ? 'City' : 'State'}</span>
         <strong>{place.name}</strong>
-        <span className={styles.stampCount}>{count?.institutions ? plural(count.institutions, 'institution') : 'None listed yet'}</span>
+        <span className={styles.stampCount}>{count?.institutions ? countLine(count) : 'None listed yet'}</span>
         <Icon name="arrow" />
       </span>
     </Link>

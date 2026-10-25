@@ -1,6 +1,11 @@
 import { fileURLToPath } from 'node:url';
 
 const isDev = process.env.NODE_ENV === 'development';
+// The HTTPS-only headers (upgrade-insecure-requests, HSTS) belong to a site that is served over
+// HTTPS — NEXT_PUBLIC_SITE_URL, the same value the sitemap and canonical links use. A production
+// build run locally over plain http would otherwise upgrade its own login redirect to https://
+// and fail with ERR_SSL_PROTOCOL_ERROR.
+const servesHttps = !isDev && /^https:\/\//i.test(process.env.NEXT_PUBLIC_SITE_URL ?? '');
 
 // No nonces: most public pages are statically generated or cached, which nonces would rule out.
 // Remote logos come from many official university sites, so images allow any https source.
@@ -16,7 +21,7 @@ const contentSecurityPolicy = [
   "base-uri 'self'",
   "form-action 'self'",
   "frame-ancestors 'none'",
-  ...(isDev ? [] : ['upgrade-insecure-requests']),
+  ...(servesHttps ? ['upgrade-insecure-requests'] : []),
 ].join('; ');
 
 const securityHeaders = [
@@ -25,7 +30,7 @@ const securityHeaders = [
   { key: 'X-Frame-Options', value: 'DENY' },
   { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
   { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), payment=(), usb=()' },
-  ...(isDev ? [] : [{ key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains' }]),
+  ...(servesHttps ? [{ key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains' }] : []),
 ];
 
 const nextConfig = {
@@ -56,6 +61,10 @@ const nextConfig = {
     return [{
       source: '/api/:path*',
       destination: `${process.env.API_URL || 'http://127.0.0.1:4100'}/api/:path*`,
+    }, {
+      // Browsers ask for /favicon.ico on their own, whatever the page links; serve the brand mark.
+      source: '/favicon.ico',
+      destination: '/brand/favicon-64.png',
     }];
   },
 };

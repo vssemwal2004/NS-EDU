@@ -1,3 +1,5 @@
+import { isIP } from 'node:net';
+
 // URL helpers. "Registrable domain" uses a small suffix list that covers Indian academic and
 // government hosts; it decides which links count as the institution's own site.
 const MULTI_PART_SUFFIXES = new Set([
@@ -21,10 +23,14 @@ export function registrableDomain(hostname) {
 export function normalizeWebsite(raw) {
   let text = String(raw ?? '').trim();
   if (!text) return '';
+  // Directory spreadsheets sometimes contain `www.https//host` (or our previously normalised
+  // `https://www.https//host`): the intended scheme is present, just in the wrong column/order.
+  text = text.replace(/^(?:https?:\/\/)?www\.(https?)\:?\/{2}/i, (_match, scheme) => `${scheme.toLowerCase()}://`);
   if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(text)) text = `https://${text.replace(/^\/+/, '')}`;
   try {
     const url = new URL(text);
-    if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password || !url.hostname.includes('.')) return '';
+    const hostname = url.hostname.replace(/^\[|\]$/g, '');
+    if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password || !url.hostname.includes('.') || isIP(hostname)) return '';
     url.hash = '';
     url.search = '';
     return url.toString();
@@ -60,3 +66,21 @@ export const isSameSite = (url, domain) => {
 };
 
 export const originOf = (url) => new URL(url).origin;
+
+// Commercial CDNs institutions rent to serve their own files (Azure Front Door, CloudFront, S3,
+// Azure Blob, Cloudinary, Bunny, Akamai, DigitalOcean Spaces).
+const CDN_HOSTS = /\.(azurefd\.net|azureedge\.net|cloudfront\.net|amazonaws\.com|blob\.core\.windows\.net|b-cdn\.net|akamaized\.net|digitaloceanspaces\.com)$|^res\.cloudinary\.com$/;
+/**
+ * An image host that is the institution's own CDN: a known CDN service whose host name (or, for a
+ * shared host such as Cloudinary, first path segment) carries the institution's domain label —
+ * "upeswebsitecdn-prod….azurefd.net" for upes.ac.in. Only used for photographs the institution's
+ * own pages reference; pages themselves are never crawled off-site.
+ */
+export function isInstitutionCdn(url, domain) {
+  const parsed = url instanceof URL ? url : resolveUrl(url);
+  const label = String(domain ?? '').split('.')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
+  if (!parsed || label.length < 3 || !CDN_HOSTS.test(parsed.hostname.toLowerCase())) return false;
+  const host = parsed.hostname.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const firstSegment = parsed.pathname.split('/')[1]?.toLowerCase().replace(/[^a-z0-9]/g, '') ?? '';
+  return host.includes(label) || firstSegment.includes(label);
+}

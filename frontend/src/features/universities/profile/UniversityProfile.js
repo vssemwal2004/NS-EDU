@@ -21,7 +21,7 @@ function Source({ href, children }) {
 }
 
 function Cover({ model }) {
-  const { item, shortName, place, heroImage, chips } = model;
+  const { item, shortName, place, heroImage, chips, chipsNote } = model;
   const directoryLink = item.state ? `/universities?${new URLSearchParams(item.city ? { state: item.state, city: item.city } : { state: item.state })}` : '/universities';
   return <section id="profile-top" className={`lux-surface-dark ${styles.cover}`} data-image={heroImage ? true : undefined} aria-labelledby="page-title">
     {heroImage && <div className={styles.coverMedia} aria-hidden="true"><Photo src={heroImage} sizes="100vw" priority /></div>}
@@ -44,29 +44,49 @@ function Cover({ model }) {
             {item.establishedYear && <li><Icon name="uniCalendar" />Established {item.establishedYear}</li>}
             <li><SourceTag item={item} className={styles.coverSource} /></li>
           </ul>
-          {chips.length > 0 && <ul className={styles.chips} aria-label="Accreditation and ranking, as reported by the source">
-            {chips.map((chip) => <li key={chip.key}><Icon name={chip.icon} /><strong>{chip.label}</strong><small>{chip.note}</small></li>)}
-          </ul>}
+          {chips.length > 0 && <>
+            <ul className={styles.chips} aria-label="Accreditation and ranking, as reported by the source">
+              {chips.map((chip) => <li key={chip.key}><Icon name={chip.icon} /><strong>{chip.label}</strong></li>)}
+            </ul>
+            <p className={styles.chipsNote}><a href="#accreditation">{chipsNote} — see details</a></p>
+          </>}
         </div>
         <div className={styles.coverActions}>
           <ApplyButton university={applyTarget(item)} variant="light" size="lg" />
-          {item.website && <a className="lux-button lux-button--outline lux-button--lg" href={item.website} {...external}><Icon name="uniGlobe" />Official website<span className="sr-only"> (opens in a new tab)</span></a>}
-          <CompareToggle slug={item.id} name={item.name} size="md" />
+          <div className={styles.coverSecondary}>
+            <CompareToggle slug={item.id} name={item.name} size="md" />
+            {item.website && <a className={`lux-button lux-button--outline lux-button--lg ${styles.siteButton}`} href={item.website} {...external}><Icon name="uniGlobe" /><span className={styles.siteLabel}>Official website</span><span className="sr-only"> (opens in a new tab)</span></a>}
+          </div>
         </div>
       </div>
     </div>
   </section>;
 }
 
-function Ribbon({ ribbon }) {
+// The four figures a student weighs first — fees, placement, programmes, campus — each only when known.
+function Glance({ glance }) {
   return <div className={`lux-container ${styles.ribbonWrap}`}>
-    <dl className={styles.ribbon} aria-label="Key facts">
-      {ribbon.map((fact) => <div key={fact.label}>
-        <dt>{fact.label}</dt>
-        <dd>{fact.href ? <a href={fact.href} {...external}>{fact.value}<Icon name="external" /><span className="sr-only"> (opens in a new tab)</span></a> : fact.value}</dd>
+    <dl className={styles.ribbon} aria-label="At a glance">
+      {glance.map((tile) => <div key={tile.key}>
+        <dt><span className={styles.glanceIcon} aria-hidden="true"><Icon name={tile.icon} /></span>{tile.label}</dt>
+        <dd>{tile.value}{tile.note && <small>{tile.note}</small>}</dd>
       </div>)}
     </dl>
   </div>;
+}
+
+function Awards({ model }) {
+  const { item, awards } = model;
+  return <section id="awards" className={styles.section} aria-labelledby="awards-title">
+    <SectionHead id="awards" eyebrow="Recognition" title="Awards & recognitions" aside={`${awards.length} listed by the institution`} />
+    <ol className={styles.timeline}>
+      {awards.map((award) => <li key={award.title}>
+        <span className={styles.timelineYear}>{award.year ?? '—'}</span>
+        <p>{award.title}</p>
+      </li>)}
+    </ol>
+    <p className={styles.sourceRow}><Source href={item.website}>As stated by {item.name} on its own website</Source></p>
+  </section>;
 }
 
 function SectionHead({ id, eyebrow, title, aside }) {
@@ -77,17 +97,17 @@ function SectionHead({ id, eyebrow, title, aside }) {
 }
 
 function Overview({ model }) {
-  const { item, about, aboutSource, highlights, gaps } = model;
+  const { item, shortName, about, aboutSource, highlights, gaps } = model;
   return <section id="overview" className={styles.section} aria-labelledby="overview-title">
-    <SectionHead id="overview" eyebrow="About" title="Overview" aside={item.source?.fetchedAt && !item.isIllustrative ? `Updated ${shortDate(item.source.fetchedAt)}` : ''} />
-    <p className={styles.about}>{about}</p>
+    <SectionHead id="overview" eyebrow="About" title={`${shortName} overview`} aside={item.source?.fetchedAt && !item.isIllustrative ? `Updated ${shortDate(item.source.fetchedAt)}` : ''} />
+    {about.split(/\n{2,}/).map((paragraph, index) => <p key={index} className={index ? styles.aboutMore : styles.about}>{paragraph}</p>)}
     {aboutSource ? <p className={styles.sourceRow}><Source href={aboutSource}>From the institution’s website</Source></p>
       : <p className={styles.footnote}>Written from the directory record: name, type, location and year of establishment.</p>}
     {item.isIllustrative && <p className={styles.notice}><Icon name="uniInfo" />This is an illustrative profile used to demonstrate the platform. Its fees and packages are sample values, not verified figures.</p>}
     {highlights.length > 0 && <>
       <h3 className={styles.subhead}>Highlights</h3>
       <ul className={styles.highlights}>
-        {highlights.map((row) => <li key={row.title}><span className={styles.highlightIcon}><Icon name={row.icon} /></span><div><strong>{row.title}</strong><p>{row.text}</p></div></li>)}
+        {highlights.map((row) => <li key={row.key}><span className={styles.highlightIcon}><Icon name={row.icon} /></span><div><strong>{row.title}</strong><p>{row.text}</p></div></li>)}
       </ul>
     </>}
     {item.streams.length > 0 && <>
@@ -115,7 +135,7 @@ function Courses({ model }) {
   const { item, rows, summary, moreCourses, offeredRows, offeredWithFees, offeredSource } = model;
   const target = applyTarget(item);
   return <section id="courses" className={styles.section} aria-labelledby="courses-title">
-    <SectionHead id="courses" eyebrow="Programmes" title={rows.length || offeredWithFees ? 'Courses & fees' : 'Courses'}
+    <SectionHead id="courses" eyebrow="Academics" title={rows.length || offeredWithFees ? 'Courses & fees' : 'Courses'}
       aside={rows.length ? `${rows.length === 1 ? '1 programme' : `${rows.length} programmes`} with published fees` : ''} />
     {rows.length > 0 && <div className={styles.tableWrap}>
       <table className={styles.table}>
@@ -158,12 +178,27 @@ function Courses({ model }) {
 }
 
 function Placements({ model }) {
-  const { item, placementStats, recruiters, placementYear, placementSource, summary } = model;
+  const { item, placementStats, recruiters, placementYear, placementNote, placementSource, summary, placementHistory, historyColumns } = model;
   return <section id="placements" className={styles.section} aria-labelledby="placements-title">
     <SectionHead id="placements" eyebrow="Outcomes" title="Placements" aside={placementYear ? `Reported for ${placementYear}` : ''} />
     {placementStats.length > 0 ? <ul className={styles.stats}>
       {placementStats.map((stat) => <li key={stat.key}><span>{stat.label}</span><strong>{stat.value}</strong></li>)}
-    </ul> : <p className={styles.notice}><Icon name="uniInfo" />The institution does not publish overall placement figures{placementYear ? ` for ${placementYear}` : ''}. Only the course-level packages below are known.</p>}
+    </ul> : !historyColumns.length && <p className={styles.notice}><Icon name="uniInfo" />The institution does not publish overall placement figures{placementYear ? ` for ${placementYear}` : ''}. Only the course-level packages below are known.</p>}
+    {historyColumns.length > 0 && <>
+      <h3 className={styles.subhead}>Season by season <small>{placementHistory.length} {placementHistory.length === 1 ? 'season' : 'seasons'} reported</small></h3>
+      <div className={styles.tableWrap}>
+        <table className={`${styles.table} ${styles.history}`}>
+          <caption>Placement record as the institution reports it, newest season first. A dash means that season’s figure was not published.</caption>
+          <thead><tr><th scope="col">Season</th>{historyColumns.map(([key, label]) => <th key={key} scope="col">{label}</th>)}</tr></thead>
+          <tbody>{placementHistory.map((row) => <tr key={row.year}>
+            <th scope="row"><strong>{row.session}{row.counted && ' *'}</strong>{row.sourcePage && <small><a href={row.sourcePage} {...external}>Source</a></small>}</th>
+            {historyColumns.map(([key, label, format]) => <td key={key} data-label={label} data-missing={row[key] == null || undefined}>{row[key] == null ? '—' : format(row[key])}</td>)}
+          </tr>)}</tbody>
+        </table>
+      </div>
+      {placementHistory.some((row) => row.counted) && <p className={styles.footnote}>* Counted from the institution’s published list of placed students (students, distinct employers and the highest package printed). The list may not name every student placed.</p>}
+    </>}
+    {placementNote && <p className={styles.footnote}>{placementNote}</p>}
     {summary?.medianMax != null && <p className={styles.footnote}>Course-level packages for {summary.placementYear} are in the courses table above{item.isIllustrative ? ' (illustrative values)' : ''}.</p>}
     {recruiters.length > 0 && <>
       <h3 className={styles.subhead}>Recruiters listed <small>{recruiters.length}</small></h3>
@@ -305,8 +340,9 @@ function Similar({ model, courseNames }) {
   </section>;
 }
 
+// Contacts live in the Contact section only; the rail keeps to the decision: fee and Apply.
 function Rail({ model }) {
-  const { item, summary, contacts, shortName } = model;
+  const { item, summary, shortName } = model;
   return <aside className={styles.rail} aria-labelledby="rail-title">
     <div className={`lux-surface-dark ${styles.railCard}`}>
       <div className={styles.railHead}><UniversityLogo item={item} size="sm" /><p>{shortName}</p></div>
@@ -316,10 +352,7 @@ function Rail({ model }) {
       {item.website && <a className={`lux-button lux-button--outline lux-button--block ${styles.railSite}`} href={item.website} {...external}><Icon name="uniGlobe" />Official website<span className="sr-only"> (opens in a new tab)</span></a>}
       <p className={styles.railNote}>Gyaan Vidhya’s admissions team then contacts you to help with the institution’s own application.</p>
     </div>
-    {contacts.length > 0 && <div className={styles.railContacts}>
-      <h3>Key contacts</h3>
-      <ul>{contacts.map((row) => <li key={row.key}><a href={row.href} {...(row.external ? external : {})}><Icon name={row.icon} /><span><small>{row.label}</small>{row.value}</span>{row.external && <span className="sr-only"> (opens in a new tab)</span>}</a></li>)}</ul>
-    </div>}
+    <div className={styles.railCompare}><CompareToggle slug={item.id} name={item.name} size="md" /></div>
   </aside>;
 }
 
@@ -327,7 +360,7 @@ export default function UniversityProfile({ model, courseNames }) {
   const { item, summary, shortName } = model;
   return <>
     <Cover model={model} />
-    <Ribbon ribbon={model.ribbon} />
+    <Glance glance={model.glance} />
     <SectionTabs sections={model.sections} />
     <div className={`lux-container ${styles.body}`}>
       <div className={styles.main}>
@@ -336,10 +369,11 @@ export default function UniversityProfile({ model, courseNames }) {
         {model.hasCourses && <Courses model={model} />}
         {model.hasPlacements && <Placements model={model} />}
         {model.hasCampus && <Campus model={model} />}
+        {model.awards.length > 0 && <Awards model={model} />}
         <Admissions model={model} />
         <Accreditation model={model} />
         <Contact model={model} />
-        <Similar model={model} courseNames={courseNames} />
+        {model.similar.length > 0 && <Similar model={model} courseNames={courseNames} />}
       </div>
       <Rail model={model} />
     </div>

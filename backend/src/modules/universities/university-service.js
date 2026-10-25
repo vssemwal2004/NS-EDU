@@ -3,8 +3,9 @@ import { HttpError } from '../../lib/http-error.js';
 import { pagination, queryString } from '../../lib/query.js';
 import { createTtlCache } from '../../lib/ttl-cache.js';
 import { slugify, validate } from '../../lib/validation.js';
-import { derivedFields, foldText, nameKeyOf, domainOf, queryKeys, slugCandidates } from './normalize.js';
+import { derivedFields, foldText, nameKeyOf, domainOf, queryKeys, siteKeyOf, slugCandidates } from './normalize.js';
 import { IMPORTABLE_FIELDS, INSTITUTION_CATEGORIES, INSTITUTION_FIELDS, INSTITUTION_TYPES, OWNERSHIP } from './schema.js';
+import { isCredibleAward } from '../../scraper/deep.js';
 
 // Students only see visible, non-rejected records. Unverified (imported/scraped) records are
 // public but carry their source and date so the page can say where the facts came from.
@@ -21,6 +22,57 @@ const institutions = async () => (await getDb()).collection(COLLECTIONS.institut
 const pick = (value, options) => (options.includes(value) ? value : '');
 const MAX_PAGE_SIZE = 48;
 
+// A listing row shows more than a name: one line about the institution, a campus photo, the fee it
+// starts at and its placement headline. Everything here is already on the document, so the preview
+// costs no extra query — it is clipped hard because a page carries up to 48 of them.
+const firstSentence = (about) => {
+  const text = String(about || '').replace(/\s+/g, ' ').trim();
+  if (!text) return '';
+  const stop = text.search(/[.!?](\s|$)/);
+  const sentence = stop > 40 ? text.slice(0, stop + 1) : text;
+  return sentence.length > 180 ? `${sentence.slice(0, 177).trimEnd()}…` : sentence;
+};
+
+const PACKAGE_KEYS = ['averagePackageLpa', 'highestPackageLpa', 'placedPercent'];
+const previewOf = (doc) => {
+  const programmes = doc.programmesOffered ?? [];
+  const lowest = (field) => {
+    const values = programmes.map((row) => row[field]).filter((value) => typeof value === 'number' && value > 0);
+    return values.length ? Math.min(...values) : null;
+  };
+  // The lowest fee for the period the site prints most usefully: a year, else a semester, else the
+  // whole programme. The period travels with the amount so it is never read as an annual figure.
+  const [feeFromInr, feePeriod] = [['annualFeeInr', 'year'], ['semesterFeeInr', 'semester'], ['totalFeeInr', 'total']]
+    .map(([field, period]) => [lowest(field), period]).find(([value]) => value !== null) ?? [null, null];
+  // The single-season snapshot when it has a figure, else the newest season of the year-wise record;
+  // the two are never mixed, so every figure keeps the year it belongs to.
+  const snapshot = doc.placements ?? null;
+  const placements = PACKAGE_KEYS.some((key) => typeof snapshot?.[key] === 'number') ? snapshot
+    : (doc.placementHistory ?? []).find((row) => PACKAGE_KEYS.some((key) => typeof row[key] === 'number')) ?? snapshot;
+  return {
+    tagline: firstSentence(doc.about),
+    photoUrl: doc.coverUrl || doc.gallery?.[0]?.url || '',
+    photoCount: doc.gallery?.length ?? 0,
+    // Programme names the student recognises, longest-form first so "B.Tech Computer Science" wins
+    // over a bare "B.Tech" when both were extracted.
+    topProgrammes: [...new Set(programmes.map((row) => row.name).filter(Boolean))].slice(0, 4),
+    programmeCount: programmes.length,
+    feeFromInr,
+    feePeriod,
+    placementSeasons: doc.placementHistory?.length ?? 0,
+    averagePackageLpa: placements?.averagePackageLpa ?? null,
+    highestPackageLpa: placements?.highestPackageLpa ?? null,
+    placedPercent: placements?.placedPercent ?? null,
+    placementYear: placements?.year ?? null,
+    facilities: (doc.facilities ?? []).slice(0, 6),
+    facilityCount: doc.facilities?.length ?? 0,
+    activityCount: doc.activities?.length ?? 0,
+    awardCount: (doc.awards ?? []).filter((award) => isCredibleAward(award?.title ?? '')).length,
+    hostelAvailable: doc.campus?.hostelAvailable ?? null,
+    campusAcres: doc.campus?.sizeAcres ?? null,
+  };
+};
+
 export const toSummary = (doc) => ({
   id: doc.slug,
   name: doc.name,
@@ -35,6 +87,7 @@ export const toSummary = (doc) => ({
   naacGrade: doc.naacGrade || '',
   nirfRank: doc.nirfRank ?? null,
   nirfYear: doc.nirfYear ?? null,
+  nirfCategory: doc.nirfCategory || '',
   approvals: doc.approvals ?? [],
   streams: doc.streams ?? [],
   courseSlugs: doc.courseSlugs ?? [],
@@ -47,6 +100,7 @@ export const toSummary = (doc) => ({
   art: doc.art ?? null,
   source: doc.source ? { kind: doc.source.kind, name: doc.source.name || '', url: doc.source.url || '', fetchedAt: doc.source.fetchedAt ?? null } : null,
   updatedAt: doc.updatedAt ?? null,
+  preview: previewOf(doc),
 });
 
 const toDetail = (doc) => ({
@@ -66,11 +120,14 @@ const toDetail = (doc) => ({
   gallery: doc.gallery ?? [],
   programmesOffered: doc.programmesOffered ?? [],
   placements: doc.placements ?? null,
+  placementHistory: doc.placementHistory ?? [],
   facilities: doc.facilities ?? [],
   activities: doc.activities ?? [],
   campus: doc.campus ?? null,
   admissionNote: doc.admissionNote || '',
   entranceExams: doc.entranceExams ?? [],
+  // Rows stored before the award test was tightened are filtered on the way out as well.
+  awards: (doc.awards ?? []).filter((award) => isCredibleAward(award?.title ?? '')),
   directory: doc.directory ?? null,
 });
 
@@ -167,10 +224,14 @@ export async function listUniversities(query) {
 
 // Public landing-page set: the most popular visible institutions, with curated fee summaries.
 export const FEATURED_MAX = 12;
-export async function featuredUniversities(rawLimit) {
+// `course` narrows the set to institutions offering one course (the homepage's course tabs). An
+// unknown or malformed slug simply matches nothing — it is never passed through as a pattern.
+export async function featuredUniversities(rawLimit, rawCourse = '') {
   const limit = Math.min(Math.max(Number.parseInt(rawLimit, 10) || 8, 1), FEATURED_MAX);
-  return aggregateCache.wrap(`featured:${limit}`, async () => {
-    const docs = await (await institutions()).find(PUBLIC_FILTER, { projection: { searchPrefixes: 0 } })
+  const course = /^[a-z0-9-]{1,40}$/.test(String(rawCourse)) ? String(rawCourse) : '';
+  return aggregateCache.wrap(`featured:${limit}:${course}`, async () => {
+    const filter = course ? { ...PUBLIC_FILTER, courseSlugs: course } : PUBLIC_FILTER;
+    const docs = await (await institutions()).find(filter, { projection: { searchPrefixes: 0 } })
       .sort(SORTS.relevance).limit(limit).toArray();
     const fees = await programmeSummaries(docs.map((doc) => doc.slug));
     return { items: docs.map((doc) => ({ ...toSummary(doc), programmes: fees.get(doc.slug) ?? null })), limit };
@@ -302,18 +363,36 @@ function remember(index, doc) {
   index.byNameKey.set(doc.nameKey, [...(index.byNameKey.get(doc.nameKey) ?? []), doc]);
 }
 
-// Matching order: explicit slug, then official website domain + name, then name + state (or city).
+// Fields a new value adds to instead of replacing. A placement season the site has since taken down
+// stays on record; a season printed again replaces the stored row for that year.
+const ACCUMULATING = { placementHistory: { key: 'year', max: 6 } };
+function accumulate(existing, data) {
+  const out = { ...data };
+  for (const [field, { key, max }] of Object.entries(ACCUMULATING)) {
+    if (!Array.isArray(data[field]) || !Array.isArray(existing[field])) continue;
+    const rows = new Map(existing[field].map((row) => [row[key], row]));
+    for (const row of data[field]) rows.set(row[key], row);
+    out[field] = [...rows.values()].sort((a, b) => b[key] - a[key]).slice(0, max);
+  }
+  return out;
+}
+
+// Matching order: explicit slug, then official website domain + name, then name + state (or city),
+// and last the same site with a drifted name.
+// The last rule compares the whole site key (host + path), not just the host: university groups
+// publish every constituent college under one hostname, so "only one record on this host" would
+// otherwise fold a dental college and a fashion school into a single chimera record.
 function findMatch(index, data) {
   if (data.slug && index.bySlug.has(data.slug)) return index.bySlug.get(data.slug);
   const nameKey = nameKeyOf(data.name);
   const domain = domainOf(data.website);
-  if (domain) {
-    const sameDomain = (index.byDomain.get(domain) ?? []).slice(0, sameDomainLimit);
-    const exact = sameDomain.find((doc) => doc.nameKey === nameKey);
-    if (exact) return exact;
-    if (sameDomain.length === 1 && !sameDomain[0].isIllustrative) return sameDomain[0];
-  }
-  return (index.byNameKey.get(nameKey) ?? []).find((doc) => (data.state ? doc.state === data.state : doc.city === data.city)) ?? null;
+  const sameDomain = domain ? (index.byDomain.get(domain) ?? []).slice(0, sameDomainLimit) : [];
+  const exact = sameDomain.find((doc) => doc.nameKey === nameKey);
+  if (exact) return exact;
+  const byName = (index.byNameKey.get(nameKey) ?? []).find((doc) => (data.state ? doc.state === data.state : doc.city === data.city));
+  if (byName) return byName;
+  const siteKey = siteKeyOf(data.website);
+  return (siteKey && sameDomain.find((doc) => !doc.isIllustrative && siteKeyOf(doc.website) === siteKey)) || null;
 }
 
 async function allocateSlug(collection, data, index) {
@@ -363,14 +442,17 @@ export async function upsertUniversities(records, { source, publish = true, dryR
       const existing = findMatch(index, data);
       if (existing) {
         const locked = new Set(existing.lockedFields ?? []);
-        const changes = Object.fromEntries(Object.entries(data).filter(([key, value]) => key !== 'slug' && !locked.has(key)
+        const changes = Object.fromEntries(Object.entries(accumulate(existing, data)).filter(([key, value]) => key !== 'slug' && !locked.has(key)
           && JSON.stringify(existing[key]) !== JSON.stringify(value)));
         if (!Object.keys(changes).length) { summary.unchanged += 1; note({ index: row, slug: existing.slug, action: 'unchanged' }); continue; }
         Object.assign(existing, changes);
         const key = existing._id ? String(existing._id) : existing.slug;
         const entry = pending.get(key) ?? { doc: existing, changes: {}, isNew: !existing._id };
         Object.assign(entry.changes, changes);
-        entry.recordSource = recordSource;
+        // A directory import that corrects a couple of columns must not take the credit for a
+        // record the crawler filled: the page would then stop saying the facts came from the
+        // institution's own website. The richer provenance stands unless a crawl replaces it.
+        entry.recordSource = existing.source?.kind === 'scrape' && recordSource.kind !== 'scrape' ? existing.source : recordSource;
         pending.set(key, entry);
         if (entry.isNew) { note({ index: row, slug: existing.slug, action: 'merged' }); continue; }
         summary.updated += 1;

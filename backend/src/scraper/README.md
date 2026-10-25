@@ -10,8 +10,9 @@ It is one of two ways data gets in. The other is a file import (Admin → Data �
 seed list (CSV/JSON) ──► scrape_sources ──enqueue──► scrape_jobs ──lease──► worker process(es)
 admin "Add source" ─────┘    (one per institution)     (one per source per run)      │
                                                                                      ▼
-                robots.txt → home page → ≤ 11 keyword-matched internal pages (polite fetcher)
+                robots.txt → home page → ≤ 17 keyword-matched internal pages (18 pages total)
                        (about, contact, admissions, programmes, accreditation, placement, campus)
+                       empty React/Vite/Angular shell or client redirect → controlled JS renderer
                                                                                      │
                                  extract.js + deep.js (pure functions) → one record ─┤
                                                                                      │
@@ -26,6 +27,7 @@ admin "Add source" ─────┘    (one per institution)     (one per sour
 | `urls.js` | Registrable domain (understands `ac.in`, `edu.in`, `res.in`, …), website normalisation |
 | `robots.js` | robots.txt parser (RFC 9309): user-agent groups, longest-match Allow/Disallow, `*`/`$`, Crawl-delay |
 | `fetcher.js` | Polite HTTP client: User-Agent, robots per origin, per-domain delay, timeout, 2 MB cap, same-domain redirects only. `getPage` for HTML, `getFile` for images (8 MB cap, image types only) |
+| `renderer.js` | Optional Playwright fallback for empty React/Vite/Angular shells and client-side redirects. Reuses one system-Chrome process per worker, blocks nonessential browser assets, and stays on the institution's own site |
 | `extract.js`, `india.js` | Pure extraction from HTML strings (name, address/PIN/state/city, established year, NAAC, NIRF, approvals, streams, programmes, catalogue courses, logo URL, short summary, admission page, institutional email/phone) |
 | `deep.js` | Pure extraction of the detail a student judges a place on: factual about text, campus photo candidates, programme rows with duration and fee, placement figures, facilities, activities, campus size, admission note, entrance exams |
 | `../lib/image-pipeline.js` | Download → decode with `sharp` → size/shape checks → strip metadata → resize → compress → Cloudinary |
@@ -42,7 +44,12 @@ Collections: `scrape_sources`, `scrape_jobs`, `scrape_runs` (indexes in `db/inde
 - A job is `queued → running → done | failed | skipped`, or `cancelled` by an admin.
 - `leaseJob` uses one atomic `findOneAndUpdate` to set `status: 'running'`, `lockedBy` and `lockedUntil` (default 5 minutes). The worker extends the lease every third of that time while it crawls.
 - If a worker dies, its lease expires. The next lease call puts the job back in the queue, or fails it once `maxAttempts` (4) is used up.
+- Selected sources are promoted even when they already have an open queued job, so a university-focused batch cannot remain behind the general directory queue.
+- Changing a source URL or exact `institutionSlug` clears its old terminal result; the corrected target is treated as never crawled until a new job finishes.
 - Transient errors (network, timeouts, HTTP 5xx, robots.txt answering 5xx/429) are retried after 10 min, 20 min, 40 min and so on, capped at 12 h, with ±20% jitter.
+- A whole-job timeout keeps the first attempt's full 18-page/8-image budget, then retries with progressively smaller 12/6, 8/4 and 5/2 budgets. This preserves useful verified core data from slow sites instead of repeating the same all-or-nothing timeout; later quality batches revisit the remaining gaps.
+- Normal retries retain exponential backoff. Priority-2 quality batches cap retry delay at two minutes so one timed-out profile does not pause the serial exact-100 supervisor for 10–40 minutes.
+- The same whole-job deadline stops new page renders and image downloads before the hard limit. A slow site therefore returns the verified fields collected so far instead of leaving abandoned background requests after its job has timed out.
 - Permanent errors fail at once: an off-site redirect, HTTP 404/410, a record that cannot be saved (for example, no city).
 - `skipped` means robots.txt disallows the page, the Crawl-delay is above 60 s, or the home page is not HTML.
 - Two partial unique indexes keep the queue consistent across processes:
@@ -67,7 +74,7 @@ The practical ceiling is 64 lanes per process. Lanes cost almost nothing while t
 ### Scaling to 20,000+ institutions
 
 - Run as many worker processes as you like, on one machine or several, all pointing at the same `MONGODB_URI`. Leases and the per-host index keep them from colliding.
-- Throughput per worker is roughly `concurrency × 3600 / ((pages + images) × delay + fetch time)`. With the defaults (8 sites, 12 pages, 6 photographs, 3 s) that is around 500 sites an hour; at `--concurrency 50`, a few thousand.
+- Throughput per worker is roughly `concurrency × 3600 / ((pages + images) × delay + fetch time)`. With the defaults (8 sites, 18 pages, 8 photographs, 3 s) it varies widely with server speed; at `--concurrency 50`, hundreds to a few thousand sites an hour is typical.
 - A full pass over 20k sources takes one worker a couple of days. Spread it out: `enqueue --never` for new sources, then `enqueue --stale-days 30` from a daily cron or systemd timer, followed by `work --max-jobs N`.
 - `work --watch` keeps polling instead of exiting when the queue is empty, which suits a long-running service.
 - Workers never run inside the API process; the admin screens only manage the queue.
@@ -84,12 +91,34 @@ npm run scrape --workspace backend -- enqueue --never           # never crawled
 npm run scrape --workspace backend -- enqueue --stale-days 30   # refresh
 npm run scrape --workspace backend -- enqueue --all --limit 500
 
+# Re-enrich exactly 100 sourced university/institute profiles with the most content gaps.
+# Repeat after each batch finishes; open jobs are automatically excluded.
+npm run scrape --workspace backend -- enqueue-quality --limit 100
+
+# Keep the 100-profile quality passes moving without overlapping batches.
+npm run scrape --workspace backend -- quality-watch --limit 100 --poll-seconds 60
+
+# AIHER publishes its 300+ programme rows inside official SPA assets rather than page HTML.
+npm run repair:aiher-programmes --workspace backend
+
+# Repair strict-TLS/403/robots/dynamic-site gaps from verified official material. AMU's rows are
+# parsed from its current admission guide; SIU and NFSU rows come from robots-allowed live pages.
+npm run repair:official-fallbacks:dry-run --workspace backend
+npm run repair:official-fallbacks --workspace backend
+
+# If imported universities are missing websites, fill 100 at a time from UGC's public registry
+# and immediately queue those matched sources at high priority (safe to re-run).
+npm run sync:ugc-websites --workspace backend
+npm run sync:ugc-websites --workspace backend -- --dry-run
+
 # 3. Crawl
 npm run scrape --workspace backend -- work --concurrency 50 --max-jobs 200
 
 # 4. Photographs only, for records that already exist (no re-crawl of the text)
 npm run scrape --workspace backend -- enrich-images --limit 50            # institutions with no photographs yet
 npm run scrape --workspace backend -- enrich-images --slug iit-bombay --all   # redo one
+cd backend
+node --max-old-space-size=1024 --env-file-if-exists=.env --env-file-if-exists=.env.local src/scripts/scrape.js enrich-images --slug one-slug --source-url https://official.example.edu/campus --all
 npm run scrape --workspace backend -- enrich-images --limit 20 --dry-run  # count candidates, upload nothing
 
 # Inspect / maintain
@@ -113,25 +142,41 @@ The admin screens under **Admin → Data** do the same jobs in the browser: uplo
 | `SCRAPER_USER_AGENT` | derived | Full User-Agent override (keep the `GyaanVidhyaBot` token) |
 | `SCRAPER_CONCURRENCY` | 8 | Institutions crawled in parallel per worker (max 64); see the section above |
 | `SCRAPER_HOST_DELAY_MS` | 3000 | Minimum gap between requests to one registrable domain; a larger `Crawl-delay` wins |
-| `SCRAPER_MAX_PAGES` | 12 | Pages per site, home page included |
-| `SCRAPER_MAX_IMAGES` | 6 | Campus photographs downloaded per institution (0 turns the image pipeline off) |
+| `SCRAPER_MAX_PAGES` | 18 | Pages per site, home page included |
+| `SCRAPER_MAX_IMAGES` | 12 | Campus photographs downloaded per institution (0 turns the image pipeline off) |
+| `SCRAPER_MAX_DOCUMENTS` | 3 | Fee/placement PDFs read per institution when its pages print no figures (0 turns this off) |
 | `SCRAPER_TIMEOUT_MS` | 15000 | Per-request timeout |
 | `SCRAPER_JOB_TIMEOUT_MS` | 480000 | Whole-institution budget. A site that answers every request slowly is given up on and retried later, instead of holding a lane |
+| `SCRAPER_RENDER_JS` | `true` | Render recognised JavaScript-only shells and client-side redirects; ordinary HTML never enters the browser |
+| `SCRAPER_RENDER_CONCURRENCY` | `2` | Browser pages rendered concurrently per worker (max 4); HTTP crawl concurrency is unchanged |
+| `SCRAPER_RENDER_TIMEOUT_MS` | `15000` | Browser navigation/content timeout per rendered page |
+| `SCRAPER_RENDER_MAX_PAGES` | `9` | Maximum rendered pages per institution, including the home page |
 | `CLOUDINARY_URL` | — | Required for photographs. Without it the crawl still runs and simply stores no images |
 | `CLOUDINARY_FOLDER` | `gyaan-vidhya` | Root folder; photographs land in `<folder>/universities/<slug>/photo-<n>` |
 
-Fixed limits: 2 MB per HTML response (the rest is not downloaded), 8 MB per image, 5 redirects, and 4 attempts.
+The JS fallback uses Playwright with the installed Chrome channel. If Chrome cannot start, the crawl safely falls back to the original HTTP response and records no invented data. Fixed limits: 2 MB per HTML response (the rest is not downloaded), 8 MB per image, 5 redirects, and 4 attempts.
 
 ## The image pipeline
 
 `lib/image-pipeline.js` is the only way a picture reaches our storage, and it is used both by the crawler and by `enrich-images`.
 
 1. **Download** through the same polite fetcher as the pages: robots.txt, the per-host delay, redirects inside the institution's own domain only, an image content type, a 15 s timeout and an 8 MB cap. Nothing is streamed to disk; a response bigger than the cap is abandoned rather than truncated.
-2. **Verify** by decoding with `sharp`. A file that will not decode is not an image, whatever its extension said. Photographs must be at least 480×320 with an aspect ratio between 1.2 and 2.4 — that removes logos, icons, banner strips and portrait headshots that slipped through the filename rules.
+2. **Verify** by decoding with `sharp`. A file that will not decode is not an image, whatever its extension said. Photographs must be at least 480×320 with an aspect ratio between 1.2 and 2.7 — that removes logos, icons, banner strips and portrait headshots that slipped through the filename rules.
 3. **Compress**: EXIF orientation applied and then dropped with every other metadata block, resized to at most 1600 px wide, re-encoded as WebP at quality 78. A logo keeps PNG only when it actually has an alpha channel.
 4. **Upload** to Cloudinary at `<folder>/universities/<slug>/photo-<n>` with `overwrite: true`, so re-running replaces the same objects instead of filling the account with copies. Only the returned `secure_url` is stored.
 
 A picture that fails any step is logged and skipped; it never fails the crawl. Run summaries print how many were uploaded, skipped and failed, and the total bytes before and after compression.
+
+**No photograph older than five years.** A campus changes, so a picture is refused when anything proves its age: the camera's own date inside the file (earliest EXIF date), a server `Last-Modified` date more than five years ago, or the address itself — a camera file name (`IMG_20190512…`), a dated upload folder (`/uploads/2018/05/`) or a year in the file name or alt text (`convocation-2017.jpg`). Candidates the address already dates are dropped before download; recent ones rank first, and the cover prefers the newest wide campus photograph. Only the year is kept (`gallery[].year`); the EXIF block itself is stripped. A picture with no date evidence at all cannot be aged and is kept. Photographs go to Cloudinary only — nothing is written to local disk.
+
+## Fee and placement documents, and pages that ship their data as JSON
+
+Most institutions publish fee structures and placement reports as PDFs, and many modern sites draw their fee table from JSON only after a click. Both are read:
+
+- **PDFs** (`documents.js`). After the pages, up to `SCRAPER_MAX_DOCUMENTS` (3) same-site PDFs whose name or link text says fee/tuition or placement/recruitment record are downloaded — only when the HTML pages printed no such figures. Newest session first; payment instructions, refund rules, notices, forms and older-than-three-sessions files are skipped. Same robots.txt, per-host delay and same-domain rules as pages, a 15 MB cap, the first 15 pages only. Text items are regrouped into rows and cells by position, so a fee table reads like an HTML table. Scanned (image-only) PDFs give nothing.
+- **Embedded data.** On fee and placement pages the strings and numbers inside Next.js/Nuxt data scripts are read in document order as extra lines (`embeddedLines`). If a fee or placement page still shows no figure, it is rendered once in the browser.
+- **Fee table layouts.** Besides a row per programme, the table reader handles the layouts small colleges use most: a fee table nested inside layout tables (only the innermost table is read); a programme named only above the table or in the fee page's title ("B.C.A. Fee Structure") with rows of semester/year amounts or fee heads; programmes as columns with fee heads as rows (the tuition or total row gives each programme's fee, for the period that row states); and a fee regulating authority's approval (Maharashtra FRA: Tuition | Development | Total, stored as the year's total) — an authority's district-wide list is skipped because the institution's own row cannot be told apart. Plain four-digit cells ("8000") count in a fee column only when the row prints no larger amount.
+- **Fee sections.** A heading that names a degree opens a section; the nearest column header ("Semester I | Semester II", "Year I") or fee label ("Tuition Fee Per Semester") says what period the amounts under it are for. Only amounts on a fee-labelled line, or bare amounts right under a fee label or a period header, count — an application-form price elsewhere in the document is never read as tuition, and scholarship amounts are never read as fees.
 
 Which pictures are even considered (`deep.js`, `galleryCandidates`): images served from the institution's own domain, with a `.jpg`/`.png`/`.webp` path, whose filename, `alt` text or CSS class does not look like a logo, icon, sprite, social badge, accreditation mark or a named person, preferring ones that mention campus, building, infrastructure, library, lab, hostel, sports, convocation or campus life.
 
@@ -139,19 +184,20 @@ Which pictures are even considered (`deep.js`, `galleryCandidates`): images serv
 
 | Field | What it holds | When it is absent |
 | --- | --- | --- |
-| `about`, `aboutSource` | 2–4 factual sentences (≤ 1200 chars) from the institution's own about/overview page, and that page's URL. Sentences that only sell ("a premier institute with world-class infrastructure") are dropped unless they also state something checkable | No about page, or nothing factual on it |
-| `gallery[]` | Up to 8 `{ url, caption?, credit: 'official website', sourcePage, width?, height? }` — photographs re-hosted on Cloudinary | Nothing on the site passed the photo checks, or Cloudinary is not configured |
-| `coverUrl` | The first gallery photograph, unless a cover is already set | — |
-| `programmesOffered[]` | Up to 60 `{ name, level?, durationYears?, annualFeeInr?, feeNote?, sourcePage }` rows, from fee/course tables, topped up from the plain name list | — |
+| `about`, `aboutSource` | Up to three factual paragraphs (≤ 2400 chars, separated by a blank line) from the institution's own about pages or home page, and the first page's URL. The first paragraph must introduce the institution (name it, or say what it is and when it was established); addresses and sentences that only sell are dropped | No about page, or nothing factual on it |
+| `gallery[]` | Up to 12 `{ url, caption?, credit: 'official website', sourcePage, width?, height?, year? }` — photographs no older than five years, re-hosted on Cloudinary | Nothing on the site passed the photo checks, or Cloudinary is not configured |
+| `coverUrl` | The newest wide campus/about photograph, unless a cover is already set | — |
+| `programmesOffered[]` | Up to 500 `{ name, courseSlug?, level?, durationYears?, annualFeeInr?, semesterFeeInr?, totalFeeInr?, feeYear?, feeNote?, sourcePage }` rows, from fee/course tables, fee sections and fee PDFs, topped up from the plain name list. `courseSlug` links the row to a catalogue course | — |
 | `coursesOffered[]` | The plain programme-name list, unchanged | — |
 | `placements` | `{ year?, averagePackageLpa?, highestPackageLpa?, medianPackageLpa?, placedPercent?, recruiters[]?, sourcePage }` from the official placement page | No placement page, or it prints no figures |
+| `placementHistory[]` | Up to 6 seasons `{ year, session, averagePackageLpa?, highestPackageLpa?, medianPackageLpa?, placedPercent?, studentsPlaced?, offers?, companies?, basis?, sourcePage }`, newest first, from season-by-season tables or sections of the placement page/report. A season the page does not sum up may come from the institution's own list of placed students (the NAAC 5.2.1 format: student, programme, employer, pay): `basis: 'student-list'`, with the students listed, the distinct employers and the highest package printed (median only when most rows print a package); at least three students per season, internship and higher-study lists excluded. A crawl adds seasons and replaces a season printed again; it never drops one | No placement page prints figures by season or lists placed students |
 | `facilities[]`, `activities[]` | Up to 20 each, only names the site itself uses (hostel, library, labs, sports, NSS, NCC, fests, clubs …) | — |
 | `campus` | `{ sizeAcres?, hostelAvailable?, coEd?, sourcePage }` | Not printed |
 | `admissionNote`, `entranceExams[]` | ≤ 400 chars from the admissions page, and named exams (JEE Main, NEET UG, CUET, state CETs …) | — |
 
 Rules that matter more than coverage:
 
-- **A fee is stored only when the page states it unambiguously, per year, in rupees, for that programme.** A "total course fee" or a per-semester amount goes into `feeNote` as the page wrote it, and `annualFeeInr` stays empty. Nothing is ever annualised, averaged or estimated.
+- **A fee is stored under the period the page prints it for** — `annualFeeInr` per year, `semesterFeeInr` per semester, `totalFeeInr` for the whole programme — and never converted from one to another: a semester fee is not doubled into an annual one. An amount whose period the page does not state goes into `feeNote` as written. Hostel, mess, deposits, application and exam fees are not tuition and are never stored as a programme's fee. Nothing is annualised, averaged or estimated.
 - **Placement figures are never inferred.** A median that is not printed stays absent; it is not derived from the average. The year is stored only when the page says which year the numbers belong to.
 - **An absent value means "we did not find it", never "there is none".** `hostelAvailable` is only ever set to `true`; a site that does not mention hostels leaves it empty rather than claiming there is no hostel.
 - Every structured value keeps the `sourcePage` it was read from, so a university page can link the claim back to the institution's own page.
@@ -177,7 +223,7 @@ This section describes the safeguards built in. It is **not legal advice**, and 
 
 - **robots.txt and site terms.** The crawler fetches and obeys robots.txt for every origin, including Crawl-delay, and skips a site that disallows it. Some sites forbid automated access or reuse in their terms of use; robots.txt does not override those. When a site's terms prohibit it, set the source to **Blocked**.
 - **Facts, not content.** We store short factual data points (address, PIN, year of establishment, accreditation grade, programme names, fees and placement figures as printed) plus links. Facts are generally not protected by copyright, but the wording, layout, photographs and logos are.
-  - `about` is a short extract (at most 1200 characters) of the institution's own description. Treat it as a quotation with attribution, or better, have an editor rewrite it before verifying.
+  - `about` is a short extract (at most 2400 characters) of the institution's own description. Treat it as a quotation with attribution, or better, have an editor rewrite it before verifying.
   - **Photographs are now downloaded and re-hosted** (`gallery`), which earlier versions of this crawler deliberately did not do. This is a product decision by the owner, and it is the part of this pipeline with the clearest copyright exposure: a campus photograph is a creative work owned by the institution or its photographer, and re-publishing it is not covered by any "facts are free" argument. The safeguards are narrow ones:
     - only images served from the institution's own domain, never a stock library, a CDN we do not control or a third-party page;
     - every row stores `credit: 'official website'` and the `sourcePage` it came from, and the university page is expected to show both next to the photographs;

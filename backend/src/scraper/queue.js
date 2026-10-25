@@ -4,6 +4,7 @@ import { pagination, queryString } from '../lib/query.js';
 import { escapeRegex } from '../lib/validation.js';
 import { foldText } from '../modules/universities/normalize.js';
 import { scraperConfig } from './config.js';
+import { websiteKey } from './urls.js';
 
 // MongoDB-backed crawl queue. A job is leased with findOneAndUpdate (status queued → running,
 // lockedBy/lockedUntil), so any number of worker processes can share it. Two partial unique
@@ -13,6 +14,7 @@ import { scraperConfig } from './config.js';
 export const JOB_STATUSES = ['queued', 'running', 'done', 'failed', 'skipped', 'cancelled'];
 const BACKOFF_BASE_MS = 10 * 60_000;
 const BACKOFF_MAX_MS = 12 * 60 * 60_000;
+const QUALITY_BACKOFF_MAX_MS = 2 * 60_000;
 
 const db = getDb;
 const jobsCollection = async () => (await db()).collection(COLLECTIONS.scrapeJobs);
@@ -20,6 +22,14 @@ const jobsCollection = async () => (await db()).collection(COLLECTIONS.scrapeJob
 export function backoffMs(attempt, random = Math.random) {
   const base = Math.min(BACKOFF_BASE_MS * 2 ** Math.max(0, attempt - 1), BACKOFF_MAX_MS);
   return Math.round(base * (0.8 + random() * 0.4));
+}
+
+// Exact quality passes are supervised serially: one delayed straggler otherwise pauses every later
+// batch for 10, 20 and then 40 minutes. They still keep a two-minute recovery window between
+// attempts, while normal/background jobs retain the conservative exponential backoff above.
+export function retryBackoffMs(job, random = Math.random) {
+  const delay = backoffMs(job.attempts, random);
+  return Number(job.priority) >= 2 ? Math.min(delay, QUALITY_BACKOFF_MAX_MS) : delay;
 }
 
 export function serializeJob({ _id, sourceId, runId, open: _open, ...rest }) {
@@ -32,14 +42,17 @@ export function serializeJob({ _id, sourceId, runId, open: _open, ...rest }) {
  */
 export async function enqueueSources({ mode = 'all', staleDays = 30, limit = 0, sourceIds = [], seedListName = '', createdBy = 'cli', now = new Date() } = {}) {
   if (!['all', 'stale', 'never', 'selected'].includes(mode)) throw new HttpError(400, 'Unknown enqueue mode');
+  if (sourceIds.length && mode !== 'selected') throw new HttpError(400, 'sourceIds requires selected mode');
   const database = await db();
   const filter = { status: 'active' };
+  let selectedIds = [];
   if (mode === 'stale') filter.$or = [{ lastJobAt: null }, { lastJobAt: { $lt: new Date(now.getTime() - Math.max(1, Number(staleDays) || 30) * 86_400_000) } }];
   if (mode === 'never') filter.lastJobAt = null;
   if (mode === 'selected') {
     const ids = [...new Set(sourceIds)].map(toObjectId);
     if (!ids.length || ids.length > 5000 || ids.some((id) => !id)) throw new HttpError(400, 'Select between 1 and 5,000 valid sources');
     filter._id = { $in: ids };
+    selectedIds = ids;
   }
   if (seedListName) filter.seedListName = seedListName;
   const { maxAttempts } = scraperConfig();
@@ -72,10 +85,113 @@ export async function enqueueSources({ mode = 'all', staleDays = 30, limit = 0, 
     if (batch.length === 1000) await flush();
   }
   await flush();
+  // "selected" is the high-priority path. An existing open job cannot be inserted again because
+  // of the sourceId/open unique index, but it must still be promoted; otherwise a newly selected
+  // university can remain behind thousands of general directory jobs.
+  if (selectedIds.length) {
+    await jobs.updateMany(
+      { sourceId: { $in: selectedIds }, status: 'queued', priority: { $lt: 1 } },
+      { $max: { priority: 1 }, $set: { updatedAt: now } },
+    );
+  }
   // A run that queued nothing is not worth keeping in the history.
   if (!queued) await database.collection(COLLECTIONS.scrapeRuns).deleteOne({ _id: runId });
   else await database.collection(COLLECTIONS.scrapeRuns).updateOne({ _id: runId }, { $set: { total: queued, selected } });
   return { runId: queued ? runId.toString() : null, selected, queued, alreadyQueued: selected - queued };
+}
+
+const hasRows = (value) => Array.isArray(value) && value.length > 0;
+const hasPlacement = (value) => value && typeof value === 'object' && (
+  Number(value.averagePackageLpa) > 0
+  || Number(value.highestPackageLpa) > 0
+  || Number(value.medianPackageLpa) > 0
+  || Number(value.placedPercent) > 0
+  || hasRows(value.recruiters)
+);
+
+/**
+ * Queues a bounded batch of university/institute profiles with the most missing student-facing
+ * fields. Only exact institutionSlug sources are eligible, and a source with an existing open job
+ * is excluded. This makes repeated `enqueue-quality --limit 100` calls resumable and non-overlapping.
+ */
+export async function enqueueQualitySources({ limit = 100, createdBy = 'quality-reenrichment', now = new Date() } = {}) {
+  const batchSize = Math.max(1, Math.min(Number(limit) || 100, 500));
+  const database = await db();
+  const institutions = await database.collection(COLLECTIONS.institutions).find({
+    active: { $ne: false },
+    type: { $in: ['university', 'institute'] },
+    isIllustrative: { $ne: true },
+  }, { projection: {
+    _id: 0, name: 1, slug: 1, website: 1, about: 1, programmesOffered: 1,
+    gallery: 1, facilities: 1, placements: 1,
+  } }).toArray();
+  const slugs = institutions.map((item) => item.slug).filter(Boolean);
+  const [sourceDocs, openSourceIds] = await Promise.all([
+    database.collection(COLLECTIONS.scrapeSources).find({
+      status: 'active', institutionSlug: { $in: slugs },
+    }, { projection: {
+      _id: 1, institutionSlug: 1, website: 1, websiteKey: 1, lastJobAt: 1, lastResult: 1,
+    } }).toArray(),
+    database.collection(COLLECTIONS.scrapeJobs).distinct('sourceId', { open: true }),
+  ]);
+  const open = new Set(openSourceIds.map((id) => id.toString()));
+  const bySlug = new Map();
+  for (const source of sourceDocs) {
+    if (open.has(source._id.toString())) continue;
+    const list = bySlug.get(source.institutionSlug) ?? [];
+    list.push(source);
+    bySlug.set(source.institutionSlug, list);
+  }
+
+  const candidates = [];
+  for (const institution of institutions) {
+    const gaps = [];
+    if (String(institution.about ?? '').trim().length < 80) gaps.push('about');
+    if (!hasRows(institution.programmesOffered)) gaps.push('programmesOffered');
+    if (!hasRows(institution.gallery)) gaps.push('gallery');
+    if (!hasRows(institution.facilities)) gaps.push('facilities');
+    if (!hasPlacement(institution.placements)) gaps.push('placements');
+    if (!gaps.length) continue;
+    const expectedKey = websiteKey(institution.website);
+    const available = bySlug.get(institution.slug) ?? [];
+    available.sort((a, b) => {
+      const aExact = expectedKey && a.websiteKey === expectedKey ? 1 : 0;
+      const bExact = expectedKey && b.websiteKey === expectedKey ? 1 : 0;
+      if (aExact !== bExact) return bExact - aExact;
+      const aAt = a.lastJobAt instanceof Date ? a.lastJobAt.getTime() : 0;
+      const bAt = b.lastJobAt instanceof Date ? b.lastJobAt.getTime() : 0;
+      return aAt - bAt || a._id.toString().localeCompare(b._id.toString());
+    });
+    if (available[0]) candidates.push({ institution, source: available[0], gaps });
+  }
+  candidates.sort((a, b) => b.gaps.length - a.gaps.length
+    || (a.source.lastJobAt?.getTime?.() ?? 0) - (b.source.lastJobAt?.getTime?.() ?? 0)
+    || String(a.institution.name).localeCompare(String(b.institution.name)));
+  const picked = candidates.slice(0, batchSize);
+  if (!picked.length) return { runId: null, selected: 0, queued: 0, alreadyQueued: 0, gaps: {}, items: [] };
+  const result = await enqueueSources({
+    mode: 'selected', sourceIds: picked.map((item) => item.source._id.toString()), createdBy, now,
+  });
+  if (result.runId) {
+    // A watch worker can lease a freshly inserted job before this promotion runs. Promote both
+    // queued and already-running rows so a transient retry keeps its quality-batch priority.
+    await database.collection(COLLECTIONS.scrapeJobs).updateMany(
+      { runId: toObjectId(result.runId), status: { $in: ['queued', 'running'] } },
+      { $max: { priority: 2 }, $set: { updatedAt: now } },
+    );
+  }
+  const gaps = Object.fromEntries(['about', 'programmesOffered', 'gallery', 'facilities', 'placements']
+    .map((field) => [field, picked.filter((item) => item.gaps.includes(field)).length]));
+  return {
+    ...result,
+    gaps,
+    items: picked.map((item) => ({
+      name: item.institution.name,
+      slug: item.institution.slug,
+      sourceId: item.source._id.toString(),
+      gaps: item.gaps,
+    })),
+  };
 }
 
 // Jobs whose worker died keep their lease until it expires; then they are retried (or failed).
@@ -129,7 +245,7 @@ export async function finishJob(job, workerId, { status, result = null, error = 
 export async function failJob(job, workerId, error, { now = new Date(), random = Math.random } = {}) {
   const message = String(error?.message ?? error).slice(0, 500);
   if (error?.permanent || job.attempts >= job.maxAttempts) return { final: true, saved: await finishJob(job, workerId, { status: 'failed', error: message, result: error?.result ?? null, now }) };
-  const nextRunAt = new Date(now.getTime() + backoffMs(job.attempts, random));
+  const nextRunAt = new Date(now.getTime() + retryBackoffMs(job, random));
   const update = await (await jobsCollection()).updateOne({ _id: job._id, lockedBy: workerId, status: 'running' }, {
     $set: { status: 'queued', error: message, nextRunAt, lockedBy: null, lockedUntil: null, updatedAt: now },
   });

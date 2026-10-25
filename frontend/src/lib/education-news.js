@@ -23,6 +23,10 @@ export function safeNewsImage(value) {
   } catch { return null; }
 }
 
+// ET Education's feed carries only small thumbnails (etimg …/thumb/…). They suit a list row but
+// pixelate as a lead photograph, so lead slots prefer publishers that supply full-size images.
+export const isThumbnailOnly = (url) => /^https:\/\/etimg\.etb2bimg\.com\/thumb\//.test(String(url ?? ''));
+
 export function displayNewsImage(value, config) {
   const safe = safeNewsImage(value);
   const policy = config.imagePolicy;

@@ -1,7 +1,7 @@
 // Shared, pure helpers for the course and exam pages (server and client).
 
 // Course `level` and exam `level` / `courseSlugs` / `note` are catalogue fields edited in the admin console.
-export const LEVEL_LABEL = { UG: 'Undergraduate', PG: 'Postgraduate' };
+export const LEVEL_LABEL = { UG: 'Undergraduate', PG: 'Postgraduate', Diploma: 'Diploma & certificate', PhD: 'Doctoral' };
 
 export const courseLevel = (course) => (LEVEL_LABEL[course?.level] ? course.level : null);
 export const examLevel = (exam) => (LEVEL_LABEL[exam?.level] ? exam.level : null);
@@ -76,10 +76,12 @@ export function relatedExams(course, exams) {
   });
 }
 
-// ₹70,000 → '₹0.7L', ₹1,60,000 → '₹1.6L'. Written by hand: Intl compact en-IN prints '₹70.0K'.
+// ₹1,60,000 → '₹1.6L', ₹2.5 crore → '₹2.5Cr'; below a lakh the exact amount ('₹66,000'), since
+// '₹0.7L' reads poorly. Written by hand: Intl compact en-IN prints '₹70.0K'.
 export function formatLakh(value) {
   if (value == null) return '—';
   if (value >= 1e7) return `₹${trim(value / 1e7)}Cr`;
+  if (value < 1e5) return `₹${new Intl.NumberFormat('en-IN').format(Math.round(value / 100) * 100)}`;
   return `₹${trim(value / 1e5)}L`;
 }
 const trim = (value) => (Math.round(value * 10) / 10).toFixed(1).replace(/\.0$/, '');
@@ -92,6 +94,17 @@ export function hostname(href) {
 }
 
 export const plural = (count, word, many = `${word}s`) => `${count} ${count === 1 ? word : many}`;
+
+// A programme row's published fees, each with the period it is for. An institution may print more
+// than one (a year's fee and the whole programme's); none is converted into another.
+const inr = (value) => (value >= 100000 ? formatLakh(value) : `₹${new Intl.NumberFormat('en-IN').format(value)}`);
+export function feeFacts(row = {}) {
+  return [
+    typeof row.annualFeeInr === 'number' && { label: 'a year', value: inr(row.annualFeeInr) },
+    typeof row.semesterFeeInr === 'number' && { label: 'a semester', value: inr(row.semesterFeeInr) },
+    typeof row.totalFeeInr === 'number' && { label: 'whole programme', value: inr(row.totalFeeInr) },
+  ].filter(Boolean);
+}
 
 export const firstParam = (value) => String((Array.isArray(value) ? value[0] : value) ?? '').trim().slice(0, 80);
 

@@ -73,6 +73,11 @@ const specs = {
     [{ type: 1, query: 1, at: -1 }],
     [{ type: 1, institutionSlug: 1, at: -1 }],
   ],
+  // One anonymous row per cookie decision (choice + time only). Kept 400 days so a full year of
+  // decisions is always available to the admin report, then deleted by the TTL index.
+  consent_events: [
+    [{ at: 1 }, { expireAfterSeconds: 400 * 24 * 60 * 60, name: 'consent_events_ttl' }],
+  ],
 };
 
 export async function ensureIndexes(db) {

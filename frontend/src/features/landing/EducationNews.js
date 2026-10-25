@@ -2,51 +2,95 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import Icon from '@/components/ui/Icon';
-import { displayNewsImage, filterEducationStories, newsDate, readSavedNews, safeNewsImage, savedNewsKey, validEducationStory } from '@/lib/education-news';
+import { displayNewsImage, filterEducationStories, isThumbnailOnly, newsDate, readSavedNews, safeNewsImage, savedNewsKey, validEducationStory } from '@/lib/education-news';
 import { useContent } from '@/providers/ContentProvider';
 import styles from './EducationNews.module.css';
 
-function NewsBackdrop() {
-  return <div className={styles.backdrop} aria-hidden="true"><div className={styles.printGrid} /><svg viewBox="0 0 300 190" fill="none"><path d="M34 28h150v127H34zM184 50h45v105H67M51 45h91M51 55h114M51 114h40m-40 10h113m-113 10h90M108 73h55v29h-55ZM51 73h43v29H51zM212 163h58m-20-98v68m-10-55 10-13 10 13" /><path d="M242 28h31v31h-31zM250 39h14m-14 9h8M8 116h13m-7-6v13" /></svg><span className={styles.marginMark}>DISCOVER / UNDERSTAND / PLAN</span></div>;
-}
+// The homepage teaser of the Education Desk: one lead story, the latest few and three explainers.
+// Searching, sorting and the full archive live on /news; this section only has to be worth a glance.
+// Topics and the cover-image policy are admin-edited content (`news`); stories come from /api/education-news.
+const LATEST = 4;
+const READS = 3;
 
-function StoryCover({ story, featured = false, config }) {
+// The publisher's photo when the policy allows it, otherwise a plate in the topic's own colours —
+// never an empty box, so a story without a picture still reads as deliberate.
+function Cover({ story, config, sizes, variant }) {
   const [broken, setBroken] = useState(false);
   const src = displayNewsImage(story.imageUrl, config);
   const topic = config.topics.find((item) => item.id === story.category);
-  return <div className={`${styles.cover} ${featured ? styles.featureCover : ''}`} data-news-cover>{src && !broken ? <Image src={src} alt="" fill loading="lazy" sizes={featured ? '(max-width: 600px) 68px, (max-width: 1000px) 100px, 150px' : '(max-width: 600px) 68px, 100px'} onError={() => setBroken(true)} /> : <div className={styles.coverFallback} data-news-image-fallback><Icon name={topic?.icon || 'news'} /><span>{topic?.label || 'Education'}</span><i /></div>}</div>;
+  return <div className={styles.cover} data-variant={variant} data-news-cover>
+    {src && !broken ? <Image src={src} alt="" fill sizes={sizes} onError={() => setBroken(true)} />
+      : <div className={styles.plate} data-topic={story.category} data-news-image-fallback><Icon name={topic?.icon || 'news'} /><span>{topic?.label || 'Education'}</span></div>}
+  </div>;
 }
 
-function Story({ story, featured, saved, onSave, config }) {
-  const label = config.topics.find((item) => item.id === story.category)?.label || 'Education';
-  return <article className={`${styles.story} ${featured ? styles.featured : ''}`} data-news-story data-story-type={story.type}>
-    <a className={styles.coverLink} href={story.url} target="_blank" rel="noopener noreferrer" aria-label={`Read ${story.title} on ${story.source} (opens in a new tab)`}><StoryCover key={story.imageUrl} story={story} featured={featured} config={config} /></a>
-    <div className={styles.storyBody}><span className={styles.topicLabel}>{label}{story.type === 'article' && <span> / Article</span>}</span><h4><a href={story.url} target="_blank" rel="noopener noreferrer">{story.title}<span className="sr-only"> (opens publisher in a new tab)</span></a></h4>{featured && story.description && <p className={styles.excerpt}>{story.description}</p>}<div className={styles.metadata}><span>{story.source}</span><span aria-hidden="true">·</span><time dateTime={story.publishedAt} title={`${newsDate(story.publishedAt, true)} IST`}>{newsDate(story.publishedAt)}</time></div></div>
-    <div className={styles.storyActions}><button type="button" className={styles.save} aria-pressed={saved} aria-label={`${saved ? 'Unsave' : 'Save'} ${story.title}`} onClick={() => onSave(story)}><Icon name={saved ? 'bookmarkFilled' : 'bookmark'} /></button></div>
+function Meta({ story, withTime = false }) {
+  return <p className={styles.meta}><span>{story.source}</span><span aria-hidden="true">·</span><time dateTime={story.publishedAt} title={`${newsDate(story.publishedAt, true)} IST`}>{newsDate(story.publishedAt, withTime)}</time></p>;
+}
+
+function Kicker({ story, config }) {
+  return <p className={styles.kicker}>{config.topics.find((item) => item.id === story.category)?.label || 'Education'}{story.type === 'article' && <span> · Explainer</span>}</p>;
+}
+
+function Headline({ story, as: Tag = 'h3', className }) {
+  return <Tag className={className}><a href={story.url} target="_blank" rel="noopener noreferrer">{story.title}<span className="sr-only"> (opens publisher in a new tab)</span></a></Tag>;
+}
+
+function Save({ story, saved, onSave }) {
+  return <button type="button" className={styles.save} aria-pressed={saved} aria-label={`${saved ? 'Unsave' : 'Save'} ${story.title}`} onClick={() => onSave(story)}><Icon name={saved ? 'bookmarkFilled' : 'bookmark'} /></button>;
+}
+
+// The cover links to the story too, but only once for keyboard and screen-reader users: the headline.
+const CoverLink = ({ story, children }) => <a className={styles.coverLink} href={story.url} target="_blank" rel="noopener noreferrer" tabIndex={-1} aria-hidden="true">{children}</a>;
+
+function LeadStory({ story, saved, onSave, config }) {
+  return <article className={styles.lead} data-news-story data-story-type={story.type}>
+    <CoverLink story={story}><Cover story={story} config={config} variant="lead" sizes="(max-width: 860px) 100vw, 640px" /></CoverLink>
+    <div className={styles.leadBody}>
+      <Kicker story={story} config={config} />
+      <Headline story={story} className={styles.leadTitle} />
+      {story.description && <p className={styles.dek}>{story.description}</p>}
+      <div className={styles.foot}><Meta story={story} withTime /><Save story={story} saved={saved} onSave={onSave} /></div>
+    </div>
+  </article>;
+}
+
+function ListStory({ story, saved, onSave, config }) {
+  return <article className={styles.item} data-news-story data-story-type={story.type}>
+    <CoverLink story={story}><Cover story={story} config={config} variant="thumb" sizes="(max-width: 600px) 96px, 128px" /></CoverLink>
+    <div className={styles.itemBody}>
+      <Kicker story={story} config={config} />
+      <Headline story={story} className={styles.itemTitle} />
+      <div className={styles.foot}><Meta story={story} /><Save story={story} saved={saved} onSave={onSave} /></div>
+    </div>
+  </article>;
+}
+
+function ReadCard({ story, saved, onSave, config }) {
+  return <article className={styles.read} data-news-story data-story-type={story.type}>
+    <CoverLink story={story}><Cover story={story} config={config} variant="card" sizes="(max-width: 600px) 78vw, 340px" /></CoverLink>
+    <Kicker story={story} config={config} />
+    <Headline story={story} className={styles.readTitle} />
+    <div className={styles.foot}><Meta story={story} /><Save story={story} saved={saved} onSave={onSave} /></div>
   </article>;
 }
 
 const initialFeed = { status: 'idle', articles: [], sources: [], updatedAt: null };
 
-// Topics and the cover-image policy are admin-edited content (`news`); stories come from /api/education-news.
 export default function EducationNews() {
   const config = useContent('news');
   if (!config) return <section id="education-news" className={styles.section} aria-labelledby="education-news-title" data-news-section>
-    <div className={`container ${styles.container}`}><header className={styles.heading}><div className={styles.headingCopy}><h2 id="education-news-title">Education news</h2><p className={styles.description} role="status">Education updates are temporarily unavailable. Please refresh in a moment.</p></div></header></div>
+    <div className={`container ${styles.container}`}><header className={styles.head}><div><h2 id="education-news-title" className={styles.title}>Education news</h2><p className={styles.lede} role="status">Education updates are temporarily unavailable. Please refresh in a moment.</p></div></header></div>
   </section>;
-  return <NewsDesk config={config} />;
+  return <NewsTeaser config={config} />;
 }
 
-function NewsDesk({ config }) {
+function NewsTeaser({ config }) {
   const sectionRef = useRef(null);
   const requestRef = useRef(null);
   const [feed, setFeed] = useState(initialFeed);
   const [loading, setLoading] = useState(false);
-  const [view, setView] = useState('all');
   const [category, setCategory] = useState('all');
-  const [query, setQuery] = useState('');
-  const [sort, setSort] = useState('newest');
-  const [limit, setLimit] = useState(3);
   const [saved, setSaved] = useState([]);
   const [saveNotice, setSaveNotice] = useState('');
 
@@ -94,8 +138,6 @@ function NewsDesk({ config }) {
     return () => { mounted = false; window.removeEventListener('storage', sync); };
   }, [config]);
 
-  function changeView(value) { setView(value); setLimit(3); }
-  function changeCategory(value) { setCategory(value); setLimit(3); }
   function toggleSave(story) {
     const removing = saved.some((record) => record.id === story.id);
     if (!removing && saved.length >= 60) { setSaveNotice('Your saved list is full. Remove a story to save another.'); return; }
@@ -105,41 +147,57 @@ function NewsDesk({ config }) {
     catch { setSaveNotice('Saved for this visit. Your browser could not store it for later.'); }
   }
 
-  const eligible = filterEducationStories(view === 'saved' ? saved : feed.articles, { category, query, sort });
-  const records = eligible.filter((record) => view === 'articles' ? record.type === 'article' : view === 'saved' ? true : record.type === 'news');
-  const reading = eligible.filter((record) => record.type === 'article').slice(0, 3);
+  const stories = filterEducationStories(feed.articles, { category });
+  const news = stories.filter((record) => record.type === 'news');
+  // The lead needs a full-size picture above all — a thumbnail stretched across the lead slot reads
+  // as a broken image. Among those, one with a summary wins; then any picture; then the newest story.
+  const pictured = (record) => displayNewsImage(record.imageUrl, config);
+  const fullSize = news.slice(0, 10).filter((record) => pictured(record) && !isThumbnailOnly(record.imageUrl));
+  const lead = fullSize.find((record) => record.description) || fullSize[0]
+    || news.slice(0, 6).find((record) => pictured(record)) || news[0];
+  const latest = news.filter((record) => record !== lead).slice(0, LATEST);
+  const reads = stories.filter((record) => record.type === 'article').slice(0, READS);
   const savedIds = new Set(saved.map((record) => record.id));
-  const hasFeed = feed.articles.length > 0;
-  const unavailable = feed.status === 'unavailable';
-  const emptyTitle = view === 'saved' && !saved.length ? 'Keep a story for later.' : unavailable && view !== 'saved' ? 'We couldn’t load education updates.' : !hasFeed && view !== 'saved' ? 'No education updates available yet.' : 'No stories match this view.';
-  const emptyHelp = view === 'saved' && !saved.length ? 'Tap the bookmark on any story to build your reading list.' : unavailable && view !== 'saved' ? 'Please try refreshing in a moment.' : !hasFeed && view !== 'saved' ? 'Check back soon or refresh for the latest available stories.' : 'Try another topic or search phrase.';
-  const heading = view === 'articles' ? 'Read & understand' : view === 'saved' ? 'Saved on this device' : 'The latest in education';
+  const props = (story) => ({ story, config, saved: savedIds.has(story.id), onSave: toggleSave });
+  const waiting = !feed.articles.length && (feed.status === 'idle' || loading);
+
+  let body;
+  if (waiting) body = <div className={styles.skeleton} role="status" aria-label="Loading education updates"><span className="lux-skeleton" /><span className={styles.skeletonList}>{[1, 2, 3, 4].map((id) => <span key={id} className="lux-skeleton" />)}</span></div>;
+  else if (!feed.articles.length) body = <div className={styles.empty}><Icon name="news" /><h3>We couldn’t load education updates.</h3><p>Please try refreshing in a moment.</p><button type="button" className="lux-button lux-button--outline" onClick={loadFeed} disabled={loading}><Icon name="refresh" />Try again</button></div>;
+  else if (!lead) body = <div className={styles.empty}><Icon name="news" /><h3>No stories in this topic yet.</h3><p>New stories arrive through the day.</p><button type="button" className="lux-button lux-button--outline" onClick={() => setCategory('all')}>Show all topics</button></div>;
+  else body = <>
+    <div className={styles.front}>
+      <LeadStory {...props(lead)} />
+      {latest.length > 0 && <div className={styles.latest}>
+        <h3 className={styles.columnTitle}>Latest</h3>
+        {latest.map((story) => <ListStory key={story.id} {...props(story)} />)}
+      </div>}
+    </div>
+    {reads.length > 0 && <div className={styles.reads}>
+      <h3 className={styles.columnTitle}>Read &amp; understand</h3>
+      <div className={styles.readsTrack}>{reads.map((story) => <ReadCard key={story.id} {...props(story)} />)}</div>
+    </div>}
+  </>;
+
+  const status = loading ? 'Checking for updates…' : feed.status === 'unavailable' ? 'Updates unavailable' : feed.status === 'offline' ? 'Showing earlier updates' : feed.status === 'partial' ? 'Some sources delayed' : feed.updatedAt ? `Updated ${newsDate(feed.updatedAt, true)} IST` : 'Education news & explainers';
 
   return <section ref={sectionRef} id="education-news" className={styles.section} aria-labelledby="education-news-title" data-news-section>
-    <NewsBackdrop />
     <div className={`container ${styles.container}`}>
-      <header className={styles.heading}>
-        <div className={styles.headingCopy}><p className={styles.eyebrow}><span /><Icon name="news" />THE EDUCATION DESK</p><h2 id="education-news-title">Education, <span>in focus.</span></h2><p className={styles.description}>The latest updates and useful reads for your next step.</p></div>
-        <div className={styles.feedState}><span className={styles.status} data-feed-status={feed.status}><span aria-hidden="true" />{loading ? 'Checking for updates…' : feed.status === 'idle' ? 'Education news & articles' : feed.status === 'unavailable' ? 'Updates temporarily unavailable' : feed.status === 'offline' ? 'Showing earlier updates' : feed.status === 'partial' ? 'Some sources delayed' : 'Latest available updates'}</span>{feed.updatedAt && <p>Checked <time dateTime={feed.updatedAt}>{newsDate(feed.updatedAt, true)} IST</time></p>}<button type="button" className={styles.refresh} onClick={loadFeed} disabled={loading}><Icon name="refresh" /><span>{loading ? 'Refreshing' : 'Refresh updates'}</span></button></div>
-      </header>
-      <div className={styles.toolbar}>
-        <nav className={styles.views} aria-label="Education content">{[['all', 'Overview'], ['news', 'News'], ['articles', 'Articles'], ['saved', 'Saved']].map(([id, label]) => <button key={id} type="button" aria-pressed={view === id} onClick={() => changeView(id)}>{id === 'saved' && <Icon name="bookmark" />}{label}{id === 'saved' && saved.length > 0 && <span>{saved.length}</span>}</button>)}</nav>
-        <div className={styles.searchAndSort}><label className={styles.search}><Icon name="search" /><span className="sr-only">Search education updates</span><input type="search" value={query} onChange={(event) => { setQuery(event.target.value); setLimit(3); }} maxLength={100} placeholder="Search any education topic" /></label><label className={styles.sort}><span className="sr-only">Sort education updates</span><select value={sort} onChange={(event) => { setSort(event.target.value); setLimit(3); }}><option value="newest">Newest first</option><option value="oldest">Oldest first</option></select><Icon name="chevron" /></label></div>
-      </div>
-      <div className={styles.topics}><nav aria-label="Education topics">{config.topics.map((topic) => <button key={topic.id} type="button" aria-pressed={category === topic.id} onClick={() => changeCategory(topic.id)}>{topic.label}</button>)}</nav><span className={styles.topicHint} aria-hidden="true"><Icon name="arrow" /></span></div>
-      <div className={styles.contentGrid}>
-        <div className={styles.newsColumn}>
-          <div className={styles.columnHeading}><h3>{heading}</h3>{(hasFeed || view === 'saved') && <span>{records.length} {records.length === 1 ? 'story' : 'stories'}</span>}</div>
-          {view === 'saved' && <p className={styles.savedHelp}>Your reading list stays in this browser.</p>}
-          {!records.length && (feed.status === 'idle' || loading) && view !== 'saved' ? <div className={styles.skeleton} role="status" aria-label="Loading education updates">{[1, 2, 3].map((id) => <div key={id}><i /><span><b /><b /><b /></span></div>)}</div> : records.length ? <div className={styles.stories}>{records.slice(0, limit).map((record, index) => <Story key={record.id} story={record} featured={index === 0} saved={savedIds.has(record.id)} onSave={toggleSave} config={config} />)}</div> : <div className={styles.empty}><Icon name={view === 'saved' ? 'bookmark' : 'news'} /><h4>{emptyTitle}</h4><p>{emptyHelp}</p>{(query || category !== 'all') && <button className="button button--outline" type="button" onClick={() => { setQuery(''); changeCategory('all'); }}>Clear filters</button>}</div>}
-          {records.length > limit && <button className={styles.more} type="button" onClick={() => setLimit((value) => value + 6)}>Show more {view === 'articles' ? 'articles' : view === 'saved' ? 'saved stories' : 'updates'}<Icon name="arrow" /></button>}
+      <header className={styles.head}>
+        <div>
+          <p className={styles.eyebrow}><Icon name="news" />The Education Desk</p>
+          <h2 id="education-news-title" className={styles.title}>Education, <em>in focus.</em></h2>
         </div>
-        <aside className={styles.readingColumn} aria-label={view === 'all' ? 'Education articles' : 'Explore education topics'}>
-          {view === 'all' ? <><div className={styles.columnHeading}><h3>Read & understand</h3><button type="button" className={styles.viewArticles} onClick={() => changeView('articles')}>All articles<Icon name="arrow" /></button></div>{reading.length ? <div className={styles.reading}>{reading.map((record) => <Story key={record.id} story={record} saved={savedIds.has(record.id)} onSave={toggleSave} config={config} />)}</div> : <p className={styles.readingEmpty}>{loading || feed.status === 'idle' ? 'Finding useful reads…' : 'No articles for this topic yet. Try All education.'}</p>}</> : <><div className={styles.columnHeading}><h3>Across education</h3></div><div className={styles.topicDirectory}>{config.topics.filter((topic) => topic.id !== 'all').map((topic) => <button key={topic.id} type="button" aria-pressed={category === topic.id} onClick={() => changeCategory(topic.id)}><span><Icon name={topic.icon} />{topic.label}</span><Icon name="arrow" /></button>)}</div></>}
-          <div className={styles.readingNote}><Icon name="book" /><div><strong>A little clarity goes a long way.</strong><p>Explore the story behind the headline. Save what matters to you.</p></div></div>
-        </aside>
-      </div>
-      <footer className={styles.footer}><p><Icon name="external" />Stories open on the original publisher’s website.</p>{feed.sources?.some((source) => source.state !== 'fresh') && <p>Some publishers couldn’t refresh. Available stories remain dated.</p>}<span className="sr-only" role="status">{saveNotice}</span>{saveNotice && <p className={styles.saveNotice} aria-hidden="true">{saveNotice}</p>}</footer>
+        <p className={styles.status} data-feed-status={feed.status}>
+          <i aria-hidden="true" /><span>{status}</span>
+          <button type="button" className={styles.refresh} onClick={loadFeed} disabled={loading} aria-label="Refresh education updates"><Icon name="refresh" /></button>
+        </p>
+      </header>
+      <nav className={styles.topics} aria-label="Education topics">
+        {config.topics.map((topic) => <button key={topic.id} type="button" aria-pressed={category === topic.id} onClick={() => setCategory(topic.id)}>{topic.id === 'all' ? 'All' : topic.label}</button>)}
+      </nav>
+      {body}
+      <footer className={styles.footer}><p><Icon name="external" />Every story opens on the original publisher’s website.</p>{feed.sources?.some((source) => source.state !== 'fresh') && <p>Some publishers couldn’t refresh. Available stories remain dated.</p>}<span className="sr-only" role="status">{saveNotice}</span>{saveNotice && <p className={styles.notice} aria-hidden="true">{saveNotice}</p>}</footer>
     </div>
   </section>;
 }

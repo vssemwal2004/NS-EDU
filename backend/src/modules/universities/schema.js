@@ -56,15 +56,40 @@ const GALLERY_FIELDS = [
   { name: 'sourcePage', label: 'Source page', type: 'url' },
   { name: 'width', label: 'Width', type: 'integer', nullable: true, min: 1, max: 10_000 },
   { name: 'height', label: 'Height', type: 'integer', nullable: true, min: 1, max: 10_000 },
+  // The year the file itself gives (camera date, dated upload folder or file name); absent when unknown.
+  { name: 'year', label: 'Year taken', type: 'integer', nullable: true, min: 1990, max: year },
 ];
 
 const PROGRAMME_ROW_FIELDS = [
   { name: 'name', label: 'Programme', type: 'string', required: true, maxLength: 160 },
+  { name: 'courseSlug', label: 'Catalogue course', type: 'string', maxLength: 60 },
   { name: 'level', label: 'Level', type: 'select', options: ['', ...PROGRAMME_LEVELS], default: '' },
   { name: 'durationYears', label: 'Duration (years)', type: 'number', nullable: true, min: 0.5, max: 10 },
-  // Only ever set when the page prints a per-year rupee amount for this programme; never estimated.
+  // Each amount is set only when the page prints it for that period; one is never derived from
+  // another (a semester fee is not doubled into an annual one).
   { name: 'annualFeeInr', label: 'Annual fee (INR)', type: 'integer', nullable: true, min: 0, max: 10_000_000 },
+  { name: 'semesterFeeInr', label: 'Semester fee (INR)', type: 'integer', nullable: true, min: 0, max: 10_000_000 },
+  { name: 'totalFeeInr', label: 'Total programme fee (INR)', type: 'integer', nullable: true, min: 0, max: 50_000_000 },
+  { name: 'feeYear', label: 'Fee session', type: 'string', maxLength: 20 },
   { name: 'feeNote', label: 'Fee note', type: 'string', maxLength: 160 },
+  { name: 'sourcePage', label: 'Source page', type: 'url' },
+];
+
+// One row per placement season, as the institution reports it. `year` is the year the season ends
+// ("2024-25" → 2025) and `session` keeps the label as printed.
+const PLACEMENT_YEAR_FIELDS = [
+  { name: 'year', label: 'Year', type: 'integer', required: true, min: 2000, max: year + 1 },
+  { name: 'session', label: 'Session as printed', type: 'string', maxLength: 20 },
+  { name: 'averagePackageLpa', label: 'Average package (LPA)', type: 'number', nullable: true, min: 0, max: 1000 },
+  { name: 'highestPackageLpa', label: 'Highest package (LPA)', type: 'number', nullable: true, min: 0, max: 1000 },
+  { name: 'medianPackageLpa', label: 'Median package (LPA)', type: 'number', nullable: true, min: 0, max: 1000 },
+  { name: 'placedPercent', label: 'Students placed (%)', type: 'number', nullable: true, min: 0, max: 100 },
+  { name: 'studentsPlaced', label: 'Students placed', type: 'integer', nullable: true, min: 1, max: 100_000 },
+  { name: 'offers', label: 'Offers', type: 'integer', nullable: true, min: 1, max: 100_000 },
+  { name: 'companies', label: 'Companies', type: 'integer', nullable: true, min: 1, max: 10_000 },
+  // 'student-list': counted from the institution's published list of placed students (NAAC 5.2.1)
+  // rather than printed as a summary.
+  { name: 'basis', label: 'How the figures were read', type: 'string', maxLength: 40 },
   { name: 'sourcePage', label: 'Source page', type: 'url' },
 ];
 
@@ -75,6 +100,7 @@ const PLACEMENT_FIELDS = [
   { name: 'medianPackageLpa', label: 'Median package (LPA)', type: 'number', nullable: true, min: 0, max: 1000 },
   { name: 'placedPercent', label: 'Students placed (%)', type: 'number', nullable: true, min: 0, max: 100 },
   { name: 'recruiters', label: 'Recruiters', type: 'stringList', maxItems: 20, maxLength: 80 },
+  { name: 'note', label: 'Placement scope note', type: 'string', maxLength: 240 },
   { name: 'sourcePage', label: 'Source page', type: 'url' },
 ];
 
@@ -108,20 +134,25 @@ export const INSTITUTION_FIELDS = [
   { name: 'naacGrade', label: 'NAAC grade', type: 'select', options: ['', ...NAAC_GRADES], default: '' },
   { name: 'nirfRank', label: 'NIRF rank', type: 'integer', nullable: true, min: 1, max: 1000 },
   { name: 'nirfYear', label: 'NIRF year', type: 'integer', nullable: true, min: 2016, max: year },
+  // NIRF publishes per-subject lists, so a rank without its category reads as an overall rank.
+  // "Pharmacy" + 13 is honest; a bare "#13" for an institution ranked 49th overall is not.
+  { name: 'nirfCategory', label: 'NIRF category', type: 'string', maxLength: 60, help: 'The list the rank belongs to, e.g. Engineering, Overall, College.' },
   { name: 'streams', label: 'Streams', type: 'stringList', maxItems: 20, maxLength: 40, help: `Comma separated, e.g. ${STREAMS.slice(0, 4).join(', ')}.` },
-  { name: 'courseSlugs', label: 'Catalogue courses', type: 'stringList', maxItems: 60, maxLength: 60, help: 'Slugs of courses in the catalogue (e.g. btech, mba).' },
-  { name: 'coursesOffered', label: 'Programmes offered', type: 'stringList', maxItems: 200, maxLength: 160, help: 'Programme names as published by the institution.' },
-  { name: 'about', label: 'About', type: 'text', maxLength: 1500 },
+  { name: 'courseSlugs', label: 'Catalogue courses', type: 'stringList', maxItems: 150, maxLength: 60, help: 'Slugs of courses in the catalogue (e.g. btech, mba).' },
+  { name: 'coursesOffered', label: 'Programmes offered', type: 'stringList', maxItems: 500, maxLength: 160, help: 'Programme names as published by the institution.' },
+  { name: 'about', label: 'About', type: 'text', maxLength: 3000, help: 'Paragraphs are separated by a blank line.' },
   { name: 'aboutSource', label: 'About source page', type: 'url', help: 'The page the summary was read from.' },
   { name: 'logoUrl', label: 'Logo URL', type: 'url', help: 'Upload to Cloudinary from the media screen and paste the URL.' },
   { name: 'coverUrl', label: 'Cover image URL', type: 'url' },
   // --- Deep-scrape detail. All optional; absent means "we have not found it", never "none".
   { name: 'gallery', label: 'Campus photos', type: 'objectList', maxItems: 12, fields: GALLERY_FIELDS, machine: true,
     help: 'Photographs from the institution\'s own site, re-hosted on Cloudinary. Each row keeps its credit and source page.' },
-  { name: 'programmesOffered', label: 'Programme details', type: 'objectList', maxItems: 60, fields: PROGRAMME_ROW_FIELDS, machine: true,
+  { name: 'programmesOffered', label: 'Programme details', type: 'objectList', maxItems: 500, fields: PROGRAMME_ROW_FIELDS, machine: true,
     help: 'Structured programme rows. The plain name list stays in "Programmes offered".' },
   { name: 'placements', label: 'Placements', type: 'object', fields: PLACEMENT_FIELDS, machine: true,
     help: 'Only figures printed on the official placement page, with the year they belong to.' },
+  { name: 'placementHistory', label: 'Placement record by year', type: 'objectList', maxItems: 6, fields: PLACEMENT_YEAR_FIELDS, machine: true,
+    help: 'Season-by-season figures from the placement page or report, newest first. Crawls add seasons; they never drop one.' },
   { name: 'facilities', label: 'Facilities', type: 'stringList', maxItems: 20, maxLength: 60, help: 'Hostel, library, labs, sports … only when the site names them.' },
   { name: 'activities', label: 'Student activities', type: 'stringList', maxItems: 20, maxLength: 80, help: 'Clubs, NSS/NCC, fests … only when the site names them.' },
   { name: 'awards', label: 'Awards & recognitions', type: 'objectList', maxItems: 12, fields: AWARD_FIELDS, machine: true,

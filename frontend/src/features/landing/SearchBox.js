@@ -7,7 +7,8 @@ export default function SearchBox({ onBrowse }) {
   const [type, setType] = useState('Colleges');
   const [query, setQuery] = useState('');
   const id = useId();
-  const placeholders = { Colleges: 'Search by college name, course or city', Courses: 'Search courses or a field of study', Exams: 'Search entrance exams, e.g. JEE Main' };
+  // Short enough to show whole in a 390px search field.
+  const placeholders = { Colleges: 'College, course or city', Courses: 'Course or field of study', Exams: 'Exam, e.g. JEE Main' };
   function moveTab(event, index) {
     let next;
     if (event.key === 'ArrowRight') next = (index + 1) % tabs.length;

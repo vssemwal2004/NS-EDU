@@ -18,6 +18,9 @@ const SOURCE_FIELDS = [
   { name: 'city', type: 'string', maxLength: 80 },
   { name: 'type', type: 'select', options: ['', ...INSTITUTION_TYPES], default: '' },
   { name: 'category', type: 'select', options: ['', ...INSTITUTION_CATEGORIES], default: '' },
+  // Exact target from the directory. Without it, the first crawl has to guess by name/domain and
+  // can enrich the wrong sibling when several institutions share a university-group website.
+  { name: 'institutionSlug', type: 'slug' },
   { name: 'seedListName', type: 'string', maxLength: 80 },
   { name: 'status', type: 'select', options: SOURCE_STATUSES, default: 'active' },
   { name: 'notes', type: 'text', maxLength: 500 },
@@ -31,6 +34,7 @@ const HEADER_SYNONYMS = {
   city: ['city', 'town', 'cityname', 'district', 'location'],
   type: ['type', 'institutiontype'],
   category: ['category', 'universitytype', 'universitycategory'],
+  institutionSlug: ['institutionslug', 'institutionid', 'targetslug'],
 };
 const headerKey = (raw) => {
   const key = String(raw ?? '').toLowerCase().replace(/[^a-z]/g, '');
@@ -70,9 +74,17 @@ export async function updateSource(id, body) {
   const patch = assertValid(SOURCE_FIELDS, withWebsite(body), { partial: true });
   const data = prepare({ ...existing, ...patch });
   const changes = Object.fromEntries(Object.entries(data).filter(([key]) => Object.hasOwn(patch, key) || ['website', 'websiteKey', 'domain', 'nameKey', 'state'].includes(key)));
+  const identityChanged = changes.website !== existing.website
+    || (Object.hasOwn(patch, 'institutionSlug') && changes.institutionSlug !== existing.institutionSlug);
   try {
-    const updated = await collection.findOneAndUpdate({ _id }, { $set: { ...changes, updatedAt: new Date() } }, { returnDocument: 'after' });
-    if (patch.status && patch.status !== 'active') await cancelQueuedFor(_id);
+    const updated = await collection.findOneAndUpdate(
+      { _id },
+      { $set: { ...changes, ...(identityChanged ? { lastJobAt: null, lastResult: null } : {}), updatedAt: new Date() } },
+      { returnDocument: 'after' },
+    );
+    // A queued job snapshots the old website and host. Discard that snapshot when the source
+    // identity changes so the next selected enqueue crawls only the corrected official URL.
+    if (identityChanged || (patch.status && patch.status !== 'active')) await cancelQueuedFor(_id);
     return serializeSource(updated);
   } catch (error) {
     if (error.code === 11000) throw new HttpError(409, 'A source with this website already exists', { fields: { website: 'Already in use' } });
@@ -135,7 +147,8 @@ export async function importSources(rows, { seedListName = 'Seed list' } = {}) {
   const summary = { inserted: 0, updated: 0, duplicates: 0, failed: 0, errors: [] };
   const now = new Date();
   const operations = [];
-  const seen = new Set();
+  const candidates = new Map();
+  const targetPriority = (row) => ({ university: 4, institute: 3, college: 2, school: 1 }[row.type] ?? 0);
   for (const [index, raw] of rows.entries()) {
     const type = INSTITUTION_TYPES.includes(String(raw.type ?? '').toLowerCase()) ? String(raw.type).toLowerCase() : '';
     const category = INSTITUTION_CATEGORIES.includes(String(raw.category ?? '').toLowerCase()) ? String(raw.category).toLowerCase() : '';
@@ -148,12 +161,35 @@ export async function importSources(rows, { seedListName = 'Seed list' } = {}) {
       continue;
     }
     const data = prepare(value);
-    if (seen.has(data.websiteKey)) { summary.duplicates += 1; continue; }
-    seen.add(data.websiteKey);
+    const existing = candidates.get(data.websiteKey);
+    if (existing) {
+      summary.duplicates += 1;
+      // A university homepage is often also copied onto its constituent-college directory rows.
+      // Crawl that root into the parent university, not whichever college happened to sort first.
+      if (targetPriority(data) > targetPriority(existing)) candidates.set(data.websiteKey, data);
+      continue;
+    }
+    candidates.set(data.websiteKey, data);
+  }
+  const existingByKey = new Map();
+  const keys = [...candidates.keys()];
+  for (let start = 0; start < keys.length; start += 5000) {
+    const docs = await collection.find(
+      { websiteKey: { $in: keys.slice(start, start + 5000) } },
+      { projection: { websiteKey: 1, institutionSlug: 1 } },
+    ).toArray();
+    for (const doc of docs) existingByKey.set(doc.websiteKey, doc);
+  }
+  for (const data of candidates.values()) {
     const { status: _status, ...fields } = data;
+    const existing = existingByKey.get(data.websiteKey);
+    const retargeted = Boolean(existing && data.institutionSlug && existing.institutionSlug !== data.institutionSlug);
     operations.push({ updateOne: {
       filter: { websiteKey: data.websiteKey },
-      update: { $set: { ...fields, updatedAt: now }, $setOnInsert: { status: 'active', hints: {}, lastJobAt: null, lastResult: null, createdAt: now } },
+      update: {
+        $set: { ...fields, ...(retargeted ? { lastJobAt: null, lastResult: null } : {}), updatedAt: now },
+        $setOnInsert: { status: 'active', hints: {}, ...(!retargeted ? { lastJobAt: null, lastResult: null } : {}), createdAt: now },
+      },
       upsert: true,
     } });
   }

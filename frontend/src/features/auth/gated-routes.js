@@ -22,6 +22,14 @@ export function safeNext(raw, fallback = DEFAULT_AFTER_LOGIN) {
   }
 }
 
+// Which login-popup wording fits a destination (keys of `reasons` in LoginDrawer.js).
+export function loginReasonFor(next = '') {
+  if (next.startsWith('/apply')) return 'apply';
+  if (next.startsWith('/compare')) return 'compare';
+  if (next.startsWith('/account')) return 'account';
+  return 'directory';
+}
+
 export const loginHref = (next) => {
   const target = safeNext(next, '');
   return target ? `/login?next=${encodeURIComponent(target)}` : '/login';

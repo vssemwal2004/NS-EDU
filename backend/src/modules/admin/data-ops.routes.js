@@ -3,6 +3,7 @@ import { HttpError } from '../../lib/http-error.js';
 import { queryString } from '../../lib/query.js';
 import { isPlainObject } from '../../lib/validation.js';
 import { csvRow } from '../../scraper/csv.js';
+import { COURSE_TEMPLATE_COLUMNS, importCourses, relinkInstitutions, syncCatalogue } from '../catalog/course-catalogue.js';
 import { cancelJobs, enqueueSources, listJobs, listRuns, queueStats, retryJobs } from '../../scraper/queue.js';
 import { createSource, deleteSource, importSources, listSources, parseSeedList, updateSource } from '../../scraper/sources.js';
 import {
@@ -40,6 +41,18 @@ dataOpsRouter.post('/universities/import', fileBody, async (request, response) =
 });
 dataOpsRouter.post('/universities/bulk', async (request, response) => response.json(await bulkUpdateInstitutions(request.body, request.admin)));
 dataOpsRouter.get('/universities/export.csv', async (request, response) => streamInstitutionsCsv(request.query, response));
+
+// Course catalogue: bulk import, the full Indian degree list, and relinking institutions' programmes.
+dataOpsRouter.get('/courses/template.csv', (_request, response) => {
+  response.set({ 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': 'attachment; filename="courses-template.csv"' });
+  response.send(`﻿${csvRow(COURSE_TEMPLATE_COLUMNS)}${csvRow(['B.Sc Agriculture', 'bsc-agriculture', 'Bachelor of Science in Agriculture', 'Agriculture', 'UG', 'science', 'Undergraduate degree in agronomy and soil science.', 'B.Sc Ag; B.Sc (Hons) Agriculture', 'false', '200', 'true'])}`);
+});
+dataOpsRouter.post('/courses/import', fileBody, async (request, response) => {
+  const input = fileInput(request);
+  response.json(await importCourses({ content: input.content, format: formatOf(input), dryRun: ['true', '1', true].includes(input.dryRun) }));
+});
+dataOpsRouter.post('/courses/sync', async (_request, response) => response.json({ catalogue: await syncCatalogue(), relinked: await relinkInstitutions() }));
+dataOpsRouter.post('/courses/relink', async (_request, response) => response.json(await relinkInstitutions()));
 
 dataOpsRouter.get('/review', async (request, response) => response.json(await listReviewQueue(request.query)));
 

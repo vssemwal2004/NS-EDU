@@ -1,5 +1,5 @@
 import { summarize } from '@/lib/college-catalog';
-import { formatCount, formatInr, formatLpa, hostOf, kindOf, lakhRange, nirfOf, ownershipOf, placeOf, shortDate } from '../labels';
+import { formatCount, formatInr, formatLpa, hostOf, kindOf, lakhRange, nirfOf, nirfPairs, ownershipOf, placeOf, shortDate, shortInr, usableAbout } from '../labels';
 
 const num = (value) => (typeof value === 'number' && Number.isFinite(value) ? value : null);
 const list = (value) => (Array.isArray(value) ? value.filter((row) => row && (typeof row !== 'string' || row.trim())) : []);
@@ -16,6 +16,17 @@ const sourceLink = (value) => {
   const label = text(value?.label || value?.name || value?.title) || (url ? hostOf(url) : '');
   return label ? { label, url } : null;
 };
+
+// Columns of the season-by-season placement table; only the ones some season reports are shown.
+const HISTORY_COLUMNS = [
+  ['highestPackageLpa', 'Highest package', formatLpa],
+  ['averagePackageLpa', 'Average package', formatLpa],
+  ['medianPackageLpa', 'Median package', formatLpa],
+  ['placedPercent', 'Students placed', (value) => `${value}%`],
+  ['studentsPlaced', 'Placed (students)', formatCount],
+  ['offers', 'Offers', formatCount],
+  ['companies', 'Companies', formatCount],
+];
 
 // Everything shown on a profile is derived here from real record fields; nothing is filled in.
 // Every scraped field is optional — most records carry only the imported directory snapshot.
@@ -41,37 +52,22 @@ export function profileModel({ item, programmes, courses, similar }, catalogCour
       credit: text(photo.credit) || 'Official website',
       sourcePage: text(photo.sourcePage),
     }))
-    .filter((photo) => /^https?:\/\//i.test(photo.url))
-    .slice(0, 30);
+    .filter((photo) => /^https?:\/\//i.test(photo.url));
   const heroImage = text(item.coverUrl) || photos[0]?.url || '';
+  // The cover already fills the header, so the gallery starts with the next picture (schema max 12).
+  const galleryPhotos = photos.filter((photo) => photo.url !== heroImage).slice(0, 12);
 
-  // ---- hero chips: snapshot values, never "verified" -----------------------------------------
-  const snapshotSuffix = snapshotOn ? `source-reported, ${snapshotOn}` : 'source-reported';
+  // ---- hero badges: at most three, each a real value -----------------------------------------
+  // The "source-reported" caveat is said once under the badges and in full in Accreditation, not
+  // repeated on every chip. A directory AICTE cell that only says "not matched" is not a badge.
+  const aicteId = /\d/.test(text(directory.aicteId)) && !/\bnot\b/i.test(text(directory.aicteId)) ? text(directory.aicteId) : '';
   const chips = [
-    item.naacGrade && { key: 'naac', icon: 'uniMedal', label: `NAAC ${item.naacGrade}${directory.naacCgpa ? ` · CGPA ${directory.naacCgpa}` : ''}`, note: snapshotSuffix },
-    item.nirfRank && { key: 'nirf', icon: 'uniRibbon', label: `NIRF ${nirfOf(item)}`, note: snapshotSuffix },
-    directory.aicteId && { key: 'aicte', icon: 'uniClipboard', label: `AICTE ${directory.aicteId}`, note: snapshotSuffix },
-    ...item.approvals.slice(0, 2).map((approval) => ({ key: `a-${approval}`, icon: 'uniVerified', label: approval, note: snapshotSuffix })),
-  ].filter(Boolean).slice(0, 4);
-
-  const ribbon = [
-    item.establishedYear && { label: 'Established', value: String(item.establishedYear) },
-    item.naacGrade && { label: 'NAAC grade', value: item.naacGrade },
-    item.nirfRank && { label: 'NIRF rank', value: nirfOf(item) },
-    item.approvals.length && { label: 'Approvals', value: item.approvals.join(', ') },
-    item.affiliatedTo && { label: 'Affiliated to', value: item.affiliatedTo },
-    item.website && { label: 'Website', value: hostOf(item.website), href: item.website },
-  ].filter(Boolean);
-  // Too few institutional facts: complete the ribbon with what the record does have.
-  const extras = [
-    { label: 'Institution', value: kindOf(item) },
-    place && { label: 'Location', value: place },
-    summary?.feeMin != null && { label: `Annual tuition · ${summary.tuitionYear}`, value: lakhRange(summary.feeMin, summary.feeMax) },
-    rows.length && { label: 'Programmes with fees', value: String(rows.length) },
-    item.streams.length && { label: 'Streams', value: String(item.streams.length) },
-    directory.aisheCode && { label: 'AISHE code', value: directory.aisheCode },
-  ].filter(Boolean);
-  while (ribbon.length < 4 && extras.length) ribbon.push(extras.shift());
+    item.nirfRank && { key: 'nirf', icon: 'uniRibbon', label: `NIRF ${nirfOf(item)}` },
+    item.naacGrade && { key: 'naac', icon: 'uniMedal', label: `NAAC ${item.naacGrade}${directory.naacCgpa ? ` · CGPA ${directory.naacCgpa}` : ''}` },
+    aicteId && { key: 'aicte', icon: 'uniClipboard', label: `AICTE ${aicteId}` },
+    ...item.approvals.slice(0, 2).map((approval) => ({ key: `a-${approval}`, icon: 'uniVerified', label: `${approval} approved` })),
+  ].filter(Boolean).slice(0, 3);
+  const chipsNote = chips.length ? `Source-reported${snapshotOn ? ` · ${snapshotOn}` : ''}` : '';
 
   const year = new Date().getFullYear();
   const bestMedian = summary?.medianMax;
@@ -86,6 +82,9 @@ export function profileModel({ item, programmes, courses, similar }, catalogCour
     level: text(row?.level),
     durationYears: num(row?.durationYears),
     annualFeeInr: num(row?.annualFeeInr),
+    semesterFeeInr: num(row?.semesterFeeInr),
+    totalFeeInr: num(row?.totalFeeInr),
+    feeYear: text(row?.feeYear),
     feeNote: text(row?.feeNote),
     sourcePage: text(row?.sourcePage),
   })).filter((row) => {
@@ -96,23 +95,43 @@ export function profileModel({ item, programmes, courses, similar }, catalogCour
   }).map((row, index) => ({
     ...row,
     id: `o${index}`,
-    fee: row.annualFeeInr != null ? formatInr(row.annualFeeInr) : '',
-    meta: [row.level, row.durationYears ? `${row.durationYears} ${row.durationYears === 1 ? 'year' : 'years'}` : ''].filter(Boolean).join(' · '),
+    // Every fee the institution prints for the programme, each with its own period; none is
+    // converted into another, so "₹60,000 a semester" never turns into an annual figure.
+    fees: [
+      row.annualFeeInr != null && { label: 'a year', value: formatInr(row.annualFeeInr) },
+      row.semesterFeeInr != null && { label: 'a semester', value: formatInr(row.semesterFeeInr) },
+      row.totalFeeInr != null && { label: 'whole programme', value: formatInr(row.totalFeeInr) },
+    ].filter(Boolean),
+    meta: [row.level, row.durationYears ? `${row.durationYears} ${row.durationYears === 1 ? 'year' : 'years'}` : '', row.feeYear && `fees ${row.feeYear}`].filter(Boolean).join(' · '),
   }));
-  const offeredWithFees = offeredRows.filter((row) => row.annualFeeInr != null).length;
+  const offeredWithFees = offeredRows.filter((row) => row.fees.length).length;
   const offeredSource = offeredRows.find((row) => row.sourcePage)?.sourcePage || '';
 
   // ---- placements ------------------------------------------------------------------------------
   const placements = item.placements && typeof item.placements === 'object' ? item.placements : {};
-  const placementStats = [
-    num(placements.averagePackageLpa) != null && { key: 'avg', label: 'Average package', value: formatLpa(num(placements.averagePackageLpa)) },
-    num(placements.medianPackageLpa) != null && { key: 'median', label: 'Median package', value: formatLpa(num(placements.medianPackageLpa)) },
-    num(placements.highestPackageLpa) != null && { key: 'high', label: 'Highest package', value: formatLpa(num(placements.highestPackageLpa)) },
-    num(placements.placedPercent) != null && { key: 'placed', label: 'Students placed', value: `${num(placements.placedPercent)}%` },
+  const statsOf = (source) => [
+    num(source.averagePackageLpa) != null && { key: 'avg', label: 'Average package', value: formatLpa(num(source.averagePackageLpa)) },
+    num(source.medianPackageLpa) != null && { key: 'median', label: 'Median package', value: formatLpa(num(source.medianPackageLpa)) },
+    num(source.highestPackageLpa) != null && { key: 'high', label: 'Highest package', value: formatLpa(num(source.highestPackageLpa)) },
+    num(source.placedPercent) != null && { key: 'placed', label: 'Students placed', value: `${num(source.placedPercent)}%` },
   ].filter(Boolean);
+  // Season by season, newest first, as the institution reports it.
+  const placementHistory = list(item.placementHistory)
+    // `counted`: tallied from the institution's published list of placed students, not a summary it printed.
+    .map((row) => ({ ...row, year: num(row?.year), session: text(row?.session) || String(row?.year ?? ''), counted: row?.basis === 'student-list' }))
+    .filter((row) => row.year)
+    .toSorted((a, b) => b.year - a.year)
+    .slice(0, 4);
+  const historyColumns = HISTORY_COLUMNS.filter(([key]) => placementHistory.some((row) => num(row[key]) != null));
+  // The single-season snapshot when it has figures; otherwise the newest season of the record, so
+  // the headline tiles and the year they belong to always come from one place.
+  const snapshotStats = statsOf(placements);
+  const latestSeason = placementHistory.find((row) => statsOf(row).length);
+  const placementStats = snapshotStats.length ? snapshotStats : latestSeason ? statsOf(latestSeason) : [];
   const recruiters = list(placements.recruiters).map(text).filter(Boolean).slice(0, 40);
-  const placementYear = placements.year ? String(placements.year) : '';
-  const hasPlacements = placementStats.length > 0 || recruiters.length > 0 || bestMedian != null;
+  const placementYear = snapshotStats.length ? (placements.year ? String(placements.year) : '') : latestSeason?.session ?? (placements.year ? String(placements.year) : '');
+  const placementNote = text(placements.note);
+  const hasPlacements = placementStats.length > 0 || recruiters.length > 0 || bestMedian != null || historyColumns.length > 0;
 
   // ---- campus ----------------------------------------------------------------------------------
   const campus = item.campus && typeof item.campus === 'object' ? item.campus : {};
@@ -126,19 +145,44 @@ export function profileModel({ item, programmes, courses, similar }, catalogCour
   const activities = list(item.activities).map(text).filter(Boolean).slice(0, 40);
   const hasCampus = campusFacts.length > 0 || facilities.length > 0 || activities.length > 0;
 
+  // ---- at a glance: the four figures a student weighs first, in that order of importance -------
+  // Each tile appears only when the record holds the figure; the rest of the row is filled from the
+  // next facts down the list, so a thin record still gets a full, honest row.
+  const lowest = (field) => {
+    const values = offeredRows.map((row) => row[field]).filter((value) => value != null && value > 0);
+    return values.length ? Math.min(...values) : null;
+  };
+  const scrapedFee = [['annualFeeInr', 'a year'], ['semesterFeeInr', 'a semester'], ['totalFeeInr', 'whole programme']]
+    .map(([field, period]) => ({ value: lowest(field), period })).find((fee) => fee.value != null);
+  const firstStat = placementStats[0];
+  const glance = [
+    summary?.feeMin != null ? { key: 'fees', icon: 'uniRupee', label: 'Annual tuition', value: lakhRange(summary.feeMin, summary.feeMax), note: summary.tuitionYear || 'published fees' }
+      : scrapedFee ? { key: 'fees', icon: 'uniRupee', label: 'Fees from', value: shortInr(scrapedFee.value), note: `${scrapedFee.period}, lowest published` } : null,
+    firstStat ? { key: 'placement', icon: 'trend', label: firstStat.label, value: firstStat.value, note: placementYear ? `reported for ${placementYear}` : 'reported by the institution' }
+      : bestMedian != null ? { key: 'placement', icon: 'trend', label: 'Median package', value: `up to ${formatLpa(bestMedian)}`, note: summary.placementYear } : null,
+    offeredRows.length ? { key: 'programmes', icon: 'uniLayers', label: 'Programmes', value: formatCount(offeredRows.length), note: 'listed by the institution' }
+      : rows.length ? { key: 'programmes', icon: 'uniLayers', label: 'Programmes', value: String(rows.length), note: 'with published fees' } : null,
+    num(campus.sizeAcres) != null && { key: 'campus', icon: 'uniCampus', label: 'Campus', value: `${num(campus.sizeAcres)} acres`, note: campus.hostelAvailable ? 'hostel available' : 'stated by the institution' },
+    item.establishedYear && { key: 'established', icon: 'uniCalendar', label: 'Established', value: String(item.establishedYear), note: year > item.establishedYear ? `${year - item.establishedYear} years ago` : 'this year' },
+    item.streams.length && { key: 'streams', icon: 'uniBook', label: 'Streams', value: String(item.streams.length), note: item.streams.slice(0, 2).join(', ') },
+    { key: 'type', icon: 'building', label: 'Institution', value: kindOf(item), note: ownershipOf(item) || place },
+  ].filter(Boolean).slice(0, 4);
+  const shown = new Set(glance.map((tile) => tile.key));
+
+  // Highlights add what the hero and the glance row have not already said.
   const highlights = [
-    item.naacGrade && { icon: 'uniMedal', title: `NAAC ${item.naacGrade}`, text: `Grade reported by the directory source${snapshotOn ? ` (${snapshotOn})` : ''}, not a current certificate.` },
-    item.nirfRank && { icon: 'uniRibbon', title: `NIRF rank #${item.nirfRank}`, text: `Listed in the National Institutional Ranking Framework${item.nirfYear ? ` (${item.nirfYear})` : ''}.` },
-    item.establishedYear && { icon: 'uniCalendar', title: `Since ${item.establishedYear}`, text: year > item.establishedYear ? `${year - item.establishedYear} years since the institution was established.` : 'Established this year.' },
-    campusFacts[0]?.label === 'Campus size' && { icon: 'uniCampus', title: campusFacts[0].value, text: 'Campus size published by the institution.' },
-    placementStats[0] && { icon: 'trend', title: `${placementStats[0].label} ${placementStats[0].value}`, text: `Reported by the institution${placementYear ? ` for ${placementYear}` : ''}.` },
-    rows.length && summary.feeMin != null && { icon: 'uniRupee', title: `From ${lakhRange(summary.feeMin, summary.feeMin)} a year`, text: `Lowest annual tuition across ${rows.length === 1 ? 'one programme' : `${rows.length} programmes`} with published fees (${summary.tuitionYear}).` },
-    bestMedian != null && { icon: 'trend', title: `Median package up to ${formatLpa(bestMedian)}`, text: `Best median package among listed programmes (${summary.placementYear})${item.isIllustrative ? ', illustrative values' : ''}.` },
-    item.streams.length && { icon: 'uniBook', title: `${item.streams.length === 1 ? '1 stream' : `${item.streams.length} streams`}`, text: item.streams.join(', ') },
-    offeredRows.length && { icon: 'uniLayers', title: `${formatCount(offeredRows.length)} programmes listed`, text: 'Published by the institution on its own website.' },
+    !shown.has('established') && item.establishedYear && { key: 'established', icon: 'uniCalendar', title: `Since ${item.establishedYear}`, text: year > item.establishedYear ? `${year - item.establishedYear} years since the institution was established.` : 'Established this year.' },
+    campusFacts.find((fact) => fact.label === 'Hostel') && { key: 'hostel', icon: 'bed', title: `Hostel ${campusFacts.find((fact) => fact.label === 'Hostel').value.toLowerCase()}`, text: 'As stated on the institution’s website.' },
+    !shown.has('campus') && num(campus.sizeAcres) != null && { key: 'campus', icon: 'uniCampus', title: `${num(campus.sizeAcres)} acre campus`, text: 'Campus size published by the institution.' },
+    placementStats[1] && { key: 'placement2', icon: 'trend', title: `${placementStats[1].label} ${placementStats[1].value}`, text: `Reported by the institution${placementYear ? ` for ${placementYear}` : ''}.` },
+    facilities.length > 0 && { key: 'facilities', icon: 'uniCampus', title: `${facilities.length} facilities`, text: facilities.slice(0, 3).join(', ') },
+    activities.length > 0 && { key: 'activities', icon: 'uniSpark', title: `${activities.length} clubs & activities`, text: activities.slice(0, 3).join(', ') },
+    !shown.has('streams') && item.streams.length && { key: 'streams', icon: 'uniBook', title: `${item.streams.length === 1 ? '1 stream' : `${item.streams.length} streams`}`, text: item.streams.join(', ') },
+    item.affiliatedTo && { key: 'affiliation', icon: 'uniColumns', title: 'Affiliated university', text: item.affiliatedTo },
   ].filter(Boolean).slice(0, 6);
 
   // ---- accreditation & approvals: verbatim snapshot values -------------------------------------
+  const nirfLists = nirfPairs(directory);
   const accreditation = [
     (item.naacGrade || directory.naacCgpa || directory.naacNote) && {
       key: 'naac', icon: 'uniMedal', label: 'NAAC',
@@ -150,13 +194,13 @@ export function profileModel({ item, programmes, courses, similar }, catalogCour
       ].filter(Boolean),
       note: text(directory.naacNote), href: 'https://www.naac.gov.in/',
     },
-    (item.nirfRank || list(directory.nirfCategories).length) && {
+    (item.nirfRank || nirfLists.length) && {
       key: 'nirf', icon: 'uniRibbon', label: 'NIRF',
-      value: item.nirfRank ? `Rank #${item.nirfRank}` : 'Listed',
+      // The rank belongs to a list ("University #2"), so it is never shown bare.
+      value: item.nirfRank ? nirfOf(item).replace(/ · \d{4}$/, '') : 'Listed',
       facts: [
         item.nirfYear && { label: 'Ranking year', value: String(item.nirfYear) },
-        list(directory.nirfCategories).length && { label: 'Categories', value: list(directory.nirfCategories).join(', ') },
-        list(directory.nirfRanks).length && { label: 'Ranks', value: list(directory.nirfRanks).join(', ') },
+        nirfLists.length > 0 && { label: nirfLists.length === 1 ? 'List' : 'All lists', value: nirfLists.join(' · ') },
       ].filter(Boolean),
       note: '', href: 'https://www.nirfindia.org/',
     },
@@ -193,7 +237,16 @@ export function profileModel({ item, programmes, courses, similar }, catalogCour
   const address = [item.address, item.district && !item.address?.includes(item.district) ? item.district : '', place, item.pincode].filter(Boolean).join(', ');
   const mapQuery = [item.name, item.address, item.city, item.state, item.pincode].filter(Boolean).join(', ');
 
-  const scrapedAbout = text(item.about);
+  // A scraped "about" that is really site chrome (a disclaimer about who runs the website) or too
+  // short to describe anything is not shown; the sentence built from the directory record stands in.
+  const scrapedAbout = usableAbout(item.about);
+
+  // ---- awards: quoted as the institution prints them, newest first ------------------------------
+  const awards = list(item.awards)
+    .map((row) => ({ title: text(row?.title), year: num(row?.year) }))
+    .filter((row) => row.title)
+    .toSorted((a, b) => (b.year ?? 0) - (a.year ?? 0))
+    .slice(0, 12);
   const about = scrapedAbout || `${item.name} is ${/^(?:[aeio]|u(?!ni))/i.test(kindOf(item)) ? 'an' : 'a'} ${kindOf(item).toLowerCase()}${place ? ` in ${place}` : ''}${item.establishedYear ? `, established in ${item.establishedYear}` : ''}.${item.streams.length ? ` It offers programmes in ${item.streams.slice(0, 5).join(', ').toLowerCase()}.` : ''}`;
   const aboutSource = scrapedAbout ? text(item.aboutSource) || text(item.website) : '';
 
@@ -208,24 +261,27 @@ export function profileModel({ item, programmes, courses, similar }, catalogCour
   ].filter(Boolean);
 
   const hasCourses = rows.length > 0 || moreCourses.length > 0 || offeredRows.length > 0;
+  // A section with nothing to show is left out, and so is its tab — no empty boxes.
   const sections = [
     { id: 'overview', label: 'Overview' },
-    photos.length && { id: 'photos', label: 'Photos' },
+    galleryPhotos.length && { id: 'photos', label: 'Photos' },
     hasCourses && { id: 'courses', label: rows.length || offeredWithFees ? 'Courses & fees' : 'Courses' },
     hasPlacements && { id: 'placements', label: 'Placements' },
-    hasCampus && { id: 'campus', label: 'Campus & activities' },
+    hasCampus && { id: 'campus', label: 'Campus life' },
+    awards.length && { id: 'awards', label: 'Awards' },
     { id: 'admissions', label: 'Admissions' },
     { id: 'accreditation', label: 'Accreditation' },
-    { id: 'contact', label: 'Contact & location' },
-    { id: 'similar', label: 'Similar' },
+    { id: 'contact', label: 'Contact' },
+    similar.length && { id: 'similar', label: 'Similar' },
   ].filter(Boolean);
 
   return {
-    item, rows, summary, moreCourses, similar, shortName, place, ribbon, highlights, accreditation, status,
-    contacts, address, mapQuery, about, aboutSource, sections, hasCourses,
-    directory, snapshotOn, directorySources, sourceUrl, photos, heroImage, chips,
+    item, rows, summary, moreCourses, similar, shortName, place, glance, highlights, accreditation, status,
+    contacts, address, mapQuery, about, aboutSource, sections, hasCourses, awards,
+    directory, snapshotOn, directorySources, sourceUrl, photos: galleryPhotos, heroImage, chips, chipsNote,
     offeredRows, offeredWithFees, offeredSource,
-    placementStats, recruiters, placementYear, placementSource: text(placements.sourcePage), hasPlacements,
+    placementStats, recruiters, placementYear, placementNote, placementSource: text(placements.sourcePage) || text(latestSeason?.sourcePage), hasPlacements,
+    placementHistory, historyColumns,
     campusFacts, facilities, activities, campusSource: text(campus.sourcePage), hasCampus,
     entranceExams, admissionNote, gaps,
   };

@@ -4,12 +4,12 @@ import Link from 'next/link';
 import Icon from '@/components/ui/Icon';
 import { useCatalog } from '@/providers/CatalogProvider';
 import { usePreferences } from '@/providers/PreferencesProvider';
-import { countByPlace, emptyCount, placeHref, programmeLabel } from '@/features/home/placeCounts';
+import { countByPlace, institutionLabel, mergePlaceCount, placeHref } from '@/features/home/placeCounts';
 import { DestinationArt, LocationBackdrop } from './LocationArtwork';
 import styles from './LocationDiscovery.module.css';
 
 function CountBadge({ count }) {
-  return <span className={styles.badge} data-empty={!count.programmes}>{programmeLabel(count)}</span>;
+  return <span className={styles.badge} data-empty={!count.institutions}>{institutionLabel(count)}</span>;
 }
 
 // variant "home": homepage section 2 with links to /locations.
@@ -20,8 +20,9 @@ export default function LocationDiscovery({ variant = 'home' }) {
   const counts = useMemo(() => countByPlace(colleges, course), [colleges, course]);
   const courseName = courses.find((item) => item.id === course)?.name;
   const home = variant === 'home';
-  const countFor = (name) => counts.get(name) || emptyCount;
-  const label = (name) => `Explore ${courseName ? `${courseName} ` : ''}colleges in ${name} — ${programmeLabel(countFor(name))}`;
+  // Badges count the real directory records for the place; the course choice carries into the link.
+  const countFor = (place) => mergePlaceCount(place, counts);
+  const label = (place) => `Explore ${courseName ? `${courseName} ` : ''}colleges in ${place.name} — ${institutionLabel(countFor(place))}`;
 
   return <section id="study-destinations" className={styles.section} aria-labelledby="destinations-title" data-variant={variant}>
     <LocationBackdrop className={styles.backdrop} />
@@ -39,16 +40,16 @@ export default function LocationDiscovery({ variant = 'home' }) {
             <Icon name="chevron" />
           </label>
         </div>
-        <p>{home ? 'Choose a city or state to explore colleges, courses and fees.' : 'Landmark tiles for popular study cities and states. Counts follow the course you choose.'}</p>
+        <p>{home ? 'Choose a city or state to explore colleges, courses and fees.' : 'Landmark tiles for popular study cities and states, with the number of institutions listed in each.'}</p>
         {home && <Link className={`text-link ${styles.viewAll}`} href="/locations">View all destinations<Icon name="arrow" /></Link>}
       </div>
 
       <ul className={styles.cityGrid} aria-label="Study destinations by city">
         {studyCities.map((destination) => <li key={destination.name}>
-          <Link className={styles.cityTile} href={placeHref(destination.name, course)} aria-label={label(destination.name)}>
+          <Link className={styles.cityTile} href={placeHref(destination.name, course)} aria-label={label(destination)}>
             <DestinationArt destination={destination} className={styles.cityImage} />
             <span className={styles.cityTitle}>{destination.name}<Icon name="arrow" /></span>
-            <CountBadge count={countFor(destination.name)} />
+            <CountBadge count={countFor(destination)} />
             <span className={styles.cityAction}>Explore colleges<Icon name="arrow" /></span>
           </Link>
         </li>)}
@@ -62,15 +63,15 @@ export default function LocationDiscovery({ variant = 'home' }) {
         </div>
         <ul className={styles.stateGrid} aria-label="Study destinations by state">
           {studyStates.map((destination) => <li key={destination.name}>
-            <Link className={styles.stateTile} href={placeHref(destination.name, course)} aria-label={label(destination.name)}>
+            <Link className={styles.stateTile} href={placeHref(destination.name, course)} aria-label={label(destination)}>
               <DestinationArt destination={destination} className={styles.stateImage} />
               <span className={styles.stateTitle}>{destination.name}<Icon name="arrow" /></span>
-              <CountBadge count={countFor(destination.name)} />
+              <CountBadge count={countFor(destination)} />
             </Link>
           </li>)}
         </ul>
       </section>
-      <p className={styles.footer}>Your course choice carries into location results. Counts come from the illustrative sample catalogue{courseName ? ` for ${courseName}` : ''}.</p>
+      <p className={styles.footer}>Your course choice carries into location results{courseName ? ` for ${courseName}` : ''}. Counts are institutions in the Gyaan Vidhya directory, not a ranking.</p>
     </div>
   </section>;
 }

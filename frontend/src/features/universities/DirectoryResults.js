@@ -2,9 +2,27 @@ import Icon from '@/components/ui/Icon';
 import { DirLink, ResultsRegion, RetryButton } from './DirectoryState';
 import FilterBar, { ActiveFilters } from './FilterBar';
 import UniversityCard from './UniversityCard';
+import UniversityRow from './UniversityRow';
 import { FILTER_KEYS, clearedFilters, directoryHref, pageWindow } from './directory-url';
 import { CATEGORY_LABELS, OWNERSHIP_LABELS, TYPE_LABELS, formatCount, labelOf } from './labels';
 import styles from './Directory.module.css';
+import listing from './Listing.module.css';
+
+// Detailed rows by default (photo, fee, placement side by side); the grid is for scanning names
+// quickly. The choice is a URL parameter so it survives filtering, sharing and the back button.
+const VIEWS = [
+  { value: 'list', label: 'Detailed', icon: 'uniRows' },
+  { value: 'grid', label: 'Grid', icon: 'uniGrid' },
+];
+
+function ViewToggle({ params, view }) {
+  return <div className={listing.toggle} role="group" aria-label="Result layout">
+    {VIEWS.map((option) => <DirLink key={option.value} href={directoryHref(params, { view: option.value === 'list' ? '' : option.value, page: params.page || '' })}
+      aria-current={view === option.value ? 'true' : undefined} toResults={false}>
+      <Icon name={option.icon} /><span>{option.label}</span>
+    </DirLink>)}
+  </div>;
+}
 
 const FILTER_NAMES = { state: 'State', city: 'City', type: 'Type', category: 'Category', ownership: 'Ownership', stream: 'Stream', course: 'Course', naac: 'NAAC' };
 
@@ -24,7 +42,7 @@ function Pagination({ params, page, pages }) {
   </nav>;
 }
 
-export default function DirectoryResults({ params, result, facets, courses }) {
+export default function DirectoryResults({ params, result, facets, courses, view = 'list' }) {
   const courseNames = Object.fromEntries(courses.map((course) => [course.id, course.name]));
   const list = (rows, labels) => rows.map((row) => ({ value: row.value, label: labels ? labelOf(labels, row.value) : row.value, count: row.count }));
   const showCategory = facets.categories.some((row) => row.value !== 'other') || params.category;
@@ -64,12 +82,17 @@ export default function DirectoryResults({ params, result, facets, courses }) {
             : result.total ? <><strong>{formatCount(result.total)}</strong> {result.total === 1 ? 'result' : 'results'}{pages > 1 && <> · showing {formatCount(from)}–{formatCount(to)}</>}</>
               : 'No universities match these filters.'}</p>
         </div>
-        <ActiveFilters chips={chips} />
+        <div className={styles.headSide}>
+          <ActiveFilters chips={chips} />
+          {result.items.length > 0 && <ViewToggle params={params} view={view} />}
+        </div>
       </header>
 
       <ResultsRegion className={styles.region}>
-        {result.items.length > 0 ? <ul className={styles.grid}>
+        {result.items.length > 0 ? view === 'grid' ? <ul className={styles.grid}>
           {result.items.map((item) => <li key={item.id}><UniversityCard item={item} courseNames={courseNames} /></li>)}
+        </ul> : <ul className={listing.list}>
+          {result.items.map((item) => <li key={item.id}><UniversityRow item={item} /></li>)}
         </ul> : <div className={`lux-state ${styles.state}`}>
           <Icon name={result.failed ? 'refresh' : 'search'} />
           <h3 className="lux-title">{result.failed ? 'We could not load the directory' : 'No universities found'}</h3>

@@ -24,7 +24,7 @@ export const universitiesRouter = Router();
 // Public: the small landing-page set. Everything below requires a session.
 universitiesRouter.get('/featured', async (request, response) => {
   response.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=600');
-  response.json(await featuredUniversities(request.query.limit));
+  response.json(await featuredUniversities(request.query.limit, request.query.course));
 });
 
 universitiesRouter.use((_request, response, next) => {

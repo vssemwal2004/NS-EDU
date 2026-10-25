@@ -6,11 +6,6 @@
 .heroVisual { position: absolute; top: 34px; right: 4.5%; bottom: 0; width: 43%; overflow: hidden; border-radius: 86px 142px 0 0; animation: reveal var(--motion-reveal) var(--ease-out) both; }
 .heroImage { display: block; width: 100%; height: 100%; }
 .artwork { display: none; position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
-.centerQuote, .leftQuote, .rightQuote { position: absolute; font-family: var(--hero-quote-font); color: var(--color-accent); opacity: .8; font-size: 1.05rem; line-height: 1.18; z-index: 1; }
-.centerQuote { left: 49%; top: 46px; width: 78px; }
-.centerQuote span, .rightQuote span { display: block; width: 24px; height: 1px; background: var(--color-primary); margin-top: var(--space-4); }
-.leftQuote { left: 18px; bottom: 24px; font-size: .88rem; }
-.rightQuote { right: 12px; top: 38px; font-size: .88rem; width: 68px; }
 .searchBox { max-width: 720px; position: relative; margin-top: var(--space-6); }
 .tabs { display: flex; gap: var(--space-2); padding-inline: var(--space-1); }
 .tabs button { min-width: 124px; min-height: 44px; border: 1px solid var(--color-border); border-bottom: 0; border-radius: var(--radius-control) var(--radius-control) 0 0; padding: var(--space-3) var(--space-6); background: var(--color-page); color: var(--color-text); font-weight: 600; font-size: var(--text-small); }
@@ -23,11 +18,10 @@
 .searchInput input::placeholder { color: var(--color-muted); }
 .heroSearch > button { min-width: 145px; border-radius: var(--radius-search); font-size: var(--text-body); }
 .heroSearch > button svg { display: none; }
-.fields { display: flex; gap: var(--space-3); margin-top: var(--space-5); justify-content: space-around; max-width: 660px; padding-left: 64px; }
-.fields a { text-decoration: none; display: flex; flex-direction: column; align-items: center; gap: var(--space-2); min-width: 66px; padding: var(--space-1); border: 0; background: transparent; font-size: .72rem; color: var(--color-text); }
-.fieldIcon { display: grid; place-items: center; border-radius: var(--radius-pill); background: var(--color-accent-soft); width: 52px; height: 52px; color: var(--color-accent); transition: background var(--motion-fast), transform var(--motion-fast); }
-.fieldIcon svg { width: 26px; height: 26px; }
-.fields a:hover .fieldIcon { background: var(--color-surface); transform: translateY(-2px); }
+/* One quiet line of proof under the search, counted live from the directory. */
+.trust { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-5); margin: var(--space-5) 0 0; padding: 0; list-style: none; color: var(--color-muted); font-size: var(--text-small); font-weight: 600; }
+.trust li { display: inline-flex; align-items: center; gap: var(--space-2); }
+.trust svg { width: 16px; height: 16px; flex: none; padding: 2px; border-radius: 50%; background: var(--color-primary); color: var(--color-surface); stroke-width: 3; }
 .discovery { padding-block: var(--space-6) var(--space-5); }
 .courseRow { display: flex; align-items: center; gap: var(--space-6); padding-bottom: var(--space-6); }
 .courseIntro { min-width: 275px; }
@@ -48,7 +42,6 @@
 .shortcut:hover h3 { text-decoration: underline; text-underline-offset: 4px; }
 .shortcut:hover > svg:last-child { transform: translateX(3px); }
 @media (max-width: 1500px) {
-  .centerQuote { display: none; }
   .courseIntro { min-width: 240px; }
   .courseRow { gap: var(--space-5); }
   .courseLinks { gap: var(--space-2); }
@@ -59,12 +52,8 @@
   .heroInner { min-height: 485px; padding-block: var(--space-10) var(--space-6); }
   .heroContent { width: 55%; }
   .heroVisual { right: 0; width: 42%; border-radius: 72px 110px 0 0; }
-  .leftQuote, .rightQuote { display: none; }
   .heroContent h1 { font-size: clamp(2.6rem, 4.9vw, 3.7rem); }
   .desktopBreak { display: none; }
-  .fields { gap: var(--space-3); padding-left: 0; justify-content: flex-start; overflow-x: auto; scrollbar-width: thin; padding-bottom: var(--space-2); }
-  .fields a { flex: 0 0 70px; }
-  .fieldIcon { width: 46px; height: 46px; }
   .searchInput { padding-inline: var(--space-3); gap: var(--space-2); }
   /* 16px: anything smaller makes iOS Safari zoom the page when the field is tapped. */
   .searchInput input { font-size: 16px; }
@@ -78,23 +67,22 @@
   .shortcut:nth-child(3) { padding-left: 0; }
 }
 @media (max-width: 767px) {
-  .heroInner { display: flex; flex-direction: column; min-height: 0; padding-top: var(--space-8); padding-bottom: 0; }
+  /* Phones: the photo is a slim banner above the headline, so the search and the popular-course
+     chips below it fit on the first screen instead of sitting under a tall picture. */
+  .heroInner { display: flex; flex-direction: column; min-height: 0; padding-top: var(--space-4); padding-bottom: var(--space-6); }
   .heroContent { width: 100%; }
-  .heroContent h1 { font-size: clamp(2.5rem, 7.4vw, 4.2rem); max-width: 660px; }
-  .heroDescription { font-size: .9375rem; margin-top: var(--space-4); margin-bottom: var(--space-5); max-width: 520px; }
+  .heroContent h1 { font-size: clamp(2.1rem, 9vw, 3.4rem); line-height: 1.02; max-width: 660px; }
+  .heroDescription { font-size: .9375rem; margin-top: var(--space-3); margin-bottom: 0; max-width: 520px; }
   .searchBox { margin-top: var(--space-5); }
+  .trust { gap: var(--space-2) var(--space-4); margin-top: var(--space-4); font-size: .75rem; }
+  .trust svg { width: 14px; height: 14px; }
   .tabs button { min-width: 0; flex: 1; padding-inline: var(--space-4); }
   .heroSearch { gap: var(--space-2); padding: var(--space-2); }
   .searchInput { padding-inline: var(--space-2); gap: var(--space-2); }
   .searchInput input { min-height: 44px; font-size: 16px; }
   .searchInput > svg { width: 18px; }
   .heroSearch > button { min-width: 78px; font-size: .8rem; padding-inline: var(--space-3); border-radius: var(--radius-control); }
-  /* 3×2 grid so every field (incl. Law and Commerce) is visible without scrolling. */
-  .fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); overflow: visible; padding: var(--space-2) 0 0; margin-top: var(--space-4); gap: var(--space-2) var(--space-3); max-width: 420px; }
-  .fields a { min-width: 0; font-size: .72rem; min-height: 76px; justify-content: flex-start; }
-  .fieldIcon { width: 44px; height: 44px; }
-  .fieldIcon svg { width: 23px; height: 23px; }
-  .heroVisual { position: relative; inset: auto; width: 100%; aspect-ratio: var(--hero-mobile-photo-ratio); margin-top: var(--space-5); border-radius: 32px 56px 0 0; }
+  .heroVisual { position: relative; inset: auto; width: 100%; aspect-ratio: 1.8; margin-bottom: var(--space-5); border-radius: 24px 48px 24px 24px; }
   .artwork { display: none; }
   .discovery { padding-top: var(--space-5); }
   .courseIntro h2 { font-size: 1.35rem; }
@@ -148,8 +136,8 @@
   .artwork { inset: auto 0 0 auto; width: calc(1672 * var(--photo-scale)); height: calc(564 * var(--photo-scale)); }
   .heroInner { height: 100%; min-height: 0; padding: 8cqh var(--hero-gutter) 3cqh; }
   .heroContent { width: min(53%, var(--hero-text-width)); }
-  /* "Find a college that" is ~7.4em wide: shrink before it can wrap to three lines on tall screens. */
-  .heroContent h1 { font-size: min(var(--text-title), 15cqh, var(--hero-text-width) / 7.6); line-height: .97; }
+  /* "Find the college that" is ~8.4em wide: shrink before it can wrap to three lines on tall screens. */
+  .heroContent h1 { font-size: min(var(--text-title), 15cqh, var(--hero-text-width) / 8.6); line-height: .97; }
   .desktopBreak { display: inline; }
   .heroDescription { font-size: min(1.44vw, 4.3cqh, 1.6rem); line-height: 1.35; margin: 2cqh 0 0; }
   .heroVisual { top: 0; right: 0; width: 50.6%; border-radius: 0; }
@@ -160,18 +148,10 @@
   .searchInput { padding-inline: var(--space-4); }
   .searchInput input { min-height: 0; height: 100%; font-size: var(--text-control); padding-block: 0; }
   .heroSearch > button { min-height: 0; min-width: 22%; font-size: min(1.2vw, 3.7cqh, 1.25rem); }
-  .fields { margin-top: 3cqh; max-width: min(690px, calc(var(--photo-edge-low) - var(--hero-inner-left) - var(--hero-gutter) - 1.5cqw)); padding: 0 0 0 min(3vw, 3.5rem); gap: min(.8vw, 12px); justify-content: space-between; overflow: visible; }
-  /* Items keep their label width (long labels like "Management" never touch neighbours);
-     icon and label sizes are capped so the row stays clear of the photo on tall screens. */
-  .fields a { flex: 1 1 0; min-width: max-content; font-size: min(.9vw, 2.7cqh, .875rem); padding: 0; gap: 1cqh; }
-  .fieldIcon { width: clamp(30px, min(11cqh, 4vw), 64px); height: clamp(30px, min(11cqh, 4vw), 64px); }
-  .fieldIcon svg { width: 50%; height: 50%; }
-  .centerQuote { display: block; top: 7%; font-size: min(1.3vw, 4cqh, 1.5rem); width: min(5.5vw, 6rem); left: calc(var(--photo-edge-top) - var(--hero-inner-left) - min(5.5vw, 6rem) - 1.25cqw); }
-  /* On wide-but-short heroes the quote would meet the headline: hide it there. */
-  @container (max-aspect-ratio: 26/10) { .centerQuote { display: none; } }
-  .leftQuote { display: block; left: 1.6%; bottom: 4.5%; font-size: min(.98vw, 3cqh, 1.2rem); }
-  /* Anchored to the hero's right edge (not the capped container) so it stays over the sketch, clear of the photo. */
-  .rightQuote { display: block; right: calc(1.25cqw - var(--hero-inner-left)); top: 6.5%; width: min(6vw, 7rem); font-size: min(.98vw, 3cqh, 1.2rem); }  .discovery { padding: 3.25dvh var(--discovery-gutter) 3.5dvh; display: grid; grid-template-rows: minmax(0, .48fr) minmax(0, .52fr); }
+  /* Without the field-icon row the text block is shorter, so it sits in the vertical middle. */
+  .heroInner { display: flex; align-items: center; padding-block: 3cqh; }
+  .trust { margin-top: 3.5cqh; font-size: min(1vw, 2.9cqh, 1rem); gap: 1cqh 2vw; }
+  .discovery { padding: 3.25dvh var(--discovery-gutter) 3.5dvh; display: grid; grid-template-rows: minmax(0, .48fr) minmax(0, .52fr); }
   /* vw sizes are capped: content width stops at --content-width, the viewport does not. */
   .courseRow { flex-wrap: nowrap; gap: min(1.3vw, 1.5rem); padding-bottom: 3dvh; }
   .courseIntro { flex: none; min-width: min(22.5vw, 24rem); }

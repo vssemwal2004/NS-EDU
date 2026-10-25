@@ -27,6 +27,22 @@ insightsRouter.post('/events', limit(captureLimiter, 'Too many events. Please sl
   response.status(202).json(result);
 });
 
+// The homepage's "colleges for you": the same engine, open to everyone, because it returns only the
+// basic card details the public featured set already shows. A visitor who accepted personalisation
+// gets suggestions from their own searches and views; anyone else gets the top institutions for the
+// course, ranked by NIRF and NAAC. `personalised` tells the page which of the two it received.
+const COURSE = /^[a-z0-9-]{1,40}$/;
+insightsRouter.get('/home', limit(recommendLimiter, 'Too many requests. Please try again shortly.'), async (request, response) => {
+  const course = queryString(request.query.course, 40).toLowerCase();
+  const result = await recommendUniversities({
+    studentId: request.student?._id ?? null,
+    visitorId: request.visitorId,
+    limit: Math.min(Number.parseInt(request.query.limit, 10) || 6, 12),
+    course: COURSE.test(course) ? course : '',
+  });
+  response.json({ ...result, items: result.items.map(({ score: _score, matched: _matched, ...item }) => item) });
+});
+
 // Recommendations hand back directory records, so they sit behind the same gate as /api/universities.
 // Capture above stays open: a visitor may search before signing in, and those events follow them in.
 insightsRouter.get('/recommendations', requireStudentOrAdmin, limit(recommendLimiter, 'Too many requests. Please try again shortly.'), async (request, response) => {

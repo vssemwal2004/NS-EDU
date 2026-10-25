@@ -17,10 +17,13 @@ describe('search tracking and recommendations', { skip }, () => {
   let server; let base; let db; let closeDb; let resetRateLimits; let normalize; let recommend; let events;
   let adminCookie; let studentCookie;
 
-  async function api(path, { method = 'GET', body, cookie, headers = {} } = {}) {
+  // Activity is only captured for visitors who accepted personalisation cookies, so requests carry
+  // that consent unless a test passes `consent: null` (or 'essential') to check the opposite.
+  async function api(path, { method = 'GET', body, cookie, headers = {}, consent = 'all' } = {}) {
+    const cookies = [consent && `gv_consent=${consent}`, cookie].filter(Boolean).join('; ');
     const response = await fetch(`${base}${path}`, {
       method,
-      headers: { ...(body !== undefined && { 'content-type': 'application/json' }), ...(cookie && { cookie }), ...headers },
+      headers: { ...(body !== undefined && { 'content-type': 'application/json' }), ...(cookies && { cookie: cookies }), ...headers },
       body: body === undefined ? undefined : JSON.stringify(body),
     });
     const text = await response.text();
@@ -250,6 +253,67 @@ describe('search tracking and recommendations', { skip }, () => {
     assert.equal(page.body.student.email, 'drill@example.com');
     assert.deepEqual(page.body.items.map((item) => item.query), ['query 2', 'query 3'], 'newest first, page 2');
     assert.equal((await api('/api/admin/insights/students/nope', { cookie: adminCookie })).status, 404);
+  });
+
+  test('without personalisation consent nothing is stored and no visitor id is issued', async () => {
+    const before = await db.collection('student_events').countDocuments({});
+    for (const consent of [null, 'essential']) {
+      const result = await api('/api/insights/events', { method: 'POST', consent, body: { events: [{ type: 'search', query: 'no consent', city: 'Pune' }] } });
+      assert.equal(result.status, 202);
+      assert.deepEqual(result.body, { accepted: 0, dropped: 1, consent: false });
+      assert.equal(cookieFrom(result, 'gv_visitor'), undefined, `no id is minted (${consent ?? 'undecided'})`);
+    }
+    assert.equal(await db.collection('student_events').countDocuments({}), before);
+  });
+
+  test('a cookie decision is stored anonymously, sets the consent cookie and withdrawal clears the visitor id', async () => {
+    assert.equal((await api('/api/consent', { method: 'POST', consent: null, body: { choice: 'maybe' } })).status, 400);
+    const accepted = await api('/api/consent', { method: 'POST', consent: null, body: { choice: 'all' } });
+    assert.equal(accepted.status, 204);
+    const raw = cookieFrom(accepted, 'gv_consent');
+    assert.match(raw, /^gv_consent=all;/);
+    assert.doesNotMatch(raw, /HttpOnly/i, 'the page reads it to decide whether to show the banner');
+    assert.match(raw, /Max-Age=15552000/);
+
+    const withdrawn = await api('/api/consent', { method: 'POST', consent: 'all', cookie: 'gv_visitor=66666666-6666-4666-8666-666666666666', body: { choice: 'essential' } });
+    assert.match(cookieFrom(withdrawn, 'gv_visitor'), /^gv_visitor=;/, 'the personalisation id is removed straight away');
+    const rows = await db.collection('consent_events').find({}).toArray();
+    assert.deepEqual(rows.map((row) => [row.choice, row.changed]), [['all', false], ['essential', true]]);
+    assert.deepEqual(Object.keys(rows[0]).toSorted(), ['_id', 'at', 'changed', 'choice'], 'no visitor id, IP or browser details');
+  });
+
+  test('the homepage suggestions are public, follow the course and personalise only with consent', async () => {
+    const visitorId = '77777777-7777-4777-8777-777777777777';
+    await seedEvents(visitorId, [{ type: 'search', query: 'engineering pune', city: 'Pune', state: 'Maharashtra', stream: 'Engineering', results: 2, at: new Date() }]);
+    const anonymous = await api('/api/insights/home?course=mba', { consent: null });
+    assert.equal(anonymous.status, 200);
+    assert.equal(anonymous.body.personalised, false);
+    assert.deepEqual(anonymous.body.items.map((item) => item.id), ['pune-college-of-management'], 'only institutions offering the course');
+    assert.equal(anonymous.body.items[0].score, undefined, 'internal scores stay internal');
+
+    recommend.invalidateRecommendationCache();
+    const personal = await api('/api/insights/home?course=btech', { cookie: `gv_visitor=${visitorId}` });
+    assert.equal(personal.body.personalised, true);
+    assert.equal(personal.body.items[0].id, 'pune-institute-of-engineering', 'the Pune search outranks Delhi');
+    assert.match(personal.body.items[0].reason, /^Because you searched/);
+
+    recommend.invalidateRecommendationCache();
+    const declined = await api('/api/insights/home?course=btech', { consent: 'essential', cookie: `gv_visitor=${visitorId}` });
+    assert.equal(declined.body.personalised, false, 'a stale visitor cookie is ignored once consent is withdrawn');
+  });
+
+  test('the admin cookie report counts decisions and estimates visitors', async () => {
+    assert.equal((await api('/api/admin/insights/consent')).status, 401);
+    const report = await api('/api/admin/insights/consent?days=30', { cookie: adminCookie });
+    assert.equal(report.status, 200);
+    assert.equal(report.body.days, 30);
+    assert.deepEqual(report.body.totals, { all: 1, essential: 1 });
+    assert.equal(report.body.decisions, 2);
+    assert.equal(report.body.changed, 1);
+    assert.equal(report.body.acceptanceRate, 0.5);
+    assert.ok(report.body.trackedVisitors > 0);
+    assert.equal(report.body.estimatedVisitors, Math.round(report.body.trackedVisitors / 0.5));
+    assert.equal(report.body.daily.reduce((sum, row) => sum + row.all + row.essential, 0), 2);
   });
 
   test('the raw-event TTL index expires activity after 180 days', async () => {

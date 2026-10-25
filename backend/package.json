@@ -10,8 +10,15 @@
     "seed": "node --env-file-if-exists=.env --env-file-if-exists=.env.local src/scripts/seed.js",
     "images:migrate": "node --env-file-if-exists=.env --env-file-if-exists=.env.local src/scripts/migrate-images.js",
     "benchmark:universities": "node --env-file-if-exists=.env --env-file-if-exists=.env.local src/scripts/benchmark-universities.js",
-    "scrape": "node --env-file-if-exists=.env --env-file-if-exists=.env.local src/scripts/scrape.js",
+    "scrape": "node --max-old-space-size=1024 --env-file-if-exists=.env --env-file-if-exists=.env.local src/scripts/scrape.js",
+    "crawl": "node --max-old-space-size=2048 --env-file-if-exists=.env --env-file-if-exists=.env.local src/scripts/scrape.js work --concurrency 24",
+    "sync:ugc-websites": "node --env-file-if-exists=.env --env-file-if-exists=.env.local src/scripts/sync-ugc-websites.js",
     "import:directory": "node --env-file-if-exists=.env --env-file-if-exists=.env.local src/scripts/import-directory.js",
+    "catalogue": "node --env-file-if-exists=.env --env-file-if-exists=.env.local src/scripts/course-catalogue.js",
+    "curate":"node --env-file-if-exists=.env --env-file-if-exists=.env.local src/scripts/curate-institutions.js",
+    "repair:aiher-programmes": "node --env-file-if-exists=.env --env-file-if-exists=.env.local src/scripts/repair-aiher-programmes.js",
+    "repair:official-fallbacks": "node --env-file-if-exists=.env --env-file-if-exists=.env.local src/scripts/repair-official-index-fallbacks.js",
+    "repair:official-fallbacks:dry-run": "node --env-file-if-exists=.env --env-file-if-exists=.env.local src/scripts/repair-official-index-fallbacks.js --dry-run",
     "db:local": "node scripts/local-mongo.mjs",
     "db:copy": "node --env-file-if-exists=.env src/scripts/copy-database.js"
   },
@@ -23,7 +30,10 @@
     "jsonwebtoken": "^9.0.3",
     "mongodb": "^6.20.0",
     "node-html-parser": "^9.0.4",
-    "nodemailer": "^6.10.1"
+    "nodemailer": "^6.10.1",
+    "playwright": "^1.63.0",
+    "sharp": "^0.35.5",
+    "unpdf": "1.8.1"
   },
   "engines": {
     "node": ">=22.12.0"

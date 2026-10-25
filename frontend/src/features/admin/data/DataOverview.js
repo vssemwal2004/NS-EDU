@@ -9,6 +9,10 @@ import table from '../ResourceManager.module.css';
 
 const SOURCE_LABELS = { seed: 'Seed data', admin: 'Admin console', import: 'File import', scrape: 'Official websites', unknown: 'Unknown' };
 const JOB_ORDER = ['queued', 'running', 'done', 'failed', 'skipped', 'cancelled'];
+const COVERAGE_LABELS = [
+  ['about', 'Description'], ['photos', 'Campus photos'], ['programmes', 'Programme list'], ['courses', 'Linked to courses'],
+  ['fees', 'Published fees'], ['placements', 'Placement figures'], ['placementSeasons', 'Two or more placement seasons'],
+];
 
 export default function DataOverview() {
   const { request } = useAdminSession();
@@ -61,6 +65,15 @@ export default function DataOverview() {
         {data && <p>{formatCount(scraper.sources.total)} crawl sources ({formatCount(scraper.sources.neverCrawled)} never crawled). {scraper.workers.length ? `${scraper.workers.length} worker${scraper.workers.length === 1 ? '' : 's'} running.` : 'No worker is running right now.'}</p>}
         {scraper?.lastRun && <p>Last run {formatDate(scraper.lastRun.createdAt)} by {scraper.lastRun.createdBy}: {formatCount(scraper.lastRun.counts.done)} done, {formatCount(scraper.lastRun.counts.failed)} failed, {formatCount(scraper.lastRun.counts.queued + scraper.lastRun.counts.running)} still open.</p>}
       </section>
+
+      {data?.coverage && <section className={styles.card} aria-labelledby="coverage-title">
+        <h2 id="coverage-title">Profile depth</h2>
+        <p>How many records carry each kind of content. The scraper fills these from official websites, fee documents and placement reports.</p>
+        <ul className={styles.bars}>{COVERAGE_LABELS.map(([key, label]) => <li key={key}>
+          <span>{label}</span><span aria-hidden="true"><i style={{ width: `${((data.coverage[key] ?? 0) / Math.max(1, institutions.total)) * 100}%` }} /></span>
+          <strong>{formatCount(data.coverage[key] ?? 0)}</strong>
+        </li>)}</ul>
+      </section>}
 
       <section className={styles.card} aria-labelledby="export-title">
         <h2 id="export-title">Export</h2>

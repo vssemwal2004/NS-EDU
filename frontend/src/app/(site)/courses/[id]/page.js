@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import CourseDetail from '@/features/courses/CourseDetail';
-import { getCatalog } from '@/lib/api/catalog';
+import { firstParam } from '@/features/courses/data';
+import { getCatalog, getCourseOfferings } from '@/lib/api/catalog';
 
 // Rendered on demand (no generateStaticParams): admins can add courses at any time.
 async function findCourse(params) {
@@ -15,8 +16,12 @@ export async function generateMetadata({ params }) {
   return { title: `${name} — colleges, fees & exams | Gyaan Vidhya`, description: course.summary };
 }
 
-export default async function CoursePage({ params }) {
-  const { course, catalog } = await findCourse(params);
+const OFFERING_KEYS = ['state', 'sort', 'page'];
+
+export default async function CoursePage({ params, searchParams }) {
+  const [{ course, catalog }, search] = await Promise.all([findCourse(params), searchParams]);
   if (!course) notFound();
-  return <CourseDetail course={course} catalog={catalog} />;
+  const filters = Object.fromEntries(OFFERING_KEYS.map((key) => [key, firstParam(search[key])]).filter(([, value]) => value));
+  const offerings = await getCourseOfferings(course.id, new URLSearchParams(filters).toString());
+  return <CourseDetail course={course} catalog={catalog} offerings={offerings} filters={filters} />;
 }

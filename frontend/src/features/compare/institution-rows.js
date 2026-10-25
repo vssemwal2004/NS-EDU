@@ -1,4 +1,4 @@
-import { formatCount, hostOf, kindOf, lakhRange, ownershipOf, placeOf, shortDate } from '@/features/universities/labels';
+import { formatCount, hostOf, kindOf, lakhRange, nirfPairs, ownershipOf, placeOf, shortDate, usableAbout } from '@/features/universities/labels';
 
 // Builds the /compare board from /api/universities/:slug payloads. Rules, in order of importance:
 //  1. Nothing is invented. A field the record does not carry renders as "Not published".
@@ -29,7 +29,8 @@ const yearLabel = (value) => {
 
 function feeFacts(detail) {
   const offered = (Array.isArray(detail.item?.programmesOffered) ? detail.item.programmesOffered : [])
-    .map((row) => ({ fee: num(row?.annualFeeInr ?? row?.annualTuitionInr), year: yearLabel(row?.feeYear ?? row?.tuitionYear) }))
+    // Scraped programme rows carry no fee year; the board then says so instead of guessing one.
+    .map((row) => ({ fee: num(row?.annualFeeInr), year: '' }))
     .filter((row) => row.fee != null);
   const curated = (Array.isArray(detail.programmes) ? detail.programmes : [])
     .map((row) => ({ fee: num(row?.annualTuitionInr), year: yearLabel(row?.tuitionYear) }))
@@ -62,8 +63,10 @@ function placementFacts(detail) {
 const campusOf = (item) => (item?.campus && typeof item.campus === 'object' ? item.campus : {});
 const dirOf = (item) => (item?.directory && typeof item.directory === 'object' ? item.directory : {});
 
+// The crawler stores `campus.hostelAvailable` (true/false); `hostel` is accepted for records an
+// admin has written by hand.
 function hostelText(campus) {
-  const value = campus.hostel;
+  const value = first(campus.hostelAvailable, campus.hostel);
   if (typeof value === 'boolean') return value ? 'Yes' : 'Not available';
   const raw = text(value);
   if (!raw) return '';
@@ -111,11 +114,24 @@ export function institutionFacts(detail) {
     placements: placementFacts(detail ?? {}),
     hostel: hostelText(campus),
     coEd: coEdText(campus),
-    facilities: list(campus.facilities ?? item.facilities),
-    activities: list(campus.activities ?? item.activities ?? campus.clubs),
-    campusSize: first(num(campus.sizeAcres), num(campus.areaAcres)),
-    admission: [...list(item.admissionRoutes), ...list(item.admissionExams), text(dir.selectionBasis)].filter(Boolean),
+    facilities: list(item.facilities),
+    activities: list(item.activities),
+    campusSize: num(campus.sizeAcres),
+    // Entrance exams the institution names on its admissions pages, then the directory's own note.
+    admission: [...list(item.entranceExams), text(dir.selectionBasis)].filter(Boolean),
+    admissionNote: text(item.admissionNote),
+    about: firstSentence(item.about),
+    awards: (Array.isArray(item.awards) ? item.awards : []).map((row) => ({ title: text(row?.title), year: num(row?.year) })).filter((row) => row.title),
   };
+}
+
+// One sentence of the institution's own description — enough to tell two places apart in a column.
+function firstSentence(value) {
+  const about = usableAbout(value).replace(/\s+/g, ' ');
+  if (!about) return '';
+  const stop = about.search(/[.!?](\s|$)/);
+  const sentence = stop > 40 ? about.slice(0, stop + 1) : about;
+  return sentence.length > 200 ? `${sentence.slice(0, 197).trimEnd()}…` : sentence;
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -153,18 +169,17 @@ function naacCell(facts) {
   };
 }
 
+// NIRF publishes a separate table per subject, so a rank is only meaningful with its list.
+// The directory stores them either as parallel arrays or as the source's own text
+// ("Engineering: 1; Overall: 1; Research: 2"); read both, and never print a bare "#1".
 function nirfCell(facts) {
   const { item, dir } = facts;
-  const ranks = Array.isArray(dir.nirfRanks) ? dir.nirfRanks : [];
-  const categories = list(dir.nirfCategories);
-  const pairs = ranks.length === categories.length && ranks.length
-    ? ranks.map((rank, index) => `#${rank} ${categories[index]}`)
-    : [];
-  if (pairs.length) return { value: pairs.join(' · '), sub: item.nirfYear ? `NIRF ${item.nirfYear}` : '', tag: 'Source-reported' };
+  const pairs = nirfPairs(dir);
+  if (pairs.length) return { value: joinMax(pairs, 4), sub: item.nirfYear ? `NIRF ${item.nirfYear}` : '', tag: 'Source-reported' };
   if (item.nirfRank == null) return { ...MISSING };
   return {
-    value: `#${item.nirfRank}`,
-    sub: [item.nirfYear && `NIRF ${item.nirfYear}`, categories.length && categories.join(', ')].filter(Boolean).join(' · '),
+    value: `${item.nirfCategory ? `${item.nirfCategory} ` : ''}#${item.nirfRank}`,
+    sub: [item.nirfYear && `NIRF ${item.nirfYear}`, !item.nirfCategory && 'List not recorded'].filter(Boolean).join(' · '),
     tag: 'Source-reported',
   };
 }
@@ -210,6 +225,7 @@ const SECTION_DEFS = [
     id: 'compare-identity',
     label: 'Institution',
     rows: [
+      { key: 'about', label: 'About', cell: (f) => cell(f.about, { sub: f.about ? 'From the institution’s website' : '' }) },
       { key: 'location', label: 'Location', cell: (f) => cell(f.place, { sub: [text(f.item.district) && `${text(f.item.district)} district`, text(f.item.pincode)].filter(Boolean).join(' · ') }) },
       { key: 'kind', label: 'Type & ownership', cell: (f) => cell(kindOf(f.item), { sub: ownershipOf(f.item) }) },
       { key: 'established', label: 'Established', cell: (f) => (f.item.establishedYear ? { value: String(f.item.establishedYear), sub: `${new Date().getFullYear() - f.item.establishedYear} years` } : { ...MISSING }) },
@@ -225,6 +241,9 @@ const SECTION_DEFS = [
       { key: 'naac', label: 'NAAC', cell: naacCell },
       { key: 'nirf', label: 'NIRF rank', cell: nirfCell },
       { key: 'approvals', label: 'Approvals', cell: approvalCell },
+      { key: 'awards', label: 'Awards listed', cell: (f) => (f.awards.length
+        ? { value: `${f.awards.length} ${f.awards.length === 1 ? 'award' : 'awards'}`, sub: f.awards.map((award) => award.year).filter(Boolean).length ? `Latest ${Math.max(...f.awards.map((award) => award.year ?? 0))}` : '', foot: f.awards[0].title }
+        : { ...MISSING }) },
     ],
   },
   {
@@ -235,16 +254,16 @@ const SECTION_DEFS = [
       { key: 'levels', label: 'Programmes by level', cell: (f) => (f.levels.length ? { value: f.levels.map((group) => `${group.level}: ${group.items.length}`).join(' · '), sub: f.levels.map((group) => joinMax(group.items, 3)).join(' | ') } : { ...MISSING }) },
       { key: 'examples', label: 'Example programmes', cell: (f) => cell(joinMax(f.programmeNames, 6) || f.courses.map((course) => course.name).join(' · ')) },
       { key: 'streams', label: 'Streams', cell: (f) => cell(joinMax(list(f.item.streams), 6)) },
-      { key: 'admission', label: 'Admission route', cell: (f) => cell(joinMax(f.admission, 4), { sub: f.item.admissionUrl ? 'Admissions page linked below' : '' }) },
+      { key: 'admission', label: 'Entrance exams', cell: (f) => cell(joinMax(f.admission, 4), { sub: f.item.admissionUrl ? 'Admissions page linked below' : '', foot: f.admissionNote }) },
     ],
   },
   {
     id: 'compare-campus',
     label: 'Campus & student life',
     rows: [
-      { key: 'campusSize', label: 'Campus size', cell: (f) => (f.campusSize != null ? { value: `${f.campusSize} acres` } : cell(text(f.campus.sizeNote))) },
-      { key: 'setting', label: 'Setting', cell: (f) => cell(text(f.campus.setting) || text(f.dir.area)) },
-      { key: 'hostel', label: 'Hostel', cell: (f) => cell(f.hostel, { sub: text(f.campus.hostelNote) }) },
+      { key: 'campusSize', label: 'Campus size', cell: (f) => (f.campusSize != null ? { value: `${f.campusSize} acres` } : { ...MISSING }) },
+      { key: 'setting', label: 'Setting', cell: (f) => cell(text(f.dir.area)) },
+      { key: 'hostel', label: 'Hostel', cell: (f) => cell(f.hostel) },
       { key: 'coEd', label: 'Co-ed / single sex', cell: (f) => cell(f.coEd) },
       { key: 'facilities', label: 'Facilities', cell: (f) => (f.facilities.length ? { value: joinMax(f.facilities, 8), sub: `${f.facilities.length} listed` } : { ...MISSING }) },
       { key: 'activities', label: 'Clubs & activities', cell: (f) => (f.activities.length ? { value: joinMax(f.activities, 8), sub: `${f.activities.length} listed` } : { ...MISSING }) },

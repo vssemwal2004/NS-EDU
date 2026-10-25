@@ -39,6 +39,19 @@ export function domainOf(url) {
   }
 }
 
+// Hostname + path. Many Indian university groups give every constituent college its own path on
+// one hostname (charusat.ac.in/cspit vs /rpcp), so the hostname alone does not identify an
+// institution — only the full site key does.
+export function siteKeyOf(url) {
+  try {
+    const parsed = new URL(url);
+    const path = parsed.pathname.toLowerCase().replace(/\/(index|home|default)\.(html?|php|aspx?)$/, '/').replace(/\/+$/, '');
+    return `${parsed.hostname.toLowerCase().replace(/^www\./, '')}${path}`;
+  } catch {
+    return '';
+  }
+}
+
 export const acronymOf = (name) => wordsOf(name).filter((word) => !/^\d+$/.test(word)).map((word) => word[0]).join('');
 
 // Derived fields are recomputed on every write so search never drifts from the visible data.

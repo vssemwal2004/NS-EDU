@@ -8,6 +8,7 @@ import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { closeDb, COLLECTIONS, getDb } from '../db/collections.js';
+import { classify } from '../modules/universities/directory-taxonomy.js';
 import { upsertUniversities } from '../modules/universities/university-service.js';
 
 const args = process.argv.slice(2);
@@ -49,33 +50,6 @@ function readRows(xlsxPath) {
 }
 
 // --- mapping ---------------------------------------------------------------------------------
-const TYPE = { university: 'university', college: 'college', institute: 'institute' };
-const typeOf = (category, institutionType) => {
-  const text = `${category} ${institutionType}`.toLowerCase();
-  if (text.includes('university')) return TYPE.university;
-  if (text.includes('institute') || text.includes('standalone')) return TYPE.institute;
-  return TYPE.college;
-};
-const categoryOf = (institutionType, management) => {
-  const text = `${institutionType} ${management}`.toLowerCase();
-  if (text.includes('central')) return 'central-university';
-  if (text.includes('deemed')) return 'deemed-university';
-  if (text.includes('state') && text.includes('univ')) return 'state-university';
-  if (text.includes('private') && text.includes('univ')) return 'private-university';
-  if (text.includes('national importance')) return 'institute-of-national-importance';
-  if (text.includes('affiliated')) return 'affiliated-college';
-  if (text.includes('constituent')) return 'affiliated-college';
-  if (text.includes('standalone')) return 'standalone-institution';
-  return 'other';
-};
-const ownershipOf = (management) => {
-  const text = String(management).toLowerCase();
-  if (text.includes('private un-aided') || text.includes('private unaided')) return 'private';
-  if (text.includes('aided')) return 'public-private';
-  if (text.includes('government') || text.includes('central') || text.includes('state') || text.includes('university')) return 'public';
-  if (text.includes('private')) return 'private';
-  return 'unknown';
-};
 // A few rows carry an email address in the website column; keep it as the institutional contact.
 const EMAIL = /^[^\s@]+@[a-z0-9-]+(\.[a-z0-9-]+)+$/i;
 const emailOf = (value) => { const text = String(value).trim().replace(/^www\./i, ''); return EMAIL.test(text) ? text.toLowerCase() : ''; };
@@ -92,16 +66,26 @@ const websiteOf = (value) => {
   } catch { return ''; }
 };
 const yearOf = (value) => { const year = Number.parseInt(value, 10); return Number.isInteger(year) && year >= 1800 && year <= new Date().getFullYear() ? year : null; };
-// "Pharmacy: 52" or "Engineering: 101-150" → the best (lowest) numeric rank in the row.
-const nirfOf = (value) => {
-  const ranks = [...String(value).matchAll(/:\s*(\d+)/g)].map((match) => Number(match[1])).filter((rank) => rank > 0 && rank <= 1000);
-  return ranks.length ? Math.min(...ranks) : null;
+// "Pharmacy: 52; Engineering: 101-150" → the best (lowest) numeric rank in the row, WITH the list
+// it belongs to. NIRF publishes per-subject tables, so the category is part of the fact.
+export const nirfOf = (value) => {
+  const ranks = [...String(value).matchAll(/([^;:]+):\s*(\d+)/g)]
+    .map((match) => ({ category: match[1].trim().slice(0, 60), rank: Number(match[2]) }))
+    .filter((entry) => entry.rank > 0 && entry.rank <= 1000);
+  return ranks.length ? ranks.reduce((best, entry) => (entry.rank < best.rank ? entry : best)) : null;
 };
 const NAAC_GRADES = new Set(['A++', 'A+', 'A', 'B++', 'B+', 'B', 'C', 'D']);
 const titleCase = (text) => String(text).toLowerCase().replace(/\b([a-z])/g, (match) => match.toUpperCase())
   .replace(/\b(Of|And|For|In|At|The|To)\b/g, (match) => match.toLowerCase()).replace(/^(.)/, (match) => match.toUpperCase());
 // Directory names are shouty and carry the AISHE code; keep them readable without inventing anything.
-const cleanName = (raw) => titleCase(String(raw).replace(/^\d{4,}-/, '').replace(/\s+/g, ' ').trim()).slice(0, 200);
+// The separator is sometimes spaced ("150028 - Tapi Valley …") and sometimes not.
+const cleanName = (raw) => titleCase(String(raw).replace(/^\s*\d{3,}\s*[-–—]\s*/, '').replace(/\s+/g, ' ').trim()).slice(0, 200);
+// Empty cells arrive as the literal string NULL ("College Road, NULL, Kottayam").
+const commaList = (raw) => String(raw).split(',').map((part) => part.trim()).filter((part) => part && !/^null$/i.test(part)).join(', ');
+// A website in the "Affiliating university" column is not an affiliation; the scrape-time cleanup
+// in src/scripts/curate-institutions.js resolves these to a name where it can.
+const LOOKS_LIKE_URL = /^(https?:\/\/|www\.)|^[a-z0-9-]+(\.[a-z0-9-]+)+\/?$/i;
+const affiliationOf = (raw) => { const text = String(raw).trim(); return LOOKS_LIKE_URL.test(text) ? '' : text.slice(0, 200); };
 
 function toRecord(row, headerIndex) {
   const get = (label) => String(row[headerIndex[label]] ?? '').trim();
@@ -112,23 +96,29 @@ function toRecord(row, headerIndex) {
   const naacGrade = get('NAAC grade (Aug 2025 snapshot)').toUpperCase();
   const aisheCode = get('AISHE code');
   const sources = [get('Directory source'), get('NAAC source'), get('AICTE source'), get('NIRF source')].filter(Boolean);
+  const nirf = nirfOf(get('NIRF 2025 category ranks'));
+  // A university-level or standalone institution has no affiliating university, and in this source
+  // its own address was filed in that column instead (1,390 rows, JNU and AIIMS among them). The
+  // cell is only read as a website when the row cannot have an affiliation and has no website of
+  // its own — for a college the same cell would be its parent university's site, not the college's.
+  const ownRow = /^(university-level|standalone)/i.test(get('Institution category'));
+  const strayWebsite = ownRow ? websiteOf(get('Affiliating university')) : '';
   return {
     name,
     shortName: '',
     city: district || state,
     district,
     state: state || null,
-    type: typeOf(get('Institution category'), get('Institution type')),
-    category: categoryOf(get('Institution type'), get('Management / ownership')),
-    ownership: ownershipOf(get('Management / ownership')),
+    ...classify(get('Institution type'), get('Management / ownership')),
     establishedYear: yearOf(get('Established year')),
-    website: websiteOf(get('Website (source-reported)')),
+    website: websiteOf(get('Website (source-reported)')) || strayWebsite,
     email: emailOf(get('Website (source-reported)')),
-    address: get('Address (source-reported)').replace(/\s*,\s*/g, ', ').slice(0, 400),
-    affiliatedTo: get('Affiliating university').slice(0, 200),
+    address: commaList(get('Address (source-reported)')).slice(0, 400),
+    affiliatedTo: affiliationOf(get('Affiliating university')),
     naacGrade: NAAC_GRADES.has(naacGrade) ? naacGrade : '',
-    nirfRank: nirfOf(get('NIRF 2025 category ranks')),
-    nirfYear: nirfOf(get('NIRF 2025 category ranks')) ? 2025 : null,
+    nirfRank: nirf?.rank ?? null,
+    nirfYear: nirf ? 2025 : null,
+    nirfCategory: nirf?.category ?? '',
     aliases: aisheCode ? [aisheCode] : [],
     sourceUrl: sources[0] || '',
     // Everything below is a historical snapshot from the file, never a current approval claim.

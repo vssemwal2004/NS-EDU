@@ -57,7 +57,7 @@ export default function ExamDetail({ exam, catalog }) {
           <h2 id="courses-title" className="lux-display-3">Courses {exam.name} is commonly used for</h2>
           <p>General guidance — confirm each programme’s admission route in its official prospectus.</p>
         </header>
-        {courses.length ? <ul className={styles.courses}>{courses.map(({ course, stats }) => <li key={course.id}><CourseCard course={course} stats={stats} /></li>)}</ul>
+        {courses.length ? <ul className={styles.courses}>{courses.map(({ course }) => <li key={course.id}><CourseCard course={course} institutions={catalog.stats?.courseCounts?.[course.id] ?? 0} /></li>)}</ul>
           : <div className={`lux-state ${styles.empty}`}>
             <Icon name="book" /><p className="lux-title">No course is linked to {exam.name} yet</p>
             <Link className="lux-button lux-button--outline" href="/courses">Browse courses</Link>

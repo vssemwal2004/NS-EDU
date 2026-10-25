@@ -127,5 +127,10 @@ describe('image pipeline: store', () => {
     assert.equal(stored.length, 3);
     assert.deepEqual(calls.map((call) => call.publicId), ['photo-1', 'photo-2', 'photo-3'], 'a rejected image must not leave a gap');
     assert.equal(pipeline.stats.skipped, 1);
+    let checks = 0;
+    const bounded = await pipeline.processMany(candidates.filter((item) => !item.url.includes('small')), {
+      slug: 'bounded', want: 4, shouldContinue: () => checks++ < 2,
+    });
+    assert.equal(bounded.length, 2, 'a job deadline can stop the image loop between downloads');
   });
 });

@@ -1,6 +1,6 @@
 # Gyaan Vidhya — University Discovery & Admissions Platform
 
-Last updated: 18 October 2026 (IST)
+Last updated: 20 October 2026 (IST)
 
 > Formerly "NSEDU". Sections below the "Earlier history" marker describe earlier rounds and keep the old name where it was historically accurate. Internal identifiers (`nsedu_*` cookies, the `nsedu` database, browser-storage keys, npm package names) were deliberately kept so existing sessions and data keep working.
 
@@ -19,6 +19,7 @@ Last updated: 18 October 2026 (IST)
 | Dynamic content | Student-facing copy, guides, tool settings and image references live in MongoDB (`site_content`) and are edited in **Admin → Site content**. | `backend/src/modules/content/` |
 | Images | Cloudinary media library (direct signed browser uploads) and a one-command migration of the site images. | `backend/src/lib/cloudinary.js`, `/admin/media`, `npm run images:migrate` |
 | Production basics | Security headers + CSP, compression, request ids + JSON access logs, global rate limit, liveness/readiness checks, fail-fast production config, graceful shutdown, error pages, robots.txt, sitemaps for every university, Dockerfiles, docker-compose and CI. | see "Operations" below |
+| Depth phase | 9,334 real institutions imported, deep scraping (about, photos, programmes, placements, facilities, campus, admissions), Cloudinary image pipeline, institution compare board, activity tracking and recommendations. | see "Depth phase" below |
 
 ### Measured performance (20,000 synthetic universities, MongoDB Atlas, cold cache)
 
@@ -58,6 +59,189 @@ docker compose up --build                  # production-like stack (API + web) a
 - **Production config:** with `NODE_ENV=production` the API refuses to start without `MONGODB_URI`, a 32+ character `JWT_SECRET`, and a real OTP provider (`OTP_DELIVERY=console` prints login codes to logs; `ALLOW_CONSOLE_OTP=true` overrides it for staging only).
 - **Scaling notes:** caches and rate limits are per API process (60 s staleness across instances at most). For more than one API instance, move rate limits to Redis or the load balancer. The search design works on any MongoDB; Atlas Search would add typo tolerance later without changing the API contract.
 - **Logs:** one JSON line per request in production (no query strings, so search terms and tokens are not logged); every response carries `X-Request-Id`, and 500 responses return it for support.
+
+## Depth phase — real directory, scraped detail, images, tracking
+
+The directory stopped being a schema with sample rows in it. **9,334 real Indian institutions**
+(7,620 colleges, 1,688 universities, 26 institutes) were imported from an AISHE-derived directory
+spreadsheet, a deep scraper now fills campus detail from each institution's own website, photographs
+are re-hosted on Cloudinary, and search/view activity drives recommendations.
+
+### Honesty rules for this data (non-negotiable)
+
+The source spreadsheet is **a curated directory of dated snapshots, not a ranking and not a register
+of current approvals**. Everything downstream has to keep saying so.
+
+- **NAAC / AICTE / UGC / NBA values are historical snapshots.** Every one is shown with its snapshot
+  date, the source link and the source's own wording (`directory.naacNote`, `aicteNote`, `ugcNote`,
+  `nbaNote`). Never present one as a current, verified approval.
+- **NIRF ranks are per-subject.** NIRF publishes one table per discipline, so `nirfRank` is stored
+  with `nirfCategory` and always rendered as "Pharmacy #13 · 2025". A bare "#13" reads as an overall
+  rank and is not allowed — `/compare` prints every category pair it has
+  ("Engineering #48 · University #31 · Overall #49").
+- **Nothing is invented.** No fees, photos, placements, reviews or ratings are generated. A field the
+  record does not carry renders as "Not published" or is left out; a blank cell means *not published*,
+  not zero. The compare board only marks a "better" figure when the metric, the data year and the
+  kind of data (all real, or all illustrative) match.
+- **`popularity` is a listing order, not a verdict.** See "Curation" below.
+- **One deliberate exception: the illustrative sample set.** 11 fictional institutions
+  (`isIllustrative: true`, `northfield-tech`, `meadow-engineering`, …) and their 29 programmes are the
+  only records carrying tuition, placement and "demo rating" figures, and they are what the landing
+  page's course explorer, the fee ledger and the budget planner run on. They are labelled
+  "Illustrative data" wherever they appear — but they are also `active: true`, so they sit inside the
+  public directory, are searchable, and are counted in the 9,334. Either keep them and accept that,
+  or retire them and accept that the explorer, `/compare?course=` and the budget planner lose their
+  only fee and placement data. Nothing scraped or imported invents a figure.
+- **`placements.recruiters` is the weakest scraped field** (read from alt text on recruiter walls).
+  Treat it as unverified and consider gating it behind admin review before showing it widely.
+
+### Record identity — one hostname is not one institution
+
+`upsertUniversities()` matches an incoming row to a stored record by, in order: an explicit `slug`,
+the website **host + name**, the **name + state/city**, and only then the **whole site key**
+(host *and* path, `siteKeyOf` in `normalize.js`).
+
+The site key matters. Indian university groups publish every constituent college under one hostname
+(`charusat.ac.in/cspit` and `charusat.ac.in/rpcp`; `nitte.edu.in/nsftid` and `nitte.edu.in/absmids`),
+so an earlier "only one record on this host, so it must be the same institution" rule folded distinct
+colleges into one chimera record — the slug of one, the name, address, established year and NIRF rank
+of another. A scrape job also now passes its source's `institutionSlug`, so an extracted site name can
+never land on a sibling college. `test/universities.test.js` covers both.
+
+> **Known data debt (20 October 2026).** 77 of the 9,334 records were written by the old rule and
+> still carry a name that does not belong to their slug, and the rows they absorbed are missing from
+> the directory. Re-running `npm run import:directory` against the source spreadsheet with the fixed
+> matcher restores them; do it with **no scraper worker running**, or the pass races a writer that
+> still has the old code in memory.
+
+### Importing the directory
+
+```bash
+cd backend
+npm run import:directory -- "C:\path\to\directory.xlsx"        # add --dry-run to parse only
+```
+
+Each record keeps `source {kind:'import', url, fetchedAt, fields}` plus a verbatim `directory`
+sub-document (`aisheCode`, `managementLabel`, `institutionType`, `area`, `affiliatingAishe`,
+`selectionBasis`, `nirfCategories`, `nirfRanks`, `naacCgpa`, `naacDeclaredOn`, `naacCycle`,
+`naacNote`, `aicteId`, `aicteNote`, `ugcNote`, `nbaNote`, `compiledOn`, `sources[]`). Type, category
+and ownership are derived from the source's own institution-type vocabulary in
+`backend/src/modules/universities/directory-taxonomy.js`, not from keyword-matching the free-text
+management column.
+
+### Curation — `npm run curate`
+
+```bash
+cd backend
+node src/scripts/curate-institutions.js              # idempotent; safe to re-run
+node src/scripts/curate-institutions.js --dry-run    # report only, write nothing
+node src/scripts/curate-institutions.js --rescore-all # recompute popularity for every record
+```
+
+> `npm run curate -- --dry-run` does **not** work: npm swallows `--`-prefixed flags before the
+> script sees them, so a "dry run" launched that way writes for real. Call `node` directly for flags.
+> The same trap applies to `npm run scrape -- <cmd> --flag`.
+
+It does five things, all of them data-only:
+
+1. **Listing prominence → `popularity`.** The import left every record at 0, so the default
+   "relevance" order (popularity, then name) was alphabetical and the directory opened on rows whose
+   names began with a digit. The score is a published, auditable formula (`SCORE` in the script):
+   NIRF rank, NAAC grade, type, category and record completeness. **It is an ordering aid, not a
+   Gyaan Vidhya ranking or a quality judgement** — it decides what a student sees first when they
+   have not sorted or filtered. `popularity` is also the admin "Popularity boost" field, so by
+   default only records still at 0 are written.
+2. **`affiliatedTo`** held a website for ~1,400 rows (and, for a university, its own site). Each is
+   resolved to the affiliating institution's name via `directory.affiliatingAishe`, or dropped.
+3. **Addresses** keep the literal string `NULL` out of "College Road, NULL, Kottayam".
+4. **Type / category / ownership** are re-derived through `directory-taxonomy.js`.
+5. **`nirfCategory`** is recovered from `directory.nirfRanks`, and plain-`http://` logos are dropped
+   — the site's CSP allows `img-src https:`, so they could only ever render broken.
+
+Re-run it after a scraping pass: the scraper writes new NIRF/NAAC values and new records start at
+`popularity: 0`, which leaves their order stale until the next `--rescore-all`.
+
+### Scraper enrichment
+
+`backend/src/scraper/` (see its own `README.md`) honours robots.txt, keeps a per-host delay and
+leases jobs from `scrape_jobs`. It writes **only** through `upsertUniversities()`, so admin-locked
+fields are never overwritten and an empty value never blanks a stored one. Beyond the original
+contact/approval extraction it now fills, all optional and absent when unknown:
+
+| Field | Shape | Notes |
+| --- | --- | --- |
+| `about` / `aboutSource` | text ≤1500 / url | factual sentences only; marketing copy is dropped |
+| `gallery` | ≤8 × `{url, caption?, credit, sourcePage?, width?, height?}` | Cloudinary `secure_url`; `credit` defaults to "official website" |
+| `coverUrl` | url | set from `gallery[0]` only when no cover existed |
+| `programmesOffered` | ≤200 × `{name, level?, durationYears?, annualFeeInr?, feeNote?, sourcePage?}` | a fee is stored only when the page prints a per-year INR amount |
+| `placements` | `{year?, averagePackageLpa?, medianPackageLpa?, highestPackageLpa?, placedPercent?, recruiters?, sourcePage?}` | absent when the site printed nothing; a median is never derived from an average |
+| `facilities` / `activities` | ≤20 canonical labels each | "Hostel", "Library", "NSS", "Cultural fest" … |
+| `campus` | `{sizeAcres?, hostelAvailable?, coEd?, sourcePage?}` | `hostelAvailable` is only ever `true`; absent ≠ "no hostel" |
+| `admissionNote` / `entranceExams` | text ≤400 / ≤12 canonical exam names | "JEE Main", "NEET UG", "CUET UG" … |
+
+```bash
+cd backend
+node src/scripts/scrape.js import-sources        # one scrape_source per institution with a website
+node src/scripts/scrape.js enqueue --all
+node src/scripts/scrape.js work --concurrency 8 --watch
+node src/scripts/scrape.js status
+node src/scripts/scrape.js retry-failed | cancel-queued
+node src/scripts/enrich-images.js --limit 200    # photo pass only
+```
+
+New env (documented in `backend/.env.example`): `SCRAPER_MAX_IMAGES` (default 6, `0` disables),
+`SCRAPER_JOB_TIMEOUT_MS` (default 480000). `SITE_URL` should be set before any large run so the
+crawler identifies itself with a contact URL and the `/bot` page.
+
+### Cloudinary image pipeline
+
+`backend/src/lib/image-pipeline.js` (`createImagePipeline`, `prepareImage`, `IMAGE_LIMITS`) downloads
+a candidate photograph **from the institution's own domain only**, re-encodes it with `sharp`, and
+uploads it to Cloudinary under a fixed public id so a correction or a takedown overwrites rather than
+accumulates. `frontend/next.config.mjs` allows `res.cloudinary.com`, so those photos go through
+`next/image`; anything hosted elsewhere falls back to a plain lazy `<img>` with no resizing.
+
+> **Copyright.** A campus photograph is a creative work; "facts are not copyrightable" does not cover
+> it. Every row keeps `credit` and `sourcePage`, but before this runs beyond a pilot get written
+> permission from the institutions or fall back to hot-linking. Treat a takedown as binding and
+> immediate: delete the Cloudinary objects (`destroyImage`) as well as the `gallery` rows.
+
+### Tracking and recommendations
+
+`student_events` records what students search for and open, so the directory can learn and the admin
+can see where the catalogue has gaps.
+
+- **Stored per event:** `type` (`search` | `view` | `filter` | `apply-open` | `compare`), `query`,
+  `institutionSlug`, `state`, `city`, `stream`, `courseSlug`, `results`, the **route only** (never its
+  query string), `at`, and either a `studentId` or an anonymous `gv_visitor` id.
+- **Not stored:** IP addresses, user agents, full URLs, referrers.
+- **Retention:** a TTL index deletes every row after 180 days. Do Not Track is honoured — nothing is
+  queued and nothing is sent. Batches are capped at 20 events, one request per 5 s.
+- `TrackingProvider` wraps the site layout; `<TrackEvent>` lets a server page record one event without
+  becoming a client component; `useTracking()` exposes `trackSearch/trackFilter/trackView/...`.
+- `GET /api/insights/recommendations` needs a student session and returns `/api/universities`-shaped
+  items with a `reason`, rendered by `<RecommendedUniversities />` on the directory, each profile and
+  `/account`.
+- **Admin → Search insights** (`/admin/insights`) reports events by type, top searches, **searches
+  with no results** (the content-gap list — this is why `results` is recorded), most-viewed
+  institutions, places and streams in demand, and per-student activity.
+
+### Checks
+
+```bash
+npm run lint                                                   # root → eslint src tests *.mjs
+npm test --workspace backend                                   # node --test, 114 tests
+cd frontend && $env:PLAYWRIGHT_PORT='3000'; npx playwright test # 36 e2e tests
+cd frontend && $env:NEXT_DIST_DIR='.next-build'; npx next build # then delete .next-build
+```
+
+`PLAYWRIGHT_PORT` must name the port the shared dev server actually bound. `next dev` falls back to
+:3001 when :3000 is busy at start-up, and Playwright's `webServer` would otherwise try to start a
+second dev server, which Next refuses.
+
+`backend/src/config/env.js` loads `.env.local` ahead of `.env` (real environment variables still win),
+so a script or test helper started without node's `--env-file` reaches the same local database the
+API uses instead of silently falling back to the hosted one.
 
 ## Earlier history
 

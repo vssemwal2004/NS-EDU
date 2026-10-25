@@ -21,4 +21,8 @@ export default {
   uniClipboard: 'M9 3h6v3H9ZM7 5H5v16h14V5h-2M9 13l2 2 4-4',
   uniCompass: 'M3 11 21 3l-8 18-2-8-8-2Z',
   uniLayers: 'm12 3 9 5-9 5-9-5 9-5Zm-9 9 9 5 9-5',
+  uniPhotos: 'M3 6h12v12H3ZM3 15l3.5-3.5 3 3 3-3L15 14M6.5 9.5h.01M18 7h3v11H8',
+  uniTrend: 'm3 16 5.5-5.5 3.5 3.5L21 5m0 0h-5m5 0v5',
+  uniRows: 'M3 5h18M3 12h18M3 19h18',
+  uniGrid: 'M4 4h7v7H4ZM13 4h7v7h-7ZM4 13h7v7H4ZM13 13h7v7h-7Z',
 };

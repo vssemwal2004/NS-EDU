@@ -175,6 +175,16 @@ export async function listReviewQueue(query = {}) {
   return { items, total, page, limit, view, counts: { held, visible } };
 }
 
+const COVERAGE = {
+  about: { about: { $nin: [null, ''] } },
+  photos: { 'gallery.0': { $exists: true } },
+  programmes: { 'programmesOffered.0': { $exists: true } },
+  courses: { 'courseSlugs.0': { $exists: true } },
+  fees: { $or: [{ 'programmesOffered.annualFeeInr': { $type: 'number' } }, { 'programmesOffered.semesterFeeInr': { $type: 'number' } }, { 'programmesOffered.totalFeeInr': { $type: 'number' } }] },
+  placements: { $or: [{ 'placements.averagePackageLpa': { $type: 'number' } }, { 'placements.highestPackageLpa': { $type: 'number' } }, { 'placements.placedPercent': { $type: 'number' } }, { 'placementHistory.0': { $exists: true } }] },
+  placementSeasons: { 'placementHistory.1': { $exists: true } },
+};
+
 export async function dataOverview() {
   const [facets] = await (await institutions()).aggregate([{ $facet: {
     verification: [{ $group: { _id: '$verification', count: { $sum: 1 } } }],
@@ -182,6 +192,8 @@ export async function dataOverview() {
     hidden: [{ $match: { active: false } }, { $count: 'value' }],
     held: [{ $match: { active: false, verification: 'unverified' } }, { $count: 'value' }],
     total: [{ $count: 'value' }],
+    // Profile depth: how many records carry each kind of content the crawl fills in.
+    ...Object.fromEntries(Object.entries(COVERAGE).map(([key, filter]) => [`has_${key}`, [{ $match: filter }, { $count: 'value' }]])),
   } }]).toArray();
   const byKey = (rows) => Object.fromEntries(rows.map((row) => [row._id ?? 'unknown', row.count]));
   const verification = byKey(facets.verification);
@@ -190,6 +202,7 @@ export async function dataOverview() {
       total: facets.total[0]?.value ?? 0, verified: verification.verified ?? 0, unverified: (verification.unverified ?? 0) + (verification.unknown ?? 0), rejected: verification.rejected ?? 0,
       hidden: facets.hidden[0]?.value ?? 0, held: facets.held[0]?.value ?? 0, bySource: byKey(facets.source),
     },
+    coverage: Object.fromEntries(Object.keys(COVERAGE).map((key) => [key, facets[`has_${key}`][0]?.value ?? 0])),
     scraper: await queueStats(),
   };
 }

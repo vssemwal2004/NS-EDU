@@ -117,7 +117,7 @@ export default {
         },
         {
           title: 'Freshness, images and corrections',
-          text: 'The feed checks periodically and reports delayed or unavailable sources. Original publish dates stay visible. Reviewed neutral publisher photos can appear; other covers use education graphics. If information needs correcting, provide the page and supporting source.',
+          text: 'The feed checks periodically and reports delayed or unavailable sources. Original publish dates stay visible. Each story shows the photo its publisher supplies in the feed; a story without one uses an education graphic. If information needs correcting, provide the page and supporting source.',
           links: [{ label: 'Report a correction', href: '/report-correction' }],
         },
       ],
@@ -241,16 +241,24 @@ export default {
           text: 'Local storage is different from a cookie. The preview uses it so your choices remain when you return in the same browser: saved stories (nsedu.education.saved.v1), course and city preferences (nsedu:preferences), compare shortlists (nsedu:compare), recent searches (nsedu:recent-searches), your last log-in method (nsedu:login-channel) and guide checklist ticks (keys starting nsedu:guide-checklist:).',
         },
         {
-          title: 'Session cookie for log-in',
-          text: 'Logging in sets one essential, HTTP-only cookie (nsedu_student) that keeps your session. It is cleared when you log out and stops working when the session ends.',
+          title: 'Essential cookies (always on)',
+          text: 'Logging in sets one HTTP-only cookie (nsedu_student) that keeps your session; it is cleared when you log out and stops working when the session ends. A second cookie (gv_consent) remembers your cookie choice for 180 days so we do not ask again on every page.',
+        },
+        {
+          title: 'Personalisation cookie (only if you accept)',
+          text: 'If you choose “Accept all”, we set a random first-party id (gv_visitor, HTTP-only, 180 days) and record what you search for, the filters you use and the universities you open. We use this only to recommend colleges to you and to see, in aggregate, what students look for. We never store your IP address, browser details or full web addresses, and activity is deleted automatically after 180 days. If you choose “Essential only”, none of this is set or stored. We do not use advertising cookies or sell your data.',
+        },
+        {
+          title: 'Changing your choice',
+          text: 'Use “Cookie settings” at the bottom of any page to change your choice at any time. Choosing “Essential only” removes the personalisation id from your browser straight away.',
         },
         {
           title: 'Removing saved information',
-          text: 'Unsave a story in the news section, use Clear ticks on a guide checklist or clear Gyaan Vidhya’s site data in your browser settings. Clearing site data removes everything listed above from this browser. The present app code does not set analytics or advertising cookies.',
+          text: 'Unsave a story in the news section, use Clear ticks on a guide checklist or clear Gyaan Vidhya’s site data in your browser settings. Clearing site data removes everything listed above from this browser.',
         },
         {
           title: 'Future integrations',
-          text: 'This draft will be updated when hosting, analytics, account authentication or other integrations are chosen. No consent-management or tracking choices are simulated in this preview.',
+          text: 'This page will be updated before any new analytics or third-party service is added.',
           links: [{ label: 'Privacy policy preview', href: '/privacy-policy' }],
         },
       ],

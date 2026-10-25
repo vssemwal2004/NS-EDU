@@ -47,15 +47,47 @@ describe('scraper queue and worker', { skip }, () => {
     const listed = await sources.listSources({ q: 'state' });
     assert.deepEqual(listed.items.map((item) => [item.name, item.state, item.domain, item.seedListName]), [['Statecraft College', 'Kerala', 'statecraft-example.ac.in', 'JSON list']]);
     assert.equal((await sources.listSources({ q: 'dvit-example' })).total, 1);
+    const changing = await sources.createSource({ name: 'Changing Website Institute', website: 'changing-old-example.ac.in', institutionSlug: 'changing-website-institute' });
+    await db.collection('scrape_sources').updateOne({ _id: new ObjectId(changing.id) }, { $set: { lastJobAt: new Date(), lastResult: { status: 'done' } } });
+    await queue.enqueueSources({ mode: 'selected', sourceIds: [changing.id] });
+    const changed = await sources.updateSource(changing.id, { website: 'changing-new-example.ac.in' });
+    assert.deepEqual([changed.websiteKey, changed.lastJobAt, changed.lastResult], ['changing-new-example.ac.in', null, null]);
+    const staleJob = await db.collection('scrape_jobs').findOne({ sourceId: new ObjectId(changing.id), website: 'https://changing-old-example.ac.in/' });
+    assert.deepEqual([staleJob.status, staleJob.open], ['cancelled', undefined]);
+    await sources.deleteSource(changing.id);
+    const variant = await sources.createSource({ name: 'Host Variant Institute', website: 'www.variant-example.ac.in', institutionSlug: 'host-variant-institute' });
+    await queue.enqueueSources({ mode: 'selected', sourceIds: [variant.id] });
+    await sources.updateSource(variant.id, { website: 'https://variant-example.ac.in/' });
+    const variantJob = await db.collection('scrape_jobs').findOne({ sourceId: new ObjectId(variant.id) });
+    assert.deepEqual([variantJob.website, variantJob.status, variantJob.open], ['https://www.variant-example.ac.in/', 'cancelled', undefined]);
+    await sources.deleteSource(variant.id);
+    await db.collection('scrape_sources').updateOne({ name: 'Statecraft College' }, { $set: { lastJobAt: new Date(), lastResult: { status: 'done' } } });
+    await sources.importSources([{ name: 'Statecraft College', website: 'statecraft-example.ac.in', state: 'Kerala', institutionSlug: 'statecraft-college' }], { seedListName: 'Directory targets' });
+    const retargeted = await db.collection('scrape_sources').findOne({ name: 'Statecraft College' });
+    assert.deepEqual([retargeted.institutionSlug, retargeted.lastJobAt, retargeted.lastResult], ['statecraft-college', null, null]);
+    const shared = await sources.importSources([
+      { name: 'Example Constituent College', website: 'shared-campus-example.ac.in', type: 'college', institutionSlug: 'example-constituent-college' },
+      { name: 'Example University', website: 'shared-campus-example.ac.in', type: 'university', institutionSlug: 'example-university' },
+    ], { seedListName: 'Shared homepage targets' });
+    assert.equal(shared.duplicates, 1);
+    assert.equal((await db.collection('scrape_sources').findOne({ websiteKey: 'shared-campus-example.ac.in' })).institutionSlug, 'example-university');
+    await db.collection('scrape_sources').deleteOne({ websiteKey: 'shared-campus-example.ac.in' });
     await assert.rejects(sources.createSource({ name: 'Dup', website: 'https://www.statecraft-example.ac.in' }), (error) => error.status === 409);
   });
 
   test('leases are exclusive per job and per domain, failures back off and leases can be reclaimed', async () => {
     const a = await sources.createSource({ name: 'North Campus', website: 'https://north.multi-example.ac.in', state: 'Delhi', city: 'Delhi' });
     const b = await sources.createSource({ name: 'South Campus', website: 'https://south.multi-example.ac.in', state: 'Delhi', city: 'Delhi' });
+    await assert.rejects(
+      queue.enqueueSources({ sourceIds: [a.id] }),
+      (error) => error.status === 400 && /selected mode/.test(error.message),
+      'sourceIds must never be silently ignored by a broad enqueue mode',
+    );
     const run = await queue.enqueueSources({ mode: 'selected', sourceIds: [a.id, b.id], createdBy: 'test' });
     assert.deepEqual([run.queued, run.alreadyQueued], [2, 0]);
+    await db.collection('scrape_jobs').updateOne({ sourceId: new ObjectId(a.id), open: true }, { $set: { priority: 0 } });
     assert.equal((await queue.enqueueSources({ mode: 'selected', sourceIds: [a.id] })).alreadyQueued, 1, 'second open job for a source');
+    assert.equal((await db.collection('scrape_jobs').findOne({ sourceId: new ObjectId(a.id), open: true })).priority, 1, 'selected sources promote an existing queued job');
 
     const first = await queue.leaseJob('w1');
     assert.equal(first.host, 'multi-example.ac.in');
@@ -69,6 +101,8 @@ describe('scraper queue and worker', { skip }, () => {
     assert.equal(failed.final, false);
     assert.equal(failed.nextRunAt.getTime() - now.getTime(), 10 * MINUTE);
     assert.equal(queue.backoffMs(3, () => 0.5), 40 * MINUTE);
+    assert.equal(queue.retryBackoffMs({ attempts: 3, priority: 2 }, () => 0.5), 2 * MINUTE,
+      'serial quality batches use a short capped retry delay');
 
     const second = await queue.leaseJob('w2');
     assert.notEqual(second._id.toString(), first._id.toString());
@@ -107,6 +141,44 @@ describe('scraper queue and worker', { skip }, () => {
     await assert.rejects(queue.retryJobs({ ids: ['nope'] }), (error) => error.status === 400);
   });
 
+  test('quality batches select incomplete university profiles and exclude complete or illustrative records', async () => {
+    const incomplete = {
+      name: 'Quality Gap University', slug: 'quality-gap-university', website: 'https://quality-gap-example.ac.in/',
+      type: 'university', active: true,
+    };
+    const complete = {
+      name: 'Complete University', slug: 'complete-university', website: 'https://complete-example.ac.in/',
+      type: 'university', active: true, about: 'A'.repeat(100), programmesOffered: [{ name: 'B.Tech' }],
+      gallery: [{ url: 'https://res.cloudinary.com/demo/image/upload/campus.jpg' }], facilities: ['Library'],
+      placements: { medianPackageLpa: 6, sourcePage: 'https://complete-example.ac.in/placements' },
+    };
+    const illustrative = {
+      name: 'Illustrative University', slug: 'illustrative-university', website: 'https://illustrative-example.ac.in/',
+      type: 'university', active: true, isIllustrative: true,
+    };
+    await db.collection('institutions').insertMany([incomplete, complete, illustrative]);
+    const [gapSource, completeSource, illustrativeSource] = await Promise.all([
+      sources.createSource({ name: incomplete.name, website: incomplete.website, institutionSlug: incomplete.slug }),
+      sources.createSource({ name: complete.name, website: complete.website, institutionSlug: complete.slug }),
+      sources.createSource({ name: illustrative.name, website: illustrative.website, institutionSlug: illustrative.slug }),
+    ]);
+    const result = await queue.enqueueQualitySources({ limit: 1, createdBy: 'quality-test' });
+    assert.deepEqual([result.selected, result.queued, result.items[0].slug, result.items[0].gaps.length], [1, 1, incomplete.slug, 5]);
+    const job = await db.collection('scrape_jobs').findOne({ runId: new ObjectId(result.runId) });
+    assert.deepEqual([job.sourceId.toString(), job.priority], [gapSource.id, 2]);
+    await queue.cancelJobs({ runId: result.runId });
+    await db.collection('institutions').deleteMany({ slug: { $in: [incomplete.slug, complete.slug, illustrative.slug] } });
+    await db.collection('scrape_sources').deleteMany({ _id: { $in: [gapSource.id, completeSource.id, illustrativeSource.id].map((id) => new ObjectId(id)) } });
+  });
+
+  test('retries progressively reduce page and image work without changing the full first attempt', () => {
+    const config = { maxPages: 18, maxImages: 8, renderMaxPages: 9 };
+    assert.equal(worker.crawlConfigFor({ attempts: 1 }, config), config);
+    assert.deepEqual(worker.crawlConfigFor({ attempts: 2 }, config), { maxPages: 12, maxImages: 6, renderMaxPages: 9 });
+    assert.deepEqual(worker.crawlConfigFor({ attempts: 3 }, config), { maxPages: 8, maxImages: 4, renderMaxPages: 8 });
+    assert.deepEqual(worker.crawlConfigFor({ attempts: 4 }, config), { maxPages: 5, maxImages: 2, renderMaxPages: 5 });
+  });
+
   test('the worker crawls due jobs, applies the publish rule and records results', async () => {
     const site = (host, html) => ({ [`https://${host}/robots.txt`]: { status: 404 }, [`https://${host}/`]: { body: html } });
     const web = fakeWeb({
@@ -115,6 +187,8 @@ describe('scraper queue and worker', { skip }, () => {
       [`${SITE}/academics/programmes`]: { body: fixtures.programmes },
       ...site('hidden-example.ac.in', '<html><head><title>Hidden Hills College</title></head><body><p>A college in the hills.</p></body></html>'),
       ...site('statecraft-example.ac.in', '<html><head><title>Statecraft College</title></head><body><p>No address here.</p></body></html>'),
+      'https://statecraft-example.ac.in/about-us': { body: '<html><body><h1>About Statecraft College</h1><p>Statecraft College was established in 2005 to provide higher education in Kerala.</p></body></html>' },
+      'https://statecraft-example.ac.in/courses': { body: '<html><body><h1>Courses</h1><ul><li>Bachelor of Technology in Computer Science</li><li>Master of Business Administration</li></ul></body></html>' },
       'https://blocked-example.ac.in/robots.txt': { body: 'User-agent: *\nDisallow: /\n' },
       ...site('north.multi-example.ac.in', '<html><body><p>North Campus, Delhi 110007</p></body></html>'),
       ...site('south.multi-example.ac.in', '<html><body><p>South Campus, Delhi 110021</p></body></html>'),
@@ -140,7 +214,10 @@ describe('scraper queue and worker', { skip }, () => {
     assert.match(byName['Robots Blocked College'].error, /robots\.txt disallows/);
     // No city on the site, but the seed list's state is enough to place (and, with the website, publish) it.
     assert.equal(byName['Statecraft College'].status, 'done');
-    assert.equal((await institutions.findOne({ name: 'Statecraft College' })).city, undefined);
+    const statecraft = await institutions.findOne({ name: 'Statecraft College' });
+    assert.equal(statecraft.city, undefined);
+    assert.match(statecraft.about, /established in 2005/i);
+    assert.ok(statecraft.programmesOffered.some((row) => /Bachelor of Technology/i.test(row.name)));
     assert.deepEqual([byName['Doon Valley Institute of Technology'].result.action, byName['Doon Valley Institute of Technology'].result.published], ['inserted', true]);
     assert.ok(byName['Doon Valley Institute of Technology'].result.fields.includes('naacGrade'));
     assert.deepEqual(byName['Hidden Hills College'].result.missing, ['state']);

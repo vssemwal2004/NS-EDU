@@ -71,6 +71,11 @@ describe('scraper URL helpers', () => {
     assert.equal(normalizeWebsite('http://xyz.ac.in/home?x=1#top'), 'http://xyz.ac.in/home');
     assert.equal(normalizeWebsite('ftp://xyz.ac.in'), '');
     assert.equal(normalizeWebsite('not a site'), '');
+    assert.equal(normalizeWebsite('www.https//rlbcau.ac.in'), 'https://rlbcau.ac.in/');
+    assert.equal(normalizeWebsite('https://www.http//example.ac.in/path'), 'http://example.ac.in/path');
+    assert.equal(normalizeWebsite('https://0.0.0.58/university'), '');
+    assert.equal(normalizeWebsite('https://127.0.0.1'), '');
+    assert.equal(normalizeWebsite('https://[::1]/university'), '');
     assert.equal(websiteKey('https://www.XYZ.ac.in/'), websiteKey('http://xyz.ac.in'));
     assert.equal(isSameSite('https://admissions.xyz.ac.in/apply', 'xyz.ac.in'), true);
     assert.equal(isSameSite('https://xyz.ac.in.evil.com/', 'xyz.ac.in'), false);

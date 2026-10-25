@@ -24,6 +24,10 @@ export async function generateMetadata({ searchParams }) {
 export default async function UniversitiesPage({ searchParams }) {
   const raw = await searchParams;
   const params = Object.fromEntries(UNIVERSITY_QUERY_KEYS.map((key) => [key, text(raw[key])]).filter(([, value]) => value));
+  // Layout choice rides along in the query string; the detailed rows are the default, so only the
+  // grid is ever written to the URL. It is not part of the API query.
+  const view = text(raw.view) === 'grid' ? 'grid' : 'list';
+  if (view === 'grid') params.view = 'grid';
   const [, result, facets, catalog] = await Promise.all([
     requireStudentSession(),
     getUniversities(universityQuery(params)),
@@ -35,7 +39,7 @@ export default async function UniversitiesPage({ searchParams }) {
   return <main id="main" tabIndex={-1} className={styles.page}>
     <DirectoryProvider params={params}>
       <DirectoryHero params={params} facets={facets} result={result} />
-      <DirectoryResults params={params} result={result} facets={facets} courses={catalog.courses} />
+      <DirectoryResults params={params} result={result} facets={facets} courses={catalog.courses} view={view} />
       {searched && !result.failed && <TrackEvent event={{
         type: 'search', query: params.q, state: params.state, city: params.city,
         stream: params.stream, courseSlug: params.course, results: result.total ?? 0,

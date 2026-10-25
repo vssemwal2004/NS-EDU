@@ -6,15 +6,34 @@ import { upsertUniversities } from '../modules/universities/university-service.j
 import { scraperConfig } from './config.js';
 import { crawlSource, missingForPublish, shouldPublish } from './crawler.js';
 import { CrawlError, createFetcher, sleep } from './fetcher.js';
+import { createRenderer } from './renderer.js';
 import { extendLease, failJob, finishJob, leaseJob, releaseJob } from './queue.js';
 
 const SKIP_CODES = new Set(['robots', 'crawl-delay', 'not-html']);
 
 export async function loadCourses() {
-  return (await getDb()).collection(COLLECTIONS.courses).find({ active: { $ne: false } }, { projection: { _id: 0, slug: 1, name: 1, fullName: 1 } }).toArray();
+  return (await getDb()).collection(COLLECTIONS.courses).find({ active: { $ne: false } }, { projection: { _id: 0, slug: 1, name: 1, fullName: 1, aliases: 1 } }).toArray();
 }
 
 const describeErrors = (errors) => Object.entries(errors ?? {}).map(([field, message]) => `${field}: ${message}`).join('; ');
+
+// A retry should have a better chance than the attempt that already exhausted the whole-job
+// budget. Keep the first crawl rich; progressively trim secondary pages and photographs while
+// retaining the home page and core about/programme/placement discovery. Later quality batches can
+// revisit any remaining gaps instead of losing the entire institution repeatedly.
+export function crawlConfigFor(job, config) {
+  const attempt = Math.max(1, Number(job?.attempts) || 1);
+  if (attempt === 1) return config;
+  const budget = attempt === 2 ? { pages: 12, images: 6 }
+    : attempt === 3 ? { pages: 8, images: 4 }
+      : { pages: 5, images: 2 };
+  return {
+    ...config,
+    maxPages: Math.min(config.maxPages, budget.pages),
+    maxImages: Math.min(config.maxImages, budget.images),
+    renderMaxPages: Math.min(config.renderMaxPages, budget.pages),
+  };
+}
 
 // A site that answers every request just under the per-request timeout can hold a lane for hours.
 // The abandoned crawl finishes into nothing; the job goes back to the queue and is retried later.
@@ -35,13 +54,13 @@ export function pipelineFor(fetcher, { config, log } = {}) {
   return createImagePipeline({
     log,
     download: async (url, options) => {
-      const result = await fetcher.getFile(url, { domain: options.domain, types: options.types, maxBytes: options.maxBytes ?? config?.maxImageBytes });
-      return { contentType: result.contentType, body: result.body };
+      const result = await fetcher.getFile(url, { domain: options.domain, types: options.types, maxBytes: options.maxBytes ?? config?.maxImageBytes, cdn: true });
+      return { contentType: result.contentType, body: result.body, lastModified: result.lastModified };
     },
   });
 }
 
-export async function processJob(job, { fetcher, config, courses, workerId, images = null, now = () => new Date() }) {
+export async function processJob(job, { fetcher, config, courses, workerId, images = null, renderer = null, now = () => new Date() }) {
   const database = await getDb();
   const source = await database.collection(COLLECTIONS.scrapeSources).findOne({ _id: job.sourceId });
   if (!source || source.status !== 'active') {
@@ -51,7 +70,13 @@ export async function processJob(job, { fetcher, config, courses, workerId, imag
   }
   let crawl;
   try {
-    crawl = await withTimeout(crawlSource(source, { fetcher, config, courses, images, fetchedAt: now() }), config.jobTimeoutMs);
+    const crawlConfig = crawlConfigFor(job, config);
+    // Stop scheduling secondary work shortly before the hard timeout. Individual requests still
+    // have their own timeout, so the remaining margin lets the crawl return and persist partial data.
+    const deadlineAt = Date.now() + Math.max(1000, config.jobTimeoutMs - Math.max(20_000, config.timeoutMs + 5000));
+    crawl = await withTimeout(crawlSource(source, {
+      fetcher, config: crawlConfig, courses, images, renderer, fetchedAt: now(), deadlineAt,
+    }), config.jobTimeoutMs);
   } catch (error) {
     if (error instanceof CrawlError && SKIP_CODES.has(error.code)) {
       await finishJob(job, workerId, { status: 'skipped', error: error.message, result: { reason: error.code } });
@@ -91,6 +116,7 @@ export async function runWorker({
   const fetcher = createFetcher({ config, fetchImpl, signal, wait });
   // One pipeline per worker so the compression totals cover the whole run.
   const images = config.maxImages ? pipelineFor(fetcher, { config, log }) : null;
+  const renderer = config.renderJs ? createRenderer({ config, signal, log }) : null;
   const stats = { workerId, leased: 0, done: 0, skipped: 0, failed: 0, retrying: 0, released: 0 };
 
   async function lane() {
@@ -106,7 +132,7 @@ export async function runWorker({
       const heartbeat = setInterval(() => { extendLease(job, workerId, { leaseMs: config.leaseMs }).catch(() => {}); }, Math.max(1000, config.leaseMs / 3));
       heartbeat.unref?.();
       try {
-        const outcome = await processJob(job, { fetcher, config, courses, workerId, images });
+        const outcome = await processJob(job, { fetcher, config, courses, workerId, images, renderer });
         stats[outcome.status] += 1;
         log(`[${outcome.status}] ${job.name} <${job.website}>${outcome.result?.slug ? ` → ${outcome.result.slug} (${outcome.result.action}${outcome.result.published === false ? ', held for review' : ''})` : ''}${outcome.error ? ` — ${outcome.error}` : ''}`);
       } catch (error) {
@@ -126,6 +152,7 @@ export async function runWorker({
   }
 
   await Promise.all(Array.from({ length: lanes }, lane));
+  await renderer?.close();
   stats.requests = fetcher.stats.requests;
   if (images) stats.images = images.stats;
   return stats;
