@@ -125,6 +125,51 @@
   .toggle a span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .toggle a { padding: 0 var(--lux-space-3); }
 }
+/* Phones: a compact app-style card — thumbnail beside the name, the two deciding figures, two
+   actions — so three or four institutions fit on one screen. The whole card opens the profile
+   (the name link covers it), so "View profile" is dropped; tagline, programme chips, counts and
+   the source line stay on the profile, where there is room to read them. */
+@media (max-width: 640px) {
+  .list { gap: var(--lux-space-3); }
+  .row { grid-template-columns: 88px minmax(0, 1fr); column-gap: var(--lux-space-3); padding: var(--lux-space-3); border-radius: var(--lux-radius-lg); }
+  .row:hover { transform: none; }
+  .frame { aspect-ratio: 1; min-height: 0; height: auto; align-self: start; border-radius: var(--lux-radius-md); }
+  .crest { font-size: 1.5rem; }
+  .crest::before { inset: 6px; border-radius: var(--lux-radius-sm); }
+  .frameRank, .frameFoot { display: none; }
+  .body { gap: 6px; padding: 0; }
+  .head { margin-top: 0; }
+  .head > :global(span) { display: none; }
+  .headText { padding-top: 0; }
+  .kind { overflow: hidden; font-size: .625rem; letter-spacing: .08em; text-overflow: ellipsis; white-space: nowrap; }
+  .name { margin-top: 2px; font-size: 1.0625rem; line-height: 1.25; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+  .meta { gap: 2px var(--lux-space-3); margin-top: 4px; font-size: .75rem; }
+  .meta :global(.icon) { width: 13px; height: 13px; }
+  .badges { gap: 4px; }
+  .badges li { min-height: 22px; gap: 4px; padding: 0 7px; font-size: .6875rem; }
+  .badges li:nth-child(n + 3) { display: none; }
+  .badges :global(.icon) { width: 12px; height: 12px; }
+  .tagline, .courses, .signals, .bodyFoot { display: none; }
+  .rail { grid-column: 1 / -1; flex-direction: column; gap: var(--lux-space-2); margin-top: var(--lux-space-3); padding: var(--lux-space-2) 0 0; border-top: 1px solid var(--lux-border); background: none; }
+  .stats { grid-auto-flow: row; grid-template-columns: 1fr 1fr; gap: var(--lux-space-3); }
+  .stat dt { font-size: .625rem; }
+  .stat dd { font-size: 1.0625rem; }
+  .stat dd small { overflow: hidden; font-size: .6875rem; text-overflow: ellipsis; white-space: nowrap; }
+  .stat[data-empty] dd { font-size: .75rem; }
+  .actions { grid-template-columns: 1fr 1fr; grid-auto-flow: row; }
+  .actions > a:first-child { display: none; }
+  .actions > *:last-child { grid-column: auto; }
+  .actions > span, .actions > span > button { width: 100%; min-height: 40px; justify-content: center; }
+  .actions > span:not([data-placeholder]) { grid-template-columns: minmax(0, 1fr); }
+  .stat dd { margin-top: 0; }
+  /* Grid-card pieces (the tile itself is in Directory.module.css). */
+  .cardFrame { height: 88px; margin: calc(var(--lux-space-3) * -1 - 1px) calc(var(--lux-space-3) * -1 - 1px) 2px; }
+  .tagline, .courses { display: none; }
+  .reason { padding: 4px var(--lux-space-2); font-size: .6875rem; }
+  .cardStats { grid-template-columns: minmax(0, 1fr); gap: 4px; padding: var(--lux-space-2); }
+  .cardStats .stat dd { font-size: .9375rem; }
+  .cardStats .stat[data-empty] dd { font-size: .75rem; }
+}
 @media (prefers-reduced-motion: reduce) {
   .row, .frame img { transition: none; }
   .row:hover { transform: none; }

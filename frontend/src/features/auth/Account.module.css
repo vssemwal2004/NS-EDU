@@ -211,3 +211,20 @@
   .empty { flex-direction: column; }
   .inviteButton { width: 100%; }
 }
+/* Phones, denser (the "My applications" card on /account): tighter card, the empty state's icon
+   beside its text instead of above it. */
+@media (max-width: 640px) {
+  .card { gap: var(--space-3); }
+  .cardHead { flex-wrap: nowrap; }
+  .cardHead :global(.text-link) { min-height: 40px; font-size: .8125rem; white-space: nowrap; }
+  .cardIcon { width: 36px; height: 36px; border-radius: 50%; }
+  .cardIcon :global(.icon) { width: 17px; height: 17px; }
+  .empty { flex-direction: row; gap: var(--space-3); padding: var(--space-3) var(--space-4); border-radius: var(--lux-radius-md); }
+  .emptyIcon { width: 36px; height: 36px; border-radius: 10px; }
+  .emptyIcon :global(.icon) { width: 18px; height: 18px; }
+  .empty h3 { font-size: 1.0625rem; }
+  .empty p { font-size: .8125rem; line-height: 1.5; }
+  .emptyActions { margin-top: var(--space-3); }
+  .emptyActions :global(.button) { min-height: 40px; }
+  .cardText { font-size: .8125rem; }
+}

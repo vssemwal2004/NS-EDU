@@ -122,6 +122,34 @@
   .match h3 { font-size: 1.1rem; }
   .matchAmount > strong { font-size: 1rem; }
 }
+/* Phones (≤ 640px): the four inputs pair up two per row (course + fee, stay + budget), the cost rows and
+   the result card tighten, and small captions stay ≥ 11px. Inputs keep 16px text so iOS does not zoom. */
+@media (max-width: 640px) {
+  .section { padding-block: var(--lux-section); }
+  .heading { margin-bottom: var(--space-3); }
+  .heading h2 { margin-block: var(--space-1); }
+  .description { font-size: .875rem; }
+  .controls { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3) var(--space-2); padding-bottom: var(--space-3); }
+  .control > label { margin-bottom: 6px; font-size: .625rem; letter-spacing: .03em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .selectWrap select { min-height: 44px; padding-left: var(--space-2); padding-right: var(--space-6); }
+  .selectWrap > :global(.icon) { right: var(--space-2); }
+  .currencyInput { padding-inline: var(--space-2); }
+  .currencyInput input { min-height: 44px; }
+  .context { padding-top: 4px; font-size: .6875rem; line-height: 1.35; }
+  .demo { font-size: .6875rem; }
+  .summary { gap: var(--space-3); }
+  .result { padding: var(--space-3) var(--space-4) var(--space-4); }
+  .balance { margin-block: var(--space-2); }
+  .resultHelp { font-size: .75rem; }
+  .groups { padding-top: var(--space-2); }
+  .groups > h3 { margin-bottom: 0; }
+  .costGroups > div { padding-block: var(--space-2); }
+  .costGroups small { margin-top: 2px; }
+  .tuitionRow small, .costField label small { font-size: .72rem; }
+  .funding { margin-top: var(--space-3); }
+  .funding p { font-size: .8125rem; }
+  .footnote { font-size: .72rem; line-height: 1.5; }
+}
 @media (max-width: 380px) {
   .desk { right: -4px; }
   .costGroups dt { align-items: start; }

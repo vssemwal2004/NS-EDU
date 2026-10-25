@@ -162,3 +162,65 @@
   .sectionActions :global(.text-link) { justify-content: center; }
   .sectionButton { width: 100%; white-space: normal; }
 }
+/* Phones (≤ 640px): denser bands. Stream tiles become a compact two-column list (icon beside the field);
+   the exam guides become one swipe rail with their two actions side by side; small links and chips get a
+   36–44px tap height. Same sections, same content — only size and arrangement change. */
+@media (max-width: 640px) {
+  .band { padding-block: var(--lux-section); }
+  .bandHeading { margin-bottom: var(--lux-space-4); gap: var(--space-1); }
+  .bandCopy { gap: 6px; }
+  .bandCopy h2 { font-size: 1.625rem; }
+  .bandDescription { font-size: .875rem; line-height: 1.55; }
+  .bandLink { min-height: 40px; padding-block: 0; }
+  .bandNote { align-items: flex-start; margin-top: var(--lux-space-3); line-height: 1.5; }
+  .bandNote :global(.icon) { margin-top: 1px; flex: none; }
+
+  /* At a glance: the inline source link is padded to a 40px target without moving the text. */
+  .statsInner { padding-block: var(--lux-space-6); gap: var(--lux-space-4); }
+  .statsIntro a { display: inline-block; padding-block: 10px; margin-block: -10px; white-space: nowrap; }
+  .statList a, .statList li:first-child a { padding: var(--space-3) var(--space-3) 10px; }
+  .statList strong { font-size: 1.5rem; }
+  .statList strong + span { font-size: .75rem; }
+
+  /* Streams: icon | field + count, four rows of two. The field link is the card's 36px+ tap target. */
+  .streamGrid { gap: var(--space-2); }
+  .streamCard { display: grid; grid-template-columns: 36px minmax(0, 1fr); align-items: center; gap: 0 10px; padding: 0 var(--space-3) var(--space-3); border-radius: var(--lux-radius-md); }
+  .streamCard:hover { transform: none; }
+  .streamTop { grid-row: 1 / 3; align-self: center; margin: var(--space-3) 0 0; }
+  .streamIcon { width: 36px; height: 36px; border-radius: 11px; }
+  .streamIcon :global(.icon) { width: 18px; height: 18px; }
+  .streamArrow { display: none; }
+  .streamCard h3 { font-size: 1.0625rem; line-height: 1.2; overflow-wrap: anywhere; }
+  .stretched { display: block; padding-top: var(--space-3); min-height: 36px; }
+  .streamMeta { font-size: .75rem; line-height: 1.35; }
+
+  /* Compare promo: tighter card, the four points as small tags. */
+  .promoBand { padding-block: var(--lux-space-4); }
+  .promo { gap: var(--space-3) var(--space-3); padding: var(--space-4); }
+  .promoIcon { width: 44px; height: 44px; border-radius: 13px; }
+  .promoIcon :global(.icon) { width: 22px; height: 22px; }
+  .promoCopy h2 { font-size: 1.1875rem; line-height: 1.2; }
+  .promoCopy p { font-size: .8125rem; line-height: 1.5; }
+  .promoPoints { gap: 6px; }
+  .promoPoints li { min-height: 32px; padding: 0 10px; }
+
+  /* Exams: one swipe rail; each card keeps its chips and both actions (side by side). position: relative keeps
+     the cards' absolutely positioned screen-reader text inside the rail instead of widening the page. */
+  .examGrid { position: relative; grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 82%; gap: var(--space-3); margin-inline: calc(var(--page-gutter) * -1); padding: 2px var(--page-gutter) var(--space-3); overflow-x: auto; overscroll-behavior-inline: contain; scroll-snap-type: x mandatory; scroll-padding-inline: var(--page-gutter); scrollbar-width: none; }
+  .examGrid::-webkit-scrollbar { display: none; }
+  .examCard { gap: var(--space-2); padding: var(--space-4) var(--space-4) 0; scroll-snap-align: start; }
+  .examCard:hover { transform: none; }
+  .examHead h3 { font-size: 1.25rem; }
+  .examSummary { font-size: .8125rem; line-height: 1.5; }
+  .examCourses a { min-height: 36px; }
+  .examActions { grid-template-columns: 1fr 1fr; margin-inline: calc(-1 * var(--space-4)); }
+  .examActions a { min-height: 46px; }
+  .examActions a + a { border-top: 0; border-left: 1px solid var(--color-border); }
+
+  /* "View all" rows: one slim line of context above a full-width button. */
+  .sectionLinkInner { gap: var(--space-3); padding-block: var(--space-4); }
+  .sectionMeta { gap: var(--space-2); font-size: .8125rem; line-height: 1.45; }
+  .sectionMetaIcon { width: 32px; height: 32px; }
+  .sectionMetaIcon :global(.icon) { width: 16px; height: 16px; }
+  .sectionActions :global(.text-link) { min-height: 40px; padding-block: 0; }
+}

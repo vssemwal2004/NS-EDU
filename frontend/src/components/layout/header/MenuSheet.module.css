@@ -51,4 +51,25 @@
 .support a { display: inline-flex; align-items: center; min-height: 44px; color: var(--lux-text-muted); font-size: var(--lux-small); text-decoration: none; }
 .support a:hover, .support a[aria-current="page"] { color: var(--lux-wine); text-decoration: underline; text-underline-offset: 4px; }
 
+/* Phones (≤ 640px): a denser native-style sheet — 52px rows, compact tool tiles and a slimmer start card,
+   so the main links and tools fit on about one and a half screens. */
+@media (max-width: 640px) {
+  .body { gap: var(--lux-space-4); padding-top: var(--lux-space-4); }
+  .search { min-height: 52px; }
+  .search input { height: 44px; }
+  .search button { width: 44px; height: 44px; }
+  .cta { gap: 6px; padding: var(--lux-space-4); border-radius: var(--lux-radius-md); }
+  .ctaTitle { font-size: 1.5rem; }
+  .ctaText { margin-bottom: var(--lux-space-2); }
+  .nav { gap: var(--lux-space-2); }
+  .links a { min-height: 52px; font-size: 1.25rem; }
+  .linkIcon { width: 32px; height: 32px; }
+  .linkIcon :global(.icon) { width: 16px; height: 16px; }
+  .nav > :global(.lux-eyebrow) { margin-top: var(--lux-space-2); }
+  .tools a { min-height: 0; gap: 2px; padding: var(--lux-space-3); }
+  .tools :global(.icon) { width: 20px; height: 20px; margin-bottom: 2px; }
+  .tools strong { font-size: .875rem; }
+  .account { gap: var(--lux-space-3); padding: var(--lux-space-4); border-radius: var(--lux-radius-md); }
+  .support { gap: 0 var(--lux-space-3); }
+}
 @media (max-width: 359px) { .tools { grid-template-columns: minmax(0, 1fr); } .tools a { min-height: 0; } }

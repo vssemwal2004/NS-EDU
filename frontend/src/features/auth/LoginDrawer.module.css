@@ -29,3 +29,11 @@
   .close:hover { background: rgb(255 255 255 / 24%); }
 }
 @keyframes login-sheet { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+/* Phones: a tighter sheet so the code field, the button and the legal line all fit above a
+   keyboard-height viewport without scrolling. */
+@media (max-width: 640px) {
+  .main { padding: var(--lux-space-5) var(--lux-gutter) calc(var(--lux-space-4) + var(--lux-safe-bottom)); }
+  .handle { top: 8px; }
+  .close { top: var(--lux-space-2); right: var(--lux-space-2); width: 40px; height: 40px; }
+  .close :global(.icon) { width: 18px; height: 18px; }
+}

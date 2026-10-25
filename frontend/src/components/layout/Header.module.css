@@ -77,6 +77,12 @@
   .brand { --brand-height: 38px; }
   .actions { gap: 6px; }
   .loginButton { padding: 0 var(--lux-space-4); }
+  /* Phones: the signed-in control is just the avatar in a 44px ring, matching the search and menu buttons;
+     the account menu opens as a full-width card under the bar. */
+  .avatarButton { justify-content: center; width: 44px; padding: 0; }
+  .avatarButton > :global(.icon) { display: none; }
+  .account { position: static; }
+  .accountMenu { top: calc(100% + 6px); left: var(--lux-gutter); right: var(--lux-gutter); width: auto; }
 }
 /* The label stays in the accessibility tree when only the icon is visible. */
 @media (max-width: 374px) {

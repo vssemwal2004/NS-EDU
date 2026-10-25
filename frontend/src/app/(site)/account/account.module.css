@@ -165,3 +165,76 @@
   .panelHead { grid-template-columns: auto minmax(0, 1fr); }
   .panelHead > :global(.lux-link) { grid-column: 2; justify-self: start; min-height: 32px; margin-top: calc(var(--lux-space-2) * -1); }
 }
+/* Phones, denser: the monogram sits beside the greeting, the at-a-glance strip is a short row,
+   panels are tighter, profile facts, preferences and quick links go two-up, and the journey is a
+   compact timeline. The head link moves to the right of the title instead of under it. */
+@media (max-width: 640px) {
+  .bandInner { gap: var(--lux-space-3); }
+  .crumbs ol { font-size: .8125rem; }
+  .crumbs a { min-height: 40px; }
+  .identity { grid-template-columns: auto minmax(0, 1fr); align-items: start; gap: var(--lux-space-3) var(--lux-space-4); }
+  .monogram { width: 52px; font-size: 1.25rem; box-shadow: 0 0 0 1px var(--lux-champagne), 0 0 0 5px rgb(201 164 106 / 14%), 0 12px 28px -14px rgb(0 0 0 / 60%); }
+  .identityText { gap: var(--lux-space-2); }
+  .greeting { font-size: 1.625rem; }
+  .identityMeta { gap: 4px var(--lux-space-4); font-size: .8125rem; }
+  .identityMeta :global(.icon) { width: 14px; height: 14px; }
+  .verified { padding: 1px 8px 1px 5px; font-size: .6875rem; }
+  .bandActions { gap: var(--lux-space-2); }
+  .bandActions :global(.lux-button--sm) { min-height: 40px; }
+  .glance { margin-top: var(--lux-space-1); }
+  .glance a { gap: 2px; min-height: 0; padding: var(--lux-space-3) var(--lux-space-2) var(--lux-space-3) 0; }
+  .glance li + li a { padding-left: var(--lux-space-3); }
+  .glance span { font-size: .625rem; letter-spacing: .08em; line-height: 1.3; }
+  .glance strong { font-size: 1.375rem; }
+  .glance strong[data-text] { font-size: 1rem; line-height: 1.25; }
+
+  .grid, .mainCol, .sideCol { gap: var(--lux-space-3); }
+  .grid { margin-top: var(--lux-space-4); }
+  .panel { gap: var(--lux-space-3); padding: var(--lux-space-4); border-radius: var(--lux-radius-lg); }
+  .panelHead { grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--lux-space-3); }
+  .panelHead > :global(.lux-link) { grid-column: auto; justify-self: end; min-height: 40px; margin-top: 0; font-size: .8125rem; }
+  .panelIcon { width: 36px; height: 36px; }
+  .panelIcon :global(.icon) { width: 17px; height: 17px; }
+  .panelTitles :global(.lux-eyebrow) { font-size: .625rem; }
+  .note { font-size: .8125rem; line-height: 1.5; }
+  .empty { gap: 4px; padding: var(--lux-space-3) var(--lux-space-4); border-radius: var(--lux-radius-md); }
+  .empty p { font-size: .8125rem; line-height: 1.5; }
+  .empty .emptyTitle { font-size: 1.0625rem; }
+  .emptyActions { margin-top: var(--lux-space-1); }
+  .emptyActions :global(.lux-button--sm), .compareActions :global(.lux-button--sm) { min-height: 40px; }
+
+  /* MyApplications' legacy card, through the variables it reads. */
+  .tracker { --account-card-padding: var(--lux-space-4); --account-card-radius: var(--lux-radius-lg); --account-heading-size: var(--lux-title); gap: var(--lux-space-3); }
+  .journey { padding: var(--lux-space-4); border-radius: var(--lux-radius-lg); }
+  .journeyTitle { margin-bottom: var(--lux-space-3); font-size: .6875rem; }
+  .steps li { gap: var(--lux-space-3); padding-bottom: var(--lux-space-3); }
+  .steps li:not(:last-child)::after { top: 26px; left: 11.5px; }
+  .stepDot { width: 24px; height: 24px; font-size: .6875rem; }
+  .steps p { font-size: .75rem; line-height: 1.45; }
+  .steps strong { font-size: .8125rem; }
+
+  .compareCard { gap: var(--lux-space-2); padding: var(--lux-space-3); }
+  .compareHead h3 { font-size: 1.0625rem; }
+  .picks li { padding: var(--lux-space-2) var(--lux-space-3); }
+  .compareFoot p { font-size: .8125rem; }
+  .newsLink { padding: var(--lux-space-3) 0; }
+  .newsLink strong { display: -webkit-box; overflow: hidden; font-size: 1rem; line-height: 1.3; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; }
+  .newsMeta { font-size: .6875rem; }
+
+  .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: var(--lux-space-4); }
+  .facts > div { padding: var(--lux-space-2) 0; }
+  .facts > div:first-child, .facts > div:last-child:nth-child(even) { grid-column: 1 / -1; }
+  .facts dt { font-size: .6875rem; }
+  .facts dd { font-size: .875rem; }
+  .verifiedLight { padding: 1px 8px 1px 5px; font-size: .6875rem; }
+  .prefGrid { gap: var(--lux-space-2); }
+  .prefGrid :global(.lux-label) { font-size: .8125rem; }
+
+  .tools { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--lux-space-2); margin: 0; }
+  .tool { grid-template-columns: auto minmax(0, 1fr); align-content: start; gap: var(--lux-space-2); min-height: 52px; padding: var(--lux-space-3); border: 1px solid var(--lux-border); background: var(--lux-ivory); }
+  .tool > :global(.icon:first-child) { width: 18px; height: 18px; }
+  .tool strong { font-size: .8125rem; line-height: 1.3; }
+  .tool small, .toolArrow { display: none; }
+
+  .recommended { margin-top: var(--lux-space-6); }
+}

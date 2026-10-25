@@ -194,14 +194,44 @@ a.pageNumber:hover, a.pageStep:hover { border-color: var(--lux-wine); }
   .picks li { flex: none; scroll-snap-align: start; }
   .readoutStats dd { font-size: 1.25rem; }
   .resultsHead { margin-bottom: var(--lux-space-5); }
-  .card { padding: var(--lux-space-4); gap: var(--lux-space-3); }
-  .logo { width: 52px; height: 52px; border-radius: 14px; }
-  .cardTitle h3, .cardTitle h2 { font-size: 1.25rem; }
-  .cardFoot { flex-direction: column; align-items: stretch; }
-  /* View profile · Compare · Apply: the first two share a row, Apply takes the full width below. */
-  .cardActions { display: grid; grid-template-columns: 1fr 1fr; margin-left: 0; }
-  .cardActions > * { width: 100%; }
-  .cardActions > *:last-child { grid-column: 1 / -1; }
+  /* The card becomes a compact tile (directory grid, home, profile "similar", recommendations):
+     photo strip, name, place, one badge, the figures, Compare + Apply. The name link covers the
+     tile, so it opens the profile and "View profile" is dropped. */
+  .card { gap: 6px; padding: var(--lux-space-3); }
+  .card:hover { transform: none; }
+  .cardTop > .logo, .cardKind, .streams, .card .source { display: none; }
+  .cardTitle h3, .cardTitle h2 { margin: 0; font-size: .9375rem; line-height: 1.25; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
+  .cardTitle a::after { content: ''; position: absolute; inset: 0; }
+  .cardPlace { margin-top: 4px; font-size: .6875rem; }
+  .cardPlace :global(.icon) { width: 12px; height: 12px; }
+  .card .badges li { min-height: 22px; padding: 0 6px; font-size: .625rem; }
+  .card .badges li:nth-child(n + 2) { display: none; }
+  .card .badges :global(.icon) { width: 12px; height: 12px; }
+  .cardFoot { position: relative; z-index: 1; flex-direction: column; align-items: stretch; padding-top: var(--lux-space-2); }
+  /* Compare shrinks to an icon square beside Apply; its text stays in the accessible name. */
+  .cardActions { display: grid; grid-template-columns: 38px minmax(0, 1fr); gap: 6px; margin-left: 0; }
+  .cardActions > a:first-child { display: none; }
+  .cardActions > *, .cardActions > span > button { width: 100%; min-height: 38px; justify-content: center; font-size: .75rem; }
+  .cardActions > span > button, .cardActions > span[data-placeholder] { gap: 0; padding: 0; font-size: 0; }
+  /* CompareToggle's wrapper is an inline grid: give its one column the full cell so the button fills it. */
+  .cardActions > span:not([data-placeholder]) { grid-template-columns: minmax(0, 1fr); }
+  /* Hero: the count readout shrinks to one compact line so the search and the first results show
+     on the first screen. */
+  .hero { padding-block: var(--lux-space-6) var(--lux-space-5); }
+  .heroLead { margin: var(--lux-space-3) 0 var(--lux-space-4); }
+  .readout { grid-template-columns: auto minmax(0, 1fr); padding: var(--lux-space-3) var(--lux-space-4); border-radius: var(--lux-radius-lg); }
+  .readout::before { inset-inline: var(--lux-space-4); }
+  .readoutLabel { font-size: .625rem; }
+  .readoutValue { font-size: 2rem; }
+  .readoutCaption { font-size: .75rem; }
+  .readoutStats, .readoutJump { display: none; }
+  .picks { margin-top: var(--lux-space-4); }
+  .resultsInner { padding-block: var(--lux-space-5) var(--lux-space-8); }
+  .resultsCount { margin-top: 2px; }
+  .chip { min-height: 36px; padding-left: var(--lux-space-3); font-size: .75rem; }
+  .chip :global(.icon) { width: 22px; height: 22px; padding: 5px; }
+  /* Grid view: two compact tiles a row (the tile itself is styled below and in Listing.module.css). */
+  .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--lux-space-3); }
   .pageStep { width: 44px; padding: 0; }
   .pageStep span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .pagination { gap: 6px; }

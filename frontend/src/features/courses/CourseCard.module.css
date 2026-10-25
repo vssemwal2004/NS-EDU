@@ -35,14 +35,32 @@
 .card:hover .go { background: var(--lux-wine); color: #FFFFFF; transform: translateX(2px); }
 .foot:not(.empty) { padding-right: 44px; }
 
+/* Phones: a compact tile built to sit two to a row — a slim tinted band (icon + level code), the stream,
+   name and full name on one line each, and the institution count. The level label repeats the band's
+   code and the summary is for the course page, so both go; "Featured" shrinks to its star. */
 @media (max-width: 640px) {
-  .band { height: 56px; padding-inline: var(--lux-space-4); }
-  .glyph { width: 36px; height: 36px; }
-  .glyph :global(.icon) { width: 18px; height: 18px; }
-  .code { font-size: 1.75rem; }
-  .body { gap: 6px; padding: var(--lux-space-4); }
-  .name { font-size: 1.5rem; }
-  .summary { -webkit-line-clamp: 2; line-clamp: 2; }
-  .foot { padding-top: var(--lux-space-3); }
-  .go { right: var(--lux-space-4); bottom: var(--lux-space-4); }
+  .card { border-radius: var(--lux-radius-md); }
+  .card:hover { transform: none; }
+  .band { height: 44px; padding-inline: var(--lux-space-3); }
+  .glyph { width: 30px; height: 30px; }
+  .glyph :global(.icon) { width: 15px; height: 15px; }
+  .code { font-size: 1.375rem; }
+  .body { gap: 2px; padding: var(--lux-space-2) var(--lux-space-3) var(--lux-space-3); }
+  .meta { flex-wrap: nowrap; gap: 6px; overflow: hidden; font-size: .625rem; letter-spacing: .08em; white-space: nowrap; }
+  .meta > span:first-child { overflow: hidden; text-overflow: ellipsis; }
+  .level { display: none; }
+  .featured { flex: 0 0 auto; order: -1; padding: 0; background: none; font-size: 0; }
+  .featured :global(.icon) { width: 12px; height: 12px; }
+  .name { margin-top: 2px; font-size: 1.1875rem; line-height: 1.15; overflow-wrap: anywhere; }
+  .full { overflow: hidden; font-size: .8125rem; text-overflow: ellipsis; white-space: nowrap; }
+  .summary, .caption { display: none; }
+  .foot { padding-top: var(--lux-space-2); }
+  .foot:not(.empty) { padding-right: 30px; }
+  .facts { display: block; padding-top: var(--lux-space-2); }
+  .facts dt { font-size: .6875rem; }
+  .facts dd { font-size: .8125rem; }
+  .empty { font-size: .75rem; line-height: 1.35; }
+  .empty { padding-top: var(--lux-space-2); }
+  .go { right: var(--lux-space-2); bottom: var(--lux-space-3); width: 28px; height: 28px; }
+  .go :global(.icon) { width: 14px; height: 14px; }
 }

@@ -180,7 +180,8 @@
   .intro > h2 { font-size: var(--eligibility-mobile-intro-size); margin-block: var(--space-2); }
   .introDescription { font-size: var(--text-small); }
   .journey { margin-top: var(--space-4); min-width: 0; max-width: 360px; }
-  .journey small { font-size: .68rem; }
+  .journey small { font-size: .6875rem; }
+  .journey li > span { font-size: .6875rem; }
   .layout { gap: var(--space-4); }
   .questionHeading { margin-bottom: var(--space-3); }
   .questionHeading h3 { font-size: var(--eligibility-question-size); }
@@ -205,7 +206,7 @@
   .continue { min-height: var(--eligibility-button-height); font-size: var(--text-small); }
   .continue > span:first-child { padding-inline: var(--space-5); }
   .continue > span:last-child { width: 42px; }
-  .footnote { display: block; font-size: .68rem; line-height: 1.65; margin-top: var(--space-4); }
+  .footnote { display: block; font-size: .6875rem; line-height: 1.6; margin-top: var(--space-4); }
   .footnote span { display: block; }
   .footnote span + span { border: 0; padding: 0; }
   .focusPanel { padding: var(--space-4); }
@@ -216,13 +217,13 @@
   .courseChoice { min-height: 80px; padding: var(--space-3); gap: var(--space-1); grid-template-columns: 22px 1fr; }
   .courseChoice strong { font-size: .875rem; padding-right: 10px; }
   .courseChoice > .radio { top: 9px; right: 9px; width: 16px; height: 16px; }
-  .courseChoice small { font-size: .65rem; }
+  .courseChoice small { font-size: .6875rem; }
   .optionGrid { grid-template-columns: 1fr; gap: var(--space-3); }
   .largeChoice { min-height: 68px; padding: var(--space-3) 42px var(--space-3) var(--space-3); display: grid; grid-template-columns: 26px 1fr; gap: var(--space-1) var(--space-3); }
   .largeChoice > :global(.icon) { width: 26px; height: 26px; margin: 0; grid-row: 1 / 3; align-self: center; }
   .largeChoice strong { font-size: 1.3rem; }
   .largeChoice .radio { top: 25px; right: 14px; }
-  .largeChoice > span:last-child { grid-column: 2; font-size: .7rem; }
+  .largeChoice > span:last-child { grid-column: 2; font-size: .72rem; }
   .subjectGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2); }
   .subjectChoice { font-size: .73rem; padding-inline: var(--space-2); }
   .unknownChoice { font-size: .75rem; }
@@ -241,13 +242,13 @@
   .resultHeading p, .programme { font-size: .75rem; }
   .requirement { grid-template-columns: minmax(0, 1fr) auto; font-size: .75rem; }
   .requirement p { grid-column: 1; font-size: .72rem; }
-  .requirementStatus { grid-column: 2; grid-row: 1 / 3; font-size: .65rem; }
-  .requirement small { font-size: .68rem; }
+  .requirementStatus { grid-column: 2; grid-row: 1 / 3; font-size: .6875rem; }
+  .requirement small { font-size: .6875rem; }
   .entranceReview strong { font-size: .75rem; }
-  .entranceReview p { font-size: .7rem; }
+  .entranceReview p { font-size: .72rem; }
   .reviewActions .continue { width: 100%; }
   .reviewActions .continue > span:first-child { flex: 1; }
   .answerSummary { font-size: .75rem; }
   .answerSummary dl > div { grid-template-columns: 90px minmax(0, 1fr); }
-  .sampleNote { font-size: .68rem; }
+  .sampleNote { font-size: .6875rem; }
 }

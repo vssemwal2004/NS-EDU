@@ -4,6 +4,7 @@ import ApplyButton from '@/features/apply/ApplyButton';
 import CompareToggle from '@/features/compare/CompareToggle';
 import UniversityCard, { SourceTag, UniversityLogo, applyTarget } from '../UniversityCard';
 import { formatInr, formatLpa, hostOf, kindOf, lakhRange, ownershipOf, shortDate, sourceNote } from '../labels';
+import AboutText from './AboutText';
 import Gallery from './Gallery';
 import OfferedProgrammes from './OfferedProgrammes';
 import { Photo } from './media';
@@ -100,7 +101,7 @@ function Overview({ model }) {
   const { item, shortName, about, aboutSource, highlights, gaps } = model;
   return <section id="overview" className={styles.section} aria-labelledby="overview-title">
     <SectionHead id="overview" eyebrow="About" title={`${shortName} overview`} aside={item.source?.fetchedAt && !item.isIllustrative ? `Updated ${shortDate(item.source.fetchedAt)}` : ''} />
-    {about.split(/\n{2,}/).map((paragraph, index) => <p key={index} className={index ? styles.aboutMore : styles.about}>{paragraph}</p>)}
+    <AboutText text={about} />
     {aboutSource ? <p className={styles.sourceRow}><Source href={aboutSource}>From the institution’s website</Source></p>
       : <p className={styles.footnote}>Written from the directory record: name, type, location and year of establishment.</p>}
     {item.isIllustrative && <p className={styles.notice}><Icon name="uniInfo" />This is an illustrative profile used to demonstrate the platform. Its fees and packages are sample values, not verified figures.</p>}

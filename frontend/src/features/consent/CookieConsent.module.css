@@ -24,6 +24,20 @@
   .actions { grid-column: 1 / -1; flex-direction: column-reverse; align-items: stretch; gap: var(--lux-space-2); }
   .actions > * { width: 100%; justify-content: center; }
 }
+/* Phones, denser: smaller type and the two equal choices side by side, so the card covers about
+   a quarter of the screen instead of a third. */
+@media (max-width: 640px) {
+  .card { gap: var(--lux-space-2) var(--lux-space-3); padding: var(--lux-space-4) var(--lux-space-4) var(--lux-space-3); border-radius: var(--lux-radius-lg); }
+  .card::before { inset-inline: var(--lux-space-4); }
+  .icon { width: 36px; height: 36px; border-radius: 11px; }
+  .icon svg { width: 19px; height: 19px; }
+  .title { font-size: 1.125rem; line-height: 36px; }
+  .text { grid-column: 1 / -1; font-size: .8125rem; line-height: 1.5; }
+  .copy { display: contents; }
+  .actions { flex-direction: row; gap: var(--lux-space-2); margin-top: var(--lux-space-2); }
+  .actions > * { flex: 1 1 0; min-width: 0; padding-inline: var(--lux-space-3); }
+  .badge { right: 8px; font-size: .625rem; }
+}
 @media (prefers-reduced-motion: reduce) {
   .card { animation: none; }
 }

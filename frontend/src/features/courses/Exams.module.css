@@ -70,3 +70,34 @@
   .chips::-webkit-scrollbar { display: none; }
   .chips > * { flex: 0 0 auto; }
 }
+/* Phones: a tighter dark header (smaller promises, a compact departures board), then the passes with
+   less air between them and the "While you prepare" links as slim one-line rows. */
+@media (max-width: 640px) {
+  .hero { padding-block: var(--lux-space-6); }
+  .heroGrid { gap: var(--lux-space-5); }
+  .heroCopy { gap: var(--lux-space-3); }
+  .promises { gap: 6px; margin-top: 0; }
+  .promises li { gap: var(--lux-space-2); font-size: .8125rem; line-height: 1.45; }
+  .promises :global(.icon) { width: 18px; height: 18px; }
+  .boardTitle { margin-bottom: var(--lux-space-1); font-size: .6875rem; }
+  .board a { min-height: 48px; padding-inline: var(--lux-space-1); }
+  .boardName { font-size: 1.1875rem; }
+  .boardLevel { font-size: .6875rem; }
+
+  .listing { padding-block: var(--lux-space-6) var(--lux-space-7); }
+  .head { gap: var(--lux-space-3); }
+  .search { min-height: 50px; }
+  .search input { height: 40px; }
+  .chips { margin-top: var(--lux-space-3); }
+  .result { margin: var(--lux-space-2) 0 var(--lux-space-3); font-size: .8125rem; }
+  .clear { min-height: 36px; }
+  .tickets { gap: var(--lux-space-3); }
+
+  .next { gap: var(--lux-space-3); margin-top: var(--lux-space-6); padding-top: var(--lux-space-5); }
+  .next ul { gap: var(--lux-space-2); }
+  .next a { grid-template-columns: 34px minmax(0, 1fr) 16px; min-height: 60px; padding: var(--lux-space-2) var(--lux-space-3); }
+  .next a > :global(.icon):first-child { width: 34px; height: 34px; padding: 8px; }
+  .next strong { font-size: .875rem; }
+  .next small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .footnote { margin-top: var(--lux-space-5); }
+}

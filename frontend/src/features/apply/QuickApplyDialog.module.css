@@ -39,3 +39,22 @@
   .lead { margin-bottom: var(--lux-space-4); }
 }
 @keyframes qa-sheet { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+/* Phones, denser: a shorter header that never gets squeezed when the keyboard shrinks the sheet
+   (it is a flex child of a max-height column), so the fields get the room. */
+@media (max-width: 640px) {
+  .head { flex: none; gap: var(--lux-space-3); padding: 1.625rem calc(var(--lux-space-3) + 48px) var(--lux-space-3) var(--lux-gutter); }
+  .head::after { right: -80px; bottom: -150px; }
+  .head > span[aria-hidden]:not(.handle) { width: 40px; height: 40px; font-size: 1.0625rem; }
+  .handle { top: 8px; }
+  .headText { gap: 1px; }
+  .eyebrow { font-size: .625rem; }
+  .title { font-size: 1.25rem; line-height: 1.15; }
+  .place { font-size: .8125rem; }
+  .place :global(.icon) { width: 13px; height: 13px; }
+  .close { width: 40px; height: 40px; }
+  .close :global(.icon) { width: 18px; height: 18px; }
+  .body { padding-top: var(--lux-space-3); }
+  .lead { margin-bottom: var(--lux-space-3); font-size: .8125rem; line-height: 1.5; }
+  .confirmCard { padding: var(--lux-space-5) var(--lux-space-4) var(--lux-space-4); }
+  .confirmCard h3 { font-size: 1.375rem; }
+}

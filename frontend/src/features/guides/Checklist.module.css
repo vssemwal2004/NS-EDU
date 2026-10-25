@@ -46,3 +46,23 @@
   .dark .items { padding: var(--lux-space-1); }
   .items label { padding-inline: var(--lux-space-2); }
 }
+/* Phones: denser tick rows (still a ≥44px tap target each) and a smaller head. */
+@media (max-width: 640px) {
+  .checklist { gap: var(--lux-space-4); }
+  .head { gap: var(--lux-space-2); }
+  .title { font-size: 1.375rem; }
+  .intro { font-size: .875rem; line-height: 1.5; }
+  .meter { gap: 6px; margin-top: var(--lux-space-1); }
+  .meter p { font-size: .75rem; }
+  .items label { grid-template-columns: 22px minmax(0, 1fr); gap: var(--lux-space-3); min-height: 46px; padding-block: 6px; }
+  .box { width: 22px; height: 22px; border-radius: 6px; }
+  .box :global(.icon) { width: 14px; height: 14px; }
+  .text { font-size: .875rem; line-height: 1.35; }
+  .text small { font-size: .75rem; }
+  .foot { gap: var(--lux-space-2) var(--lux-space-4); }
+  .foot p { flex-basis: 100%; font-size: .6875rem; }
+  .paper { gap: var(--lux-space-3); padding: var(--lux-space-4); }
+  .paper .title { font-size: 1.125rem; }
+  .paper .intro { font-size: .8125rem; }
+  .paper .text { font-size: .8125rem; }
+}

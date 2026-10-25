@@ -5,8 +5,17 @@
 
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr)); gap: clamp(1rem, .75rem + 1vw, 1.5rem); margin: 0; padding: 0; list-style: none; }
 .grid > li { display: grid; grid-template-rows: auto 1fr; gap: var(--lux-space-2); min-width: 0; }
+@media (max-width: 640px) {
+  .rail { gap: var(--lux-space-4); }
+  .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--lux-space-3); }
+}
 
 .reason { display: inline-flex; align-items: center; gap: 6px; justify-self: start; max-width: 100%; min-height: 28px; padding: 0 12px 0 10px; border: 1px solid rgb(201 164 106 / 45%); border-radius: var(--lux-radius-pill); background: var(--lux-champagne-soft); color: var(--lux-bronze-ink); font: 600 var(--lux-caption)/1.3 var(--lux-font-body); overflow-wrap: anywhere; }
 .reason :global(.icon) { flex: none; width: 14px; height: 14px; }
+/* Two tiles a row on phones: the reason becomes one truncated line (full text in the title). */
+@media (max-width: 640px) {
+  .reason { display: block; min-height: 0; overflow: hidden; padding: 4px 8px; border-radius: var(--lux-radius-sm); font-size: .6875rem; text-overflow: ellipsis; white-space: nowrap; }
+  .reason :global(.icon) { width: 12px; height: 12px; margin-right: 4px; vertical-align: -2px; }
+}
 
 .skeleton { display: block; width: 100%; height: 280px; border-radius: var(--lux-radius-lg); }

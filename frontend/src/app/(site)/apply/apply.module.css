@@ -65,3 +65,31 @@
 .pickFoot { margin-top: var(--lux-space-3); color: var(--lux-text-muted); font-size: var(--lux-small); }
 .pickFoot a { color: var(--lux-wine); font-weight: 600; }
 @media (max-width: 720px) { .pickInner > .steps { grid-template-columns: minmax(0, 1fr); } }
+/* Phones, denser: a shorter ticket band and a compact chooser with the three steps as a tight list. */
+@media (max-width: 640px) {
+  .summary { gap: var(--lux-space-2); padding-bottom: var(--lux-space-6); }
+  .back { min-height: 40px; font-size: .8125rem; }
+  .ticket > span[aria-hidden] { width: 52px; height: 52px; }
+  .ticketEyebrow { font-size: .6875rem; }
+  .name { font-size: 1.5rem; line-height: 1.1; }
+  .place { font-size: .8125rem; }
+  .facts { grid-template-columns: repeat(auto-fit, minmax(72px, 1fr)); gap: var(--lux-space-2); margin-top: var(--lux-space-2); padding-top: var(--lux-space-3); }
+  .ticket > dl.facts { grid-column: 1 / -1; }
+  .facts dt { font-size: .6875rem; }
+  .facts dd { font-size: 1.0625rem; }
+  .panel { gap: var(--lux-space-4); margin-top: calc(var(--lux-space-5) * -1); padding: var(--lux-space-4); }
+  .panelHead { padding-bottom: var(--lux-space-3); }
+  .panelTitle { font-size: var(--lux-title); }
+  .panelLead { font-size: .8125rem; }
+
+  .pickPage { padding: var(--lux-space-6) var(--lux-gutter) var(--lux-space-7); }
+  .pickInner { gap: var(--lux-space-3); }
+  .pickLead { font-size: .9375rem; }
+  .pickCard { margin-top: var(--lux-space-1); padding: var(--lux-space-4); border-radius: var(--lux-radius-lg); }
+  .pickInner > .steps { gap: var(--lux-space-3); margin-top: var(--lux-space-3); }
+  .steps li { grid-template-columns: 28px 1fr; }
+  .steps li > span { width: 28px; height: 28px; font-size: .875rem; }
+  .steps strong { font-size: .875rem; }
+  .steps small { font-size: .8125rem; line-height: 1.45; }
+  .pickFoot a { display: inline-flex; align-items: center; min-height: 40px; }
+}

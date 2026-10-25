@@ -191,3 +191,90 @@
   .notes li, .notes li + li { padding: var(--lux-space-5) 0; border-left: 0; border-bottom: 1px solid var(--lux-border); }
   .presets :global(.lux-chip) { flex: 1 1 calc(50% - var(--lux-space-2)); }
 }
+/* Phones: denser calculator. Stay options three-up, budget presets in one row, slimmer ledger lines, a
+   smaller donut, compact match cards (figures beside the name) and the notes as icon rows. */
+@media (max-width: 640px) {
+  .page { --bud-pad: var(--lux-space-4); }
+  .hero { padding-block: var(--lux-space-6) 3.5rem; }
+  .heroCopy { gap: var(--lux-space-3); }
+  .board { margin-top: -2.25rem; }
+  .dashboard { gap: var(--lux-space-3); }
+  .inputs { gap: var(--lux-space-3); }
+  .block { gap: var(--lux-space-3); border-radius: var(--lux-radius-md); }
+  .blockHead span { font-size: 1rem; }
+  .blockHead h2 { font-size: 1rem; }
+  .blockIntro { font-size: .8125rem; line-height: 1.5; }
+  .pair { gap: var(--lux-space-3); }
+  .pair :global(.lux-label) { margin-bottom: 6px; }
+  .context { gap: 6px; font-size: .75rem; }
+  .context :global(.icon) { width: 15px; height: 15px; }
+  .sample { font-size: .6875rem; }
+  .notice { padding: var(--lux-space-2) var(--lux-space-3); font-size: .75rem; }
+
+  .living { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--lux-space-2); }
+  .living label { grid-template-columns: minmax(0, 1fr); align-content: start; justify-items: start; gap: 2px; min-height: 0; padding: var(--lux-space-3) var(--lux-space-2) var(--lux-space-3) var(--lux-space-3); }
+  .living label > :global(.icon) { grid-row: auto; width: 22px; height: 22px; margin: 0 0 var(--lux-space-1); }
+  .living strong { font-size: .8125rem; line-height: 1.25; }
+  .living small { font-size: .6875rem; line-height: 1.35; }
+
+  .money > span { left: .875rem; font-size: 1.25rem; }
+  .money input { min-height: 54px; padding-left: 2.25rem; font-size: 1.3125rem; }
+  .presets { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+  .presets :global(.lux-chip) { justify-content: center; padding: 0 4px; font-size: .8125rem; }
+
+  .line { grid-template-columns: minmax(0, 1fr) 7.75rem; gap: 2px var(--lux-space-3); padding-block: var(--lux-space-2); }
+  .lineLabel strong { font-size: .875rem; }
+  .lineLabel small { font-size: .6875rem; line-height: 1.35; }
+  .lineValue { padding-right: .75rem; font-size: .9375rem; }
+  .money[data-size="sm"] > span { left: .75rem; font-size: 1rem; }
+  .money[data-size="sm"] input { min-height: 44px; padding: .5rem .75rem .5rem 1.75rem; }
+  .block > :global(.lux-link) { min-height: 40px; }
+
+  .bar { padding-left: 1rem; }
+  .bar strong { font-size: 1.25rem; }
+  .bar small { font-size: .625rem; }
+
+  .summary { gap: var(--lux-space-4); border-radius: var(--lux-radius-lg); }
+  .summaryTitle { font-size: .6875rem; }
+  .chart { gap: var(--lux-space-3); }
+  .donutWrap { width: 176px; }
+  .total { gap: 2px; padding: 14%; }
+  .total small { font-size: .625rem; }
+  .total strong { font-size: 1.5rem; }
+  .verdict { padding: .375rem .875rem; font-size: .8125rem; }
+  .legend li { gap: var(--lux-space-3); padding: var(--lux-space-2) 0; }
+  .legend strong { font-size: .8125rem; }
+  .legend small { font-size: .6875rem; }
+  .legendValue { font-size: .8125rem; }
+  .meterLegend, .deposit { font-size: .6875rem; }
+  .summaryActions :global(.lux-link) { min-height: 40px; font-size: .8125rem; }
+
+  .matches { gap: var(--lux-space-3); margin-top: var(--lux-space-8); }
+  .matchesHead { gap: var(--lux-space-2); padding-bottom: var(--lux-space-3); }
+  .matchesHead > div { gap: 4px; }
+  .matchesIntro { font-size: .75rem; line-height: 1.5; }
+  .matchList { gap: var(--lux-space-2); }
+  .match { grid-template-columns: minmax(0, 1fr) auto; gap: var(--lux-space-2) var(--lux-space-3); padding: var(--lux-space-3) var(--lux-space-4); border-radius: var(--lux-radius-md); }
+  .matchMain { gap: 2px; }
+  .matchMain h3 { font-size: 1.0625rem; line-height: 1.25; }
+  .matchMain h3::before { font-size: .8125rem; }
+  .matchMain p { gap: 4px; font-size: .75rem; }
+  .matchMain :global(.icon) { width: 13px; height: 13px; }
+  .matchMain .matchSplit { font-size: .6875rem; }
+  .matchFigures { justify-items: end; text-align: right; }
+  .matchFigures strong { font-size: 1rem; }
+  .matchFigures small { font-size: .6875rem; }
+  .matchFigures span { margin-top: 4px; padding: 1px 8px; font-size: .6875rem; }
+  .match > :global(.lux-button) { --lux-button-height: 36px; }
+  .current { min-height: 32px; font-size: .8125rem; }
+  .directory { gap: var(--lux-space-3); padding: var(--lux-space-4); border-radius: var(--lux-radius-md); }
+  .directory p { font-size: .8125rem; }
+
+  .notes { gap: var(--lux-space-3); margin-top: var(--lux-space-8); }
+  .notes li, .notes li + li { grid-template-columns: 36px minmax(0, 1fr); column-gap: var(--lux-space-3); row-gap: 2px; padding: var(--lux-space-3) 0; }
+  .notes li > span { grid-row: span 3; width: 36px; height: 36px; margin: 0; }
+  .notes li > span :global(.icon) { width: 17px; height: 17px; }
+  .notes h3 { font-size: .9375rem; }
+  .notes p { font-size: .8125rem; line-height: 1.5; }
+  .notes li :global(.lux-link) { min-height: 36px; }
+}

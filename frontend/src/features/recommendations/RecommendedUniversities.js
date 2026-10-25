@@ -44,7 +44,7 @@ export default function RecommendedUniversities({
     {state.status === 'loading'
       ? <ul className={styles.grid}>{Array.from({ length: Math.min(limit, 3) }, (_item, index) => <li key={index}><span className={`lux-skeleton ${styles.skeleton}`} /></li>)}</ul>
       : <ul className={styles.grid}>{state.items.map((item) => <li key={item.id}>
-        <p className={styles.reason}><Icon name="spark" />{item.reason}</p>
+        <p className={styles.reason} title={item.reason}><Icon name="spark" />{item.reason}</p>
         <UniversityCard item={item} courseNames={courseNames} headingLevel={headingLevel + 1} />
       </li>)}</ul>}
   </section>;

@@ -55,3 +55,21 @@
   .grid::-webkit-scrollbar { display: none; }
   .grid > li { scroll-snap-align: start; }
 }
+/* Phones: the card is a compact tile here, so 1½ show at once and the swipe is obvious. */
+@media (max-width: 640px) {
+  .section { padding-block: var(--lux-section); }
+  .head { gap: var(--lux-space-1); margin-bottom: var(--lux-space-4); }
+  .title { font-size: 1.625rem; line-height: 1.12; }
+  .lede { font-size: .875rem; line-height: 1.55; }
+  .all { min-height: 40px; font-size: .875rem; }
+  /* The section sits in the legacy .container, so the rails bleed by its gutter (--page-gutter) to the screen edge. */
+  .tabs { margin: 0 calc(var(--page-gutter) * -1) var(--lux-space-4); padding-inline: var(--page-gutter); scroll-padding-inline: var(--page-gutter); }
+  .grid { grid-auto-columns: 60%; gap: var(--lux-space-3); margin-inline: calc(var(--page-gutter) * -1); padding-inline: var(--page-gutter); scroll-padding-inline: var(--page-gutter); }
+  .tab { min-height: 38px; padding: 0 var(--lux-space-3); font-size: .8125rem; }
+  .skeleton { height: 340px; }
+  /* The consent prompt's button gets a full 40px tap row of its own. */
+  .personalise { margin-top: var(--lux-space-4); padding: var(--lux-space-2) var(--lux-space-3) 0; font-size: .8125rem; }
+  .personalise button { display: inline-flex; align-items: center; min-height: 40px; }
+  .note { align-items: flex-start; margin-top: var(--lux-space-3); line-height: 1.5; }
+  .note :global(.icon) { flex: none; margin-top: 2px; }
+}

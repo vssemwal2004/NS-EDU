@@ -81,3 +81,26 @@
 .legal { display: flex; gap: var(--lux-space-2); color: var(--lux-text-subtle); font-size: var(--lux-caption); line-height: 1.5; }
 .legal :global(.icon) { flex: none; width: 15px; height: 15px; margin-top: 2px; color: var(--lux-bronze); }
 .legal a { color: var(--lux-wine); font-weight: 600; }
+
+/* Phones: denser steps. Inputs stay at 16px+ so iOS does not zoom; the main button stays 52px. */
+@media (max-width: 640px) {
+  .root { gap: var(--lux-space-4); }
+  .heading { gap: 6px; }
+  .stepTag { font-size: .6875rem; }
+  .title { font-size: 1.625rem; }
+  .lead { font-size: .9375rem; line-height: 1.5; }
+  .form { gap: var(--lux-space-3); }
+  .segment { min-height: 40px; }
+  .label { font-size: .8125rem; }
+  .inputWrap { min-height: 52px; padding: 0 var(--lux-space-3); }
+  .inputWrap input { height: 50px; font-size: 1rem; }
+  .primary { min-height: 52px; }
+  .otp input { height: 52px; font-size: 1.5rem; }
+  .timers > span { min-height: 40px; }
+  .timers, .devCode { font-size: .8125rem; }
+  .inlineLink { min-height: 40px; font-size: .8125rem; }
+  .devCode { padding: var(--lux-space-2) var(--lux-space-3); }
+  .devCode button { min-height: 40px; }
+  .error { padding: var(--lux-space-2) var(--lux-space-3); font-size: .8125rem; }
+  .legal { font-size: .75rem; }
+}

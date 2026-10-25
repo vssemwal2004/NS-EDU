@@ -67,6 +67,30 @@
   .stateTitle > svg { width: 15px; height: 15px; }
   .footer { padding: 0; font-size: var(--location-mobile-link-size); }
 }
+/* Phones (≤ 640px): cities as three small arched tiles per row (the whole tile is the link, so the repeated
+   "Explore colleges" line is dropped) and states as compact two-column cards with a short landscape strip. */
+@media (max-width: 640px) {
+  .content { padding: var(--lux-section) var(--page-gutter) var(--space-6); }
+  .heading { gap: var(--space-2) var(--space-3); margin-bottom: var(--space-4); }
+  .heading h2 { font-size: 1.625rem; line-height: 1.12; }
+  .heading > p { font-size: .875rem; line-height: 1.5; }
+  .courseControl { min-height: 44px; }
+  .viewAll { min-height: 40px; }
+  .cityGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-4) var(--space-2); }
+  .cityImage { aspect-ratio: 1.08; border-radius: 48% 48% .65rem .65rem / 30% 30% .65rem .65rem; }
+  .cityTitle { padding: 6px 2px 0; font-size: 1rem; line-height: 1.2; }
+  .cityTitle > svg { width: 13px; height: 13px; flex: none; }
+  .cityGrid .badge { max-width: calc(100% - 4px); margin: 4px 2px 0; padding: 1px 6px; font-size: .6875rem; }
+  .cityAction { display: none; }
+  .stateSection { margin-top: var(--space-5); padding-top: var(--space-5); }
+  .stateHeading h2 { font-size: 1.5rem; }
+  .stateHeading > .viewAll { margin-top: 0; }
+  .stateGrid { gap: var(--space-2); }
+  .stateImage { aspect-ratio: 2.6; }
+  .stateTitle { min-height: 0; padding: var(--space-2) var(--space-2) 0; font-size: 1rem; line-height: 1.2; }
+  .stateTile .badge { margin: 6px var(--space-2) var(--space-2); font-size: .6875rem; }
+  .footer { margin-top: var(--space-4); font-size: .75rem; line-height: 1.5; }
+}
 @media (max-width: 370px) {
   .courseControl { flex-basis: 100%; }
 }

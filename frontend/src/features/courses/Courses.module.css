@@ -105,3 +105,47 @@
   .short { display: inline; }
   .grid { grid-template-columns: 1fr; gap: var(--lux-space-4); }
 }
+/* Phones: a tighter hero (the levels count repeats the level switch below, so it goes), popular courses
+   on a swipe row, and the stream mosaic as a three-row swipe rail of compact tiles — icon beside name and
+   count — so every stream fits in about a quarter of a screen. The "see all" tile is dropped: the
+   directory starts right below. Courses then sit two to a row (CourseCard.module.css). */
+@media (max-width: 640px) {
+  .hero { padding-block: var(--lux-space-5) var(--lux-space-6); }
+  .heroGrid { gap: var(--lux-space-5); }
+  .counts { gap: var(--lux-space-2) var(--lux-space-5); margin-top: 0; padding-top: var(--lux-space-3); }
+  .counts div:nth-child(3) { display: none; }
+  .counts dd { font-size: 1.5rem; }
+  .counts dt { font-size: .6875rem; }
+  .popular { width: 100%; margin-top: 0; }
+  .popular p { font-size: .6875rem; }
+  .popular ul { flex-wrap: nowrap; margin-inline: calc(var(--lux-gutter) * -1); padding: 2px var(--lux-gutter) 4px; overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain; }
+  .popular ul::-webkit-scrollbar { display: none; }
+  .popular li { flex: 0 0 auto; }
+
+  .mosaic { margin-inline: calc(var(--lux-gutter) * -1); }
+  .mosaic ul { grid-template-columns: none; grid-template-rows: repeat(3, auto); grid-auto-flow: column; grid-auto-columns: calc((100vw - var(--lux-gutter)) / 2.25); grid-auto-rows: auto; gap: var(--lux-space-2); padding: 2px var(--lux-gutter) 6px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: var(--lux-gutter); scrollbar-width: none; overscroll-behavior-x: contain; }
+  .mosaic ul::-webkit-scrollbar { display: none; }
+  .cell, .cell[data-size="xl"], .cell[data-size="wide"] { grid-column: auto; grid-row: auto; scroll-snap-align: start; }
+  .endCell { display: none; }
+  .tile, .cell[data-size="xl"] .tile { display: grid; grid-template-columns: 32px minmax(0, 1fr); align-content: center; column-gap: 10px; row-gap: 1px; min-height: 60px; padding: var(--lux-space-2) var(--lux-space-3); border-radius: var(--lux-radius-md); }
+  .tile:hover { transform: none; }
+  .cell[data-size="xl"] .tile::after { display: none; }
+  .tileIcon, .cell[data-size="xl"] .tileIcon, .cell[data-size="wide"] .tileIcon { position: static; grid-row: span 2; align-self: center; width: 32px; height: 32px; }
+  .tileIcon :global(.icon), .cell[data-size="xl"] .tileIcon :global(.icon) { width: 16px; height: 16px; }
+  .tileName, .cell[data-size="xl"] .tileName, .cell[data-size="wide"] .tileName { display: -webkit-box; margin: 0; overflow: hidden; font-size: 1rem; line-height: 1.15; overflow-wrap: normal; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; }
+  .tileCount { font-size: .625rem; letter-spacing: .08em; }
+  .cell[data-size="xl"] .tileList { display: none; }
+
+  .directory { padding-block: var(--lux-space-6) var(--lux-space-7); }
+  .dirHead { gap: var(--lux-space-3); }
+  .dirHead > div { gap: 2px; }
+  .search { min-height: 50px; }
+  .search input { height: 40px; }
+  .filters { margin-top: var(--lux-space-3); }
+  .segmented a { min-height: 40px; gap: 6px; }
+  .count { min-width: 20px; height: 20px; padding: 0 5px; font-size: .6875rem; }
+  .activeChip { min-height: 40px; }
+  .result { margin: var(--lux-space-3) 0; font-size: .8125rem; }
+  .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--lux-space-2); }
+  .footnote { margin-top: var(--lux-space-5); }
+}

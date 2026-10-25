@@ -2,6 +2,7 @@ import Link from 'next/link';
 import Icon from '@/components/ui/Icon';
 import Checklist from './Checklist';
 import GuideExtras from './GuideExtras';
+import StreamDisclosure from './StreamDisclosure';
 import { LuxLink } from './GuidePage';
 import { pad, plural, slugify, withIds } from './data';
 import styles from './CareerGuidance.module.css';
@@ -84,13 +85,13 @@ export default function CareerGuidance({ guides, guide, courses, exams }) {
           <h2 id={`${exploreId}-title`} className="lux-display-3">{catalogSection.title}</h2>
           {catalogSection.text && <p className="lux-lead">{catalogSection.text}</p>}
         </div>
-        <ul className={styles.streamGrid}>{streams.map((stream) => <li key={stream.field} className={styles.stream}>
+        <ul className={styles.streamGrid}>{streams.map((stream) => <StreamDisclosure key={stream.field} className={styles.stream} controls={`stream-${stream.id}-courses`} label={`${stream.field}: show ${plural(stream.courses.length, 'course')}`}>
           <header className={styles.streamHead}>
             <span className={styles.streamIcon} aria-hidden="true"><Icon name={stream.icon} /></span>
             <h3 className="lux-title" id={`stream-${stream.id}`}>{stream.field}</h3>
             <span className={styles.streamCount}>{plural(stream.courses.length, 'course')}</span>
           </header>
-          <ul className={styles.courseList} aria-labelledby={`stream-${stream.id}`}>{stream.courses.map((course) => <li key={course.id}>
+          <ul id={`stream-${stream.id}-courses`} className={styles.courseList} aria-labelledby={`stream-${stream.id}`}>{stream.courses.map((course) => <li key={course.id}>
             <Link href={`/courses/${course.id}`}>
               <span><strong>{course.name}</strong>{course.fullName && <small>{course.fullName}</small>}</span>
               {LEVEL[course.level] && <abbr className={styles.level} title={LEVEL[course.level]}>{course.level}</abbr>}
@@ -101,7 +102,7 @@ export default function CareerGuidance({ guides, guide, courses, exams }) {
             <span>Entrance exams</span>
             {stream.exams.map((exam) => <Link key={exam.id} href={`/exams/${exam.id}`} className={styles.examChip}>{exam.name}<span className="sr-only"> exam guide</span></Link>)}
           </footer>}
-        </li>)}</ul>
+        </StreamDisclosure>)}</ul>
       </div>
     </section>}
 

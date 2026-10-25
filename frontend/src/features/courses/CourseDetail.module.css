@@ -107,3 +107,68 @@
   .tool { grid-template-columns: 32px minmax(0, 1fr); column-gap: var(--lux-space-3); padding: var(--lux-space-4); }
   .tool :global(.icon) { grid-row: span 2; margin: 0; }
 }
+/* Phones: a shorter masthead (smaller name, tighter facts), the summary shown once — the masthead lead
+   already carries it, so the pull-quote goes — sibling courses on a swipe row instead of a tall list,
+   the long section intros clamped, and the next-step tools as a 2x2 grid of compact tiles. */
+@media (max-width: 640px) {
+  .masthead { padding-block: var(--lux-space-2) var(--lux-space-6); }
+  .masthead::after { right: -40vw; bottom: auto; top: -10vw; width: 90vw; }
+  .mastGrid { gap: var(--lux-space-5); }
+  .mastCopy { gap: var(--lux-space-2); }
+  .crumbs ol { margin-bottom: 0; font-size: .8125rem; }
+  .crumbs a { min-height: 40px; }
+  .kicker { gap: var(--lux-space-2); font-size: .6875rem; }
+  .glyph { width: 34px; height: 34px; }
+  .glyph :global(.icon) { width: 17px; height: 17px; }
+  .name { margin-top: var(--lux-space-1); font-size: 2.75rem; }
+  .full { font-size: 1.125rem; }
+  .lead { margin-top: var(--lux-space-1); font-size: .9375rem; line-height: 1.5; }
+  .actions { gap: var(--lux-space-2); margin-top: var(--lux-space-3); }
+
+  .glance { gap: var(--lux-space-3); }
+  .glanceHead { padding-bottom: var(--lux-space-2); }
+  .glanceHead h2 { font-size: 1.25rem; }
+  .tag { padding: 2px 8px; font-size: .6875rem; }
+  .facts { gap: var(--lux-space-3); }
+  .facts dt { font-size: .625rem; }
+  .facts dd { font-size: 1.1875rem; }
+  .wide { padding-top: var(--lux-space-3); }
+  .wide dd { font-size: 1.625rem; }
+  .facts small { font-size: .75rem; }
+  .ends { font-size: .6875rem; }
+  .glanceNote { font-size: .6875rem; }
+
+  .body { gap: var(--lux-space-7); padding-block: var(--lux-space-6) var(--lux-space-7); }
+  .study { gap: var(--lux-space-4); }
+  .studyMain { gap: var(--lux-space-3); }
+  .quote { display: none; }
+  .note { font-size: .8125rem; }
+  .side { gap: var(--lux-space-2); padding: var(--lux-space-3) var(--lux-space-4) var(--lux-space-2); }
+  .siblings { display: flex; justify-self: stretch; gap: var(--lux-space-2); width: auto; margin-inline: calc(var(--lux-space-4) * -1); padding: 2px var(--lux-space-4) 4px; overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain; }
+  .siblings::-webkit-scrollbar { display: none; }
+  .siblings li { flex: 0 0 auto; }
+  .siblings a { grid-template-columns: 18px auto auto; gap: var(--lux-space-2); min-height: 44px; padding: 0 var(--lux-space-3); font-size: .875rem; white-space: nowrap; }
+  .siblings :global(.icon) { width: 18px; height: 18px; }
+  .siblings small { font-size: .6875rem; }
+  .side :global(.lux-link) { min-height: 40px; font-size: .875rem; }
+
+  .block { gap: var(--lux-space-4); }
+  .blockHead { gap: var(--lux-space-2); }
+  .blockHead > div { gap: 2px; }
+  .blockHead > p { display: -webkit-box; overflow: hidden; font-size: .8125rem; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; }
+  .blockLinks { display: grid; gap: 0; }
+  .blockLinks :global(.lux-link) { min-height: 40px; font-size: .875rem; }
+  .tickets { gap: var(--lux-space-3); }
+
+  .plan { padding-block: var(--lux-space-7); }
+  .plan h2 { margin-top: var(--lux-space-2); }
+  .tools { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--lux-space-2); margin-top: var(--lux-space-4); }
+  .tool { grid-template-columns: minmax(0, 1fr); gap: 4px; padding: var(--lux-space-3); }
+  .tool :global(.icon) { grid-row: auto; width: 22px; height: 22px; margin: 0 0 4px; }
+  .tool strong { font-size: 1.0625rem; }
+  .tool span { display: -webkit-box; overflow: hidden; font-size: .75rem; line-height: 1.4; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; }
+
+  .faq { gap: var(--lux-space-2); padding-block: var(--lux-space-6); }
+  .faqList summary { min-height: 52px; padding-block: var(--lux-space-2); font-size: .9375rem; }
+  .faqList details p { font-size: .875rem; }
+}

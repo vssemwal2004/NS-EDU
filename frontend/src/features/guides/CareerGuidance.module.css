@@ -79,6 +79,7 @@
 .streamExams > span { width: 100%; color: var(--lux-text-muted); font-size: var(--lux-caption); font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
 .examChip { display: inline-flex; align-items: center; min-height: 44px; padding: 0 var(--lux-space-4); border: 1px solid var(--lux-border-strong); border-radius: var(--lux-radius-pill); color: var(--lux-wine); font-size: var(--lux-small); font-weight: 600; text-decoration: none; transition: background-color var(--lux-dur-2), border-color var(--lux-dur-2); }
 .examChip:hover { border-color: var(--lux-wine); background: var(--lux-blush-soft); }
+.streamToggle { display: none; } /* phones only (StreamDisclosure) */
 
 @media (max-width: 1100px) {
   .heroGrid { grid-template-columns: minmax(0, 1fr); }
@@ -96,4 +97,70 @@
   .ask { padding: var(--lux-space-3) var(--lux-space-4); }
   .streamHead { padding-inline: var(--lux-space-4); }
   .streamExams { padding-inline: var(--lux-space-4); }
+}
+/* Phones: a tighter roadmap. The hero keeps its counts and turns the route into a 2×2 grid of stops; the
+   journey cards slim down; each field collapses to a one-line header that opens its course list
+   (StreamDisclosure), so the 22 fields read as an index instead of ten thousand pixels of links. */
+@media (max-width: 640px) {
+  .hero { padding-block: var(--lux-space-6) var(--lux-space-6); }
+  .heroGrid { gap: var(--lux-space-5); }
+  .heroCopy { gap: var(--lux-space-3); }
+  .heroCopy h1 { max-width: none; }
+  .stats { margin-top: var(--lux-space-1); }
+  .stats dd { font-size: 1.75rem; }
+  .stats dt { font-size: .625rem; }
+  .statsNote { margin-top: calc(var(--lux-space-1) * -1); font-size: .6875rem; }
+  .route { padding: var(--lux-space-3); border-radius: var(--lux-radius-lg); }
+  .routeTitle { margin-bottom: var(--lux-space-2); font-size: .625rem; }
+  .route ol { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--lux-space-2); }
+  .route li:not(:last-child)::after { content: none; }
+  .route a { grid-template-columns: 28px minmax(0, 1fr); gap: var(--lux-space-2); height: 100%; min-height: 52px; padding: var(--lux-space-2); border: 1px solid var(--lux-border-dark); border-radius: var(--lux-radius-md); background: rgb(255 255 255 / 4%); font-size: .8125rem; line-height: 1.25; }
+  .route a > span { width: 28px; height: 28px; font-size: .8125rem; }
+  .route a > span :global(.icon) { width: 14px; height: 14px; }
+
+  .page { --career-node: 32px; }
+  .journey { gap: var(--lux-space-6); }
+  .timeline { gap: var(--lux-space-4); }
+  .timeline::before { top: var(--lux-space-3); }
+  .stop { gap: var(--lux-space-2); }
+  .node { top: calc(var(--lux-header-height) + var(--lux-space-3)); font-size: .875rem; box-shadow: 0 0 0 3px var(--lux-surface-page); }
+  .node :global(.icon) { width: 16px; height: 16px; }
+  .card { gap: var(--lux-space-2); padding: var(--lux-space-4) var(--lux-space-4) var(--lux-space-3); }
+  .card h2 { font-size: 1.3125rem; line-height: 1.15; }
+  .kicker { font-size: .625rem; }
+  .text { font-size: .875rem; line-height: 1.55; }
+  .ask { gap: 6px; margin-top: 2px; padding: var(--lux-space-3); }
+  .ask > p { font-size: .625rem; }
+  .ask > p :global(.icon) { width: 15px; height: 15px; }
+  .ask ul { gap: 6px; }
+  .ask li { padding-left: var(--lux-space-4); font-size: .8125rem; line-height: 1.45; }
+  .ask li::before { left: 2px; width: 6px; height: 6px; }
+  .links { gap: 0 var(--lux-space-4); }
+  .endCard { min-height: 60px; padding: var(--lux-space-3) var(--lux-space-4); }
+  .endCard > span { font-size: 1.0625rem; }
+  .endCard small { font-size: .625rem; }
+
+  .streamsHead { gap: var(--lux-space-2); margin-bottom: var(--lux-space-4); }
+  .streamGrid { gap: var(--lux-space-2); }
+  .stream { position: relative; border-radius: var(--lux-radius-md); }
+  .streamHead { grid-template-columns: 34px minmax(0, 1fr) auto; gap: var(--lux-space-3); min-height: 58px; padding: var(--lux-space-2) 3rem var(--lux-space-2) var(--lux-space-3); border-bottom: 0; }
+  .stream[data-open] .streamHead { border-bottom: 1px solid var(--lux-border); }
+  .streamHead h3 { overflow: hidden; font-size: 1.0625rem; text-overflow: ellipsis; white-space: nowrap; }
+  .streamIcon { width: 34px; height: 34px; }
+  .streamIcon :global(.icon) { width: 17px; height: 17px; }
+  .streamCount { font-size: .6875rem; }
+  .streamToggle { position: absolute; top: 0; inset-inline: 0; z-index: 1; display: flex; align-items: center; justify-content: flex-end; height: 58px; padding: 0 var(--lux-space-3); border: 0; border-radius: var(--lux-radius-md); background: none; color: var(--lux-wine); cursor: pointer; }
+  .streamToggle :global(.icon) { width: 20px; height: 20px; transition: transform var(--lux-dur-2) var(--lux-ease-out); }
+  .streamToggle[aria-expanded="true"] :global(.icon) { transform: rotate(180deg); }
+  .streamToggle:focus-visible { outline: 2px solid var(--lux-focus); outline-offset: -2px; }
+  .stream:not([data-open]) .courseList, .stream:not([data-open]) .streamExams { display: none; }
+  .courseList { padding: var(--lux-space-1); }
+  .courseList a { gap: var(--lux-space-2); min-height: 48px; padding: 6px var(--lux-space-2); }
+  .courseList strong { font-size: .875rem; }
+  .courseList small { font-size: .75rem; }
+  .courseList a > :global(.icon) { width: 16px; height: 16px; }
+  .level { padding: 2px 7px; font-size: .6875rem; }
+  .streamExams { gap: 6px; padding: var(--lux-space-2) var(--lux-space-3) var(--lux-space-3); }
+  .streamExams > span { font-size: .625rem; }
+  .examChip { min-height: 38px; padding: 0 var(--lux-space-3); font-size: .8125rem; }
 }

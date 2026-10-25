@@ -271,18 +271,91 @@
   .table { --metric-w: 200px; --col-w: 230px; }
 }
 @media (max-width: 640px) {
-  /* The arena becomes one swipeable row: three full-height cards stacked would push the comparison
-     itself more than a full screen down. The VS medallions only make sense side by side. */
-  .ring { display: grid; grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 84%; gap: var(--lux-space-3); margin-inline: calc(-1 * var(--lux-gutter)); padding: 4px var(--lux-gutter) var(--lux-space-3); overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: var(--lux-gutter); scrollbar-width: none; position: relative; }
-  .ring::-webkit-scrollbar { display: none; }
-  .ring > * { scroll-snap-align: start; }
-  .ring > .vs { display: none; }
-  .boardWrap { margin-inline: calc(-1 * var(--lux-gutter)); }
-  .scroller { border-radius: 0; border-inline: 0; }
-  .swipeHint { padding-inline: var(--lux-gutter); }
-  .table { --metric-w: 104px; --col-w: 152px; }
-  .table th, .table td { padding: 10px 11px; }
-  .board { margin-top: calc(-1 * var(--lux-space-7)); }
+  /* Phones see every institution at once: the arena is three compact cards side by side (the
+     picker takes the full row under them), and the table drops its sideways swipe — each metric is
+     a label row with the institutions' values in equal columns beneath, under a sticky name row. */
+  .page .stage { padding-block: var(--lux-space-4) var(--lux-space-6); }
+  .page .stage[data-board] { padding-bottom: calc(var(--lux-space-6) + var(--lux-space-6)); }
+  .crumbs ol { margin-bottom: var(--lux-space-3); }
+  .title { margin-top: var(--lux-space-2); }
+  .lead { margin-top: var(--lux-space-2); }
+  .stageHead { gap: var(--lux-space-4); }
+  .controls { gap: 4px; padding: var(--lux-space-3) var(--lux-space-4); border-radius: var(--lux-radius-md); }
+  .controlHint { display: none; }
+  .controlRow { margin-top: 4px; }
+  .controlRow :global(.lux-button) { --lux-button-height: 36px; }
+
+  .arena { margin-top: var(--lux-space-5); }
+  .arenaHead { margin-bottom: var(--lux-space-3); }
+  .arenaTitle { font-size: 1.25rem; }
+  .arenaMeta { font-size: .75rem; }
+  .meter i { width: 16px; }
+  .ring { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--lux-space-2); }
+  .ring > .vs, .slot[data-state='waiting'] { display: none; }
+  .slot[data-state='open'] { grid-column: 1 / -1; }
+  .slotCard { gap: 4px; padding: var(--lux-space-3) var(--lux-space-2) var(--lux-space-2); border-radius: var(--lux-radius-md); box-shadow: none; }
+  .slotIndex { left: -6px; top: -6px; width: 20px; height: 20px; font-size: .75rem; }
+  .slotMark { width: 36px; height: 36px; border-radius: var(--lux-radius-sm); font-size: .875rem; }
+  .slotName { margin-top: 4px; font-size: .8125rem; line-height: 1.25; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
+  .slotPlace { gap: 3px; font-size: .6875rem; }
+  .slotPlace svg { width: 11px; height: 11px; }
+  .slotPlace, .slotKind { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .slotKind, .slotChips, .slotFlag, .slotLink { display: none; }
+  .slotActions { padding-top: var(--lux-space-2); }
+  .slotActions :global(.lux-button) { --lux-button-height: 32px; gap: 4px; padding: 0 6px; font-size: .75rem; }
+  .slotActions :global(.lux-button) svg { display: none; }
+  .slotRemove { top: 2px; right: 2px; width: 32px; height: 32px; }
+  .slotRemove svg { width: 14px; height: 14px; }
+  .slotOpen { gap: var(--lux-space-2); padding: var(--lux-space-3); border-radius: var(--lux-radius-md); }
+  .openHead strong { font-size: 1rem; }
+  .plusDisc { width: 32px; height: 32px; }
+  .slotLoading, .slotError { min-height: 150px; }
+  .slotError { gap: var(--lux-space-2); padding: var(--lux-space-2); font-size: .75rem; }
+  .oneMore { margin-top: var(--lux-space-3); font-size: .75rem; }
+
+  .board { gap: var(--lux-space-4); margin-top: calc(-1 * var(--lux-space-6)); }
+  .verdict { gap: var(--lux-space-3); padding: var(--lux-space-4); }
+  .verdict li { grid-template-columns: 34px minmax(0, 1fr); padding: var(--lux-space-3); }
+  .verdictIcon { width: 34px; height: 34px; }
+  .verdictIcon svg { width: 16px; height: 16px; }
+  .verdictName { font-size: 1rem; }
+  .jumpLink, .switch { min-height: 38px; font-size: .75rem; }
+  .jumpLink { padding: 0 var(--lux-space-3); }
+  .toolbar { gap: var(--lux-space-2); }
+  .jump { flex: 1 1 100%; margin-inline: calc(-1 * var(--lux-gutter)); padding-inline: var(--lux-gutter); }
+
+  .swipeHint { display: none; }
+  .scroller { overflow: visible; contain: none; border-radius: var(--lux-radius-md); }
+  .table, .table thead, .table tbody { display: block; min-width: 0; }
+  .table tr { display: grid; grid-template-columns: repeat(var(--cols, 1), minmax(0, 1fr)); }
+  .table th, .table td { padding: 8px 10px; }
+  .table td + td { border-left: 1px solid var(--lux-border); }
+  .corner, .metric, .sectionLabel { position: static; width: auto; box-shadow: none; }
+  .corner, .sectionTick { display: none; }
+  /* Sticky names: the full header (mark, place, actions) is already in the arena cards above. */
+  .table thead { position: sticky; top: var(--lux-header-height); z-index: 3; border-bottom: 1px solid var(--lux-border-strong); background: var(--lux-surface-raised); box-shadow: 0 8px 16px -14px rgb(31 20 24 / 50%); }
+  .table thead th { border-bottom: 0; }
+  .table thead th + th { border-left: 1px solid var(--lux-border); }
+  .colMark, .colPlace, .colFlag, .colActions { display: none; }
+  .colName { margin-top: 0; font-size: .8125rem; line-height: 1.25; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+  .sectionLabel, .metric { grid-column: 1 / -1; }
+  .sectionLabel { padding: 10px; border-top: 1px solid var(--lux-border-strong); font-size: .6875rem; }
+  .metric { padding: 6px 10px 2px; border-bottom: 0; background: none; color: var(--lux-bronze-ink); font: 700 .625rem/1.3 var(--lux-font-body); letter-spacing: .08em; text-transform: uppercase; }
+  .metricNote { display: inline; margin: 0 0 0 4px; font-size: .625rem; letter-spacing: 0; text-transform: none; }
+  .cell { padding-top: 2px; font-size: .8125rem; line-height: 1.4; }
+  .cellValue { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 6; overflow: hidden; }
+  .cellSub, .cellFoot { font-size: .6875rem; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
+  .cellTag, .bestFlag { font-size: .625rem; }
+  .cellLink { font-size: .75rem; }
+
+  .gap, .footnote { padding: var(--lux-space-3); font-size: .75rem; }
+  .suggestions { padding-block: var(--lux-space-6); }
+  .suggestionGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--lux-space-2); margin-top: var(--lux-space-3); }
+  .suggestionChip { min-height: 56px; gap: var(--lux-space-2); padding: var(--lux-space-2) var(--lux-space-3); border-radius: var(--lux-radius-md); }
+  .suggestionChip:hover { transform: none; }
+  .suggestionChip > svg { width: 15px; height: 15px; }
+  .suggestionChip strong { font-size: .75rem; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+  .suggestionChip small { font-size: .6875rem; }
 }
 
 /* ---------- Print ---------- */

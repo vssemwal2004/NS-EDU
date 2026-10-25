@@ -44,3 +44,22 @@
   .plate dl > div { flex-direction: column; align-items: flex-start; }
   .contact { grid-template-columns: minmax(0, 1fr); }
 }
+/* Phones, denser: list and code text one step smaller, tighter limit tiles and contact card. */
+@media (max-width: 640px) {
+  .plate { gap: var(--lux-space-3); margin-top: var(--lux-space-2); padding: var(--lux-space-3) var(--lux-space-4); }
+  .plateIcon { width: 40px; height: 40px; }
+  .plate code { font-size: .875rem; }
+  .code { margin: var(--lux-space-3) 0; }
+  .code pre { padding: var(--lux-space-3); font-size: .8125rem; line-height: 1.6; }
+  .ticks { gap: 6px; }
+  .ticks li { gap: var(--lux-space-2); font-size: .9375rem; line-height: 1.5; }
+  .ticks :global(.icon) { width: 18px; height: 18px; margin-top: 2px; }
+  .limits { margin: var(--lux-space-3) 0; }
+  .limits > div { padding: var(--lux-space-3); }
+  .limits dd { font-size: 1.5rem; }
+  .contact { gap: var(--lux-space-3); padding: var(--lux-space-5) var(--lux-space-4); border-radius: var(--lux-radius-lg); }
+  .contactIcon { width: 44px; height: 44px; }
+  .address { font-size: 1.125rem; }
+  .contactNote { font-size: .8125rem; }
+  .contactActions :global(.lux-button) { min-height: 40px; }
+}

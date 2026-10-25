@@ -138,6 +138,7 @@
 .offeredFee small { margin-left: 4px; color: var(--lux-text-muted); font-size: var(--lux-caption); font-weight: 500; }
 .offeredFee > span + span { margin-left: var(--lux-space-3); padding-left: var(--lux-space-3); border-left: 1px solid var(--lux-border); }
 .aboutMore { max-width: 68ch; margin-top: var(--lux-space-3); color: var(--lux-text); font-size: 1.0625rem; line-height: 1.75; text-wrap: pretty; }
+.aboutToggle { display: none; }
 .history th[scope="row"] strong { font-variant-numeric: tabular-nums; }
 @media (max-width: 720px) {
   .history thead { display: none; }
@@ -340,6 +341,82 @@ a.sourceLine:hover { text-decoration: underline; text-underline-offset: 4px; }
   .offeredList li { align-items: flex-start; }
   .offeredFee { white-space: normal; }
   .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .stats li { padding: var(--lux-space-4); }
-  .stats strong { font-size: 1.375rem; }
+  .stats li { padding: var(--lux-space-3); }
+  .stats strong { font-size: 1.25rem; }
+
+  /* Cover: tighter, and Apply lives in the sticky bottom bar on phones, so the cover keeps only
+     Compare and the website. */
+  .cover.cover { padding-block: var(--lux-space-2) 4.25rem; }
+  .breadcrumb a { min-height: 36px; }
+  .title { font-size: 1.5rem; line-height: 1.12; }
+  .coverMeta { font-size: .75rem; }
+  .coverMeta a { min-height: 28px; }
+  .coverMeta :global(.icon) { width: 14px; height: 14px; }
+  .chips { gap: 6px; }
+  .chips li { gap: 5px; padding: 3px 9px; }
+  .chips :global(.icon) { width: 14px; height: 14px; }
+  .chips strong { font-size: .75rem; }
+  .coverActions > :global(.lux-button) { display: none; }
+  .coverSecondary > span > button[data-size] { min-height: 44px; }
+  .siteButton { --lux-button-height: 44px; flex-basis: 44px !important; }
+
+  /* At-a-glance ribbon */
+  .ribbonWrap { margin-top: -3rem; }
+  .ribbon div { padding: var(--lux-space-3); }
+  .ribbon dt { gap: 6px; font-size: .625rem; }
+  .glanceIcon { width: 24px; height: 24px; border-radius: 7px; }
+  .glanceIcon :global(.icon) { width: 13px; height: 13px; }
+  .ribbon dd { margin-top: 6px; font-size: 1.125rem; }
+  .ribbon dd small { font-size: .6875rem; }
+
+  .tabs { margin-top: var(--lux-space-4); }
+  .tabsInner a { height: 46px; font-size: .8125rem; }
+  .body { padding-block: var(--lux-space-5) var(--lux-space-8); }
+  .section + .section { margin-top: var(--lux-space-6); padding-top: var(--lux-space-6); }
+  .sectionHead { margin-bottom: var(--lux-space-4); }
+  .sectionAside { font-size: .75rem; }
+  .subhead { margin: var(--lux-space-5) 0 var(--lux-space-3); }
+
+  /* About: the opening lines, then "Read more". */
+  .about, .aboutMore { font-size: .9375rem; line-height: 1.65; }
+  .about::first-letter { font-size: 2.75em; }
+  .aboutText[data-clamped] { position: relative; max-height: 12.5rem; overflow: hidden; }
+  .aboutText[data-clamped]::after { content: ''; position: absolute; inset: auto 0 0; height: 5rem; background: linear-gradient(rgb(255 250 245 / 0%), var(--lux-surface-page) 72%); pointer-events: none; }
+  .aboutToggle { display: inline-flex; align-items: center; min-height: 40px; margin-top: var(--lux-space-1); padding: 0; border: 0; background: none; color: var(--lux-wine); font: 700 var(--lux-small)/1 var(--lux-font-body); text-decoration: underline; text-underline-offset: 4px; cursor: pointer; }
+  .aboutText[data-clamped] .aboutToggle { position: absolute; z-index: 1; left: 0; bottom: 0; }
+
+  /* Highlights: two compact tiles a row. */
+  .highlights { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--lux-space-2); }
+  .highlights li { flex-direction: column; gap: var(--lux-space-2); padding: var(--lux-space-3); }
+  .highlightIcon { width: 32px; height: 32px; }
+  .highlightIcon :global(.icon) { width: 16px; height: 16px; }
+  .highlights strong { font-size: 1rem; }
+  .highlights p { font-size: .75rem; }
+
+  .table tbody tr { padding: var(--lux-space-3); }
+  .table tbody th strong { font-size: 1rem; }
+  .table caption { padding: var(--lux-space-2) var(--lux-space-3); }
+  .courseTiles li { padding: var(--lux-space-3); }
+  .courseTiles strong, .offeredList strong { font-size: .9375rem; }
+  .offeredList li { padding: var(--lux-space-3); }
+  .timeline li p { font-size: .8125rem; }
+  .timelineYear { font-size: 1rem; }
+
+  /* Admissions steps: a numbered list, not three tall cards. */
+  .steps li { grid-template-columns: auto minmax(0, 1fr); gap: var(--lux-space-3); padding: var(--lux-space-3); }
+  .steps li > span { font-size: 1.375rem; }
+  .steps strong { font-size: .875rem; }
+  .applyPanel, .officialPanel { padding: var(--lux-space-4); border-radius: var(--lux-radius-lg); }
+  .seals li { padding: var(--lux-space-3) var(--lux-space-4); }
+  .seals :global(.icon) { width: 22px; height: 22px; margin-bottom: 0; }
+  .seals strong { font-size: 1.125rem; }
+  .statusList { gap: var(--lux-space-3) var(--lux-space-5); }
+  .placeArt { height: 88px; }
+  .placeBody { padding: var(--lux-space-4); }
+  .contactList li { gap: var(--lux-space-3); padding: var(--lux-space-3) var(--lux-space-4); }
+  .contactIcon { width: 34px; height: 34px; }
+  .attribution { padding: var(--lux-space-3); }
+  .gallery > li { flex-basis: 64%; }
+  .similar { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--lux-space-3); }
+  .recommended { padding-bottom: var(--lux-space-8); }
 }

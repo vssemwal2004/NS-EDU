@@ -14,6 +14,9 @@ function pageHref(courseId, filters, page) {
 }
 
 const SORTS = [['popular', 'Most viewed'], ['fee', 'Fee: low to high'], ['-fee', 'Fee: high to low'], ['name', 'Name']];
+// Phones show this many programme rows per institution (CSS); the "All … programmes" link then
+// appears there too, even when the desktop list is complete.
+const PHONE_ROWS = 3;
 
 // One programme row as the institution prints it: its own name, duration and each published fee
 // with the period it is for. Nothing is converted or estimated.
@@ -86,7 +89,7 @@ export default function CourseInstitutions({ course, offerings, filters }) {
         <ul className={styles.programmes}>
           {item.programmes.map((row) => <Programme key={row.name} row={row} />)}
         </ul>
-        {item.rowCount > item.programmes.length && <Link className={styles.more} href={`/universities/${item.id}#courses`}>All {item.rowCount} {course.name} programmes<Icon name="arrow" /></Link>}
+        {(item.rowCount > item.programmes.length || item.programmes.length > PHONE_ROWS) && <Link className={item.rowCount > item.programmes.length ? styles.more : `${styles.more} ${styles.phoneOnly}`} href={`/universities/${item.id}#courses`}>All {Math.max(item.rowCount, item.programmes.length)} {course.name} programmes<Icon name="arrow" /></Link>}
       </li>)}
     </ol> : <div className={`lux-state ${styles.empty}`}><Icon name="search" /><p className="lux-title">No institution in {filters.state} lists {course.name}</p>
       <Link className="lux-button lux-button--outline" scroll={false} href={pageHref(course.id, {}, 1)}>All states</Link></div>}

@@ -77,3 +77,51 @@
   .seal dd { font-size: 2.5rem; }
   .step { padding-inline: 0; }
 }
+/* Phones: the seal becomes a slim stat strip beside its gold mark, the two hero actions sit side by side,
+   portals are compact list cards (icon beside the name, one footer row) and the scheme steps read as a
+   numbered ledger with the number beside the title. */
+@media (max-width: 640px) {
+  .hero { padding-block: var(--lux-space-6); }
+  .heroGrid { gap: var(--lux-space-5); }
+  .heroCopy { gap: var(--lux-space-3); }
+  .heroActions { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: var(--lux-space-2); margin-top: var(--lux-space-1); }
+  .heroActions :global(.lux-button) { padding-inline: var(--lux-space-3); font-size: .8125rem; white-space: normal; text-align: center; line-height: 1.2; }
+  .heroActions :global(.lux-button) :global(.icon) { display: none; }
+
+  .seal { grid-template-columns: 52px minmax(0, 1fr); gap: var(--lux-space-2) var(--lux-space-3); align-items: center; max-width: none; margin-top: 0; padding: var(--lux-space-3) var(--lux-space-4); border-radius: var(--lux-radius-lg); box-shadow: inset 0 0 0 4px var(--lux-surface-raised), inset 0 0 0 5px rgb(201 164 106 / 35%), var(--lux-shadow-card); }
+  .sealMark { position: static; width: 52px; height: 52px; box-shadow: 0 0 0 4px var(--lux-ivory), 0 8px 18px -10px rgb(160 116 90 / 80%); transform: none; }
+  .sealMark :global(.icon) { width: 24px; height: 24px; }
+  .seal dl > div { justify-items: start; padding-inline: var(--lux-space-3); text-align: left; }
+  .seal dl > div:first-child { padding-left: 0; }
+  .seal dd { font-size: 1.75rem; }
+  .seal dt { font-size: .625rem; letter-spacing: .08em; line-height: 1.3; }
+  .seal figcaption { grid-column: 1 / -1; padding-top: var(--lux-space-2); font-size: .75rem; line-height: 1.45; text-align: left; }
+
+  .portals { gap: var(--lux-space-4); padding-block: var(--lux-space-7) var(--lux-space-5); }
+  .sectionHead { gap: var(--lux-space-2); }
+  .portalGrid { gap: var(--lux-space-3); }
+  .portal { grid-template-columns: 40px minmax(0, 1fr); grid-template-rows: auto; column-gap: var(--lux-space-3); row-gap: var(--lux-space-1); align-items: center; padding: var(--lux-space-4) var(--lux-space-4) var(--lux-space-3); }
+  .portal:hover { transform: none; }
+  .portalIndex { top: var(--lux-space-3); right: var(--lux-space-4); font-size: 1.5rem; }
+  .portalIcon { width: 40px; height: 40px; }
+  .portalIcon :global(.icon) { width: 19px; height: 19px; }
+  .portal strong { padding-right: var(--lux-space-6); font-size: 1.1875rem; }
+  .portalText { grid-column: 1 / -1; font-size: .8125rem; line-height: 1.5; }
+  .portalFoot { grid-column: 1 / -1; margin-top: var(--lux-space-1); padding-top: var(--lux-space-2); }
+  .host { min-height: 26px; padding: 0 .625rem; font-size: .75rem; }
+  .host :global(.icon) { width: 13px; height: 13px; }
+  .visit { font-size: .8125rem; }
+  .caveat { font-size: .75rem; }
+  .caveat :global(.icon) { width: 16px; height: 16px; }
+
+  .steps { gap: var(--lux-space-3); padding-block: var(--lux-space-5) var(--lux-section); }
+  .step { grid-template-columns: 2rem minmax(0, 1fr); gap: var(--lux-space-2) var(--lux-space-3); padding-block: var(--lux-space-4); }
+  .step > :not(.stepNumber) { grid-column: 2; }
+  .stepNumber { grid-row: 1; font-size: 1.5rem; }
+  .step h3 { align-self: center; font-size: 1.0625rem; }
+  .stepText { font-size: .875rem; line-height: 1.55; }
+  .points { gap: 6px; margin-top: 0; }
+  .points li { grid-template-columns: 18px minmax(0, 1fr); font-size: .8125rem; line-height: 1.45; }
+  .points :global(.icon) { width: 18px; height: 18px; padding: 3px; }
+  .stepLinks :global(.lux-link) { min-height: 40px; }
+}

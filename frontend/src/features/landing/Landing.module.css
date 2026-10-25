@@ -99,6 +99,18 @@
   .shortcut h3 { font-size: 1rem; }
   .shortcutDescription { font-size: .67rem; line-height: 1.5; }
 }
+/* Phones (≤ 640px): a slimmer photo banner so the search sits higher, and readable (≥ 11.5px) shortcut
+   descriptions. */
+@media (max-width: 640px) {
+  .heroVisual { aspect-ratio: 2; margin-bottom: var(--space-4); }
+  .heroDescription { margin-top: var(--space-2); }
+  .searchBox { margin-top: var(--space-4); }
+  .discovery { padding-top: var(--space-4); }
+  .courseLinks :global(.chip) { min-height: 44px; }
+  .shortcuts { padding-top: var(--space-4); }
+  .shortcut { min-height: 64px; }
+  .shortcutDescription { font-size: .71875rem; line-height: 1.45; }
+}
 @media (max-width: 370px) {
   .heroContent h1 { font-size: 2.2rem; }
   .heroSearch { flex-wrap: wrap; }

@@ -40,3 +40,23 @@
   .answer { padding-right: 0; }
   .tool { padding-inline: var(--lux-space-3); gap: var(--lux-space-3); }
 }
+/* Phones: shorter FAQ rows, slim tool cards (one-line blurb) and a compact scope note. */
+@media (max-width: 640px) {
+  .extras { gap: var(--lux-space-6); }
+  .faqs, .tools { gap: var(--lux-space-2); }
+  .faqList { margin-top: var(--lux-space-2); }
+  .faqList summary { gap: var(--lux-space-3); min-height: 52px; padding: var(--lux-space-2) 0; font-size: .9375rem; line-height: 1.35; }
+  .faqList summary :global(.icon) { width: 28px; height: 28px; padding: 6px; }
+  .answer { padding-bottom: var(--lux-space-4); font-size: .875rem; line-height: 1.55; }
+  .tools ul { gap: var(--lux-space-2); margin-top: var(--lux-space-1); }
+  .tool { grid-template-columns: 36px minmax(0, 1fr) 16px; min-height: 64px; padding-block: var(--lux-space-2); }
+  .toolIcon { width: 36px; height: 36px; border-radius: var(--lux-radius-sm); }
+  .toolIcon :global(.icon) { width: 18px; height: 18px; }
+  .toolBody { gap: 1px; }
+  .toolBody strong { font-size: 1rem; }
+  .toolBody small { display: -webkit-box; overflow: hidden; font-size: .75rem; line-height: 1.4; -webkit-box-orient: vertical; -webkit-line-clamp: 1; }
+  .toolBody em { font-size: .6875rem; }
+  .tool > :global(.icon):last-child { width: 16px; height: 16px; }
+  .note { grid-template-columns: 18px minmax(0, 1fr); gap: var(--lux-space-2); padding: var(--lux-space-3); font-size: .75rem; line-height: 1.5; }
+  .note > :global(.icon) { width: 18px; height: 18px; }
+}

@@ -39,9 +39,21 @@
   .top { grid-template-columns: minmax(0, 1fr); gap: var(--lux-space-6); }
   .groups { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--lux-space-5) var(--lux-space-4); }
 }
+/* Phones: a compact footer — smaller logo and statement, link groups in two tight columns with 40px rows,
+   and the legal line, cookie settings and "Back to top" folded into a short bottom block. */
 @media (max-width: 640px) {
-  .brand { --brand-height: 56px; }
-  .bottom { flex-direction: column; align-items: flex-start; }
+  .inner { gap: var(--lux-space-4); padding-block: var(--lux-space-6) var(--lux-space-3); }
+  .top { gap: var(--lux-space-5); }
+  .identity { gap: var(--lux-space-2); }
+  .brand { --brand-height: 46px; margin-bottom: 0; }
+  .statement { font-size: 1.375rem; }
+  .lead { font-size: .8125rem; line-height: 1.55; }
+  .footer .identity .contact { min-height: 44px; margin-top: 0; }
+  .contact > :global(.icon) { width: 36px; height: 36px; padding: 9px; }
+  .groups { column-gap: var(--lux-space-4); row-gap: var(--lux-space-4); }
+  .footer .group h2 { margin-bottom: var(--lux-space-1); font-size: .6875rem; }
+  .footer .group li a { min-height: 40px; font-size: .8125rem; }
+  .bottom { flex-direction: column; align-items: flex-start; gap: var(--lux-space-1); font-size: .75rem; line-height: 1.5; }
   .note { text-align: left; }
-  .footer .group li a { min-height: 44px; }
+  .bottomLinks { gap: 0 var(--lux-space-5); }
 }

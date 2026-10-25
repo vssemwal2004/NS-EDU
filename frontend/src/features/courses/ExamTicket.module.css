@@ -55,3 +55,36 @@
   .frame[data-variant="hero"] .pass { padding: var(--lux-space-7) var(--lux-space-7) var(--lux-space-6); }
   .frame[data-variant="hero"] .stub { padding: var(--lux-space-7) var(--lux-space-6); }
 }
+
+/* Phones: a shorter pass. List cards drop the repeated "Entrance exam guide" kicker and the constant
+   "Dates & fees: Official bulletin" field, clamp the summary to two lines and use smaller course chips;
+   the stub puts the host beside "Read the guide", with the official-site button full width below. */
+@media (max-width: 640px) {
+  .pass { gap: var(--lux-space-2); padding: var(--lux-space-4); }
+  .kicker { font-size: .6875rem; }
+  .name { font-size: 1.75rem; }
+  .fields { gap: var(--lux-space-2) var(--lux-space-5); padding-block: var(--lux-space-2); }
+  .fields dt { font-size: .625rem; }
+  .fields dd { font-size: .875rem; }
+  .summary { font-size: .8125rem; line-height: 1.5; }
+  .note { padding: var(--lux-space-2) var(--lux-space-3); font-size: .75rem; }
+  .note :global(.icon) { width: 16px; height: 16px; }
+  .route { gap: 6px; padding-top: var(--lux-space-1); }
+  .route p { font-size: .625rem; }
+  .route ul { gap: 6px; }
+  .route a { min-height: 36px; padding: 0 var(--lux-space-3); font-size: .8125rem; }
+  .stub { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 2px var(--lux-space-3); padding: var(--lux-space-3) var(--lux-space-4) var(--lux-space-4); }
+  .stubLabel { grid-column: 1; font-size: .625rem; }
+  .host { grid-column: 1; margin: 0; font-size: 1.125rem; }
+  .guide { grid-column: 2; grid-row: 1 / span 2; align-self: center; min-height: 40px; font-size: .875rem; }
+  .stub > :global(.lux-button) { grid-column: 1 / -1; margin-top: var(--lux-space-2); }
+  .stubNote { grid-column: 1 / -1; font-size: .6875rem; }
+
+  .frame[data-variant="card"] .kicker, .frame[data-variant="card"] .fields div:nth-child(3) { display: none; }
+  .frame[data-variant="card"] .summary { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; }
+
+  .frame[data-variant="hero"] .pass { padding: var(--lux-space-5) var(--lux-space-4) var(--lux-space-4); }
+  .frame[data-variant="hero"] .summary { font-size: .9375rem; }
+  .frame[data-variant="hero"] .stub { padding: var(--lux-space-4); }
+  .frame[data-variant="hero"] .host { font-size: 1.375rem; }
+}

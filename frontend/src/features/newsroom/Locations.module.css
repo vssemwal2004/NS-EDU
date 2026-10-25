@@ -114,3 +114,38 @@
   .stampInner strong { font-size: 1.125rem; }
   .closing { margin-inline: calc(var(--lux-gutter) * -1); border-radius: 0; }
 }
+/* Phones, denser: the featured postcards become a swipe rail (about one and a half cards in view),
+   the other places compact two-up stamps (name and count only; the section already says "state"),
+   and the hero facts sit on one row. */
+@media (max-width: 640px) {
+  .heroGrid { gap: var(--lux-space-4); padding-block: var(--lux-space-5) var(--lux-space-6); }
+  .heroCopy { gap: var(--lux-space-3); }
+  .facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; }
+  .facts div { padding-inline: var(--lux-space-3); }
+  .facts dt { font-size: .6875rem; line-height: 1.3; }
+  .facts dd { font-size: 1.5rem; }
+  .fan { height: 50vw; max-width: 340px; }
+  .fanCard { font-size: .8125rem; }
+
+  .section { padding-top: var(--lux-space-7); }
+  .sectionHead { gap: var(--lux-space-1); margin-bottom: var(--lux-space-3); }
+  .postcards { display: flex; gap: var(--lux-space-3); margin-inline: calc(var(--lux-gutter) * -1); padding: var(--lux-space-2) var(--lux-gutter) var(--lux-space-4); overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scroll-padding-inline: var(--lux-gutter); scrollbar-width: none; }
+  .postcards::-webkit-scrollbar { display: none; }
+  .postcardItem { flex: 0 0 62%; scroll-snap-align: start; }
+  .postcards[data-kind="state"] .postcardItem { flex-basis: 72%; }
+  .stamp small { display: none; }
+
+  .stampsTitle { margin: var(--lux-space-4) 0 var(--lux-space-3); font-size: .75rem; }
+  .stamps { gap: var(--lux-space-2); }
+  .stampInner { gap: 2px; min-height: 0; padding: var(--lux-space-3) 30px var(--lux-space-3) var(--lux-space-3); }
+  .stampKind { display: none; }
+  .stampInner strong { font-size: 1.0625rem; }
+  .stampInner > :global(.icon) { right: 10px; bottom: 50%; width: 15px; height: 15px; transform: translateY(50%); }
+  .stampCount { font-size: .75rem; }
+  .states { padding-bottom: var(--lux-space-7); }
+
+  .closing { gap: var(--lux-space-4); padding: var(--lux-space-6) var(--lux-gutter); }
+  .closingActions { width: 100%; }
+  .closingActions > :global(.lux-button) { flex: 1 1 auto; }
+  .footnote { font-size: .75rem; }
+}

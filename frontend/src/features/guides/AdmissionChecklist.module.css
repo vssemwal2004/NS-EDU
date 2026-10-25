@@ -119,6 +119,66 @@
   .groupHead { grid-template-columns: 44px minmax(0, 1fr) auto; }
   .groupBadge { width: 44px; height: 44px; }
 }
+/* Phones: a scoreboard that fits one glance (small ring beside the per-group progress; Print lives in the
+   bottom bar, so only "Clear ticks" stays), denser tick cards, and the exam sites as two-up tiles. */
+@media (max-width: 640px) {
+  .hero { padding-block: var(--lux-space-6) var(--lux-space-5); background-size: 22px 22px, 22px 22px, auto; }
+  .heroInner { gap: var(--lux-space-3); }
+  .heroMeta { gap: 6px; margin-top: 0; }
+  .heroMeta li { gap: 6px; min-height: 30px; padding: 0 var(--lux-space-3); font-size: .75rem; }
+  .heroMeta :global(.icon) { width: 14px; height: 14px; }
+
+  .board { gap: var(--lux-space-4); padding-block: var(--lux-space-5) var(--lux-section); }
+  .aside { gap: var(--lux-space-2); }
+  .summary { grid-template-columns: 104px minmax(0, 1fr); gap: var(--lux-space-3) var(--lux-space-4); align-items: center; padding: var(--lux-space-4); }
+  .ring { width: 104px; }
+  .ring strong { font-size: 1.75rem; }
+  .ring p span { font-size: .6875rem; }
+  .summaryGroups { gap: 0; min-width: 0; }
+  .summaryGroups li { grid-template-columns: minmax(0, 1fr); gap: 2px; padding-bottom: 2px; }
+  .summaryGroups a { gap: var(--lux-space-2); min-width: 0; min-height: 36px; font-size: .75rem; }
+  .summaryGroups a > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .summaryGroups small { font-size: .6875rem; }
+  .summaryActions { grid-column: 1 / -1; }
+  .summaryActions > :first-child { display: none; }
+  .summaryActions :global(.lux-button) { --lux-button-height: 40px; }
+  .printNote { font-size: .6875rem; }
+
+  .groups { gap: var(--lux-space-3); }
+  .group { gap: var(--lux-space-2); padding: var(--lux-space-4) var(--lux-space-4) var(--lux-space-2); }
+  .groupHead { grid-template-columns: 36px minmax(0, 1fr) auto; gap: var(--lux-space-3); }
+  .groupBadge { width: 36px; height: 36px; border-radius: var(--lux-radius-sm); font-size: 1rem; }
+  .groupBadge :global(.icon) { width: 18px; height: 18px; }
+  .groupKicker { font-size: .625rem; }
+  .groupTitle { font-size: 1.125rem; line-height: 1.2; }
+  .groupCount { padding: 3px 8px; font-size: .6875rem; }
+  .groupText { font-size: .8125rem; line-height: 1.5; }
+  .ticks label { grid-template-columns: 22px minmax(0, 1fr); min-height: 46px; padding-block: 6px; }
+  .box { width: 22px; height: 22px; border-radius: 6px; }
+  .box :global(.icon) { width: 14px; height: 14px; }
+  .tickText { font-size: .875rem; line-height: 1.35; }
+  .tickText small { font-size: .75rem; }
+  .ticks li:last-child { border-bottom: 0; }
+  .groupFoot { gap: 0 var(--lux-space-4); }
+  .groupFoot :global(.lux-link) { min-height: 40px; }
+  .groupFoot p { padding-bottom: var(--lux-space-2); font-size: .6875rem; }
+
+  .examsHead { gap: var(--lux-space-2); margin-bottom: var(--lux-space-4); }
+  .examList { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--lux-space-2); border-top: 0; }
+  .examList li { grid-template-columns: 32px minmax(0, 1fr); align-content: start; gap: var(--lux-space-2); padding: var(--lux-space-3); border: 1px solid var(--lux-border); border-radius: var(--lux-radius-md); background: var(--lux-surface-page); }
+  .examIcon { width: 32px; height: 32px; }
+  .examIcon :global(.icon) { width: 16px; height: 16px; }
+  .examName small { overflow: hidden; font-size: .625rem; letter-spacing: .06em; text-overflow: ellipsis; white-space: nowrap; }
+  .examName strong { font-size: 1.0625rem; }
+  .examLinks { grid-column: 1 / -1; display: grid; gap: 0; }
+  .examLinks a { gap: 4px; min-height: 36px; font-size: .75rem; }
+  .examLinks a:first-child { overflow: hidden; }
+  .examLinks a:first-child > :global(.icon):first-child { display: none; }
+  .examLinks :global(.icon) { flex-shrink: 0; width: 13px; height: 13px; }
+  .examMore { margin-top: var(--lux-space-2); }
+
+  .barCount strong { font-size: 1.25rem; }
+}
 
 /* Print: just the board — title, groups and ticks. */
 @media print {
