@@ -26,6 +26,11 @@ export const institutionLabel = ({ institutions }) => institutions
   ? `${new Intl.NumberFormat('en-IN').format(institutions)} ${institutions === 1 ? 'institution' : 'institutions'}`
   : 'No institutions listed yet';
 
+// Places with the most directory institutions first (the API sends this order; sorting here keeps
+// callers correct if they filter or merge lists), ties by name.
+export const byInstitutions = (a, b) => (b.institutions ?? 0) - (a.institutions ?? 0) || a.name.localeCompare(b.name);
+export const busiestPlaces = (places, limit) => places.filter((place) => place.institutions > 0).toSorted(byInstitutions).slice(0, limit);
+
 export function placeHref(name, course) {
   return `/colleges?${new URLSearchParams({ location: name, ...(course ? { course } : {}) })}`;
 }

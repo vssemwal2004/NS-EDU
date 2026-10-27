@@ -8,9 +8,9 @@ import styles from './LoginDrawer.module.css';
 
 // Copy for openLogin({ reason }). Any other string is shown as the lead line.
 const reasons = {
-  apply: { title: 'Log in to apply', lead: 'Verify your email once. Your quick-apply form opens right after.' },
+  apply: { title: 'Log in to apply', lead: 'Sign in once. Your quick-apply form opens right after.' },
   compare: { title: 'Log in to compare', lead: 'Comparisons use the full university directory, which is open to signed-in students.' },
-  directory: { title: 'Log in to explore', lead: 'The full university directory is open to signed-in students. It takes one email code.' },
+  directory: { title: 'Log in to explore', lead: 'The full university directory is open to signed-in students. Signing in takes a minute.' },
   account: { title: 'Your student space', lead: 'Log in to see your applications and saved preferences.' },
 };
 
@@ -18,7 +18,7 @@ const reasons = {
 // (/login itself opens it over the homepage). A centred dialog on larger screens, a bottom sheet
 // on phones. Native <dialog> + showModal() gives the focus trap, Escape and an inert page behind it.
 export default function LoginDrawer() {
-  const { loginOpen, loginReason, closeLogin, completeLogin } = useStudentAuth();
+  const { student, loginOpen, loginReason, loginReturnTo, loginNotice, loginAskName, closeLogin, completeLogin } = useStudentAuth();
   const id = useId();
   const dialog = useRef(null);
   const timer = useRef(0);
@@ -45,6 +45,8 @@ export default function LoginDrawer() {
     if (student) completeLogin(student); else closeLogin();
   }
   const close = finish;
+  // Remembered as soon as the code checks out, so closing on the optional name step still signs in.
+  function verifiedCode(student) { verifiedStudent.current = student; }
   function verified(student) { verifiedStudent.current = student; timer.current = window.setTimeout(finish, 650); }
 
   const copy = reasons[loginReason] ?? (loginReason ? { title: 'Log in to continue', lead: loginReason } : {});
@@ -56,7 +58,8 @@ export default function LoginDrawer() {
       <LoginArt />
       <div className={styles.main}>
         <OtpLoginForm key={session.count} active={loginOpen} titleId={`${id}-title`} title={copy.title} lead={copy.lead}
-          onSuccess={verified} onLinkClick={close} doneText="Continuing where you left off…" />
+          onVerified={verifiedCode} onSuccess={verified} onLinkClick={close} doneText="Continuing where you left off…"
+          returnTo={loginReturnTo || undefined} notice={loginNotice} askNameFor={loginAskName ? student : null} />
       </div>
       {/* Pinned to the dialog's corner: over the form on desktop, over the drawing on a phone sheet. */}
       <span className={styles.handle} aria-hidden="true" />

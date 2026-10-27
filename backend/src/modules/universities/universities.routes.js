@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { HttpError } from '../../lib/http-error.js';
 import { createRateLimiter } from '../../lib/rate-limit.js';
 import { requireStudentOrAdmin } from '../../middleware/auth.js';
+import { placeFilter } from '../catalog/catalog-service.js';
 import { featuredUniversities, getUniversity, listUniversities, sitemapPage, suggestUniversities, universityFacets } from './university-service.js';
 
 // The directory is for signed-in students (and console staff) only, so responses may be kept
@@ -31,7 +32,13 @@ universitiesRouter.use((_request, response, next) => {
   response.set('Cache-Control', 'no-store');
   next();
 }, requireStudentOrAdmin, privateCache);
-universitiesRouter.get('/', async (request, response) => response.json(await listUniversities(request.query)));
+// Destination tiles link with a city and no state (the city facet always sends a state), and their
+// counts fold aliases and districts, so those links get the tile's own row set.
+universitiesRouter.get('/', async (request, response) => {
+  const { city, state } = request.query;
+  const place = typeof city === 'string' && !state ? await placeFilter(city.trim().slice(0, 80)) : null;
+  response.json(await listUniversities(request.query, { place }));
+});
 universitiesRouter.get('/suggest', limitSuggest, async (request, response) => response.json(await suggestUniversities(request.query.q, request.query.limit)));
 universitiesRouter.get('/facets', async (request, response) => response.json(await universityFacets(request.query)));
 universitiesRouter.get('/sitemap', async (request, response) => response.json(await sitemapPage(request.query.page)));

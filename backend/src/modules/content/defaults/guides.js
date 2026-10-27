@@ -121,13 +121,13 @@ export default {
           },
           {
             title: 'What fits your circumstances?',
-            text: 'Bring location, total cost and your academic background into the decision. A useful shortlist should explain why each option fits you. Personalised AI career guidance and counselling are planned; they are not active services yet.',
+            text: 'Bring location, total cost and your academic background into the decision. A useful shortlist should explain why each option fits you. If you want to talk it through, a Gyaan Vidhya counsellor for your field can help.',
             points: [
               'Duration, total cost and location',
               'Your subjects and marks against the entry requirements',
               'Whether an entrance exam is part of the route',
             ],
-            links: [{ label: 'Review academic requirements', href: '/eligibility' }, { label: 'Plan your budget', href: '/budget' }],
+            links: [{ label: 'Review academic requirements', href: '/eligibility' }, { label: 'Plan your budget', href: '/budget' }, { label: 'Talk to a counsellor', href: '#talk-to-a-counsellor' }],
           },
         ],
       },
@@ -139,7 +139,7 @@ export default {
       checklist: {
         title: 'Questions to ask yourself',
         intro: 'Work through these before you build a shortlist.',
-        note: 'Saved only in this browser. Personalised counselling is planned, not active yet.',
+        note: 'Saved only in this browser. Want a second opinion? Talk to a Gyaan Vidhya counsellor below.',
         items: [
           { id: 'subjects', label: 'Which subjects do I enjoy most?' },
           { id: 'everyday-work', label: 'What kind of everyday work suits me?', hint: 'Building, researching, designing, helping or managing' },
@@ -152,8 +152,9 @@ export default {
       },
       faqs: [
         {
-          q: 'Is there a personalised counselling service?',
-          a: 'Not yet. Personalised AI guidance and counselling are planned. For now, use these questions with the course pages and planning tools.',
+          q: 'Can I talk to a counsellor?',
+          a: 'Yes. Pick your field under “Talk to a counsellor”. Log in to see each counsellor’s phone and WhatsApp numbers, or request a callback without logging in and a counsellor will call you. The service is free.',
+          link: { href: '/career-guidance#talk-to-a-counsellor', label: 'Talk to a counsellor' },
         },
         {
           q: 'How do I compare courses that lead to similar careers?',
@@ -167,7 +168,7 @@ export default {
         },
       ],
       tools: ['courses', 'eligibility', 'budget', 'colleges'],
-      note: 'Personalised counselling and AI guidance are planned for a later release.',
+      note: 'Counsellors give general guidance; they cannot guarantee admission or confirm your eligibility for a programme.',
     },
     'admission-checklist': {
       page: {

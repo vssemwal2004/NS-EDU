@@ -1,5 +1,6 @@
 import CareerGuidance from '@/features/guides/CareerGuidance';
 import { GuideUnavailable } from '@/features/guides/GuidePage';
+import { getCareerDirectory } from '@/features/guides/career-api';
 import { guideMetadata, loadGuides } from '@/features/guides/data';
 import { getCatalog } from '@/lib/api/catalog';
 import { getContent } from '@/lib/api/content';
@@ -11,8 +12,8 @@ export async function generateMetadata() {
 }
 
 export default async function CareerGuidancePage() {
-  const [{ courses, exams }, guides] = await Promise.all([getCatalog(), loadGuides(getContent)]);
+  const [{ courses, exams }, guides, careerDirectory] = await Promise.all([getCatalog(), loadGuides(getContent), getCareerDirectory()]);
   const guide = guides?.guides[SLUG];
   if (!guide) return <main id="main" tabIndex={-1}><GuideUnavailable /></main>;
-  return <CareerGuidance guides={guides} guide={guide} courses={courses} exams={exams} />;
+  return <CareerGuidance guides={guides} guide={guide} courses={courses} exams={exams} careerDirectory={careerDirectory} />;
 }

@@ -2,6 +2,7 @@ import { createHmac, randomInt, timingSafeEqual } from 'node:crypto';
 import { env, requireJwtSecret } from '../../config/env.js';
 import { sendOtpEmail } from '../../lib/mailer.js';
 import { isEmail } from '../../lib/validation.js';
+import { sendMsg91Otp } from './sms/msg91.js';
 
 export const OTP_TTL_SECONDS = 300;
 export const OTP_RESEND_SECONDS = 30;
@@ -35,14 +36,29 @@ export function maskIdentifier(channel, identifier) {
   return `${local.slice(0, 1)}***@${domain}`;
 }
 
-// Phone sign-in exists only once an SMS provider is configured (SMS_PROVIDER); none is wired yet.
-export const phoneEnabled = () => Boolean(env.smsProvider);
+// Phone sign-in exists only once an SMS provider is configured (SMS_PROVIDER).
+const SMS_PROVIDERS = ['msg91', 'console'];
+export const phoneEnabled = () => SMS_PROVIDERS.includes(env.smsProvider);
 export const enabledChannels = () => (phoneEnabled() ? ['email', 'phone'] : ['email']);
 const deliveryOf = (channel) => (channel === 'phone' ? env.smsProvider : env.otpDelivery);
 
 export const exposesDevCode = (channel = 'email') => !env.isProduction && deliveryOf(channel) === 'console';
 
-// Single delivery seam: email goes through SMTP (or the dev console); plug an SMS provider in here.
+// Daily SMS budget (per process, reset at IST midnight). The per-IP and per-number limits stop one
+// sender; this stops a botnet spread over many numbers from draining the SMS credit.
+const smsBudget = { day: '', sent: 0 };
+const istDay = (now) => new Date(now + 330 * 60_000).toISOString().slice(0, 10);
+export function takeSmsSlot(now = Date.now()) {
+  const day = istDay(now);
+  if (smsBudget.day !== day) Object.assign(smsBudget, { day, sent: 0 });
+  if (smsBudget.sent >= env.smsDailyCap) return false;
+  smsBudget.sent += 1;
+  return true;
+}
+export const refundSmsSlot = () => { smsBudget.sent = Math.max(0, smsBudget.sent - 1); };
+export const resetSmsBudget = () => Object.assign(smsBudget, { day: '', sent: 0 });
+
+// Single delivery seam: email goes through SMTP, phone through MSG91 (either can be the dev console).
 export async function deliverOtp({ channel, identifier, code }) {
   const delivery = deliveryOf(channel);
   if (delivery === 'console') {
@@ -53,6 +69,11 @@ export async function deliverOtp({ channel, identifier, code }) {
     const { messageId } = await sendOtpEmail({ to: identifier, code, ttlMinutes: OTP_TTL_SECONDS / 60 });
     console.log(`[OTP] email sent to ${maskIdentifier(channel, identifier)} messageId=${messageId}`);
     return { delivery, messageId };
+  }
+  if (channel === 'phone' && delivery === 'msg91') {
+    const { requestId } = await sendMsg91Otp({ phone: identifier, code });
+    console.log(`[OTP] sms sent to ${maskIdentifier(channel, identifier)} via msg91 request=${requestId}`);
+    return { delivery, requestId };
   }
   throw new Error(`OTP delivery "${delivery || 'none'}" is not configured for ${channel}.`);
 }

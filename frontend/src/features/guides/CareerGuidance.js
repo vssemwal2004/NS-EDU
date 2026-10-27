@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import Icon from '@/components/ui/Icon';
 import Checklist from './Checklist';
+import Counsellors from './Counsellors';
 import GuideExtras from './GuideExtras';
 import StreamDisclosure from './StreamDisclosure';
 import { LuxLink } from './GuidePage';
@@ -19,13 +20,19 @@ function streamsFrom(courses, exams) {
   });
 }
 
-// Career guidance: a dark "route" hero, then a vertical journey of questions ending at stream cards.
-export default function CareerGuidance({ guides, guide, courses, exams }) {
+const COUNSELLORS_ID = 'talk-to-a-counsellor';
+
+// Career guidance: a dark "route" hero, a vertical journey of questions, counsellors by field, then stream cards.
+export default function CareerGuidance({ guides, guide, courses, exams, careerDirectory }) {
   const { page, checklist, catalogSection } = guide;
   const steps = withIds(page.sections);
   const streams = streamsFrom(courses, exams);
   const exploreId = 'explore-by-field';
-  const stops = [...steps.map((step) => ({ id: step.id, label: step.title })), ...(catalogSection && streams.length ? [{ id: exploreId, label: catalogSection.toc || catalogSection.title, end: true }] : [])];
+  const stops = [
+    ...steps.map((step) => ({ id: step.id, label: step.title })),
+    { id: COUNSELLORS_ID, label: 'Talk to a counsellor' },
+    ...(catalogSection && streams.length ? [{ id: exploreId, label: catalogSection.toc || catalogSection.title, end: true }] : []),
+  ];
 
   return <main id="main" tabIndex={-1} className={styles.page}>
     <header className={`lux-surface-dark ${styles.hero}`}>
@@ -77,6 +84,8 @@ export default function CareerGuidance({ guides, guide, courses, exams }) {
         <Checklist guide="career-guidance" variant="paper" eyebrow="Ask yourself" icon="guideQuestion" {...checklist} />
       </aside>
     </div>
+
+    <Counsellors id={COUNSELLORS_ID} initial={careerDirectory} />
 
     {catalogSection && streams.length > 0 && <section id={exploreId} className={styles.streams} aria-labelledby={`${exploreId}-title`}>
       <div className="lux-container">

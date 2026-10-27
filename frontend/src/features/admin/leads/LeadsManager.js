@@ -1,104 +1,137 @@
 'use client';
-import { useEffect, useMemo, useState } from 'react';
+/**
+ * Admin leads list: status chips, search, filter drawer, column picker, download dialog, paging and bulk assign.
+ *
+ * Embeddable (e.g. the submissions of one school drive):
+ *   <LeadsManager
+ *     initial={searchParams}      // starting filters (the URL params on /admin/leads)
+ *     fixedFilters={{ form: id }} // merged into every list/count/export request; hidden from the drawer, chips and URL
+ *     syncUrl={false}             // default true: filters, page, rows per page and sort live in the /admin/leads URL
+ *     formId={id}                 // scopes GET /leads/columns (adds that form's answer columns) and the saved column choice;
+ *                                 // implies fixedFilters={{ form: id }} so answer columns always have their form in scope
+ *     heading="Registrations" />  // toolbar title (default "All leads")
+ */
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import Icon from '@/components/ui/Icon';
 import AdminDrawer from '@/features/admin/AdminDrawer';
 import { useAdminSession } from '@/features/admin/AdminSession';
 import drawerStyles from '@/features/admin/ResourceManager.module.css';
-import UniversityCombobox from '@/features/apply/UniversityCombobox';
-import { INDIAN_STATES } from '@/features/apply/apply-options';
-import { api } from '@/lib/api/client';
-import { courseText, FILTER_KEYS, formatDateTime, isQuick, LEAD_MODES, LEAD_STATUSES, LEADS_QUERY_KEY, leadStatusLabel, placeText, statusTone } from './lead-format';
+import ActiveFilterChips from '@/features/admin/table/ActiveFilterChips';
+import ColumnPicker from '@/features/admin/table/ColumnPicker';
+import DataTable from '@/features/admin/table/DataTable';
+import ExportDialog from '@/features/admin/table/ExportDialog';
+import FilterDrawer, { splitList } from '@/features/admin/table/FilterDrawer';
+import Pagination from '@/features/admin/table/Pagination';
+import { useColumnPrefs } from '@/features/admin/table/useColumnPrefs';
+import { toQuery, useServerList } from '@/features/admin/table/useServerList';
+import { activeFilterCount, apiFilterParams, DRAWER_KEYS, EMPTY_FILTERS, leadFilterChips, leadFilterSections, readFilters, urlParams, withoutPaging } from './lead-filters';
+import { channelLabel, channelOf, formatCount, isQuick, LEAD_PAGE_SIZES, LEAD_STATUSES, LEADS_QUERY_KEY, leadStatusLabel, statusTone } from './lead-format';
 import styles from './Leads.module.css';
 
-const PAGE_SIZE = 20;
-const ADVANCED = ['institution', 'course', 'state', 'mode', 'from', 'to', 'assignee'];
+const NO_FILTERS = {};
+const NOUN = { one: 'lead', many: 'leads' };
+// Shown while /leads/columns loads so the skeleton has a familiar shape.
+const PLACEHOLDER_COLUMNS = ['Reference', 'Submitted', 'Status', 'Source', 'Full name', 'Mobile'].map((label) => ({ key: label, label }));
 
-function readFilters(source) {
-  const value = (key) => String((Array.isArray(source[key]) ? source[key][0] : source[key]) ?? '').trim().slice(0, 120);
-  const filters = Object.fromEntries(FILTER_KEYS.map((key) => [key, value(key)]));
-  filters.page = Math.max(1, Number.parseInt(filters.page, 10) || 1);
-  if (filters.status && !LEAD_STATUSES.some((item) => item.value === filters.status)) filters.status = '';
-  if (filters.mode && !LEAD_MODES.some((item) => item.value === filters.mode)) filters.mode = '';
-  return filters;
+// Prefetch target after a page loads: the next numbered page, or the next cursor page past the skip limit.
+// Matches what Pagination asks for, so a click on Next is usually served from the cache.
+function nextPage(data, params) {
+  if (!data?.hasNext) return null;
+  const page = Number(params.page || 1) + 1;
+  const reachable = Math.floor(data.maxSkip / Number(params.limit || LEAD_PAGE_SIZES[0])) + 1;
+  return page <= reachable ? { ...params, page, cursor: '', dir: '' } : { ...params, page, cursor: data.cursors?.last ?? '', dir: 'after' };
 }
-function toQuery(filters, { withPage = true, withNames = false } = {}) {
-  const params = new URLSearchParams();
-  for (const key of FILTER_KEYS) {
-    const value = filters[key];
-    if (key === 'page' ? withPage && value > 1 : key === 'institutionName' ? withNames && filters.institution && value : value) params.set(key, String(value));
+
+function renderCell(item, column) {
+  const value = item.values?.[column.key];
+  const blank = value === '' || value === null || value === undefined;
+  switch (column.key) {
+    case 'ref': return <><Link className={styles.refLink} href={`/admin/leads/${item.id}`}>{item.ref}</Link>{isQuick(item) && <span className={styles.mode} title="Submitted with the one-screen quick apply form">Quick</span>}</>;
+    case 'status': return <span className={styles.status} data-tone={statusTone(item.status)}>{leadStatusLabel(item.status)}</span>;
+    case 'channel': return <span className={styles.channel} data-channel={channelOf(item)}>{channelLabel(channelOf(item))}</span>;
+    case 'fullName': return <strong>{item.applicant?.fullName || 'Not provided'}</strong>;
+    case 'phone': return blank ? <span className={styles.none}>—</span> : <a className={styles.cellLink} href={`tel:${value}`}>{value}</a>;
+    case 'assigned': return blank ? <small className={styles.unassigned}>Unassigned</small> : <small className={styles.assignees}>{value}</small>;
+    default: return blank ? <span className={styles.none}>—</span> : String(value);
   }
-  return params.toString();
 }
 
-export default function LeadsManager({ initial = {} }) {
+export default function LeadsManager({ initial = NO_FILTERS, fixedFilters = NO_FILTERS, syncUrl = true, formId = '', heading = 'All leads' }) {
   const { admin, request } = useAdminSession();
   const isAdmin = admin?.role === 'admin';
-  const [filters, setFilters] = useState(() => readFilters(initial));
+  const scope = admin?.id ?? '';
+  const fixedKey = toQuery({ ...(formId && { form: formId }), ...fixedFilters });
+  const fixed = useMemo(() => Object.fromEntries(new URLSearchParams(fixedKey)), [fixedKey]);
+  const hidden = useMemo(() => Object.keys(fixed), [fixed]);
+  const scoped = hidden.length > 0;
+
+  const [filters, setFilters] = useState(() => {
+    const start = readFilters(initial);
+    return { ...start, ...Object.fromEntries(hidden.map((key) => [key, ''])) };
+  });
   const [query, setQuery] = useState(filters.q);
-  const [showFilters, setShowFilters] = useState(() => ADVANCED.some((key) => filters[key]));
-  const [list, setList] = useState({ key: null, items: [], total: 0, error: '' });
-  const [stats, setStats] = useState(null);
-  const [version, setVersion] = useState(0);
+  const [panel, setPanel] = useState('');
   const [employees, setEmployees] = useState([]);
-  const [courses, setCourses] = useState([]);
   const [selectedIds, setSelectedIds] = useState([]);
-  const [bulkOpen, setBulkOpen] = useState(false);
   const [bulkEmployeeIds, setBulkEmployeeIds] = useState([]);
   const [bulkState, setBulkState] = useState({ busy: false, error: '' });
   const [toast, setToast] = useState('');
 
-  const key = useMemo(() => toQuery(filters), [filters]);
-  const loading = list.key !== key;
+  // A school drive chosen in the filters (or fixed by the embedding page) adds that form's answer columns.
+  const columnsForm = fixed.form || formId || filters.form;
+  const columnsInfo = useServerList(request, '/leads/columns', { form: columnsForm }, { scope });
+  const options = useServerList(request, '/leads/filter-options', {}, { scope }).data;
+  const stats = useServerList(request, '/leads/stats', {}, { scope, enabled: !scoped });
+  const available = useMemo(() => columnsInfo.data?.items.map((column) => column.key) ?? [], [columnsInfo.data]);
+  const defaults = useMemo(() => columnsInfo.data?.defaults ?? [], [columnsInfo.data]);
+  const [visibleKeys, saveColumns] = useColumnPrefs(admin ? `gv-admin-cols:leads:${admin.id}${formId ? `:${formId}` : ''}` : '', available, defaults);
+  const columnsReady = Boolean(columnsInfo.data) && !columnsInfo.busy && visibleKeys.length > 0;
+
+  const filterParams = useMemo(() => apiFilterParams(filters, fixed), [filters, fixed]);
+  const list = useServerList(request, '/leads', {
+    ...filterParams, page: filters.page, limit: filters.limit, sort: filters.sort === 'newest' ? '' : filters.sort,
+    cursor: filters.cursor, dir: filters.dir, columns: visibleKeys.join(','),
+  }, { scope, enabled: columnsReady, next: nextPage });
+  const data = list.data;
+  const items = data?.items ?? [];
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
       const q = query.trim();
-      setFilters((current) => (current.q === q ? current : { ...current, q, page: 1 }));
+      setFilters((current) => (current.q === q ? current : { ...withoutPaging(current), q }));
+      setSelectedIds([]);
     }, 300);
     return () => window.clearTimeout(timer);
   }, [query]);
 
   // Filters live in the URL (shareable, survive Back) and in session storage for the detail page's back link.
   useEffect(() => {
-    const search = toQuery(filters, { withNames: true });
+    if (!syncUrl) return;
+    const search = toQuery(urlParams(filters));
     window.history.replaceState(null, '', `/admin/leads${search ? `?${search}` : ''}`);
     try { window.sessionStorage.setItem(LEADS_QUERY_KEY, search ? `?${search}` : ''); } catch { /* storage unavailable */ }
-  }, [filters]);
+  }, [filters, syncUrl]);
 
-  useEffect(() => {
-    const controller = new AbortController();
-    request(`/leads?${key}${key ? '&' : ''}limit=${PAGE_SIZE}`, { signal: controller.signal })
-      .then((data) => setList({ key, items: data.items, total: data.total, error: '' }))
-      .catch((failure) => { if (failure.name !== 'AbortError') setList({ key, items: [], total: 0, error: failure.message }); });
-    return () => controller.abort();
-  }, [key, request, version]);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    request('/leads/stats', { signal: controller.signal }).then(setStats).catch(() => {});
-    return () => controller.abort();
-  }, [request, version]);
   useEffect(() => {
     if (!isAdmin) return;
-    request('/employees').then(({ items }) => setEmployees(items)).catch(() => {});
+    request('/employees').then(({ items: rows }) => setEmployees(rows)).catch(() => {});
   }, [isAdmin, request]);
   useEffect(() => {
-    api('/catalog/courses').then(({ items }) => setCourses(items)).catch(() => {});
-  }, []);
-  useEffect(() => {
     if (!toast) return undefined;
-    const timer = window.setTimeout(() => setToast(''), 3200);
+    const timer = window.setTimeout(() => setToast(''), 3600);
     return () => window.clearTimeout(timer);
   }, [toast]);
 
-  function change(patch) {
-    setFilters((current) => ({ ...current, page: 1, ...patch }));
+  const update = useCallback((patch, { keepPage = false } = {}) => {
+    setFilters((current) => ({ ...(keepPage ? current : withoutPaging(current)), ...patch }));
     setSelectedIds([]);
-  }
+  }, []);
+  const countFor = useCallback((draft, signal) => request(`/leads?${toQuery({ ...apiFilterParams(draft, fixed), limit: LEAD_PAGE_SIZES[0] })}`, { signal }).then((result) => result.total), [fixed, request]);
+  const close = () => setPanel('');
   function clearAll() {
     setQuery('');
-    setFilters(readFilters({}));
+    setFilters((current) => ({ ...readFilters({}), limit: current.limit, sort: current.sort }));
     setSelectedIds([]);
   }
 
@@ -106,124 +139,93 @@ export default function LeadsManager({ initial = {} }) {
     setBulkState({ busy: true, error: '' });
     try {
       const { count } = await request('/leads/assignments/bulk', { method: 'POST', body: { applicationIds: selectedIds, employeeIds: bulkEmployeeIds } });
-      setBulkOpen(false); setSelectedIds([]); setBulkEmployeeIds([]); setBulkState({ busy: false, error: '' });
+      setPanel(''); setSelectedIds([]); setBulkEmployeeIds([]); setBulkState({ busy: false, error: '' });
       setToast(`Employees added to ${count} ${count === 1 ? 'lead' : 'leads'}.`);
-      setVersion((current) => current + 1);
+      list.reload(); stats.reload();
     } catch (failure) { setBulkState({ busy: false, error: failure.message }); }
   }
 
-  const employeeEmail = (id) => employees.find((employee) => employee.id === id)?.email;
-  const counts = new Map((stats?.byStatus ?? []).map((row) => [row.status, row.count]));
-  const pages = Math.max(1, Math.ceil(list.total / PAGE_SIZE));
-  const allSelected = list.items.length > 0 && list.items.every((item) => selectedIds.includes(item.id));
-  const activeFilters = ADVANCED.filter((name) => filters[name]).length;
-  const exportQuery = toQuery(filters, { withPage: false });
-  const newToday = stats?.last14Days?.at(-1)?.count ?? 0;
+  const statuses = splitList(filters.status);
+  const counts = new Map((stats.data?.byStatus ?? []).map((row) => [row.status, row.count]));
+  const showCounts = !scoped && Boolean(stats.data);
+  const sections = leadFilterSections({ options, employees, isAdmin, hidden });
+  const chips = leadFilterChips({ filters, options, employees, hidden, onChange: (patch) => update(patch) });
+  const filterCount = activeFilterCount(filters, hidden);
+  const anyFilter = filterCount > 0 || Boolean(filters.q);
+  const tableColumns = columnsInfo.data
+    ? visibleKeys.map((key) => columnsInfo.data.items.find((column) => column.key === key)).filter(Boolean).map((column) => ({ ...column, className: column.key === 'ref' ? styles.refCell : undefined }))
+    : PLACEHOLDER_COLUMNS;
+  const totalText = !data ? 'Loading leads…' : data.total === null ? 'Many leads (count timed out)' : `${formatCount(data.total)} ${data.total === 1 ? 'lead' : 'leads'}`;
+  const newToday = stats.data?.last14Days?.at(-1)?.count;
 
   return <div className={styles.manager}>
     <div className={styles.toolbar}>
       <div className={styles.summary}>
         <span className={styles.summaryIcon}><Icon name="eligibility" /></span>
-        <div><strong>{loading && list.key === null ? 'Loading leads…' : `${list.total.toLocaleString('en-IN')} ${list.total === 1 ? 'lead' : 'leads'}`}</strong>
-          <small>{isAdmin ? `Applications from the Apply flow · ${newToday} today` : 'Leads assigned to you for follow-up'}</small></div>
+        <div><strong>{heading}</strong>
+          <small aria-live="polite">{totalText}{!scoped && typeof newToday === 'number' ? ` · ${formatCount(newToday)} today` : ''}{!isAdmin && admin ? ' · assigned to you' : ''}</small></div>
       </div>
-      {isAdmin && selectedIds.length > 0 && <button type="button" className="button button--primary" onClick={() => { setBulkOpen(true); setBulkEmployeeIds([]); setBulkState({ busy: false, error: '' }); }}><Icon name="people" />Assign {selectedIds.length}</button>}
-      {isAdmin && <a className="button button--outline" href={`/api/admin/leads/export.csv${exportQuery ? `?${exportQuery}` : ''}`} download><Icon name="document" />Export CSV</a>}
+      <div className={styles.toolbarActions}>
+        {isAdmin && selectedIds.length > 0 && <button type="button" className="button button--primary" onClick={() => { setPanel('assign'); setBulkEmployeeIds([]); setBulkState({ busy: false, error: '' }); }}><Icon name="people" />Assign {selectedIds.length}</button>}
+        <button type="button" className="button button--outline" aria-haspopup="dialog" onClick={() => setPanel('filters')}>
+          <Icon name="filter" />Filters{filterCount > 0 && <span className={styles.count} aria-label={`${filterCount} active`}>{filterCount}</span>}
+        </button>
+        <button type="button" className="button button--outline" aria-haspopup="dialog" disabled={!columnsInfo.data} onClick={() => setPanel('columns')}><Icon name="layers" />Columns</button>
+        {isAdmin && <button type="button" className="button button--outline" aria-haspopup="dialog" disabled={!columnsInfo.data} onClick={() => setPanel('export')}><Icon name="document" />Download</button>}
+      </div>
     </div>
 
     <div className={styles.chips} role="group" aria-label="Filter by status">
-      <button type="button" aria-pressed={!filters.status} onClick={() => change({ status: '' })}>All<span>{stats ? stats.total : '–'}</span></button>
-      {LEAD_STATUSES.map((status) => <button key={status.value} type="button" aria-pressed={filters.status === status.value} data-tone={statusTone(status.value)} onClick={() => change({ status: status.value })}>
-        {status.label}<span>{stats ? counts.get(status.value) ?? 0 : '–'}</span>
+      <button type="button" aria-pressed={!statuses.length} onClick={() => update({ status: '' })}>All{showCounts && <span>{formatCount(stats.data.total)}</span>}</button>
+      {LEAD_STATUSES.map((status) => <button key={status.value} type="button" aria-pressed={statuses.includes(status.value)} data-tone={statusTone(status.value)}
+        onClick={() => update({ status: statuses.length === 1 && statuses[0] === status.value ? '' : status.value })}>
+        {status.label}{showCounts && <span>{formatCount(counts.get(status.value) ?? 0)}</span>}
       </button>)}
     </div>
 
     <div className={styles.filterBar}>
       <label className={styles.search}><Icon name="search" /><span className="sr-only">Search leads</span>
-        <input type="search" value={query} maxLength={100} placeholder="Search ref, name, email or mobile…" onChange={(event) => { setQuery(event.target.value); setSelectedIds([]); }} />
+        <input type="search" value={query} maxLength={100} placeholder="Search ref, name, mobile or email…" onChange={(event) => setQuery(event.target.value)} />
       </label>
-      <button type="button" className="button button--ghost" aria-expanded={showFilters} aria-controls="lead-filters" onClick={() => setShowFilters(!showFilters)}>
-        <Icon name="filter" />Filters{activeFilters > 0 && <span className={styles.count}>{activeFilters}</span>}
-      </button>
-      {(activeFilters > 0 || filters.status || filters.q) && <button type="button" className={styles.textButton} onClick={clearAll}>Clear all</button>}
+      <label className={styles.sort}><span className="sr-only">Sort</span>
+        <select className={styles.select} value={filters.sort} onChange={(event) => update({ sort: event.target.value })}>
+          <option value="newest">Newest first</option><option value="oldest">Oldest first</option>
+        </select>
+      </label>
     </div>
-
-    {showFilters && <div id="lead-filters" className={styles.filters}>
-      <div className={styles.filterField} data-wide="true">
-        <label htmlFor="lead-filter-university">University</label>
-        <UniversityCombobox id="lead-filter-university" size="small" placeholder="Any university" value={filters.institution ? { id: filters.institution, name: filters.institutionName || filters.institution } : null}
-          onSelect={(university) => change({ institution: university?.id ?? '', institutionName: university?.name ?? '' })} />
-      </div>
-      <div className={styles.filterField}>
-        <label htmlFor="lead-filter-course">Course</label>
-        <select id="lead-filter-course" className={drawerStyles.input} value={filters.course} onChange={(event) => change({ course: event.target.value })}>
-          <option value="">Any course</option>{courses.map((course) => <option key={course.id} value={course.id}>{course.name}</option>)}
-        </select>
-      </div>
-      <div className={styles.filterField}>
-        <label htmlFor="lead-filter-state">Student’s state</label>
-        <select id="lead-filter-state" className={drawerStyles.input} value={filters.state} onChange={(event) => change({ state: event.target.value })}>
-          <option value="">Any state</option>{INDIAN_STATES.map((state) => <option key={state}>{state}</option>)}
-        </select>
-      </div>
-      <div className={styles.filterField}>
-        <label htmlFor="lead-filter-mode">Form</label>
-        <select id="lead-filter-mode" className={drawerStyles.input} value={filters.mode} onChange={(event) => change({ mode: event.target.value })}>
-          <option value="">Any form</option>{LEAD_MODES.map((mode) => <option key={mode.value} value={mode.value}>{mode.label}</option>)}
-        </select>
-      </div>
-      <div className={styles.filterField}>
-        <label htmlFor="lead-filter-from">Submitted from</label>
-        <input id="lead-filter-from" className={drawerStyles.input} type="date" value={filters.from} max={filters.to || undefined} onChange={(event) => change({ from: event.target.value })} />
-      </div>
-      <div className={styles.filterField}>
-        <label htmlFor="lead-filter-to">Submitted to</label>
-        <input id="lead-filter-to" className={drawerStyles.input} type="date" value={filters.to} min={filters.from || undefined} onChange={(event) => change({ to: event.target.value })} />
-      </div>
-      {isAdmin && <div className={styles.filterField}>
-        <label htmlFor="lead-filter-assignee">Assigned to</label>
-        <select id="lead-filter-assignee" className={drawerStyles.input} value={filters.assignee} onChange={(event) => change({ assignee: event.target.value })}>
-          <option value="">Anyone</option><option value="unassigned">Unassigned</option>
-          {employees.map((employee) => <option key={employee.id} value={employee.id}>{employee.email}</option>)}
-        </select>
-      </div>}
-    </div>}
+    <ActiveFilterChips chips={chips} onClearAll={anyFilter || statuses.length ? clearAll : null} />
 
     <div className={styles.tableCard}>
-      {list.error ? <div className={styles.errorBox} role="alert"><Icon name="shield" /><p>{list.error}</p><button type="button" className="button button--outline" onClick={() => setVersion((current) => current + 1)}>Try again</button></div>
-        : <table className={styles.table} aria-busy={loading}>
-          <caption className="sr-only">Leads, newest first</caption>
-          <thead><tr>
-            {isAdmin && <th scope="col" className={styles.checkCell}><input type="checkbox" aria-label="Select all leads on this page" checked={allSelected} onChange={(event) => setSelectedIds(event.target.checked ? list.items.map((item) => item.id) : [])} /></th>}
-            <th scope="col">Lead</th><th scope="col">Applicant</th><th scope="col">University &amp; course</th><th scope="col">Status</th>{isAdmin && <th scope="col">Assigned</th>}
-          </tr></thead>
-          <tbody>{list.items.map((item) => <tr key={item.id} data-selected={selectedIds.includes(item.id) || undefined}>
-            {isAdmin && <td className={styles.checkCell}><input type="checkbox" aria-label={`Select ${item.ref}`} checked={selectedIds.includes(item.id)} onChange={(event) => setSelectedIds((current) => event.target.checked ? [...current, item.id] : current.filter((id) => id !== item.id))} /></td>}
-            <td data-label="Lead"><Link className={styles.refLink} href={`/admin/leads/${item.id}`}>{item.ref}</Link>{isQuick(item) && <span className={styles.mode} title="Submitted with the one-screen quick apply form">Quick</span>}<small>{formatDateTime(item.createdAt)}</small></td>
-            <td data-label="Applicant"><strong>{item.applicant.fullName || 'Not provided'}</strong><small>{[item.applicant.phone, item.applicant.email].filter(Boolean).join(' · ') || 'Not provided'}</small><small>{placeText(item.applicant) || 'Location not provided'}</small></td>
-            <td data-label="University"><strong>{item.preference.institutionName}</strong><small>{courseText(item.preference)} · {item.preference.intakeYear}</small></td>
-            <td data-label="Status"><span className={styles.status} data-tone={statusTone(item.status)}>{leadStatusLabel(item.status)}</span></td>
-            {isAdmin && <td data-label="Assigned">{item.assignedEmployeeIds.length ? <small className={styles.assignees}>{item.assignedEmployeeIds.map((id) => employeeEmail(id) || 'Employee').join(', ')}</small> : <small className={styles.unassigned}>Unassigned</small>}</td>}
-          </tr>)}</tbody>
-        </table>}
-      {!list.error && !loading && !list.items.length && <div className={styles.empty}><Icon name="eligibility" /><p>{filters.q || filters.status || activeFilters ? 'No leads match these filters.' : isAdmin ? 'No applications yet. They appear here when students apply through /apply.' : 'No leads are assigned to you yet.'}</p></div>}
-      {loading && list.key === null && <p className={styles.loadingRow} role="status">Loading leads…</p>}
-      {pages > 1 && <nav className={styles.pagination} aria-label="Pagination">
-        <span>Page {filters.page} of {pages}</span>
-        <div>
-          <button type="button" className={styles.pageButton} disabled={filters.page <= 1} onClick={() => { setFilters((current) => ({ ...current, page: current.page - 1 })); setSelectedIds([]); }} aria-label="Previous page"><Icon name="arrow" /></button>
-          <button type="button" className={styles.pageButton} disabled={filters.page >= pages} onClick={() => { setFilters((current) => ({ ...current, page: current.page + 1 })); setSelectedIds([]); }} aria-label="Next page"><Icon name="arrow" /></button>
-        </div>
-      </nav>}
+      <DataTable columns={tableColumns} rows={items} loading={list.loading} busy={list.busy || columnsInfo.busy} pageSize={filters.limit}
+        caption={`Leads, ${filters.sort === 'oldest' ? 'oldest' : 'newest'} first`} scrollKey={`${filters.page}|${filters.cursor}`}
+        error={columnsInfo.error || list.error} onRetry={columnsInfo.error ? columnsInfo.reload : list.reload}
+        selectable={isAdmin} selectedIds={selectedIds} onSelectionChange={setSelectedIds} rowLabel={(item) => item.ref} renderCell={renderCell}
+        empty={<><Icon name="eligibility" /><p>{anyFilter || statuses.length ? 'No leads match these filters.' : isAdmin ? 'No leads yet. They appear here when students apply, register at a school drive or ask for a callback.' : 'No leads are assigned to you yet.'}</p>
+          {(anyFilter || statuses.length > 0) && <button type="button" className="button button--outline" onClick={clearAll}>Clear filters</button>}</>} />
+      {data && !list.error && (items.length > 0 || filters.page > 1) && <Pagination page={filters.page} pageSize={filters.limit} pageSizes={LEAD_PAGE_SIZES}
+        total={data.total} totalExact={data.totalExact} rowCount={items.length} hasNext={data.hasNext} hasPrevious={data.hasPrevious} maxSkip={data.maxSkip}
+        disabled={list.busy} noun="leads"
+        onPage={(page) => update({ page, cursor: '', dir: '' }, { keepPage: true })}
+        onPageSize={(limit) => update({ limit })}
+        onNext={() => update({ page: filters.page + 1, cursor: data.cursors?.last ?? '', dir: 'after' }, { keepPage: true })}
+        onPrevious={() => update({ page: Math.max(1, filters.page - 1), cursor: data.cursors?.first ?? '', dir: 'before' }, { keepPage: true })} />}
     </div>
 
-    <AdminDrawer open={bulkOpen} onClose={() => setBulkOpen(false)} title={`Assign ${selectedIds.length} ${selectedIds.length === 1 ? 'lead' : 'leads'}`}>
+    <FilterDrawer open={panel === 'filters'} onClose={close} title="Filter leads" subtitle="Combine any filters; the count updates as you choose."
+      sections={sections} value={filters} emptyValue={EMPTY_FILTERS} countFor={countFor} noun={NOUN}
+      onApply={(draft) => { update(Object.fromEntries(DRAWER_KEYS.filter((key) => !hidden.includes(key)).map((key) => [key, draft[key] ?? '']))); close(); }} />
+    {columnsInfo.data && <ColumnPicker open={panel === 'columns'} onClose={close} columns={columnsInfo.data.items} value={visibleKeys} defaults={defaults}
+      onApply={(keys) => { saveColumns(keys.join(',') === defaults.join(',') ? null : keys); close(); }} />}
+    {isAdmin && columnsInfo.data && <ExportDialog open={panel === 'export'} onClose={close} request={request} checkPath="/leads/export/check" downloadPath="/api/admin/leads/export"
+      columns={columnsInfo.data.items} visibleKeys={visibleKeys} formats={columnsInfo.data.formats ?? []} params={filterParams} noun={NOUN} onDone={setToast} />}
+
+    <AdminDrawer open={panel === 'assign'} onClose={close} title={`Assign ${selectedIds.length} ${selectedIds.length === 1 ? 'lead' : 'leads'}`}>
       <div className={drawerStyles.form}>
         <p className={drawerStyles.help}>Selected employees are added to every selected lead. Existing assignments stay in place.</p>
         {employees.map((employee) => <label className={drawerStyles.switch} key={employee.id}><input type="checkbox" checked={bulkEmployeeIds.includes(employee.id)} onChange={(event) => setBulkEmployeeIds((current) => event.target.checked ? [...current, employee.id] : current.filter((id) => id !== employee.id))} /><span /><span>{employee.email}</span></label>)}
         {!employees.length && <p className={drawerStyles.help}>Add an employee before assigning leads.</p>}
         {bulkState.error && <p className={drawerStyles.formError} role="alert">{bulkState.error}</p>}
-        <div className={drawerStyles.formActions}><button type="button" className="button button--ghost" onClick={() => setBulkOpen(false)}>Cancel</button><button type="button" className="button button--primary" disabled={bulkState.busy || !bulkEmployeeIds.length} onClick={saveBulk}>{bulkState.busy ? 'Saving…' : 'Assign employees'}</button></div>
+        <div className={drawerStyles.formActions}><button type="button" className="button button--ghost" onClick={close}>Cancel</button><button type="button" className="button button--primary" disabled={bulkState.busy || !bulkEmployeeIds.length} onClick={saveBulk}>{bulkState.busy ? 'Saving…' : 'Assign employees'}</button></div>
       </div>
     </AdminDrawer>
     {toast && <p className={drawerStyles.toast} role="status"><Icon name="check" />{toast}</p>}

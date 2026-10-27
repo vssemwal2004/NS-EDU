@@ -2,6 +2,7 @@
 import { useId } from 'react';
 import { getDestinationImage } from '@/lib/destination-image';
 import { useContent } from '@/providers/ContentProvider';
+import PlaceVisual from './PlaceVisual';
 import styles from './LocationDiscovery.module.css';
 
 // Crops are windows into `media.destinationsArt` (1784 × 882 by default).
@@ -11,12 +12,10 @@ function useDestinationArt() {
   return src ? { src, width: art.width, height: art.height } : null;
 }
 
+// Always fills its box: uploaded photo, landmark crop, or the designed tile (see PlaceVisual).
 export function DestinationArt({ destination, className }) {
   const art = useDestinationArt();
-  if (!art) return null;
-  return <svg className={className} viewBox={destination.crop.join(' ')} preserveAspectRatio="xMidYMid slice" role="img" aria-label={`${destination.landmark} — illustrative ${destination.name} landmark`}>
-    <image href={art.src} x="0" y="0" width={art.width} height={art.height} />
-  </svg>;
+  return <PlaceVisual place={destination} art={art} className={className} />;
 }
 
 export function LocationBackdrop({ className }) {

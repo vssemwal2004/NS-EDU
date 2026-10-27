@@ -21,6 +21,10 @@ if (!Number.isInteger(port) || port < 1 || port > 65535) {
 }
 
 const trustProxy = process.env.TRUST_PROXY ?? 'loopback';
+function positiveInt(raw, fallback) {
+  const value = Number(raw);
+  return Number.isInteger(value) && value > 0 ? value : fallback;
+}
 const smtpPort = Number(process.env.SMTP_PORT || 587);
 
 export const env = {
@@ -34,8 +38,21 @@ export const env = {
   adminName: process.env.ADMIN_NAME?.trim() || 'Gyaan Vidhya Admin',
   // 'smtp' emails codes; 'console' prints them (development). Unset: smtp when SMTP_HOST is configured.
   otpDelivery: process.env.OTP_DELIVERY?.trim() || (process.env.SMTP_HOST ? 'smtp' : 'console'),
-  // Phone sign-in stays hidden until an SMS provider exists; 'console' prints SMS codes (development only).
+  // Phone sign-in stays hidden until an SMS provider exists: 'msg91' texts the code through a
+  // DLT-approved template; 'console' prints SMS codes (development only).
   smsProvider: process.env.SMS_PROVIDER?.trim() || '',
+  msg91: {
+    authKey: process.env.MSG91_AUTH_KEY?.trim() || '',
+    templateId: process.env.MSG91_TEMPLATE_ID?.trim() || '',
+    otpVar: process.env.MSG91_OTP_VAR?.trim() || 'otp',
+  },
+  // Per-process ceiling on phone codes per IST day, so a bot cannot burn the SMS credit.
+  smsDailyCap: positiveInt(process.env.SMS_DAILY_CAP, 2000),
+  // "Continue with Google" appears only when both are set (Google Cloud OAuth "Web application" client).
+  google: {
+    clientId: process.env.GOOGLE_CLIENT_ID?.trim() || '',
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET?.trim() || '',
+  },
   smtp: {
     host: process.env.SMTP_HOST?.trim() || '',
     port: Number.isInteger(smtpPort) && smtpPort > 0 ? smtpPort : 587,
@@ -43,6 +60,8 @@ export const env = {
     pass: process.env.SMTP_PASS || '',
     from: process.env.SMTP_FROM?.trim() || process.env.SMTP_USER?.trim() || '',
   },
+  // Public origin of the website (QR codes, OAuth redirects, email links), without a trailing slash.
+  publicSiteUrl: (process.env.PUBLIC_SITE_URL?.trim() || 'http://localhost:3000').replace(/\/+$/, ''),
   isProduction: process.env.NODE_ENV === 'production',
   trustProxy: trustProxy === 'false' ? false : trustProxy === 'true' ? true : /^\d+$/.test(trustProxy) ? Number(trustProxy) : trustProxy,
 };
@@ -58,7 +77,10 @@ export function assertProductionConfig() {
   if (env.otpDelivery === 'console' && !consoleAllowed) problems.push('OTP_DELIVERY=console prints login codes to the log; set OTP_DELIVERY=smtp with SMTP_* settings');
   if (env.otpDelivery === 'smtp' && !(env.smtp.host && env.smtp.user && env.smtp.pass && env.smtp.from)) problems.push('OTP_DELIVERY=smtp needs SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS and SMTP_FROM');
   if (env.smsProvider === 'console' && !consoleAllowed) problems.push('SMS_PROVIDER=console prints login codes to the log; unset it to hide phone sign-in');
-  else if (env.smsProvider && env.smsProvider !== 'console') problems.push(`SMS_PROVIDER "${env.smsProvider}" is not supported (see student-auth/otp.js)`);
+  else if (env.smsProvider === 'msg91' && !(env.msg91.authKey && env.msg91.templateId)) problems.push('SMS_PROVIDER=msg91 needs MSG91_AUTH_KEY and MSG91_TEMPLATE_ID (a DLT-approved OTP template)');
+  else if (env.smsProvider && !['console', 'msg91'].includes(env.smsProvider)) problems.push(`SMS_PROVIDER "${env.smsProvider}" is not supported (use "msg91", or unset it to hide phone sign-in)`);
+  if (Boolean(env.google.clientId) !== Boolean(env.google.clientSecret)) problems.push('Set both GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET, or neither (hides "Continue with Google")');
+  if (!process.env.PUBLIC_SITE_URL?.startsWith('https://')) problems.push('PUBLIC_SITE_URL must be the https:// address of the website (used in QR codes and sign-in redirects)');
   if (problems.length) throw new Error(`Refusing to start in production:\n - ${problems.join('\n - ')}`);
 }
 

@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import Icon from '@/components/ui/Icon';
 import { api } from '@/lib/api/client';
+import ImageField from './media/ImageField';
 import styles from './ResourceManager.module.css';
 
 // Converts a stored item to editable string state, and back to a typed payload.
@@ -64,7 +65,7 @@ function ReferenceSearch({ field, common, value, onChange }) {
   </>;
 }
 
-function Field({ field, value, error, onChange, refOptions }) {
+function Field({ field, value, error, onChange, onBusyChange, refOptions }) {
   const id = `field-${field.name}`;
   const describedBy = [field.help && `${id}-help`, error && `${id}-error`].filter(Boolean).join(' ') || undefined;
   const common = { id, 'aria-invalid': Boolean(error), 'aria-describedby': describedBy };
@@ -81,6 +82,8 @@ function Field({ field, value, error, onChange, refOptions }) {
       <option value="">{field.type === 'reference' && !refOptions ? 'Loading…' : `Choose ${field.label.toLowerCase()}`}</option>
       {options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
     </select>;
+  } else if (field.type === 'image') {
+    control = <ImageField field={field} common={common} value={value} onChange={onChange} onBusyChange={onBusyChange} />;
   } else if (field.type === 'numberArray4') {
     control = <div className={styles.quad} role="group" aria-labelledby={`${id}-label`}>{['x', 'y', 'width', 'height'].map((part, index) => <label key={part}><span>{part}</span><input className={styles.input} type="number" inputMode="numeric" min={field.min} max={field.max} value={value[index]} aria-invalid={Boolean(error)} onChange={(event) => onChange(value.map((current, position) => position === index ? event.target.value : current))} /></label>)}</div>;
   } else {
@@ -89,7 +92,7 @@ function Field({ field, value, error, onChange, refOptions }) {
       step={field.type === 'integer' ? 1 : numeric ? 'any' : undefined} min={field.min} max={field.max} maxLength={field.maxLength} placeholder={field.type === 'slug' ? 'auto-generated' : field.type === 'url' ? 'https://' : undefined}
       value={value} onChange={(event) => onChange(event.target.value)} />;
   }
-  return <div className={styles.formField} data-wide={field.type === 'text' || field.type === 'numberArray4' || field.type === 'stringList'}>
+  return <div className={styles.formField} data-wide={['text', 'numberArray4', 'stringList', 'image'].includes(field.type)}>
     {field.type === 'numberArray4' ? <span id={`${id}-label`} className={styles.fieldLabel}>{field.label}{field.required && <em aria-hidden="true">*</em>}</span> : <label htmlFor={id} className={styles.fieldLabel}>{field.label}{field.required && <em aria-hidden="true">*</em>}</label>}
     {control}
     {field.help && <p id={`${id}-help`} className={styles.help}>{field.help}</p>}
@@ -102,9 +105,17 @@ export default function ResourceForm({ meta, mode, item, refOptions, onSubmit, o
   const [errors, setErrors] = useState({});
   const [formError, setFormError] = useState('');
   const [busy, setBusy] = useState(false);
+  // Image fields still uploading: saving now would store the old URL and orphan the new upload.
+  const [uploading, setUploading] = useState(() => new Set());
+  const setFieldUploading = (name, on) => setUploading((previous) => {
+    const next = new Set(previous);
+    if (on) next.add(name); else next.delete(name);
+    return next;
+  });
 
   async function submit(event) {
     event.preventDefault();
+    if (uploading.size) return;
     const missing = meta.fields.filter((field) => field.required && field.type !== 'boolean' && (field.type === 'numberArray4' ? values[field.name].some((part) => part.trim() === '') : !values[field.name].trim()));
     if (missing.length) { setErrors(Object.fromEntries(missing.map((field) => [field.name, `${field.label} is required.`]))); setFormError('Please complete the required fields.'); return; }
     setBusy(true); setErrors({}); setFormError('');
@@ -116,12 +127,13 @@ export default function ResourceForm({ meta, mode, item, refOptions, onSubmit, o
   return <form className={styles.form} onSubmit={submit} noValidate>
     <div className={styles.formGrid}>
       {meta.fields.map((field) => <Field key={field.name} field={field} value={values[field.name]} error={errors[field.name]} refOptions={refOptions[field.ref]}
-        onChange={(value) => { setValues((previous) => ({ ...previous, [field.name]: value })); setErrors((previous) => ({ ...previous, [field.name]: undefined })); }} />)}
+        onChange={(value) => { setValues((previous) => ({ ...previous, [field.name]: value })); setErrors((previous) => ({ ...previous, [field.name]: undefined })); }}
+        onBusyChange={(on) => setFieldUploading(field.name, on)} />)}
     </div>
     {formError && <p className={styles.formError} role="alert"><Icon name="shield" />{formError}</p>}
     <div className={styles.formActions}>
       <button type="button" className="button button--ghost" onClick={onCancel} disabled={busy}>Cancel</button>
-      <button type="submit" className="button button--primary" disabled={busy}>{busy ? 'Saving…' : mode === 'create' ? `Create ${meta.singular}` : 'Save changes'}</button>
+      <button type="submit" className="button button--primary" disabled={busy || uploading.size > 0}>{busy ? 'Saving…' : uploading.size ? 'Waiting for upload…' : mode === 'create' ? `Create ${meta.singular}` : 'Save changes'}</button>
     </div>
   </form>;
 }

@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import Icon from '@/components/ui/Icon';
+import PlaceVisual from '@/features/landing/PlaceVisual';
 import styles from './Locations.module.css';
 
 // `shown` lets a large count carry thousands separators while the plural still follows the number.
@@ -16,23 +17,19 @@ export function countLine(count) {
   return count.programmes ? `${listed} · ${plural(count.programmes, 'programme')}` : listed;
 }
 
-// One window into the shared destination artwork (`media.destinationsArt`); crops are in its pixel space.
-export function ArtWindow({ art, crop, className }) {
-  if (!art || !crop) return null;
-  return <svg className={className} viewBox={crop.join(' ')} preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
-    <image href={art.src} x="0" y="0" width={art.width} height={art.height} />
-  </svg>;
-}
+// A place shows a postcard when it has an uploaded photo or a window into the shared artwork
+// (`media.destinationsArt`, crops in its pixel space); every other place is a stamp.
+export const hasPicture = (place, art) => Boolean(place.image || (art && place.crop));
 
 export function Postcard({ place, kind, art, count, index = 0 }) {
   return <li className={styles.postcardItem} style={{ '--tilt': `${[-1.2, .8, -.5, 1.1, -.9, .6][index % 6]}deg` }}>
     <Link className={styles.postcard} href={placeHref(place, kind)} data-kind={kind} data-empty={!count?.institutions || undefined}>
-      <span className={styles.photo}><ArtWindow art={art} crop={place.crop} className={styles.photoArt} /></span>
+      <span className={styles.photo}><PlaceVisual place={place} art={art} className={styles.photoArt} decorative /></span>
       <span className={styles.stamp} aria-hidden="true"><span>{place.name.slice(0, 1)}</span><small>India</small></span>
       <span className={styles.message}>
         <span className={styles.greeting}>Study in</span>
         <strong className={styles.placeName}>{place.name}</strong>
-        {place.landmark && <span className={styles.landmark}><Icon name="newsPostmark" />Illustrated: {place.landmark}</span>}
+        {place.landmark && !place.image && <span className={styles.landmark}><Icon name="newsPostmark" />Illustrated: {place.landmark}</span>}
         <span className={styles.count}>{countLine(count)}</span>
         <span className={styles.open}>Universities<span className={styles.openPlace}>&nbsp;in {place.name}</span><Icon name="arrow" /></span>
       </span>

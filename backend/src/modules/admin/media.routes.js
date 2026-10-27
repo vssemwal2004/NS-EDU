@@ -9,7 +9,7 @@ import { assertValid, escapeRegex } from '../../lib/validation.js';
 // then registers the result here so admins can reuse URLs (university logos, covers, site art).
 export const mediaRouter = Router();
 
-const USAGES = ['logo', 'cover', 'site', 'other'];
+const USAGES = ['logo', 'cover', 'site', 'place', 'counsellor', 'other'];
 const serialize = ({ _id, ...rest }) => ({ id: _id.toString(), ...rest });
 const requireConfigured = () => {
   if (!cloudinaryConfig().configured) throw new HttpError(503, 'Cloudinary is not configured on the server yet. Add the Cloudinary keys to backend/.env.');

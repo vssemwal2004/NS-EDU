@@ -48,7 +48,20 @@ export const resourceColumns = {
     { field: 'order', label: 'Order' },
     { field: 'active', label: 'Visible', badge: true },
   ],
+  career_fields: [
+    { field: 'name', label: 'Career field', primary: true, secondary: (item) => item.description },
+    { field: 'slug', label: 'Slug' },
+    { field: 'order', label: 'Order' },
+    { field: 'active', label: 'Visible', badge: true },
+  ],
+  counsellors: [
+    { field: 'name', label: 'Counsellor', primary: true, secondary: (item, refs) => [item.title, refs.career_fields?.[item.fieldSlug] || item.fieldSlug].filter(Boolean).join(' · ') },
+    { field: 'isMaster', label: 'Lead', format: yesNo },
+    { field: 'phone', label: 'Mobile' },
+    { field: 'order', label: 'Order' },
+    { field: 'active', label: 'Visible', badge: true },
+  ],
 };
 
-export const resourceIcons = { institutions: 'building', programmes: 'layers', courses: 'book', exams: 'document', cities: 'location', states: 'map', scholarships: 'cap' };
+export const resourceIcons = { institutions: 'building', programmes: 'layers', courses: 'book', exams: 'document', cities: 'location', states: 'map', scholarships: 'cap', career_fields: 'compass', counsellors: 'support' };
 export const manageableResources = Object.keys(resourceColumns);

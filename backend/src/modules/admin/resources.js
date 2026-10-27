@@ -1,5 +1,6 @@
 import { collection, COLLECTIONS } from '../../db/collections.js';
 import { slugify } from '../../lib/validation.js';
+import { normalizeIdentifier } from '../student-auth/otp.js';
 import { derivedFields } from '../universities/normalize.js';
 import { IMPORTABLE_FIELDS, INSTITUTION_FIELDS, INSTITUTION_TYPES, LEGACY_INSTITUTION_FIELDS, PROGRAMME_LEVELS, VERIFICATION } from '../universities/schema.js';
 
@@ -11,6 +12,19 @@ const active = { name: 'active', label: 'Visible to students', type: 'boolean', 
 const icon = { name: 'icon', label: 'Icon', type: 'select', options: ICONS, required: true, default: 'cap' };
 const level = { name: 'level', label: 'Level', type: 'select', options: ['UG', 'PG'], help: 'UG = undergraduate, PG = postgraduate. Leave empty if not classified.' };
 const crop = { name: 'crop', label: 'Artwork crop', type: 'numberArray4', nullable: true, min: 0, max: 5000, help: 'x, y, width, height in the 1784 × 882 landmark artwork. Leave empty for no artwork.' };
+// Same rule as normalizeIdentifier('phone'), so a value that passes is always normalized to +91XXXXXXXXXX.
+const phoneField = { type: 'string', maxLength: 20, pattern: /^(?:\+91|91|0)?[\s-]?[6-9](?:[\s-]?\d){9}$/, patternMessage: 'Enter a 10-digit Indian mobile number' };
+// Student pages order places by how many institutions each lists; these fields only dress the tile.
+const byCountNote = 'Kept for reference only: places are listed by how many institutions they have.';
+const placeFields = [
+  { name: 'name', label: 'Name', type: 'string', required: true, maxLength: 60 },
+  { name: 'landmark', label: 'Landmark', type: 'string', maxLength: 80 },
+  { name: 'imageUrl', label: 'Tile image', type: 'image', usage: 'place', help: 'A landscape photo, at least 800 px wide. It replaces the artwork crop; without either, a designed tile is shown.' },
+  { name: 'imageAlt', label: 'Image description', type: 'string', maxLength: 160, help: 'What the photo shows, for screen readers, e.g. "Gateway of India at sunset". Defaults to the place name.' },
+  crop,
+  { name: 'featured', label: 'Featured', type: 'boolean', default: false, help: byCountNote },
+  { ...order, help: byCountNote }, active,
+];
 
 // One registry drives validation, list search, the admin form metadata and slug rules.
 export const resources = {
@@ -89,23 +103,11 @@ export const resources = {
   },
   cities: {
     label: 'Cities', singular: 'city', titleField: 'name', uniqueField: 'name', searchFields: ['name', 'landmark'],
-    fields: [
-      { name: 'name', label: 'Name', type: 'string', required: true, maxLength: 60 },
-      { name: 'landmark', label: 'Landmark', type: 'string', maxLength: 80 },
-      crop,
-      { name: 'featured', label: 'Featured', type: 'boolean', default: false },
-      order, active,
-    ],
+    fields: placeFields,
   },
   states: {
     label: 'States', singular: 'state', titleField: 'name', uniqueField: 'name', searchFields: ['name', 'landmark'],
-    fields: [
-      { name: 'name', label: 'Name', type: 'string', required: true, maxLength: 60 },
-      { name: 'landmark', label: 'Landmark', type: 'string', maxLength: 80 },
-      crop,
-      { name: 'featured', label: 'Featured', type: 'boolean', default: false },
-      order, active,
-    ],
+    fields: placeFields,
   },
   scholarships: {
     label: 'Scholarships', singular: 'scholarship', titleField: 'label', uniqueField: 'slug', searchFields: ['label', 'description', 'slug'],
@@ -118,11 +120,42 @@ export const resources = {
       order, active,
     ],
   },
+  // Career guidance (/career-guidance). Counsellors and callback leads point at a field by slug,
+  // so renaming a field is safe and its slug is frozen while counsellors use it.
+  career_fields: {
+    label: 'Career fields', singular: 'career field', titleField: 'name', uniqueField: 'slug', searchFields: ['name', 'slug', 'description'],
+    slugFrom: (doc) => doc.name,
+    references: [{ collection: COLLECTIONS.counsellors, field: 'fieldSlug', noun: 'counsellor' }],
+    fields: [
+      { name: 'name', label: 'Name', type: 'string', required: true, maxLength: 60 },
+      slug('Leave blank to generate it from the name. It cannot change while counsellors belong to this field.'),
+      { ...icon, default: 'compass' },
+      { name: 'description', label: 'Description', type: 'text', maxLength: 300, help: 'One or two sentences shown above this field’s counsellors.' },
+      order, active,
+    ],
+  },
+  counsellors: {
+    label: 'Counsellors', singular: 'counsellor', titleField: 'name', searchFields: ['name', 'title', 'fieldSlug', 'languages'],
+    fields: [
+      { name: 'name', label: 'Name', type: 'string', required: true, minLength: 2, maxLength: 80 },
+      { name: 'title', label: 'Title', type: 'string', maxLength: 80, help: 'e.g. Engineering admissions counsellor' },
+      { name: 'fieldSlug', label: 'Career field', type: 'reference', ref: 'career_fields', required: true },
+      { name: 'isMaster', label: 'Lead counsellor for this field', type: 'boolean', default: false, help: 'Listed first with a “Lead counsellor” badge.' },
+      { ...phoneField, name: 'phone', label: 'Mobile number', required: true, help: 'Use a work number only: every logged-in student can see and call it.' },
+      { ...phoneField, name: 'whatsapp', label: 'WhatsApp number', help: 'Leave empty to hide the WhatsApp button.' },
+      { name: 'photoUrl', label: 'Photo', type: 'image', usage: 'other', help: 'A square head-and-shoulders photo. Leave empty to show their initials.' },
+      { name: 'languages', label: 'Languages', type: 'stringList', maxItems: 8, maxLength: 30, help: 'Comma separated, e.g. Hindi, English' },
+      { name: 'availability', label: 'Availability', type: 'string', maxLength: 80, help: 'e.g. Mon–Sat, 10 am–6 pm' },
+      order, active,
+    ],
+    // Stored as +91XXXXXXXXXX (the pattern above guarantees it parses) so tel: and wa.me links are uniform.
+    beforeWrite: (data) => Object.fromEntries(['phone', 'whatsapp'].filter((key) => data[key]).map((key) => [key, normalizeIdentifier('phone', data[key]).value])),
+  },
 };
 
 export const generateSlug = (resource, doc) => slugify(resource.slugFrom?.(doc) ?? '');
 
-const OPTIONAL_FIELD_KEYS = ['options', 'ref', 'min', 'max', 'maxLength', 'maxItems', 'nullable', 'default', 'help'];
+const OPTIONAL_FIELD_KEYS = ['options', 'ref', 'min', 'max', 'maxLength', 'maxItems', 'nullable', 'default', 'help', 'usage'];
 
 export function describeResources() {
   return Object.fromEntries(Object.entries(resources).map(([name, resource]) => [name, {

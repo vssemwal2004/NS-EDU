@@ -1,7 +1,8 @@
+import { isOwnDeliveryUrl } from './cloudinary.js';
 import { HttpError } from './http-error.js';
 
-const TEXT_TYPES = new Set(['string', 'text', 'slug', 'url', 'select', 'reference', 'email']);
-const DEFAULT_MAX_LENGTH = { string: 200, text: 2000, slug: 100, url: 500, select: 100, reference: 100, email: 254 };
+const TEXT_TYPES = new Set(['string', 'text', 'slug', 'url', 'image', 'select', 'reference', 'email']);
+const DEFAULT_MAX_LENGTH = { string: 200, text: 2000, slug: 100, url: 500, image: 500, select: 100, reference: 100, email: 254 };
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const EMAIL_PATTERN = /^[^\s@"<>()[\]\\,;:]+@[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/;
 
@@ -36,6 +37,9 @@ function coerce(field, raw) {
         if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password) throw new Error();
       } catch { return { error: 'Enter a valid http(s) URL' }; }
     }
+    // Image fields only point at this account's Cloudinary delivery URLs, so a stored record can
+    // never make student pages load from an arbitrary host.
+    if (field.type === 'image' && !isOwnDeliveryUrl(value)) return { error: 'Upload the image here or pick one from the media library' };
     return { value };
   }
   if (field.type === 'number' || field.type === 'integer') {

@@ -1,0 +1,16 @@
+/* Google's sign-in button: white, grey hairline, dark label. Stays white in every theme, as the
+   brand guidelines allow, so the mark always sits on the background it was drawn for. */
+.button { display: inline-flex; align-items: center; justify-content: center; gap: var(--lux-space-3); width: 100%; min-height: 56px; padding: 0 var(--lux-space-5); border: 1px solid #DADCE0; border-radius: var(--lux-radius-pill); background: #FFFFFF; color: #1F1F1F; font-size: 1rem; font-weight: 600; letter-spacing: .01em; box-shadow: 0 1px 2px rgb(60 64 67 / 12%); transition: background-color var(--lux-dur-2), border-color var(--lux-dur-2), box-shadow var(--lux-dur-2); }
+.button:hover:not(:disabled) { border-color: #C6C9CE; background: #F8F9FA; box-shadow: 0 2px 6px rgb(60 64 67 / 16%); }
+.button:focus-visible { outline: 2px solid var(--lux-focus); outline-offset: 2px; }
+.button:disabled { cursor: progress; opacity: .8; }
+.button[data-size="sm"] { width: auto; min-height: 44px; padding: 0 var(--lux-space-4); font-size: var(--lux-small); }
+.mark { flex: none; width: 20px; height: 20px; }
+.button[data-size="sm"] .mark { width: 18px; height: 18px; }
+.spinner { flex: none; width: 18px; height: 18px; border: 2px solid #DADCE0; border-top-color: #4285F4; border-radius: 50%; animation: google-spin .8s linear infinite; }
+@keyframes google-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 2.4s; } }
+
+@media (max-width: 640px) {
+  .button { min-height: 52px; font-size: .9375rem; }
+}

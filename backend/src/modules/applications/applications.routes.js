@@ -3,7 +3,10 @@ import { HttpError } from '../../lib/http-error.js';
 import { createRateLimiter } from '../../lib/rate-limit.js';
 import { requireStudent } from '../../middleware/auth.js';
 import { CLOSED_STATUSES, CONSENT_TEXT, parseApplication, parseQuickApplication } from './schema.js';
-import { applications, DAY, findCourse, findInstitution, nextRef, serializeForStudent } from './service.js';
+import { applications, clearLeadCounts, DAY, findCourse, findInstitution, leadKeys, nextRef, serializeForStudent } from './service.js';
+
+// A student's own applications; counsellor callbacks they requested are leads but not applications.
+const ownApplications = (studentId) => ({ studentId, channel: { $ne: 'callback' } });
 
 const PER_STUDENT_PER_DAY = 10;
 const DUPLICATE_WINDOW_DAYS = 30;
@@ -34,7 +37,7 @@ applicationsRouter.post('/', requireStudent, async (request, response) => {
   const now = new Date();
   const studentId = request.student._id;
   const collection = await applications();
-  if (await collection.countDocuments({ studentId, createdAt: { $gte: new Date(now.getTime() - DAY) } }) >= PER_STUDENT_PER_DAY) {
+  if (await collection.countDocuments({ ...ownApplications(studentId), createdAt: { $gte: new Date(now.getTime() - DAY) } }) >= PER_STUDENT_PER_DAY) {
     throw new HttpError(429, `You can submit up to ${PER_STUDENT_PER_DAY} applications a day. Please try again tomorrow.`, { retryAfterSeconds: 3600 });
   }
   const sameProgramme = course
@@ -51,8 +54,15 @@ applicationsRouter.post('/', requireStudent, async (request, response) => {
   const university = institution.name;
   const doc = {
     ref: await nextRef(now),
+    channel: 'web-apply',
     mode: data.mode,
     studentId,
+    formId: null,
+    school: null,
+    answers: [],
+    careerField: null,
+    callback: null,
+    ...leadKeys(data.applicant),
     applicant: data.applicant,
     academics: data.academics,
     exams: data.exams,
@@ -76,12 +86,13 @@ applicationsRouter.post('/', requireStudent, async (request, response) => {
     updatedAt: now,
   };
   await collection.insertOne(doc);
+  clearLeadCounts();
   response.status(201).json({ item: serializeForStudent(doc, { full: true }) });
 });
 
 applicationsRouter.get('/prefill', requireStudent, async (request, response) => {
   const { student } = request;
-  const latest = await (await applications()).findOne({ studentId: student._id }, { sort: { createdAt: -1 }, projection: { applicant: 1, academics: 1, exams: 1 } });
+  const latest = await (await applications()).findOne(ownApplications(student._id), { sort: { createdAt: -1 }, projection: { applicant: 1, academics: 1, exams: 1 } });
   response.json({
     applicant: {
       ...(latest?.applicant ?? {}),
@@ -96,7 +107,7 @@ applicationsRouter.get('/prefill', requireStudent, async (request, response) => 
 });
 
 applicationsRouter.get('/mine', requireStudent, async (request, response) => {
-  const docs = await (await applications()).find({ studentId: request.student._id }, {
+  const docs = await (await applications()).find(ownApplications(request.student._id), {
     projection: { ref: 1, mode: 1, status: 1, createdAt: 1, updatedAt: 1, preference: 1 },
   }).sort({ createdAt: -1 }).limit(100).toArray();
   response.json({ items: docs.map((doc) => serializeForStudent(doc)) });
@@ -104,7 +115,7 @@ applicationsRouter.get('/mine', requireStudent, async (request, response) => {
 
 applicationsRouter.get('/mine/:ref', requireStudent, async (request, response) => {
   const ref = String(request.params.ref).toUpperCase();
-  const doc = /^GV-\d{4}-\d{6,}$/.test(ref) && await (await applications()).findOne({ ref, studentId: request.student._id });
+  const doc = /^GV-\d{4}-\d{6,}$/.test(ref) && await (await applications()).findOne({ ref, ...ownApplications(request.student._id) });
   if (!doc) throw new HttpError(404, 'Application not found');
   response.json({ item: serializeForStudent(doc, { full: true }) });
 });

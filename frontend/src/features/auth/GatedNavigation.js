@@ -26,7 +26,7 @@ export default function GatedNavigation() {
         : isGatedPath(url.pathname) ? `${url.pathname}${url.search}${url.hash}` : null;
       if (!next) return;
       event.preventDefault();
-      openLogin({ reason: loginReasonFor(next), onSuccess: () => router.push(next) });
+      openLogin({ reason: loginReasonFor(next), onSuccess: () => router.push(next), returnTo: next });
     }
     document.addEventListener('click', onClick, true);
     return () => document.removeEventListener('click', onClick, true);

@@ -6,27 +6,44 @@ import { api, ApiError, SESSION_EXPIRED_EVENT } from '@/lib/api/client';
 
 const StudentAuthContext = createContext(null);
 
+// Resolves to the signed-in student, or null.
 function loadSession(signal, setStudent, setStatus) {
   return api('/auth/me', { signal })
-    .then((data) => { setStudent(data.student); setStatus('signed-in'); })
-    .catch((error) => { if (error.name !== 'AbortError') setStatus(error instanceof ApiError && error.status === 401 ? 'signed-out' : 'unavailable'); });
+    .then((data) => { setStudent(data.student); setStatus('signed-in'); return data.student; })
+    .catch((error) => { if (error.name !== 'AbortError') setStatus(error instanceof ApiError && error.status === 401 ? 'signed-out' : 'unavailable'); return null; });
+}
+
+// A Google sign-in for an account with no name comes back with ?welcome=name. One-shot: dropped
+// from the address as soon as it is read.
+function takeWelcomeFlag() {
+  const url = new URL(window.location.href);
+  if (url.searchParams.get('welcome') !== 'name') return false;
+  url.searchParams.delete('welcome');
+  window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+  return true;
 }
 
 /**
  * Student session for the public site.
- * openLogin({ reason?, onSuccess?(student) }) opens the login popup; onSuccess runs once after a
- * successful verification (it is dropped if the popup is closed without logging in).
+ * openLogin({ reason?, onSuccess?(student), returnTo?, notice? }) opens the login popup; onSuccess
+ * runs once after a successful verification (it is dropped if the popup is closed without logging
+ * in). "Continue with Google" leaves the page, so onSuccess cannot survive it: `returnTo` is the
+ * same-site URL that carries the caller's intent instead (default: the current page). `notice`
+ * is shown above the form, e.g. why a previous Google attempt failed. `askName` opens the popup
+ * on its "What should we call you?" step for a signed-in student who has no name yet.
  */
 export function StudentAuthProvider({ children }) {
   const router = useRouter();
   const [student, setStudent] = useState(null);
   const [status, setStatus] = useState('loading');
-  const [login, setLogin] = useState({ open: false, reason: '' });
+  const [login, setLogin] = useState({ open: false, reason: '', returnTo: '', notice: '', askName: false });
   const pending = useRef(null);
 
   useEffect(() => {
     const controller = new AbortController();
-    loadSession(controller.signal, setStudent, setStatus);
+    loadSession(controller.signal, setStudent, setStatus).then((loaded) => {
+      if (loaded && takeWelcomeFlag() && !loaded.name) setLogin({ open: true, reason: '', returnTo: '', notice: '', askName: true });
+    });
     return () => controller.abort();
   }, []);
 
@@ -54,7 +71,8 @@ export function StudentAuthProvider({ children }) {
   const openLogin = useCallback((options) => {
     const plain = options && typeof options === 'object' && !('nativeEvent' in options) ? options : {};
     pending.current = typeof plain.onSuccess === 'function' ? plain.onSuccess : null;
-    setLogin({ open: true, reason: typeof plain.reason === 'string' ? plain.reason : '' });
+    const text = (key) => (typeof plain[key] === 'string' ? plain[key] : '');
+    setLogin({ open: true, reason: text('reason'), returnTo: text('returnTo'), notice: text('notice'), askName: plain.askName === true });
   }, []);
   const closeLogin = useCallback(() => { pending.current = null; setLogin((current) => ({ ...current, open: false })); }, []);
   // Called by the login popup after verification: closes it and continues the caller's flow.
@@ -68,7 +86,7 @@ export function StudentAuthProvider({ children }) {
 
   const value = useMemo(() => ({
     student, status, signIn, signOut, setStudent, refresh,
-    loginOpen: login.open, loginReason: login.reason, openLogin, closeLogin, completeLogin,
+    loginOpen: login.open, loginReason: login.reason, loginReturnTo: login.returnTo, loginNotice: login.notice, loginAskName: login.askName, openLogin, closeLogin, completeLogin,
   }), [student, status, signIn, signOut, refresh, login, openLogin, closeLogin, completeLogin]);
   return <StudentAuthContext.Provider value={value}>{children}</StudentAuthContext.Provider>;
 }

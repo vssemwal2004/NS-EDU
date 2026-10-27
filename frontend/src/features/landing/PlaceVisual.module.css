@@ -1,0 +1,17 @@
+/* The caller's class sets the box (width, aspect ratio, radius); these only fill it. */
+.photo { object-fit: cover; background: var(--lux-sand); }
+.frame { position: relative; container-type: size; }
+
+/* Designed tile: brand wine/bronze gradients, a soft champagne glow and faint contour rings that echo
+   the landmark artwork, with the name set like the postcard titles. The oxblood scrim under the text
+   keeps the small champagne count above 4.5:1 even where a gradient ends in bronze. Bronze-ink is
+   spelled out because dark surfaces redefine that token as champagne. */
+.fallback { position: absolute; inset: 0; display: grid; align-content: end; gap: 2cqb; padding: clamp(.5rem, 7cqi, 1.25rem); overflow: hidden; border-radius: inherit; color: var(--lux-ivory); background: var(--tile-glow), var(--tile-rings), var(--tile-scrim), var(--tile-base); --tile-glow: radial-gradient(circle at 88% 6%, rgb(201 164 106 / 38%), transparent 46%); --tile-rings: repeating-radial-gradient(circle at 100% 0, transparent 0 14px, rgb(255 250 245 / 7%) 14px 15px); --tile-scrim: linear-gradient(to top, rgb(61 15 30 / 88%), rgb(61 15 30 / 55%) 40%, transparent 72%); }
+.fallback[data-tone="0"] { --tile-base: linear-gradient(155deg, var(--lux-wine), var(--lux-oxblood)); }
+.fallback[data-tone="1"] { --tile-base: linear-gradient(155deg, var(--lux-bronze), var(--lux-wine-deep)); }
+.fallback[data-tone="2"] { --tile-base: linear-gradient(155deg, var(--lux-wine-deep), #8A6249); }
+.fallback[data-tone="3"] { --tile-base: linear-gradient(155deg, #8A6249, var(--lux-oxblood)); }
+.fallback[data-tone="4"] { --tile-base: linear-gradient(155deg, #4F1A2B, var(--lux-bronze)); }
+.fallback[data-tone="5"] { --tile-base: linear-gradient(155deg, var(--lux-oxblood), var(--lux-wine)); }
+.name { font-family: var(--lux-font-display); font-weight: 400; font-size: clamp(.875rem, min(12cqi, 30cqb), 2.25rem); line-height: 1.05; letter-spacing: -.01em; text-wrap: balance; overflow-wrap: anywhere; }
+.count { color: var(--lux-champagne); font: 700 clamp(.5625rem, min(4.6cqi, 12cqb), .75rem)/1.2 var(--lux-font-body); letter-spacing: .1em; text-transform: uppercase; }

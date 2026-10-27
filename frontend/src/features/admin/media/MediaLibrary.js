@@ -4,7 +4,7 @@ import Icon from '@/components/ui/Icon';
 import { useAdminSession } from '../AdminSession';
 import styles from './MediaLibrary.module.css';
 
-const USAGES = [{ value: 'logo', label: 'University logo' }, { value: 'cover', label: 'Cover image' }, { value: 'site', label: 'Site artwork' }, { value: 'other', label: 'Other' }];
+const USAGES = [{ value: 'logo', label: 'University logo' }, { value: 'cover', label: 'Cover image' }, { value: 'site', label: 'Site artwork' }, { value: 'place', label: 'City or state tile' }, { value: 'counsellor', label: 'Counsellor photo' }, { value: 'other', label: 'Other' }];
 const MAX_BYTES = 8 * 1024 * 1024;
 const kb = (bytes) => (bytes >= 1024 * 1024 ? `${(bytes / 1024 / 1024).toFixed(1)} MB` : `${Math.round(bytes / 1024)} KB`);
 

@@ -17,6 +17,7 @@ import { mediaRouter } from './media.routes.js';
 import { leadsRouter } from '../applications/leads.routes.js';
 import { adminContentRouter } from '../content/content.routes.js';
 import { adminInsightsRouter } from './insights.routes.js';
+import { drivesRouter } from '../drives/drives.routes.js';
 
 export const adminRouter = Router();
 adminRouter.use(requireAdmin, requireReadyStaff);
@@ -34,6 +35,7 @@ adminRouter.use('/data-ops', dataOpsRouter);
 adminRouter.use('/media', mediaRouter);
 adminRouter.use('/content', adminContentRouter);
 adminRouter.use('/insights', adminInsightsRouter);
+adminRouter.use('/drives', drivesRouter);
 adminRouter.get('/dashboard', async (_request, response) => response.json(await getDashboard()));
 adminRouter.get('/resources', (_request, response) => response.json({ resources: describeResources() }));
 

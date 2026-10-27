@@ -1,0 +1,22 @@
+/* Print only, and only while the drive poster is on the page: drop the admin shell (sidebar <aside>,
+   top bar <header>) and its spacing so the poster sheet fills one A4 page. Global on purpose: the
+   shell's class names are hashed CSS-module names this page cannot target.
+   The route stylesheet stays loaded after the admin leaves this page, so the A4/no-margin page box is a
+   named page used only by the poster sheet; other admin prints keep the printer's margins. Browsers
+   without named pages fall back to a global rule (the poster still fits one sheet there). */
+@media print {
+  @supports (page: gv-poster) {
+    @page gv-poster { size: A4 portrait; margin: 0; }
+    .gv-poster-sheet { page: gv-poster; }
+  }
+  @supports not (page: gv-poster) {
+    @page { size: A4 portrait; margin: 0; }
+  }
+  body:has(.gv-poster-sheet) { background: #FFFFFF !important; }
+  body:has(.gv-poster-sheet) aside,
+  body:has(.gv-poster-sheet) header,
+  body:has(.gv-poster-sheet) .gv-no-print { display: none !important; }
+  body:has(.gv-poster-sheet) div:has(> aside) { min-height: 0 !important; background: #FFFFFF !important; }
+  body:has(.gv-poster-sheet) div:has(> main) { margin: 0 !important; }
+  body:has(.gv-poster-sheet) main { padding: 0 !important; }
+}

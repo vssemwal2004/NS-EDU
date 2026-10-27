@@ -2,7 +2,8 @@ import Link from 'next/link';
 import Icon from '@/components/ui/Icon';
 import { loginHref } from '@/features/auth/gated-routes';
 import { countByPlace, mergePlaceCount } from '@/features/home/placeCounts';
-import { ArtWindow, Postcard, Stamp } from '@/features/newsroom/Postcards';
+import PlaceVisual from '@/features/landing/PlaceVisual';
+import { hasPicture, Postcard, Stamp } from '@/features/newsroom/Postcards';
 import { getCatalog } from '@/lib/api/catalog';
 import { getSharedContent } from '@/lib/api/content';
 import { getStudentSession } from '@/lib/api/session';
@@ -10,8 +11,6 @@ import { mediaImage } from '@/lib/hero-image';
 import styles from '@/features/newsroom/Locations.module.css';
 
 export const metadata = { title: 'Study destinations | Gyaan Vidhya', description: 'Browse study cities and states in India and open the universities in each.' };
-
-const byName = (a, b) => a.name.localeCompare(b.name);
 
 // Each postcard is a small window into one shared sprite, so a 1200px-wide copy is plenty even on
 // desktop. width/height stay the original values because the crop coordinates live in that space.
@@ -26,13 +25,14 @@ export default async function LocationsPage() {
   const programmeCounts = countByPlace(catalog.colleges);
   // Institution totals come from the directory records; the sample programme rows add the fee line.
   const counts = new Map([...catalog.cities, ...catalog.states].map((place) => [place.name, mergePlaceCount(place, programmeCounts)]));
-  const split = (places) => [places.filter((place) => art && place.crop), places.filter((place) => !(art && place.crop)).toSorted(byName)];
+  // Both lists keep the API order: most institutions first.
+  const split = (places) => [places.filter((place) => hasPicture(place, art)), places.filter((place) => !hasPicture(place, art))];
   const [cityCards, cityStamps] = split(catalog.cities);
   const [stateCards, stateStamps] = split(catalog.states);
   const totals = catalog.locationTotals ?? { cities: 0, states: 0 };
   const number = (value) => new Intl.NumberFormat('en-IN').format(value ?? 0);
   const illustrative = catalog.colleges.some((row) => row.isIllustrative);
-  const fan = [cityCards[2], stateCards[3], cityCards[5]].filter(Boolean);
+  const fan = [cityCards[1], stateCards[0], cityCards[0]].filter(Boolean);
   const empty = !catalog.cities.length && !catalog.states.length;
 
   return <main id="main" tabIndex={-1} className={styles.page}>
@@ -54,7 +54,7 @@ export default async function LocationsPage() {
           </nav>}
         </div>
         {fan.length > 0 && <div className={styles.fan} aria-hidden="true">
-          {fan.map((place) => <span key={place.name} className={styles.fanCard}><ArtWindow art={art} crop={place.crop} className={styles.fanArt} /><span>{place.name}</span></span>)}
+          {fan.map((place) => <span key={place.name} className={styles.fanCard}><PlaceVisual place={place} art={art} className={styles.fanArt} decorative /><span>{place.name}</span></span>)}
           <span className={styles.fanMark}><Icon name="newsPostmark" /></span>
         </div>}
       </div>
@@ -80,7 +80,8 @@ export default async function LocationsPage() {
       </section>
 
       <section id="states" className={`${styles.section} ${styles.states}`} aria-labelledby="states-title">
-        <div className="lux-container">
+        {/* The site navigation's "Study by state" links to /locations#study-states. */}
+        <div id="study-states" className="lux-container">
           <header className={styles.sectionHead}>
             <p className="lux-eyebrow">States · {catalog.states.length}</p>
             <h2 id="states-title" className="lux-display-3">Study across India’s states</h2>
@@ -104,7 +105,7 @@ export default async function LocationsPage() {
             <Link className="lux-button lux-button--outline" href="/budget">Check living costs</Link>
           </div>
         </div>
-        <p className={styles.footnote}>Institution counts come from the Gyaan Vidhya directory and are not a ranking; programme counts come from the curated fee catalogue{illustrative ? ', which still includes illustrative sample institutions' : ''}. Landmarks are illustrations, not photographs.</p>
+        <p className={styles.footnote}>Institution counts come from the Gyaan Vidhya directory and are not a ranking; programme counts come from the curated fee catalogue{illustrative ? ', which still includes illustrative sample institutions' : ''}. Places are listed by how many institutions they have; landmark artwork is illustrative.</p>
       </section>
     </>}
   </main>;

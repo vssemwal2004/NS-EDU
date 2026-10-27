@@ -43,7 +43,7 @@ export function rowsToObjects(rows, mapHeader) {
 }
 
 // Spreadsheet formula injection guard; phone numbers such as "+91 ..." stay untouched.
-const risky = (text) => /^[=@\t\r]/.test(text) || /^[+-](?![\d\s()-]*$)/.test(text);
+export const risky = (text) => /^[=@\t\r]/.test(text) || /^[+-](?![\d\s()-]*$)/.test(text);
 const isStructured = (value) => value !== null && typeof value === 'object' && !(value instanceof Date);
 export function csvCell(value) {
   if (value === null || value === undefined) return '';

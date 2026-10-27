@@ -2,6 +2,7 @@ import { collection, COLLECTIONS, toObjectId } from '../../db/collections.js';
 import { HttpError } from '../../lib/http-error.js';
 import { pagination, queryString } from '../../lib/query.js';
 import { assertValid, escapeRegex } from '../../lib/validation.js';
+import { invalidateCareerCache } from '../career/career-service.js';
 import { invalidateCatalogCache } from '../catalog/catalog-service.js';
 import { queryKeys } from '../universities/normalize.js';
 import { invalidateUniversityCaches } from '../universities/university-service.js';
@@ -11,7 +12,7 @@ const capitalize = (value) => value.charAt(0).toUpperCase() + value.slice(1);
 const plural = (count, word) => `${count} ${word}${count === 1 ? '' : 's'}`;
 
 // Public catalogue and university reads are cached in memory; every admin write clears them.
-export const invalidatePublicCaches = () => { invalidateCatalogCache(); invalidateUniversityCaches(); };
+export const invalidatePublicCaches = () => { invalidateCatalogCache(); invalidateUniversityCaches(); invalidateCareerCache(); };
 
 // Derived search keys are internal; they never leave the API.
 export const serializeItem = ({ _id, searchPrefixes: _keys, ...rest }) => ({ id: _id.toString(), ...rest });
@@ -51,9 +52,14 @@ async function checkReferences(resource, data) {
   if (Object.keys(errors).length) throw new HttpError(400, 'Please correct the highlighted fields.', { fields: errors });
 }
 
+// Records that point at this one by slug: programmes (`referencedBy`) or the resource's own `references`.
 async function countReferences(resource, slug) {
-  if (!resource.referencedBy || !slug) return 0;
-  return (await collection(COLLECTIONS.programmes)).countDocuments({ [resource.referencedBy]: slug });
+  const refs = resource.references ?? (resource.referencedBy ? [{ collection: COLLECTIONS.programmes, field: resource.referencedBy, noun: 'programme' }] : []);
+  for (const ref of slug ? refs : []) {
+    const count = await (await collection(ref.collection)).countDocuments({ [ref.field]: slug });
+    if (count) return plural(count, ref.noun);
+  }
+  return '';
 }
 
 function conflict(resource, error) {
@@ -128,9 +134,9 @@ export async function updateItem(name, id, body) {
   const data = assertValid(resource.fields, body, { partial: true });
   if (resource.slugFrom && Object.hasOwn(data, 'slug') && !data.slug) data.slug = generateSlug(resource, { ...existing, ...data }) || existing.slug;
   if (data.slug && data.slug !== existing.slug) {
-    const count = await countReferences(resource, existing.slug);
-    if (count) {
-      const message = `This ${resource.singular} is used by ${plural(count, 'programme')}, so its slug cannot be changed`;
+    const users = await countReferences(resource, existing.slug);
+    if (users) {
+      const message = `This ${resource.singular} is used by ${users}, so its slug cannot be changed`;
       throw new HttpError(400, message, { fields: { slug: message } });
     }
   }
@@ -152,8 +158,8 @@ export async function updateItem(name, id, body) {
 export async function deleteItem(name, id) {
   const resource = getResource(name);
   const existing = await findExisting(resource, name, id);
-  const count = await countReferences(resource, existing.slug);
-  if (count) throw new HttpError(409, `Remove its ${plural(count, 'programme')} first`);
+  const users = await countReferences(resource, existing.slug);
+  if (users) throw new HttpError(409, `Remove its ${users} first`);
   await (await collection(name)).deleteOne({ _id: existing._id });
   invalidatePublicCaches();
 }

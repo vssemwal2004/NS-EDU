@@ -12,6 +12,16 @@
 
 .form { display: grid; gap: var(--lux-space-4); }
 
+/* "Continue with Google" above the code form, split by a quiet rule. */
+.alternatives { display: grid; gap: var(--lux-space-4); }
+.divider { display: flex; align-items: center; gap: var(--lux-space-3); margin: 0; color: var(--lux-text-subtle); font-size: var(--lux-caption); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
+.divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--lux-border); }
+.notice { display: flex; align-items: flex-start; gap: var(--lux-space-2); margin: 0; padding: var(--lux-space-3); border: 1px solid var(--lux-champagne); border-radius: var(--lux-radius-md); background: var(--lux-champagne-soft); color: var(--lux-ink); font-size: var(--lux-small); line-height: 1.45; }
+.notice :global(.icon) { flex: none; width: 18px; height: 18px; margin-top: 1px; color: var(--lux-wine); }
+.skip { justify-self: center; min-height: 44px; padding: 0 var(--lux-space-4); border: 0; border-radius: var(--lux-radius-pill); background: transparent; color: var(--lux-text-muted); font-size: var(--lux-small); font-weight: 600; text-decoration: underline; text-underline-offset: 4px; }
+.skip:hover:not(:disabled) { color: var(--lux-wine); }
+.skip:disabled { opacity: .5; }
+
 .segmented { position: relative; display: grid; grid-template-columns: 1fr 1fr; margin: 0; padding: 4px; border: 1px solid var(--lux-border); border-radius: var(--lux-radius-pill); background: var(--lux-sand); }
 .segmented::before { content: ''; position: absolute; inset: 4px calc(50% + 2px) 4px 4px; border-radius: var(--lux-radius-pill); background: var(--lux-surface-raised); box-shadow: var(--lux-shadow-soft); transition: inset var(--lux-dur-2) var(--lux-ease-out); }
 .segmented[data-active="phone"]::before { inset: 4px 4px 4px calc(50% + 2px); }
@@ -89,7 +99,8 @@
   .stepTag { font-size: .6875rem; }
   .title { font-size: 1.625rem; }
   .lead { font-size: .9375rem; line-height: 1.5; }
-  .form { gap: var(--lux-space-3); }
+  .form, .alternatives { gap: var(--lux-space-3); }
+  .notice { padding: var(--lux-space-2) var(--lux-space-3); font-size: .8125rem; }
   .segment { min-height: 40px; }
   .label { font-size: .8125rem; }
   .inputWrap { min-height: 52px; padding: 0 var(--lux-space-3); }

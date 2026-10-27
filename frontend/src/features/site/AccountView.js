@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import Icon from '@/components/ui/Icon';
 import { COMPARE_KEY, COMPARE_MAX, displayContact, firstName, initials, quickTools, SESSION_DAYS } from '@/features/auth/login-helpers';
+import SignInMethods from '@/features/auth/SignInMethods';
 import { parseJson, useStoredString, writeStoredJson } from '@/features/auth/useDeviceStorage';
 import MyApplications from '@/features/apply/MyApplications';
 import { STATUS_LABELS } from '@/features/apply/apply-options';
@@ -206,6 +207,15 @@ function SavedNews({ news }) {
   </Panel>;
 }
 
+const METHOD_NAMES = { google: 'Google', email: 'Email code', phone: 'Mobile code' };
+const signInSummary = (student) => (student.methods?.length ? `${student.methods.map((method) => METHOD_NAMES[method]).filter(Boolean).join(' · ')} · no password` : 'One-time code, no password');
+
+function SignIn({ student, notice }) {
+  return <Panel id="sign-in" eyebrow="Security" title="Sign-in methods" icon="lock">
+    <SignInMethods student={student} notice={notice} />
+  </Panel>;
+}
+
 function Profile({ student }) {
   const { signOut } = useStudentAuth();
   const since = memberSince(student);
@@ -215,7 +225,7 @@ function Profile({ student }) {
       {student.phone && <div><dt>Mobile</dt><dd>{displayContact({ phone: student.phone })}</dd></div>}
       <div><dt>Name</dt><dd>{student.name || 'Not added yet'}</dd></div>
       {since && <div><dt>Member since</dt><dd>{since}</dd></div>}
-      <div><dt>Sign-in</dt><dd>One-time code, no password</dd></div>
+      <div><dt>Sign-in</dt><dd>{signInSummary(student)}</dd></div>
     </dl>
     <p className={styles.note}><Icon name="lock" />You stay signed in on this device for up to {SESSION_DAYS} days. Log out on shared computers.</p>
     <button type="button" className="lux-button lux-button--ghost lux-button--block" onClick={signOut}><Icon name="logout" />Log out</button>
@@ -261,7 +271,7 @@ function QuickLinks() {
   </Panel>;
 }
 
-function Dashboard({ student }) {
+function Dashboard({ student, authNotice }) {
   const { course } = usePreferences();
   const { findCourse } = useCatalog();
   const lists = useComparisonLists();
@@ -279,6 +289,7 @@ function Dashboard({ student }) {
       </div>
       <div className={styles.sideCol}>
         <Profile student={student} />
+        <SignIn student={student} notice={authNotice} />
         <Preferences />
         <QuickLinks />
       </div>
@@ -292,10 +303,10 @@ function SignedOut({ unavailable }) {
     <div className="lux-state">
       <Icon name={unavailable ? 'refresh' : 'lock'} />
       <h1 id="account-title" className="lux-display-3">{unavailable ? 'We couldn’t reach your account' : 'You’re signed out'}</h1>
-      <p className="lux-lead">{unavailable ? 'Check your connection and try again in a moment.' : 'Log in with a one-time code sent to your email to see your applications, compare picks and saved stories.'}</p>
+      <p className="lux-lead">{unavailable ? 'Check your connection and try again in a moment.' : 'Log in with Google or a one-time code to see your applications, compare picks and saved stories.'}</p>
       <div className={styles.stateActions}>
         {unavailable ? <button type="button" className="lux-button lux-button--primary" onClick={refresh}><Icon name="refresh" />Try again</button>
-          : <button type="button" className="lux-button lux-button--primary" onClick={() => openLogin({ reason: 'Log in to open your student space.' })}><Icon name="mail" />Log in with email code</button>}
+          : <button type="button" className="lux-button lux-button--primary" onClick={() => openLogin({ reason: 'Log in to open your student space.', returnTo: '/account' })}><Icon name="user" />Log in</button>}
         <Link className="lux-button lux-button--ghost" href="/">Back to home</Link>
       </div>
     </div>
@@ -314,10 +325,11 @@ function Loading() {
 }
 
 // The server passes the session it already checked, so the dashboard paints without waiting for the client.
-export default function AccountView({ initialStudent = null }) {
+// `authNotice` carries the one-shot ?linked=google / ?error=<code> from connecting Google.
+export default function AccountView({ initialStudent = null, authNotice }) {
   const { student, status } = useStudentAuth();
   const current = student || (status === 'loading' || status === 'unavailable' ? initialStudent : null);
-  if (current) return <Dashboard student={current} />;
+  if (current) return <Dashboard student={current} authNotice={authNotice} />;
   if (status === 'loading') return <Loading />;
   return <SignedOut unavailable={status === 'unavailable'} />;
 }

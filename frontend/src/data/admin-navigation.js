@@ -22,6 +22,11 @@ export const adminNavigation = [
   ] },
   { label: 'Admissions', items: [
     { label: 'Leads', href: '/admin/leads', icon: 'eligibility', description: 'Applications submitted through the Apply flow' },
+    { label: 'School drives', href: '/admin/drives', icon: 'building', adminOnly: true, description: 'QR registration forms for school visits, grouped by state and district' },
+  ] },
+  { label: 'Career guidance', items: [
+    { label: 'Career fields', href: '/admin/career_fields', icon: 'compass', resource: 'career_fields', adminOnly: true, description: 'Fields students pick on the career guidance page' },
+    { label: 'Counsellors', href: '/admin/counsellors', icon: 'support', resource: 'counsellors', adminOnly: true, description: 'Counsellors per field; logged-in students see their numbers' },
   ] },
   { label: 'Students & funding', items: [
     { label: 'Student accounts', href: '/admin/students', icon: 'people', adminOnly: true, description: 'Student accounts and access' },

@@ -43,9 +43,13 @@ export function securityHeaders(_request, response, next) {
 // Coarse per-IP ceiling for every API call (route-specific limits stay stricter). In-memory, so
 // with several API instances put the same limit on the load balancer or move it to Redis.
 const apiLimiter = createRateLimiter({ windowMs: 60_000, max: Number(process.env.API_RATE_LIMIT_PER_MINUTE) || 600 });
+// School drive QR forms get their own, higher bucket: a whole school hall can share one Wi-Fi
+// address, and /api/forms has per-form and per-IP submit limits of its own.
+const formsLimiter = createRateLimiter({ windowMs: 60_000, max: Number(process.env.FORMS_RATE_LIMIT_PER_MINUTE) || 3000 });
 export function apiRateLimit(request, _response, next) {
   if (request.path === '/api/health' || request.path === '/api/health/ready') return next();
-  const { allowed, retryAfterSeconds } = apiLimiter.hit(request.ip);
+  const limiter = request.path.startsWith('/api/forms/') ? formsLimiter : apiLimiter;
+  const { allowed, retryAfterSeconds } = limiter.hit(request.ip);
   if (!allowed) throw new HttpError(429, 'Too many requests. Please wait a moment and try again.', { retryAfterSeconds });
   next();
 }

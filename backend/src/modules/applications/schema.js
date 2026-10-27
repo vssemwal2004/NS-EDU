@@ -11,6 +11,16 @@ export const STATUS_LABELS = {
 export const CLOSED_STATUSES = ['not-interested', 'closed'];
 
 export const QUALIFICATIONS = ['class-10', 'class-12', 'diploma', 'ug', 'pg', 'other'];
+// School drive vocabularies (fixed so the leads filter and dashboard can group by them).
+export const CLASS_LEVELS = [
+  { value: '9', label: 'Class 9' }, { value: '10', label: 'Class 10' }, { value: '11', label: 'Class 11' },
+  { value: '12', label: 'Class 12' }, { value: 'passed-12', label: 'Passed Class 12' }, { value: 'other', label: 'Other' },
+];
+export const SCHOOL_STREAMS = [
+  { value: 'pcm', label: 'Science (PCM)' }, { value: 'pcb', label: 'Science (PCB)' }, { value: 'pcmb', label: 'Science (PCMB)' },
+  { value: 'commerce', label: 'Commerce' }, { value: 'arts', label: 'Arts / Humanities' }, { value: 'vocational', label: 'Vocational' },
+  { value: 'not-decided', label: 'Not decided yet' }, { value: 'other', label: 'Other' },
+];
 export const GENDERS = ['female', 'male', 'non-binary', 'prefer-not-to-say'];
 export const STUDY_MODES = ['full-time', 'part-time', 'distance', 'online'];
 export const SCORE_TYPES = ['percentage', 'cgpa'];

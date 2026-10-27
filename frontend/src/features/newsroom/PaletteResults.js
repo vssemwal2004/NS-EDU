@@ -3,6 +3,7 @@ import Icon from '@/components/ui/Icon';
 import ApplyButton from '@/features/apply/ApplyButton';
 import UniversityMark from '@/features/apply/UniversityMark';
 import { highlight as mark } from '@/features/guides/highlight';
+import { busiestPlaces } from '@/features/home/placeCounts';
 import styles from './Search.module.css';
 
 export const SEARCH_TABS = [
@@ -99,7 +100,7 @@ export function Results({ query, tab, universities, courses, exams }) {
 
 export function Suggestions({ catalog, heading = 'Try one of these' }) {
   const courses = catalog.courses.filter((course) => course.popular).slice(0, 6);
-  const cities = catalog.cities.filter((city) => city.featured).slice(0, 6);
+  const cities = busiestPlaces(catalog.cities, 6);
   const jump = [
     { href: '/universities', icon: 'building', title: 'Browse every university', meta: 'Filter by state, course, fees and approvals' },
     { href: '/courses', icon: 'book', title: 'Course guides', meta: plural(catalog.courses.length, 'course') },

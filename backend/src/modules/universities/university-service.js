@@ -186,11 +186,13 @@ async function programmeSummaries(slugs) {
   return new Map(rows.map(({ _id, ...summary }) => [_id, summary]));
 }
 
-export async function listUniversities(query) {
+// `place` (from catalog placeFilter) replaces the exact city match, so a destination tile's link
+// lists the same rows its count covers. It derives from criteria.city alone, so the key stays valid.
+export async function listUniversities(query, { place = null } = {}) {
   const criteria = parseListQuery(query);
-  const key = JSON.stringify(criteria);
+  const key = JSON.stringify({ ...criteria, place: Boolean(place) });
   return listCache.wrap(key, async () => {
-    const filter = buildFilter(criteria);
+    const filter = place ? { ...buildFilter({ ...criteria, city: '' }), $and: [place] } : buildFilter(criteria);
     const skip = (criteria.page - 1) * criteria.limit;
     const collection = await institutions();
     let docs;

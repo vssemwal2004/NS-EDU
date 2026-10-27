@@ -1,0 +1,78 @@
+/* "Talk to a counsellor": field tabs, one panel of counsellor cards, and the callback popup. */
+.section { padding-block: var(--lux-section); border-top: 1px solid var(--lux-border); scroll-margin-top: var(--lux-header-height); }
+.head { display: grid; justify-items: start; gap: var(--lux-space-3); max-width: 760px; margin-bottom: var(--lux-space-6); }
+
+.notice { display: flex; align-items: flex-start; gap: var(--lux-space-2); margin-bottom: var(--lux-space-4); padding: var(--lux-space-3) var(--lux-space-4); border-radius: var(--lux-radius-md); background: var(--lux-surface-sunken); color: var(--lux-text); font-size: var(--lux-small); line-height: 1.5; }
+.notice[role="alert"] { background: var(--lux-danger-soft); color: var(--lux-danger); font-weight: 600; }
+.notice :global(.icon) { flex: none; width: 18px; height: 18px; margin-top: 1px; }
+
+/* Tabs scroll sideways inside the container on phones, never the page. */
+.tabs { display: flex; gap: var(--lux-space-2); margin-bottom: var(--lux-space-4); padding: 2px 2px var(--lux-space-2); overflow-x: auto; scrollbar-width: thin; overscroll-behavior-x: contain; }
+.tabs :global(.lux-chip) { flex: none; }
+.tabs :global(.lux-chip):focus-visible { outline: 2px solid var(--lux-focus); outline-offset: 2px; }
+
+.panel { display: grid; gap: var(--lux-space-5); padding: clamp(1.25rem, 1rem + 1.5vw, 2.25rem); border: 1px solid var(--lux-border); border-radius: var(--lux-radius-xl); background: var(--lux-surface-raised); box-shadow: var(--lux-shadow-card); }
+.panel:focus-visible { outline: 2px solid var(--lux-focus); outline-offset: 3px; }
+.panelHead { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; align-items: center; gap: var(--lux-space-4); }
+.fieldIcon { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; background: var(--lux-wine); color: #FFFFFF; }
+.fieldIcon :global(.icon) { width: 24px; height: 24px; }
+.fieldText { display: grid; gap: var(--lux-space-1); min-width: 0; }
+.fieldText p { max-width: 66ch; color: var(--lux-text-muted); line-height: 1.55; }
+.fieldText small { color: var(--lux-bronze-ink); font-size: var(--lux-caption); font-weight: 700; letter-spacing: var(--lux-tracking-eyebrow); text-transform: uppercase; }
+
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 290px), 1fr)); gap: var(--lux-space-4); margin: 0; padding: 0; list-style: none; }
+.card { display: grid; grid-template-rows: auto 1fr auto; gap: var(--lux-space-4); min-width: 0; padding: var(--lux-space-5); border: 1px solid var(--lux-border); border-radius: var(--lux-radius-lg); background: var(--lux-surface-page); }
+.card[data-lead] { border-color: var(--lux-champagne); background: linear-gradient(180deg, var(--lux-champagne-soft), var(--lux-surface-page) 55%); }
+.person { display: grid; grid-template-columns: 72px minmax(0, 1fr); align-items: center; gap: var(--lux-space-4); }
+.avatar { display: grid; place-items: center; width: 72px; height: 72px; overflow: hidden; border: 2px solid var(--lux-surface-raised); border-radius: 50%; background: linear-gradient(145deg, var(--lux-blush-soft), var(--lux-sand)); color: var(--lux-wine); font: 400 1.5rem/1 var(--lux-font-display); box-shadow: 0 0 0 1px var(--lux-border); }
+.avatar img { width: 100%; height: 100%; object-fit: cover; }
+.who { display: grid; justify-items: start; gap: 2px; min-width: 0; }
+.name { margin: 0; color: var(--lux-heading); font: 400 1.25rem/1.2 var(--lux-font-display); overflow-wrap: anywhere; }
+.role { color: var(--lux-text-muted); font-size: var(--lux-small); line-height: 1.4; }
+.badge { display: inline-flex; align-items: center; gap: 4px; margin-bottom: 2px; padding: 3px 10px; border-radius: var(--lux-radius-pill); background: var(--lux-oxblood); color: var(--lux-champagne); font-size: var(--lux-caption); font-weight: 700; letter-spacing: .02em; }
+.badge :global(.icon) { width: 13px; height: 13px; }
+
+.facts { display: grid; align-content: start; gap: var(--lux-space-2); margin: 0; }
+.facts > div { display: grid; grid-template-columns: 20px minmax(0, 1fr); align-items: start; gap: var(--lux-space-2); }
+.facts dt { display: flex; padding-top: 2px; color: var(--lux-bronze-ink); }
+.facts dt :global(.icon) { width: 17px; height: 17px; }
+.facts dd { margin: 0; color: var(--lux-text); font-size: var(--lux-small); line-height: 1.5; }
+
+.actions { display: flex; flex-wrap: wrap; gap: var(--lux-space-2); }
+.actions > * { flex: 1 1 auto; justify-content: center; }
+.actionNote { color: var(--lux-text-muted); font-size: var(--lux-small); }
+.footnote { display: flex; align-items: flex-start; gap: var(--lux-space-2); color: var(--lux-text-muted); font-size: var(--lux-caption); line-height: 1.5; }
+.footnote :global(.icon) { flex: none; width: 15px; height: 15px; margin-top: 1px; color: var(--lux-bronze-ink); }
+
+.empty { display: flex; align-items: flex-start; gap: var(--lux-space-4); padding: var(--lux-space-5); border: 1.5px dashed var(--lux-border-strong); border-radius: var(--lux-radius-lg); color: var(--lux-text-muted); line-height: 1.55; }
+.empty > :global(.icon) { flex: none; width: 44px; height: 44px; padding: 11px; border-radius: 50%; background: var(--lux-blush-soft); color: var(--lux-wine); }
+.empty strong { color: var(--lux-ink); }
+
+/* Callback popup (components/ui/Dialog with lux styling). Two classes beat the global .dialog rule. */
+:global(.dialog).dialog { width: min(640px, calc(100% - 32px)); padding: clamp(1.25rem, 1rem + 1.5vw, 2rem); border: 0; border-radius: var(--lux-radius-xl); background: var(--lux-ivory); color: var(--lux-ink); box-shadow: var(--lux-shadow-float), 0 0 0 1px rgb(201 164 106 / 28%); overscroll-behavior: contain; }
+.dialog :global(.dialog__heading) { margin-bottom: var(--lux-space-2); }
+.dialog :global(.dialog__heading h2) { color: var(--lux-heading); font: 400 clamp(1.5rem, 1.3rem + .8vw, 2rem)/1.15 var(--lux-font-display); }
+.dialogLead { margin-bottom: var(--lux-space-5); color: var(--lux-text-muted); line-height: 1.55; }
+.timeOptions { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--lux-space-2); }
+.timeOptions span { font-size: var(--lux-small); text-align: center; line-height: 1.3; }
+.textarea { min-height: 96px; padding-block: var(--lux-space-3); resize: vertical; }
+.privacy { grid-column: 2; color: var(--lux-wine); font-size: var(--lux-small); font-weight: 600; }
+.trap { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+@media (max-width: 760px) {
+  .panelHead { grid-template-columns: 44px minmax(0, 1fr); }
+  .panelHead > :global(.lux-button) { grid-column: 1 / -1; width: 100%; justify-content: center; }
+  .fieldIcon { width: 44px; height: 44px; }
+  .fieldIcon :global(.icon) { width: 20px; height: 20px; }
+  .timeOptions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+  .head { gap: var(--lux-space-2); margin-bottom: var(--lux-space-4); }
+  .panel { gap: var(--lux-space-4); padding: var(--lux-space-4); border-radius: var(--lux-radius-lg); }
+  .card { gap: var(--lux-space-3); padding: var(--lux-space-4); }
+  .person { grid-template-columns: 56px minmax(0, 1fr); gap: var(--lux-space-3); }
+  .avatar { width: 56px; height: 56px; font-size: 1.25rem; }
+  .name { font-size: 1.125rem; }
+  .empty { gap: var(--lux-space-3); padding: var(--lux-space-4); }
+  .empty > :global(.icon) { width: 36px; height: 36px; padding: 9px; }
+}
