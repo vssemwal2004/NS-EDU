@@ -21,6 +21,13 @@ export function createRateLimiter({ windowMs, max, clock = () => Date.now() }) {
       entry.count += 1;
       return { allowed: true, retryAfterSeconds: 0 };
     },
+    /** Same answer as hit() without counting, for limits charged only after the work succeeds. */
+    peek(key) {
+      const now = clock();
+      const entry = windows.get(key);
+      if (!entry || entry.resetAt <= now || entry.count < max) return { allowed: true, retryAfterSeconds: 0 };
+      return { allowed: false, retryAfterSeconds: Math.max(1, Math.ceil((entry.resetAt - now) / 1000)) };
+    },
     delete(key) { windows.delete(key); },
     reset() { windows.clear(); },
   };

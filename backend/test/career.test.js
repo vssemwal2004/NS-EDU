@@ -179,7 +179,7 @@ describe('career guidance counsellors and callbacks', { skip }, () => {
     assert.deepEqual(lead.source, { path: '/career-guidance', utmSource: 'instagram', utmMedium: '', utmCampaign: '', utmTerm: '', utmContent: '' });
     assert.equal(lead.status, 'new');
     assert.deepEqual(lead.nameTokens, ['meera', 'joshi']);
-    assert.equal(lead.keysV, 1);
+    assert.equal(lead.keysV, 2);
 
     const leads = await api('/api/admin/leads?channel=callback&careerField=technology-engineering', { cookie: owner });
     assert.equal(leads.status, 200);

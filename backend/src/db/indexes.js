@@ -57,6 +57,12 @@ const specs = {
     [{ 'applicant.phone': 1, createdAt: -1 }],
     [{ 'applicant.email': 1 }],
     [{ nameTokens: 1, createdAt: -1 }],
+    [{ cityKey: 1, createdAt: -1, _id: -1 }],
+    // Class/stream exist only on drive leads and career field only on callbacks; leadFilter adds the
+    // matching channel to those clauses so these smaller partial indexes are chosen.
+    [{ 'academics.classLevel': 1, createdAt: -1, _id: -1 }, { partialFilterExpression: { channel: 'school-drive' } }],
+    [{ 'academics.schoolStream': 1, createdAt: -1, _id: -1 }, { partialFilterExpression: { channel: 'school-drive' } }],
+    [{ 'careerField.slug': 1, createdAt: -1, _id: -1 }, { partialFilterExpression: { channel: 'callback' } }],
   ],
   application_notes: [[{ applicationId: 1, createdAt: -1 }]],
   // School drive registration forms: the public QR link resolves by the immutable short code.

@@ -11,7 +11,7 @@ export default function GatedLink({ href, reason = 'directory', className, child
   function onClick(event) {
     if (status !== 'signed-out' || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
     event.preventDefault();
-    openLogin({ reason, onSuccess: () => router.push(href) });
+    openLogin({ reason, onSuccess: () => router.push(href), returnTo: href });
   }
   return <Link href={href} className={className} prefetch={false} onClick={onClick}>{children}</Link>;
 }

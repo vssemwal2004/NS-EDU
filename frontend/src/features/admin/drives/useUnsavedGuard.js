@@ -1,7 +1,9 @@
 'use client';
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 
 const GUARD_STATE = 'gvUnsavedGuard';
+/** State for an in-page `history.replaceState` (e.g. a tab change) that keeps the guard entry marked. */
+export const keepGuardState = () => (window.history.state?.[GUARD_STATE] ? { [GUARD_STATE]: true } : null);
 
 /**
  * While `dirty`, asks before the page is left: closing or reloading the tab (beforeunload), clicks on
@@ -10,12 +12,6 @@ const GUARD_STATE = 'gvUnsavedGuard';
  * history entry absorbs the first Back press so we can ask (and push it again on "stay").
  */
 export function useUnsavedGuard(dirty, message = 'You have unsaved changes. Leave without saving?') {
-  const mounted = useRef(true);
-  useEffect(() => {
-    mounted.current = true;
-    return () => { mounted.current = false; };
-  }, []);
-
   useEffect(() => {
     if (!dirty) return undefined;
     const beforeUnload = (event) => { event.preventDefault(); event.returnValue = ''; };
@@ -28,6 +24,7 @@ export function useUnsavedGuard(dirty, message = 'You have unsaved changes. Leav
       if (!window.confirm(message)) { event.preventDefault(); event.stopPropagation(); }
     };
     const guarded = window.location.href;
+    // Next.js copies its own history state into entries pushed this way, so its popstate handling still works.
     const pushGuard = () => window.history.pushState({ [GUARD_STATE]: true }, '');
     let leaving = false;
     const popState = (event) => {
@@ -35,6 +32,7 @@ export function useUnsavedGuard(dirty, message = 'You have unsaved changes. Leav
       if (leaving || event.state?.[GUARD_STATE] || window.location.href !== guarded) return;
       if (!window.confirm(message)) { pushGuard(); return; }
       leaving = true;
+      window.removeEventListener('beforeunload', beforeUnload);
       window.history.back();
     };
     pushGuard();
@@ -45,9 +43,16 @@ export function useUnsavedGuard(dirty, message = 'You have unsaved changes. Leav
       window.removeEventListener('beforeunload', beforeUnload);
       window.removeEventListener('popstate', popState);
       document.removeEventListener('click', click, true);
-      // Saved or discarded while staying here: drop the guard entry so one Back press still leaves.
-      // Deferred, because on unmount the router may be mid-navigation and must not be undone.
-      if (!leaving) setTimeout(() => { if (mounted.current && window.history.state?.[GUARD_STATE]) window.history.back(); }, 0);
+      if (leaving) return;
+      // Saved, discarded or unmounted without leaving: step back off the guard entry so one Back press
+      // still leaves. Deferred so a router navigation (a new, unmarked entry) has already happened and is
+      // left alone; a URL changed in place meanwhile (keepGuardState) is put back after the step.
+      window.setTimeout(() => {
+        if (!window.history.state?.[GUARD_STATE]) return;
+        const url = window.location.href;
+        if (url !== guarded) window.addEventListener('popstate', () => window.history.replaceState(null, '', url), { once: true });
+        window.history.back();
+      }, 0);
     };
   }, [dirty, message]);
 }

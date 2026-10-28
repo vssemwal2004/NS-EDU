@@ -22,6 +22,7 @@ export const adminNavigation = [
   ] },
   { label: 'Admissions', items: [
     { label: 'Leads', href: '/admin/leads', icon: 'eligibility', description: 'Applications submitted through the Apply flow' },
+    { label: 'Leads dashboard', href: '/admin/leads/dashboard', icon: 'chart', description: 'Daily lead volume, sources, funnel and team workload' },
     { label: 'School drives', href: '/admin/drives', icon: 'building', adminOnly: true, description: 'QR registration forms for school visits, grouped by state and district' },
   ] },
   { label: 'Career guidance', items: [

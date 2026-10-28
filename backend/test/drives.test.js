@@ -200,7 +200,7 @@ describe('school drive forms', { skip }, () => {
     assert.equal(repeat.status, 200);
     assert.deepEqual(repeat.body, { ok: true, ref: first.ref, alreadyRegistered: true });
     const stranger = await api(`/api/forms/${drive.shortCode}/submit`, { method: 'POST', body: submission({ answers: { phone: '9876543210', fullName: 'Someone Else' } }) });
-    assert.deepEqual(stranger.body, { ok: true, ref: null, alreadyRegistered: true }, 'a phone number alone does not reveal the reference');
+    assert.deepEqual(stranger.body, { ok: true, alreadyRegistered: true }, 'a phone number alone does not reveal the reference');
 
     const before_ = await db.collection('applications').countDocuments();
     const bot = await api(`/api/forms/${drive.shortCode}/submit`, { method: 'POST', body: submission({ website: 'https://spam.example', answers: { phone: '9123456780' } }) });
@@ -219,7 +219,9 @@ describe('school drive forms', { skip }, () => {
       assert.equal((await post({ ...valid('12345'), token: formToken(other.id) })).body.retry, true);
       assert.equal((await post(valid('12345'))).status, 400);
     }
-    for (let index = 0; index < 5; index += 1) assert.equal((await post(valid(`91000000${10 + index}`))).status, 201);
+    for (let index = 0; index < 4; index += 1) assert.equal((await post(valid(`91000000${10 + index}`))).status, 201);
+    for (let index = 0; index < 3; index += 1) assert.equal((await post(valid('9100000010'))).body.alreadyRegistered, true);
+    assert.equal((await post(valid('9100000014'))).status, 201, 'repeat scans are not charged to the drive-wide bucket');
     const busy = await post(valid('9100000099'));
     assert.equal(busy.status, 429, 'the per-form cap (5/min in this test) still applies to real registrations');
     assert.ok(busy.body.retryAfterSeconds >= 1);
@@ -261,6 +263,22 @@ describe('school drive forms', { skip }, () => {
     assert.equal((await api('/api/admin/drives', { cookie: owner })).body.total, 0, 'archived drives leave the default list');
     assert.equal((await api('/api/admin/drives?status=archived&q=doon', { cookie: owner })).body.total, 1);
     assert.equal((await api(`/api/admin/leads?form=${drive.id}`, { cookie: owner })).body.total, 2, 'archiving keeps the leads');
+  });
+
+  test('an active drive already at its limit serves the closed page', async () => {
+    const full = (await api('/api/admin/drives', { method: 'POST', cookie: owner, body: { school: { ...SCHOOL, name: 'Full Hall School' } } })).body.item;
+    // As left by older data or a direct edit: still 'active', but the count has reached the limit.
+    await db.collection('lead_forms').updateOne({ shortCode: full.shortCode }, { $set: { maxSubmissions: 3, submissionCount: 3 } });
+    const page = await api(`/api/forms/${full.shortCode}`);
+    assert.equal(page.status, 410);
+    assert.equal(page.body.school.name, 'Full Hall School');
+    const raised = await api(`/api/admin/drives/${full.id}`, { method: 'PATCH', cookie: owner, body: { maxSubmissions: 4 } });
+    assert.equal(raised.body.item.status, 'active', 'a limit above the count leaves the drive open');
+    assert.equal((await api(`/api/forms/${full.shortCode}`)).status, 200);
+    const lowered = await api(`/api/admin/drives/${full.id}`, { method: 'PATCH', cookie: owner, body: { maxSubmissions: 2, title: 'Full hall' } });
+    assert.deepEqual([lowered.body.item.status, lowered.body.item.closedReason, lowered.body.item.title], ['closed', 'limit', 'Full hall']);
+    assert.equal((await api(`/api/forms/${full.shortCode}`)).status, 410);
+    await api(`/api/admin/drives/${full.id}`, { method: 'DELETE', cookie: owner });
   });
 
   test('a drive without registrations can be deleted for good', async () => {

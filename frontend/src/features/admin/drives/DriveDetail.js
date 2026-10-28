@@ -12,7 +12,7 @@ import { copyText, driveStatusLabel } from './drive-format';
 import DriveQrPanel from './DriveQrPanel';
 import DriveSettings from './DriveSettings';
 import FormBuilder from './FormBuilder';
-import { useUnsavedGuard } from './useUnsavedGuard';
+import { keepGuardState, useUnsavedGuard } from './useUnsavedGuard';
 import styles from './Drives.module.css';
 
 const TABS = [
@@ -49,7 +49,7 @@ export default function DriveDetail({ id, initialTab = 'builder' }) {
     if (dirty && tab === 'builder' && !window.confirm(DISCARD)) return;
     if (tab === 'builder') setDirty(false);
     setTab(next);
-    window.history.replaceState(null, '', `/admin/drives/${id}${next === 'builder' ? '' : `?tab=${next}`}`);
+    window.history.replaceState(keepGuardState(), '', `/admin/drives/${id}${next === 'builder' ? '' : `?tab=${next}`}`);
   }
   // Arrow keys move between tabs (WAI-ARIA tabs pattern); only the selected tab is in the tab order.
   function onTabKey(event) {

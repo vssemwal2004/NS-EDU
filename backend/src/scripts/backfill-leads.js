@@ -1,19 +1,20 @@
 // Brings existing `applications` (leads) up to the channel-aware shape, then builds the lead indexes.
-// Usage: npm run leads:backfill --workspace backend      (safe to re-run: only rows without keysV change)
+// Usage: npm run leads:backfill --workspace backend      (safe to re-run: only rows with an older keysV change)
 //
 // Run it BEFORE deploying the new admin leads list on a large database: index builds otherwise
 // happen on the first API request after deploy (getDb → ensureIndexes) and block it.
 import { closeDb, COLLECTIONS, getDb } from '../db/collections.js';
-import { leadKeys } from '../modules/applications/service.js';
+import { LEAD_KEYS_VERSION, leadKeys } from '../modules/applications/service.js';
 
 const BATCH = 1000;
 
 async function main() {
   const db = await getDb(); // also creates/updates every index
   const leads = db.collection(COLLECTIONS.applications);
-  const pending = await leads.countDocuments({ keysV: { $ne: 1 } });
+  const stale = { keysV: { $ne: LEAD_KEYS_VERSION } };
+  const pending = await leads.countDocuments(stale);
   console.log(`Leads to backfill: ${pending.toLocaleString('en-IN')}`);
-  const cursor = leads.find({ keysV: { $ne: 1 } }, { projection: { applicant: 1, channel: 1, mode: 1 } }).batchSize(BATCH);
+  const cursor = leads.find(stale, { projection: { applicant: 1, channel: 1, mode: 1 } }).batchSize(BATCH);
   let ops = [];
   let done = 0;
   const flush = async () => {

@@ -37,7 +37,7 @@ export default function LandingFirstScreen() {
   function search({ type, query }) {
     const target = query ? `${searchRoutes[type]}?q=${encodeURIComponent(query)}` : searchRoutes[type];
     // Signed out, a college search opens the login popup over this page and runs once verified.
-    if (status === 'signed-out' && isGatedPath(searchRoutes[type])) { openLogin({ reason: 'directory', onSuccess: () => router.push(target) }); return; }
+    if (status === 'signed-out' && isGatedPath(searchRoutes[type])) { openLogin({ reason: 'directory', onSuccess: () => router.push(target), returnTo: target }); return; }
     router.push(target);
   }
   return <div className={styles.firstScreen} data-first-screen>

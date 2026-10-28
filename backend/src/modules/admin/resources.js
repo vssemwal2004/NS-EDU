@@ -143,7 +143,7 @@ export const resources = {
       { name: 'isMaster', label: 'Lead counsellor for this field', type: 'boolean', default: false, help: 'Listed first with a “Lead counsellor” badge.' },
       { ...phoneField, name: 'phone', label: 'Mobile number', required: true, help: 'Use a work number only: every logged-in student can see and call it.' },
       { ...phoneField, name: 'whatsapp', label: 'WhatsApp number', help: 'Leave empty to hide the WhatsApp button.' },
-      { name: 'photoUrl', label: 'Photo', type: 'image', usage: 'other', help: 'A square head-and-shoulders photo. Leave empty to show their initials.' },
+      { name: 'photoUrl', label: 'Photo', type: 'image', usage: 'counsellor', help: 'A square head-and-shoulders photo. Leave empty to show their initials.' },
       { name: 'languages', label: 'Languages', type: 'stringList', maxItems: 8, maxLength: 30, help: 'Comma separated, e.g. Hindi, English' },
       { name: 'availability', label: 'Availability', type: 'string', maxLength: 80, help: 'e.g. Mon–Sat, 10 am–6 pm' },
       order, active,

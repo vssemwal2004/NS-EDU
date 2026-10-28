@@ -71,7 +71,7 @@ export default function MenuSheet({ id, open, pathname, compareCount, onClose, o
             </div>
           </>
           : <>
-            <p className={styles.accountText}>Log in with a one-time code sent to your email. New here? Your account is created on first login.</p>
+            <p className={styles.accountText}>Log in with Google or a one-time code, no password needed. New here? Your account is created on first login.</p>
             <button className="lux-button lux-button--primary lux-button--block" type="button" onClick={() => { onClose(); openLogin(); }}><Icon name="user" />Log in</button>
           </>}
       </div>

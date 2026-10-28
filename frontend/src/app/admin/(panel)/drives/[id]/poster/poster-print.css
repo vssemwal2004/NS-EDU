@@ -2,16 +2,10 @@
    top bar <header>) and its spacing so the poster sheet fills one A4 page. Global on purpose: the
    shell's class names are hashed CSS-module names this page cannot target.
    The route stylesheet stays loaded after the admin leaves this page, so the A4/no-margin page box is a
-   named page used only by the poster sheet; other admin prints keep the printer's margins. Browsers
-   without named pages fall back to a global rule (the poster still fits one sheet there). */
+   named page used only by the poster sheet; other admin prints keep the printer's margins. */
+@page poster { size: A4 portrait; margin: 0; }
 @media print {
-  @supports (page: gv-poster) {
-    @page gv-poster { size: A4 portrait; margin: 0; }
-    .gv-poster-sheet { page: gv-poster; }
-  }
-  @supports not (page: gv-poster) {
-    @page { size: A4 portrait; margin: 0; }
-  }
+  .gv-poster-sheet { page: poster; }
   body:has(.gv-poster-sheet) { background: #FFFFFF !important; }
   body:has(.gv-poster-sheet) aside,
   body:has(.gv-poster-sheet) header,

@@ -25,8 +25,10 @@ export function nameTokensOf(name) {
   const words = String(name ?? '').normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase().split(/[^\p{L}\p{N}]+/u);
   return [...new Set(words.filter(Boolean))].slice(0, 8);
 }
-// Derived search fields written on every insert; `keysV` marks documents the backfill has seen.
-export const leadKeys = (applicant) => ({ nameTokens: nameTokensOf(applicant?.fullName), keysV: 1 });
+// Derived search fields written on every insert; `keysV` marks documents the backfill has brought
+// up to date (2 added cityKey), so the backfill only rewrites older rows.
+export const LEAD_KEYS_VERSION = 2;
+export const leadKeys = (applicant) => ({ nameTokens: nameTokensOf(applicant?.fullName), cityKey: slugify(applicant?.city ?? ''), keysV: LEAD_KEYS_VERSION });
 
 // Short-lived count cache: list pages and status chips re-use a count for 30 s instead of
 // re-counting millions of rows on every click. Writes that move counts clear it.
@@ -244,7 +246,7 @@ export function leadFilter(query, staff, { districtFormIds } = {}) {
   const states = listParam(query.state, 400);
   if (states.length) clauses.push({ 'applicant.state': oneOf(states, INDIAN_STATES, 'state', 'state') });
   const city = queryString(query.city, 80);
-  if (city) clauses.push({ 'applicant.city': { $regex: `^${escapeRegex(city)}$`, $options: 'i' } });
+  if (city) clauses.push({ cityKey: slugify(city) });
   const district = districtParam(query.district);
   if (district) {
     clauses.push(districtFormIds

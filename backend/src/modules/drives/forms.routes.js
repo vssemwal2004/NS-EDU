@@ -16,8 +16,8 @@ const code = (request) => {
   if (!SHORT_CODE_PATTERN.test(value)) throw new HttpError(404, 'Registration form not found');
   return value;
 };
-function limit(limiter, key, message) {
-  const result = limiter.hit(key);
+function limit(limiter, key, message, { count = true } = {}) {
+  const result = count ? limiter.hit(key) : limiter.peek(key);
   if (!result.allowed) throw new HttpError(429, message, { retryAfterSeconds: result.retryAfterSeconds });
 }
 
@@ -48,16 +48,18 @@ formsRouter.post('/:code/submit', async (request, response) => {
     throw new HttpError(410, CLOSED);
   }
   const formId = doc._id.toString();
-  // Cheapest checks first, and the drive-wide bucket last: junk posts, retries and typing mistakes must
-  // not use up the budget every student in the hall shares, and one address cannot drain it alone.
+  // Token and answers are checked before any per-form bucket, and the drive-wide bucket (shared by every
+  // student in the hall) is charged only for new registrations: junk posts, retries and typing mistakes
+  // cannot use it up, and one address hits its own form+IP cap first.
   const token = checkFormToken(request.body?.token, formId);
   if (token === 'too-fast') throw new HttpError(400, 'Please check your details, then submit again.', { retry: true });
   if (token !== 'ok') throw new HttpError(400, 'This page has been open too long. Reload it and submit again.', { tokenExpired: true });
-  limit(perFormIp, `${formId}:${request.ip}`, 'Too many registrations from this network. Please try again in a few minutes.');
   const data = parseSubmission(doc, request.body);
-  limit(perForm, formId, 'Many students are registering right now. Please wait a minute and submit again.');
+  limit(perFormIp, `${formId}:${request.ip}`, 'Too many registrations from this network. Please try again in a few minutes.');
+  limit(perForm, formId, 'Many students are registering right now. Please wait a minute and submit again.', { count: false });
   const { ref, created } = await createDriveLead(doc, data, {
     ip: request.ip ?? '', userAgent: String(request.get('user-agent') ?? '').slice(0, 300),
   });
-  response.status(created ? 201 : 200).json({ ok: true, ref, ...(!created && { alreadyRegistered: true }) });
+  if (created) perForm.hit(formId);
+  response.status(created ? 201 : 200).json({ ok: true, ...(ref && { ref }), ...(!created && { alreadyRegistered: true }) });
 });

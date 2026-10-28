@@ -344,7 +344,7 @@ describe('admin leads list, columns and exports', { skip }, () => {
     // A city no earlier test filtered on, so no cached count is reused.
     const now = Date.now();
     await db.collection('applications').insertMany(Array.from({ length: 5001 }, (_, index) => ({
-      ref: `GV-2026-BULK${index}`, channel: 'callback', status: 'new', applicant: { fullName: 'Bulk', email: '', phone: '', city: 'Bulkpur', state: '' },
+      ref: `GV-2026-BULK${index}`, channel: 'callback', status: 'new', applicant: { fullName: 'Bulk', email: '', phone: '', city: 'Bulkpur', state: '' }, cityKey: 'bulkpur',
       createdAt: new Date(now - index * 1000), updatedAt: new Date(now), assignedEmployeeIds: [], statusHistory: [],
     })));
     const check = (await api('/api/admin/leads/export/check?format=pdf&columns=ref&city=Bulkpur')).body;
