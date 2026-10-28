@@ -126,7 +126,7 @@ export default function FormBuilder({ item, request, onSaved, onDirtyChange, not
   async function save() {
     setState({ busy: true, error: '' });
     try {
-      const { item: saved } = await request(`/drives/${item.id}`, { method: 'PATCH', body: { fields: fieldsPayload(fields) } });
+      const { item: saved } = await request(`/drives/${item.id}`, { method: 'PATCH', body: { fields: fieldsPayload(fields), expectedUpdatedAt: item.updatedAt } });
       setFields(withKeys(saved.fields)); setErrors({}); setState({ busy: false, error: '' });
       onSaved(saved);
       notify('Form saved. The link and QR code are unchanged.');

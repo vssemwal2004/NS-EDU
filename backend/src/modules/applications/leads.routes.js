@@ -77,12 +77,16 @@ leadsRouter.get('/', async (request, response) => {
 });
 
 // Status chip counts: one indexed count per status (cached), instead of grouping every lead.
+// `form` scopes the counts to one school drive (the leads table embedded on a drive's page).
 leadsRouter.get('/stats', async (request, response) => {
   const now = new Date();
   const today = istDayStart(istToday(now));
   const since = new Date(today.getTime() - 13 * DAY);
-  const match = accessFilter(request.admin);
-  const scope = request.admin.role === 'admin' ? 'admin' : request.admin._id.toString();
+  const formParam = queryString(request.query.form, 30);
+  const formId = formParam ? toObjectId(formParam) : null;
+  if (formParam && !formId) throw new HttpError(400, 'Invalid school drive filter', { fields: { form: 'Choose a valid school drive' } });
+  const match = { ...accessFilter(request.admin), ...(formId && { formId }) };
+  const scope = `${request.admin.role === 'admin' ? 'admin' : request.admin._id.toString()}${formId ? `|form=${formId}` : ''}`;
   const [byStatus, byDay] = await Promise.all([
     Promise.all(STATUSES.map((status) => countLeads({ ...match, status }, `${scope}|status=${status}`))),
     (await applications()).aggregate([

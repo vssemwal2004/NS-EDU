@@ -199,7 +199,12 @@ export async function updateDrive(id, body) {
   // A limit lowered to (or below) the count closes the drive now, not when the next student taps Register.
   if ((set.status ?? doc.status) === 'active' && max && (doc.submissionCount ?? 0) >= max) Object.assign(set, { status: 'closed', closedReason: 'limit', statusChangedAt: now });
   set.updatedAt = now;
-  const updated = await (await leadForms()).findOneAndUpdate({ _id: doc._id }, { $set: set }, { returnDocument: 'after' });
+  // `expectedUpdatedAt` (sent by the form builder) makes the save conditional, so two admins editing
+  // the same drive can't silently overwrite each other. Registrations don't touch updatedAt.
+  const expected = typeof body.expectedUpdatedAt === 'string' ? new Date(body.expectedUpdatedAt) : null;
+  if (expected && Number.isNaN(expected.getTime())) throw new HttpError(400, 'Invalid version', { fields: { expectedUpdatedAt: 'Reload the drive' } });
+  const updated = await (await leadForms()).findOneAndUpdate({ _id: doc._id, ...(expected && { updatedAt: expected }) }, { $set: set }, { returnDocument: 'after' });
+  if (!updated) throw new HttpError(409, 'Someone else saved changes to this drive while you were editing. Reload to see their version, then make your changes again.', { conflict: true });
   clearPublicForms();
   return serializeDrive(updated);
 }

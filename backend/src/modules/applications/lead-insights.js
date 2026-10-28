@@ -87,7 +87,8 @@ export function insightQueries(range, staff) {
     counts: admin ? {
       ...Object.fromEntries(STATUSES.map((status) => [`status:${status}`, { ...match, status }])),
       ...Object.fromEntries(CHANNELS.filter((channel) => channel !== 'web-apply').map((channel) => [`channel:${channel}`, { ...match, channel }])),
-      ...Object.fromEntries(['', ...INDIAN_STATES].map((state) => [`state:${state}`, { ...match, 'applicant.state': state }])),
+      // "Not given" covers '' and leads stored without a state (null matches a missing field too).
+      ...Object.fromEntries(['', ...INDIAN_STATES].map((state) => [`state:${state}`, { ...match, 'applicant.state': state || { $in: ['', null] } }])),
     } : {},
     groups: {
       ...(!admin && { facts: { pipeline: [{ $match: match }, { $group: { _id: { date: { $dateToString: { format: '%Y-%m-%d', date: { $add: ['$createdAt', IST_OFFSET] } } }, status: '$status', channel: { $ifNull: ['$channel', 'web-apply'] }, state: '$applicant.state' }, count: { $sum: 1 } } }], options: scan } }),

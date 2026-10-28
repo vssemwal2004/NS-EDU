@@ -6,7 +6,7 @@ import drawerStyles from '@/features/admin/ResourceManager.module.css';
 import { toQuery } from './useServerList';
 import styles from './Table.module.css';
 
-const number = (value) => value.toLocaleString('en-IN');
+const number = (value) => (typeof value === 'number' ? value.toLocaleString('en-IN') : '');
 const FORMAT_NOTES = { csv: 'Any number of rows. Opens in Excel and Google Sheets.', xlsx: 'Formatted spreadsheet with a frozen header row.', pdf: 'Printable landscape table.' };
 function limitText(format) {
   const parts = [format.maxRows ? `up to ${number(format.maxRows)} rows` : 'no row limit', format.maxColumns ? `${format.maxColumns} columns` : ''].filter(Boolean);
@@ -49,7 +49,8 @@ function Body({ request, checkPath, downloadPath, columns, visibleKeys, formats,
   const tooManyRows = Boolean(checked?.data) && Boolean(spec.maxRows) && (total === null || total > spec.maxRows);
   const tooManyColumns = Boolean(spec.maxColumns) && keys.length > spec.maxColumns;
   const ready = Boolean(checked?.data?.ok) && keys.length > 0 && !tooManyRows && !tooManyColumns && (total > 0 || (total === null && !spec.maxRows));
-  const rowsText = total === null ? `many ${noun.many}` : `${number(total)} ${total === 1 ? noun.one : noun.many}`;
+  // `total` is undefined until the first count arrives (the dialog opens before it does).
+  const rowsText = total === undefined ? `Counting ${noun.many}…` : total === null ? `many ${noun.many}` : `${number(total)} ${total === 1 ? noun.one : noun.many}`;
   const toggle = (key, on) => setKeys((current) => (on ? [...current.filter((item) => item !== key), key] : current.filter((item) => item !== key)));
   const groups = [...columns.reduce((map, column) => map.set(column.group, [...(map.get(column.group) ?? []), column]), new Map())];
 

@@ -358,6 +358,10 @@ describe('admin leads list, columns and exports', { skip }, () => {
     assert.equal(stats.byStatus.reduce((sum, row) => sum + row.count, 0), stats.total);
     assert.equal(stats.last14Days.length, 14);
     assert.equal((await api('/api/admin/leads/stats', { cookie: alice.cookie })).body.total, 3);
+    const forForm = (await api(`/api/admin/leads/stats?form=${formId}`)).body;
+    assert.equal(forForm.total, await db.collection('applications').countDocuments({ formId: new ObjectId(formId) }));
+    assert.ok(forForm.total > 0 && forForm.total < stats.total);
+    assert.equal((await api('/api/admin/leads/stats?form=nope')).status, 400);
   });
 
   test('same-named districts in different states stay apart; a lead without history still opens', async () => {

@@ -58,6 +58,8 @@ const specs = {
     [{ 'applicant.email': 1 }],
     [{ nameTokens: 1, createdAt: -1 }],
     [{ cityKey: 1, createdAt: -1, _id: -1 }],
+    // "New school-drive leads" style views: the commonest two-filter combination on the list.
+    [{ channel: 1, status: 1, createdAt: -1, _id: -1 }],
     // Class/stream exist only on drive leads and career field only on callbacks; leadFilter adds the
     // matching channel to those clauses so these smaller partial indexes are chosen.
     [{ 'academics.classLevel': 1, createdAt: -1, _id: -1 }, { partialFilterExpression: { channel: 'school-drive' } }],

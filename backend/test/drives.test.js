@@ -127,7 +127,14 @@ describe('school drive forms', { skip }, () => {
 
     const again = await api(`/api/admin/drives/${drive.id}`, { method: 'PATCH', cookie: owner, body: { fields: saved.body.item.fields } });
     assert.equal(again.body.item.fields.at(-1).id, customId, 'saving again keeps the custom id');
-    drive = again.body.item;
+
+    // Two admins editing the same drive: the second save, based on the older version, is refused.
+    const first = await api(`/api/admin/drives/${drive.id}`, { method: 'PATCH', cookie: owner, body: { fields: again.body.item.fields, expectedUpdatedAt: again.body.item.updatedAt } });
+    assert.equal(first.status, 200, JSON.stringify(first.body));
+    const stale = await api(`/api/admin/drives/${drive.id}`, { method: 'PATCH', cookie: owner, body: { fields: again.body.item.fields, expectedUpdatedAt: again.body.item.updatedAt } });
+    assert.equal(stale.status, 409);
+    assert.equal((await api(`/api/admin/drives/${drive.id}`, { method: 'PATCH', cookie: owner, body: { title: 'Careers week', expectedUpdatedAt: 'soon' } })).status, 400);
+    drive = first.body.item;
   });
 
   test('QR codes encode the public link as PNG and SVG', async () => {

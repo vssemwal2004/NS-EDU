@@ -82,7 +82,9 @@ export default function LeadsManager({ initial = NO_FILTERS, fixedFilters = NO_F
   const columnsForm = fixed.form || formId || filters.form;
   const columnsInfo = useServerList(request, '/leads/columns', { form: columnsForm }, { scope });
   const options = useServerList(request, '/leads/filter-options', {}, { scope }).data;
-  const stats = useServerList(request, '/leads/stats', {}, { scope, enabled: !scoped });
+  // Status counts exist for all leads or for one school drive; other fixed scopes hide them.
+  const statsScoped = hidden.length === 1 && hidden[0] === 'form';
+  const stats = useServerList(request, '/leads/stats', statsScoped ? { form: fixed.form } : {}, { scope, enabled: !scoped || statsScoped });
   const available = useMemo(() => columnsInfo.data?.items.map((column) => column.key) ?? [], [columnsInfo.data]);
   const defaults = useMemo(() => columnsInfo.data?.defaults ?? [], [columnsInfo.data]);
   const [visibleKeys, saveColumns] = useColumnPrefs(admin ? `gv-admin-cols:leads:${admin.id}${formId ? `:${formId}` : ''}` : '', available, defaults);
@@ -147,7 +149,7 @@ export default function LeadsManager({ initial = NO_FILTERS, fixedFilters = NO_F
 
   const statuses = splitList(filters.status);
   const counts = new Map((stats.data?.byStatus ?? []).map((row) => [row.status, row.count]));
-  const showCounts = !scoped && Boolean(stats.data);
+  const showCounts = (!scoped || statsScoped) && Boolean(stats.data);
   const sections = leadFilterSections({ options, employees, isAdmin, hidden });
   const chips = leadFilterChips({ filters, options, employees, hidden, onChange: (patch) => update(patch) });
   const filterCount = activeFilterCount(filters, hidden);
@@ -163,7 +165,7 @@ export default function LeadsManager({ initial = NO_FILTERS, fixedFilters = NO_F
       <div className={styles.summary}>
         <span className={styles.summaryIcon}><Icon name="eligibility" /></span>
         <div><strong>{heading}</strong>
-          <small aria-live="polite">{totalText}{!scoped && typeof newToday === 'number' ? ` · ${formatCount(newToday)} today` : ''}{!isAdmin && admin ? ' · assigned to you' : ''}</small></div>
+          <small aria-live="polite">{totalText}{(!scoped || statsScoped) && typeof newToday === 'number' ? ` · ${formatCount(newToday)} today` : ''}{!isAdmin && admin ? ' · assigned to you' : ''}</small></div>
       </div>
       <div className={styles.toolbarActions}>
         {isAdmin && selectedIds.length > 0 && <button type="button" className="button button--primary" onClick={() => { setPanel('assign'); setBulkEmployeeIds([]); setBulkState({ busy: false, error: '' }); }}><Icon name="people" />Assign {selectedIds.length}</button>}
