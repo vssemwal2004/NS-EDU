@@ -1,7 +1,7 @@
 import { cache } from 'react';
 import { cookies, headers } from 'next/headers';
 import { redirect, unstable_rethrow } from 'next/navigation';
-import { loginHref, PATH_HEADER, STUDENT_COOKIE } from '@/features/auth/gated-routes';
+import { loginHref, PATH_HEADER, PREVIEW_COOKIE, STUDENT_COOKIE } from '@/features/auth/gated-routes';
 
 // Server-only helpers for the student session. The API owns the real check; these forward the
 // browser's session cookie to it and turn a 401 into a trip to /login?next=<this page>.
@@ -12,13 +12,21 @@ export async function studentCookieHeader() {
   return value ? `${STUDENT_COOKIE}=${value}` : '';
 }
 
+// The cookies the API reads for a university request: the session and, for a signed-out visitor,
+// the preview id that their free views are counted against.
+export async function directoryCookieHeader() {
+  const store = await cookies();
+  return [STUDENT_COOKIE, PREVIEW_COOKIE].map((name) => store.get(name)).filter(Boolean).map(({ name, value }) => `${name}=${value}`).join('; ');
+}
+
 // Path + query of the current request, set by proxy.js on gated routes.
 export async function currentPath() {
   return (await headers()).get(PATH_HEADER) || '';
 }
 
-export async function redirectToLogin(nextPath) {
-  redirect(loginHref(nextPath ?? await currentPath()));
+// `why` = 'limit' when the free university views are used up (shown in the login popup).
+export async function redirectToLogin(nextPath, why = '') {
+  redirect(loginHref(nextPath ?? await currentPath(), why));
 }
 
 // { student, signedOut }: signedOut is true only when the API said so (or there is no cookie),

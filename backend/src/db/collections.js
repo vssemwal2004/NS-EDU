@@ -20,6 +20,7 @@ export const COLLECTIONS = Object.freeze({
   leadForms: 'lead_forms',
   careerFields: 'career_fields',
   counsellors: 'counsellors',
+  feeEstimates: 'fee_estimates',
   scrapeSources: 'scrape_sources',
   scrapeJobs: 'scrape_jobs',
   scrapeRuns: 'scrape_runs',
@@ -27,6 +28,7 @@ export const COLLECTIONS = Object.freeze({
   media: 'media',
   studentEvents: 'student_events',
   consentEvents: 'consent_events',
+  previewViews: 'preview_views',
 });
 
 let ready;

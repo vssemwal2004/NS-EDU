@@ -163,6 +163,10 @@ function titleOf(item, columns, refLabels) {
 function renderCell(column, item, refLabels, onToggle) {
   const value = item[column.field];
   if (column.badge) return <button type="button" className={styles.badge} data-on={value !== false} onClick={onToggle} title="Toggle visibility">{value !== false ? 'Visible' : 'Hidden'}</button>;
+  // Small Cloudinary rendition; an empty cell says so, because a place without a photo shows a plain tile to students.
+  if (column.image) return value
+    ? <img className={styles.thumb} src={String(value).replace('/image/upload/', '/image/upload/c_fill,w_112,h_76,q_auto,f_auto/')} alt="" loading="lazy" width="56" height="38" />
+    : <span className={styles.noPhoto}>No photo</span>;
   if (column.primary) {
     const title = (column.labelField && item[column.labelField]) || (column.refLabel ? refLabels[column.refLabel]?.[value] : null) || value;
     const secondary = column.secondary?.(item, refLabels);

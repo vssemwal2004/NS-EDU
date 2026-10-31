@@ -12,6 +12,7 @@ const reasons = {
   compare: { title: 'Log in to compare', lead: 'Comparisons use the full university directory, which is open to signed-in students.' },
   directory: { title: 'Log in to explore', lead: 'The full university directory is open to signed-in students. Signing in takes a minute.' },
   account: { title: 'Your student space', lead: 'Log in to see your applications and saved preferences.' },
+  limit: { title: 'Log in to keep exploring', lead: 'You have used your free university views. Log in — it is free and takes a minute — to open every profile and search result.' },
 };
 
 // The one login surface on the site: always this popup, over whatever page the student is on

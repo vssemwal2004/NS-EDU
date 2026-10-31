@@ -24,6 +24,9 @@ const stateNames = [
   'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur', 'Meghalaya',
   'Mizoram', 'Nagaland', 'Odisha', 'Punjab', 'Rajasthan', 'Sikkim',
   'Tamil Nadu', 'Telangana', 'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal',
+  // Union territories: the directory has institutions in each, so they get a tile like the states.
+  'Andaman and Nicobar Islands', 'Chandigarh', 'Dadra and Nagar Haveli and Daman and Diu', 'Delhi',
+  'Jammu and Kashmir', 'Ladakh', 'Lakshadweep', 'Puducherry',
 ];
 
 // Featured entries keep the artwork order; the rest follow their source order.

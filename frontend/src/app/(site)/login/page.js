@@ -17,8 +17,9 @@ export default async function LoginPage({ searchParams }) {
   const next = safeNext(params.next);
   if (await getStudentSession()) redirect(next);
   const error = typeof params.error === 'string' ? params.error.slice(0, 40) : '';
+  const why = params.why === 'limit' ? 'limit' : '';
   return <>
     <HomePage />
-    <LoginRoute next={next} error={error} />
+    <LoginRoute next={next} error={error} why={why} />
   </>;
 }

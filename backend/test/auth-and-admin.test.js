@@ -284,7 +284,7 @@ describe('auth, catalog and admin API', { skip }, () => {
     adminCookie = admin;
   });
 
-  test('the university directory needs a student or staff session; the featured set is public', async () => {
+  test('the university directory gives signed-out visitors a free preview; the featured set is public', async () => {
     const now = new Date();
     const institution = (slug, name, popularity, extra = {}) => ({
       slug, name, nameKey: name.toLowerCase(), city: 'Pune', state: 'Maharashtra', type: 'university', category: 'engineering',
@@ -299,21 +299,52 @@ describe('auth, catalog and admin API', { skip }, () => {
     await db.collection('institutions').insertMany(docs);
     await db.collection('programmes').insertOne({ slug: 'gate-beta-btech', institutionSlug: 'gate-beta-university', courseSlug: 'btech', annualTuitionInr: 150000, tuitionYear: '2026–27', active: true });
     try {
+      // Signed in (student or staff): everything, kept privately for a minute.
       const paths = ['/api/universities', '/api/universities/suggest?q=gate', '/api/universities/facets', '/api/universities/sitemap', '/api/universities/gate-alpha-university'];
       for (const path of paths) {
-        const anonymous = await api(path);
-        assert.equal(anonymous.status, 401, path);
-        assert.equal(anonymous.body.loginRequired, true, path);
-        assert.equal(anonymous.headers.get('cache-control'), 'no-store', path);
         for (const cookie of [studentCookie, adminCookie]) {
           const allowed = await api(path, { cookie });
           assert.equal(allowed.status, 200, `${path} ${cookie.split('=')[0]}`);
           assert.equal(allowed.headers.get('cache-control'), 'private, max-age=60', path);
+          assert.equal(allowed.body.preview, undefined, 'a signed-in viewer has no preview limits');
         }
       }
       assert.equal((await api('/api/universities', { headers: { authorization: `Bearer ${tokenOf(adminCookie)}` } })).status, 200, 'admin bearer token');
-      assert.equal((await api('/api/universities', { cookie: 'nsedu_student=forged.token.value' })).status, 401);
       assert.equal((await api('/api/universities/gate-hidden-university', { cookie: studentCookie })).status, 404);
+
+      // Signed out: searching and filtering work, the sitemap stays closed.
+      for (const path of ['/api/universities/suggest?q=gate', '/api/universities/facets']) {
+        const open = await api(path);
+        assert.equal(open.status, 200, path);
+        assert.equal(open.headers.get('cache-control'), 'no-store', path);
+      }
+      const sitemap = await api('/api/universities/sitemap');
+      assert.deepEqual([sitemap.status, sitemap.body.loginRequired], [401, true]);
+      assert.equal((await api('/api/universities', { cookie: 'nsedu_student=forged.token.value' })).status, 200, 'a forged session is just a signed-out visitor');
+
+      // The list shows the first two results free and counts the rest; they are never cached.
+      const listed = await api('/api/universities?q=gate&sort=name');
+      assert.equal(listed.status, 200);
+      assert.equal(listed.headers.get('cache-control'), 'no-store');
+      assert.deepEqual(listed.body.items.map((item) => item.id), ['gate-alpha-university', 'gate-beta-university']);
+      assert.deepEqual(listed.body.preview, { limit: 2, shown: 2, total: 3, locked: 1 });
+      assert.deepEqual((await api('/api/universities?q=gate&sort=name&page=2')).body.items, [], 'later pages are held back');
+
+      // Profiles: two different ones are free per visitor (re-opening costs nothing); the third asks for a login.
+      const first = await api('/api/universities/gate-alpha-university');
+      assert.equal(first.status, 200);
+      assert.deepEqual(first.body.preview, { used: 1, limit: 2, remaining: 1 });
+      const visitor = cookieFrom(first, 'gv_preview');
+      assert.ok(visitor, 'the visitor gets a random preview id');
+      assert.match(first.setCookies.find((item) => item.startsWith('gv_preview=')), /HttpOnly/i);
+      assert.equal((await api('/api/universities/gate-alpha-university', { cookie: visitor })).body.preview.used, 1, 'a repeat view is free');
+      assert.equal((await api('/api/universities/gate-hidden-university', { cookie: visitor })).status, 404, 'a missing page does not spend a view');
+      assert.deepEqual((await api('/api/universities/gate-beta-university', { cookie: visitor })).body.preview, { used: 2, limit: 2, remaining: 0 });
+      const blocked = await api('/api/universities/gate-gamma-university', { cookie: visitor });
+      assert.deepEqual([blocked.status, blocked.body.loginRequired, blocked.body.freeLimitReached, blocked.body.preview], [401, true, true, { used: 2, limit: 2, remaining: 0 }]);
+      assert.equal((await api('/api/universities/gate-alpha-university', { cookie: visitor })).status, 200, 'pages already opened stay open');
+      assert.equal((await api('/api/universities/gate-gamma-university', { cookie: `${visitor}; ${studentCookie}` })).status, 200, 'logging in lifts the limit');
+      assert.equal((await api('/api/universities/gate-gamma-university', { cookie: 'gv_preview=not-a-uuid' })).status, 200, 'a malformed id is replaced with a fresh one');
 
       const featured = await api('/api/universities/featured?limit=2');
       assert.equal(featured.status, 200);
@@ -507,9 +538,10 @@ describe('auth, catalog and admin API', { skip }, () => {
     assert.deepEqual(search.body.colleges, [{ id: 'test-institute', name: 'Test Institute', city: 'Pune', state: null, type: 'university', courses: ['btech'] }]);
     assert.equal(search.body.collegesRequireLogin, undefined);
     const anonymous = await api('/api/catalog/search?q=%20TEST%20inst');
-    assert.deepEqual([anonymous.body.colleges, anonymous.body.collegesRequireLogin], [[], true]);
+    // Signed out sees the first free matches; the rest are only counted until they log in.
+    assert.deepEqual([anonymous.body.colleges.map((item) => item.id), anonymous.body.collegesLocked, anonymous.body.collegesRequireLogin], [['test-institute'], 0, false]);
     assert.deepEqual((await api('/api/catalog/search?q=(', { cookie: adminCookie })).body, { query: '(', courses: [], exams: [], colleges: [] });
-    assert.deepEqual((await api('/api/catalog/search')).body, { query: '', courses: [], exams: [], colleges: [], collegesRequireLogin: true });
+    assert.deepEqual((await api('/api/catalog/search')).body, { query: '', courses: [], exams: [], colleges: [], collegesLocked: 0, collegesRequireLogin: false });
 
     await api(`/api/admin/courses/${course.id}`, { method: 'PATCH', cookie: adminCookie, body: { active: false } });
     assert.deepEqual((await api('/api/catalog/colleges')).body.items, []);

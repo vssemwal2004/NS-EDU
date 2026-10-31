@@ -1,0 +1,24 @@
+/* Free-preview prompts: a block under the free search results and a slim band on a free profile. */
+.locked { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--lux-space-4); margin-top: var(--lux-space-5); padding: var(--lux-space-5); border: 1px solid var(--lux-border-strong); border-radius: var(--lux-radius-lg); background: linear-gradient(135deg, var(--lux-surface-raised), var(--lux-blush-soft)); }
+.icon { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--lux-wine); color: var(--lux-ivory); }
+.icon :global(.icon) { width: 20px; height: 20px; }
+.copy { display: grid; gap: 4px; }
+.copy strong { font-family: var(--lux-font-display); font-weight: 400; font-size: 1.375rem; line-height: 1.15; color: var(--lux-oxblood); }
+.copy p { margin: 0; color: var(--lux-text-muted); font-size: var(--lux-small); line-height: 1.5; }
+
+.notice { border-bottom: 1px solid var(--lux-border); background: var(--lux-blush-soft); color: var(--lux-ink); font-size: var(--lux-small); }
+.notice[data-last] { background: var(--lux-wine); color: var(--lux-ivory); }
+.noticeInner { display: flex; align-items: center; gap: var(--lux-space-3); min-height: 44px; padding-block: var(--lux-space-2); }
+.noticeInner > :global(.icon) { flex: none; width: 18px; height: 18px; color: var(--lux-bronze-ink); }
+.notice[data-last] .noticeInner > :global(.icon) { color: var(--lux-champagne); }
+.noticeInner p { margin: 0; flex: 1 1 auto; min-width: 0; }
+.link { display: inline-flex; align-items: center; gap: 6px; flex: none; min-height: 32px; font-weight: 700; color: var(--lux-wine); text-decoration: underline; text-underline-offset: 3px; }
+.notice[data-last] .link { color: var(--lux-champagne); }
+.link :global(.icon) { width: 16px; height: 16px; }
+
+@media (max-width: 640px) {
+  .locked { grid-template-columns: minmax(0, 1fr); justify-items: start; padding: var(--lux-space-4); }
+  .copy strong { font-size: 1.1875rem; }
+  .locked :global(.lux-button) { width: 100%; justify-content: center; }
+  .noticeInner { flex-wrap: wrap; row-gap: 2px; }
+}

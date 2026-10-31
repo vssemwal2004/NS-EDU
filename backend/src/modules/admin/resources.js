@@ -21,6 +21,8 @@ const placeFields = [
   { name: 'landmark', label: 'Landmark', type: 'string', maxLength: 80 },
   { name: 'imageUrl', label: 'Tile image', type: 'image', usage: 'place', help: 'A landscape photo, at least 800 px wide. It replaces the artwork crop; without either, a designed tile is shown.' },
   { name: 'imageAlt', label: 'Image description', type: 'string', maxLength: 160, help: 'What the photo shows, for screen readers, e.g. "Gateway of India at sunset". Defaults to the place name.' },
+  { name: 'imageCredit', label: 'Photo credit', type: 'string', maxLength: 200, help: 'Author and licence, e.g. "Photo: Jane Doe · CC BY-SA 4.0". Required by most free licences; shown on the destinations page.' },
+  { name: 'imageSource', label: 'Photo source link', type: 'url', help: 'Where the photo came from (its Wikimedia Commons or licence page). Linked from the credit.' },
   crop,
   { name: 'featured', label: 'Featured', type: 'boolean', default: false, help: byCountNote },
   { ...order, help: byCountNote }, active,

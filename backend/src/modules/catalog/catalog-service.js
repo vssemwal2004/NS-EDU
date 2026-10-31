@@ -24,7 +24,7 @@ const toExam = (exam) => ({
 });
 const toLocation = (place, institutions = 0) => ({
   name: place.name, landmark: place.landmark ?? '', crop: place.crop ?? null, featured: Boolean(place.featured), institutions,
-  image: place.imageUrl ? { url: place.imageUrl, alt: place.imageAlt || place.name } : null,
+  image: place.imageUrl ? { url: place.imageUrl, alt: place.imageAlt || place.name, ...(place.imageCredit && { credit: place.imageCredit }), ...(place.imageSource && { source: place.imageSource }) } : null,
 });
 const matching = (fields, q) => ({ $or: fields.map((field) => ({ [field]: { $regex: escapeRegex(q), $options: 'i' } })) });
 

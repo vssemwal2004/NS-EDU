@@ -3,8 +3,8 @@ import Icon from '@/components/ui/Icon';
 import { mergeUniversities, Results, SEARCH_TABS, Suggestions, TabBar, tabHref } from '@/features/newsroom/PaletteResults';
 import SearchPalette from '@/features/newsroom/SearchPalette';
 import TrackEvent from '@/features/recommendations/TrackEvent';
+import { LockedResults } from '@/features/universities/PreviewGate';
 import { getCatalog, getUniversities, searchCatalog, universityQuery } from '@/lib/api/catalog';
-import { requireStudentSession } from '@/lib/api/session';
 import styles from '@/features/newsroom/Search.module.css';
 
 export const metadata = { title: 'Search | Gyaan Vidhya', robots: { index: false, follow: true } };
@@ -12,7 +12,6 @@ export const metadata = { title: 'Search | Gyaan Vidhya', robots: { index: false
 const text = (value) => String((Array.isArray(value) ? value[0] : value) || '');
 
 export default async function SearchPage({ searchParams }) {
-  await requireStudentSession();
   const params = await searchParams;
   const query = text(params.q).trim().slice(0, 120);
   const requested = text(params.tab) === 'colleges' ? 'universities' : text(params.tab);
@@ -27,6 +26,9 @@ export default async function SearchPage({ searchParams }) {
   const counts = { universities: universities.total, courses: results.courses.length, exams: exams.length };
   counts.all = counts.universities + counts.courses + counts.exams;
   const broken = failed && directory?.failed;
+  // Signed out, only the first few university matches are free; say how many a login unlocks.
+  const locked = directory?.preview?.locked ?? results.collegesLocked ?? 0;
+  const preview = locked ? { locked, shown: directory?.preview?.shown ?? results.colleges.length } : null;
 
   let body;
   if (!query) body = <Suggestions catalog={catalog} heading="Start typing, or pick a starting point" />;
@@ -50,6 +52,7 @@ export default async function SearchPage({ searchParams }) {
     </div>
     <div className={styles.shell}>
       <SearchPalette query={query} tab={tab}>{body}</SearchPalette>
+      {query && !broken && <LockedResults preview={preview} next={`/search?q=${encodeURIComponent(query)}`} />}
     </div>
     {/* `results` is the whole-directory total, so a zero lands in the admin content-gap list. */}
     {query && !broken && <TrackEvent event={{ type: 'search', query, results: counts.all }} />}

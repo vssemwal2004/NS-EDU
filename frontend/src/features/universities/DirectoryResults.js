@@ -1,6 +1,7 @@
 import Icon from '@/components/ui/Icon';
 import { DirLink, ResultsRegion, RetryButton } from './DirectoryState';
 import FilterBar, { ActiveFilters } from './FilterBar';
+import { LockedResults } from './PreviewGate';
 import UniversityCard from './UniversityCard';
 import UniversityRow from './UniversityRow';
 import { FILTER_KEYS, clearedFilters, directoryHref, pageWindow } from './directory-url';
@@ -68,7 +69,8 @@ export default function DirectoryResults({ params, result, facets, courses, view
   const pages = result.pages || 1;
   const size = result.limit || 24;
   const from = result.total ? (page - 1) * size + 1 : 0;
-  const to = Math.min(result.total, page * size);
+  // Signed out, only the free preview is on the page (the API says how many are held back).
+  const to = result.preview ? result.items.length : Math.min(result.total, page * size);
   const where = params.city || params.state || 'India';
 
   return <section id="directory-results" className={styles.results} aria-labelledby="uni-results-title">
@@ -79,7 +81,7 @@ export default function DirectoryResults({ params, result, facets, courses, view
           <p className="lux-eyebrow">Results</p>
           <h2 id="uni-results-title" className="lux-display-3" tabIndex={-1}>Universities in {where}</h2>
           <p className={styles.resultsCount} role="status">{result.failed ? 'The directory is temporarily unavailable.'
-            : result.total ? <><strong>{formatCount(result.total)}</strong> {result.total === 1 ? 'result' : 'results'}{pages > 1 && <> · showing {formatCount(from)}–{formatCount(to)}</>}</>
+            : result.total ? <><strong>{formatCount(result.total)}</strong> {result.total === 1 ? 'result' : 'results'}{(pages > 1 || result.preview) && <> · showing {formatCount(from)}–{formatCount(to)}</>}</>
               : 'No universities match these filters.'}</p>
         </div>
         <div className={styles.headSide}>
@@ -102,6 +104,7 @@ export default function DirectoryResults({ params, result, facets, courses, view
         </div>}
       </ResultsRegion>
 
+      <LockedResults preview={result.preview} next={directoryHref(params)} />
       <Pagination params={params} page={page} pages={pages} />
       <p className={styles.note}><Icon name="uniInfo" />Counts cover the whole directory. Fees, approvals and deadlines can change, so confirm details with each institution before you apply.</p>
     </div>

@@ -5,12 +5,13 @@ import { kindOf, lakhRange, placeOf } from '@/features/universities/labels';
 import UniversityProfile from '@/features/universities/profile/UniversityProfile';
 import { profileModel } from '@/features/universities/profile/profile-data';
 import styles from '@/features/universities/profile/Profile.module.css';
+import { ViewsNotice } from '@/features/universities/PreviewGate';
 import { getCatalog, getUniversity } from '@/lib/api/catalog';
-import { requireStudentSession } from '@/lib/api/session';
 
 async function load(slug) {
   const [detail, catalog] = await Promise.all([getUniversity(decodeURIComponent(slug)), getCatalog()]);
-  return detail ? { model: profileModel(detail, catalog.courses), catalog } : null;
+  // `preview` is only present for a signed-out visitor: how many of their free profile views are used.
+  return detail ? { model: profileModel(detail, catalog.courses), catalog, preview: detail.preview ?? null } : null;
 }
 
 export async function generateMetadata({ params }) {
@@ -28,11 +29,13 @@ export async function generateMetadata({ params }) {
 
 export default async function UniversityProfilePage({ params }) {
   const { slug } = await params;
-  const [, data] = await Promise.all([requireStudentSession(), load(slug)]);
+  // A profile past the free views makes the API answer 401, which getUniversity turns into the login redirect.
+  const data = await load(slug);
   if (!data) notFound();
   const courseNames = Object.fromEntries(data.catalog.courses.map((course) => [course.id, course.name]));
   const { item } = data.model;
   return <main id="main" tabIndex={-1} className={styles.page}>
+    <ViewsNotice preview={data.preview} next={`/universities/${item.id}`} />
     <UniversityProfile model={data.model} courseNames={courseNames} />
     <TrackEvent event={{ type: 'view', institutionSlug: item.id, city: item.city, state: item.state || '' }} />
     <div className={`lux-container ${styles.recommended}`}>

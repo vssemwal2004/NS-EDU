@@ -150,6 +150,9 @@
   .history td::before { content: attr(data-label); display: block; color: var(--lux-text-subtle); font-size: var(--lux-caption); }
 }
 .offeredFee[data-missing] { color: var(--lux-text-subtle); font-weight: 500; }
+/* An estimate is visibly not a published fee: softer weight, an approximate sign and a tag. */
+.estimate { display: inline-flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 2px var(--lux-space-2); font-weight: 600; }
+.estimateTag { padding: 1px 8px; border: 1px dashed var(--lux-border-strong, var(--lux-border)); border-radius: 999px; color: var(--lux-text-muted); font-size: var(--lux-caption); font-style: normal; font-weight: 600; letter-spacing: .02em; white-space: nowrap; }
 
 /* Provenance lines and quiet footnotes used across the new sections. */
 .sourceLine { display: inline-flex; align-items: center; gap: 6px; color: var(--lux-wine); font-size: var(--lux-small); font-weight: 600; text-decoration: none; }

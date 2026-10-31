@@ -32,13 +32,19 @@ insightsRouter.post('/events', limit(captureLimiter, 'Too many events. Please sl
 // gets suggestions from their own searches and views; anyone else gets the top institutions for the
 // course, ranked by NIRF and NAAC. `personalised` tells the page which of the two it received.
 const COURSE = /^[a-z0-9-]{1,40}$/;
+const SLUG = /^[a-z0-9][a-z0-9-]{0,99}$/;
+// The browser's per-session number that rotates the default list (see recommend.js). Anything else is ignored.
+const variantOf = (value) => { const number = Number.parseInt(value, 10); return Number.isInteger(number) && number >= 0 && number < 100 ? number : null; };
 insightsRouter.get('/home', limit(recommendLimiter, 'Too many requests. Please try again shortly.'), async (request, response) => {
   const course = queryString(request.query.course, 40).toLowerCase();
+  const exclude = queryString(request.query.exclude, 100).toLowerCase();
   const result = await recommendUniversities({
     studentId: request.student?._id ?? null,
     visitorId: request.visitorId,
     limit: Math.min(Number.parseInt(request.query.limit, 10) || 6, 12),
     course: COURSE.test(course) ? course : '',
+    exclude: SLUG.test(exclude) ? exclude : '',
+    variant: variantOf(request.query.variant),
   });
   response.json({ ...result, items: result.items.map(({ score: _score, matched: _matched, ...item }) => item) });
 });
@@ -46,10 +52,13 @@ insightsRouter.get('/home', limit(recommendLimiter, 'Too many requests. Please t
 // Recommendations hand back directory records, so they sit behind the same gate as /api/universities.
 // Capture above stays open: a visitor may search before signing in, and those events follow them in.
 insightsRouter.get('/recommendations', requireStudentOrAdmin, limit(recommendLimiter, 'Too many requests. Please try again shortly.'), async (request, response) => {
+  const course = queryString(request.query.course, 40).toLowerCase();
   response.json(await recommendUniversities({
     studentId: request.student?._id ?? null,
     visitorId: request.visitorId,
     limit: request.query.limit,
     exclude: queryString(request.query.exclude, 100).toLowerCase(),
+    course: COURSE.test(course) ? course : '',
+    variant: variantOf(request.query.variant),
   }));
 });

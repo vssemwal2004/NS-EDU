@@ -71,7 +71,7 @@ export default function LocationDiscovery({ variant = 'home' }) {
           </li>)}
         </ul>
       </section>
-      <p className={styles.footer}>Your course choice carries into location results{courseName ? ` for ${courseName}` : ''}. Counts are institutions in the Gyaan Vidhya directory, not a ranking.</p>
+      <p className={styles.footer}>Your course choice carries into location results{courseName ? ` for ${courseName}` : ''}. Counts are institutions in the Gyaan Vidhya directory, not a ranking. <Link className="text-link" href="/locations#photo-credits">Photo credits</Link></p>
     </div>
   </section>;
 }

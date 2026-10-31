@@ -71,6 +71,8 @@ const specs = {
   lead_forms: [[{ shortCode: 1 }, { unique: true }], [{ status: 1, 'school.state': 1, 'school.districtKey': 1 }], [{ createdAt: -1 }]],
   career_fields: [[{ slug: 1 }, { unique: true }], [{ order: 1 }]],
   counsellors: [[{ fieldSlug: 1, order: 1 }]],
+  // Derived by `npm run fees:estimate`; one group per course, fee period, area and ownership class.
+  fee_estimates: [[{ courseSlug: 1, field: 1, scope: 1, scopeValue: 1, ownership: 1 }, { unique: true }]],
   // Scraper queue: partial unique indexes give one open job per source and one running job per domain.
   scrape_sources: [[{ websiteKey: 1 }, { unique: true }], [{ nameKey: 1, _id: 1 }], [{ domain: 1 }], [{ status: 1, lastJobAt: 1 }], [{ seedListName: 1 }]],
   scrape_jobs: [
@@ -99,6 +101,11 @@ const specs = {
   // decisions is always available to the admin report, then deleted by the TTL index.
   consent_events: [
     [{ at: 1 }, { expireAfterSeconds: 400 * 24 * 60 * 60, name: 'consent_events_ttl' }],
+  ],
+  // Which university profiles a signed-out visitor has opened for free (see universities/free-preview.js).
+  // The row is keyed by the random `gv_preview` id and expires 30 days after its last use.
+  preview_views: [
+    [{ at: 1 }, { expireAfterSeconds: 30 * 24 * 60 * 60, name: 'preview_views_ttl' }],
   ],
 };
 

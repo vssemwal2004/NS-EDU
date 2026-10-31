@@ -39,7 +39,7 @@ export default function SearchPanel({ id, onSubmit, onClose }) {
     const controller = new AbortController();
     const timer = window.setTimeout(() => {
       api(`/catalog/search?q=${encodeURIComponent(trimmed)}`, { signal: controller.signal })
-        .then((data) => setResult({ query: trimmed, data: { ...empty, ...data }, state: 'done', locked: Boolean(data.collegesRequireLogin) }))
+        .then((data) => setResult({ query: trimmed, data: { ...empty, ...data }, state: 'done', locked: Boolean(data.collegesRequireLogin), hidden: Number(data.collegesLocked) || 0 }))
         .catch((error) => { if (error.name !== 'AbortError') setResult({ query: trimmed, data: empty, state: 'error', locked: false }); });
     }, 180);
     return () => { window.clearTimeout(timer); controller.abort(); };
@@ -119,7 +119,7 @@ export default function SearchPanel({ id, onSubmit, onClose }) {
         {status === 'loading' && !options.length && <p>Searching…</p>}
         {status === 'error' && <p>Suggestions are unavailable right now. Press Enter to open the full search.</p>}
         {status === 'done' && !options.length && <p>No quick matches for “{trimmed}”. Press Enter to search everything.</p>}
-        {status === 'done' && result.locked && <p className={styles.locked}><Icon name="lock" />University results need a free login. Press Enter to log in and see them.</p>}
+        {status === 'done' && result.locked && <p className={styles.locked}><Icon name="lock" />{result.hidden > 0 ? `Log in free to see ${result.hidden} more ${result.hidden === 1 ? 'university' : 'universities'}.` : 'Log in free to see more universities.'} Press Enter for all results.</p>}
         {options.length > 0 && <p className="sr-only">{options.length} suggestions. Use the up and down arrow keys to review them.</p>}
       </div>}
       {trimmed && <button type="button" className={`lux-link ${styles.all}`} onClick={() => submit()}>See all results for “{trimmed}”<Icon name="arrow" /></button>}

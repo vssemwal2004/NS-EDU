@@ -64,6 +64,26 @@ describe('universities service', { skip }, () => {
     assert.equal(hidden.inserted, 1);
   });
 
+  test('a crawl without a fee never erases a recorded fee, but a printed fee replaces it', async () => {
+    const hand = { kind: 'import', name: 'Official fee PDF, checked by hand' };
+    const crawl = { kind: 'scrape', name: 'Official website' };
+    const base = { name: 'Epsilon University', city: 'Pune', state: 'Maharashtra', website: 'https://epsilon.edu.in' };
+    const fee = { name: 'B.Tech Computer Science', semesterFeeInr: 90000, feeYear: '2026-27', sourcePage: 'https://epsilon.edu.in/fee.pdf' };
+    await service.upsertUniversities([{ ...base, programmesOffered: [fee, { name: 'MBA', annualFeeInr: 150000, sourcePage: 'https://epsilon.edu.in/fee.pdf' }] }], { source: hand, publish: false });
+
+    await service.upsertUniversities([{ ...base, programmesOffered: [{ name: 'B.Tech  Computer Science' }, { name: 'B.Sc Physics' }] }], { source: crawl, publish: false });
+    let rows = (await db.collection('institutions').findOne({ slug: 'epsilon-university' })).programmesOffered;
+    const btech = rows.find((row) => /B\.Tech/.test(row.name));
+    assert.equal(btech.semesterFeeInr, 90000, 'fee kept when the crawl found the programme without one');
+    assert.equal(btech.sourcePage, 'https://epsilon.edu.in/fee.pdf');
+    assert.equal(rows.find((row) => row.name === 'MBA')?.annualFeeInr, 150000, 'a recorded fee row the crawl did not see stays');
+    assert.ok(rows.some((row) => row.name === 'B.Sc Physics'), 'new programmes are added');
+
+    await service.upsertUniversities([{ ...base, programmesOffered: [{ name: 'B.Tech Computer Science', semesterFeeInr: 95000 }] }], { source: crawl, publish: false });
+    rows = (await db.collection('institutions').findOne({ slug: 'epsilon-university' })).programmesOffered;
+    assert.equal(rows.find((row) => /B\.Tech/.test(row.name)).semesterFeeInr, 95000, 'a fee the page prints now wins');
+  });
+
   test('constituent colleges on one hostname stay separate records', async () => {
     const source = { kind: 'import', name: 'Test list' };
     const group = await service.upsertUniversities([

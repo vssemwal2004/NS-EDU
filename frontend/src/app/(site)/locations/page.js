@@ -4,6 +4,7 @@ import { loginHref } from '@/features/auth/gated-routes';
 import { countByPlace, mergePlaceCount } from '@/features/home/placeCounts';
 import PlaceVisual from '@/features/landing/PlaceVisual';
 import { hasPicture, Postcard, Stamp } from '@/features/newsroom/Postcards';
+import RecommendedUniversities from '@/features/recommendations/RecommendedUniversities';
 import { getCatalog } from '@/lib/api/catalog';
 import { getSharedContent } from '@/lib/api/content';
 import { getStudentSession } from '@/lib/api/session';
@@ -32,6 +33,7 @@ export default async function LocationsPage() {
   const totals = catalog.locationTotals ?? { cities: 0, states: 0 };
   const number = (value) => new Intl.NumberFormat('en-IN').format(value ?? 0);
   const illustrative = catalog.colleges.some((row) => row.isIllustrative);
+  const credited = [...catalog.cities.map((place) => ({ ...place, kind: 'city' })), ...catalog.states.map((place) => ({ ...place, kind: 'state' }))].filter((place) => place.image?.credit);
   const fan = [cityCards[1], stateCards[0], cityCards[0]].filter(Boolean);
   const empty = !catalog.cities.length && !catalog.states.length;
 
@@ -94,6 +96,10 @@ export default async function LocationsPage() {
         </div>
       </section>
 
+      <div className="lux-container">
+        <RecommendedUniversities limit={3} courseNames={Object.fromEntries(catalog.courses.map((course) => [course.id, course.name]))} eyebrow="Recommended" title="Universities to start with" />
+      </div>
+
       <section className="lux-container" aria-labelledby="next-title">
         <div className={`lux-surface-dark ${styles.closing}`}>
           <div>
@@ -105,6 +111,13 @@ export default async function LocationsPage() {
             <Link className="lux-button lux-button--outline" href="/budget">Check living costs</Link>
           </div>
         </div>
+        {credited.length > 0 && <details id="photo-credits" className={styles.credits}>
+          <summary>Photo credits<span>{credited.length} photos</span></summary>
+          <ul>{credited.map((place) => <li key={`${place.kind}-${place.name}`}>
+            <strong>{place.name}</strong>
+            {place.image.source ? <a href={place.image.source} target="_blank" rel="noopener noreferrer">{place.image.credit}<span className="sr-only"> (opens the photo’s source page)</span></a> : <span>{place.image.credit}</span>}
+          </li>)}</ul>
+        </details>}
         <p className={styles.footnote}>Institution counts come from the Gyaan Vidhya directory and are not a ranking; programme counts come from the curated fee catalogue{illustrative ? ', which still includes illustrative sample institutions' : ''}. Places are listed by how many institutions they have; landmark artwork is illustrative.</p>
       </section>
     </>}

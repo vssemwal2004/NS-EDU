@@ -302,6 +302,44 @@ describe('search tracking and recommendations', { skip }, () => {
     assert.equal(declined.body.personalised, false, 'a stale visitor cookie is ignored once consent is withdrawn');
   });
 
+  test('the default list rotates between sessions and spreads across states; viewers with history are not shuffled', async () => {
+    const states = ['Kerala', 'Gujarat', 'Punjab', 'Assam', 'Odisha'];
+    const extra = Array.from({ length: 30 }, (_, index) => institution({
+      slug: `rotation-college-${index}`, name: `Rotation College ${index}`, city: `Town ${index}`, state: states[index % states.length], streams: ['Science'], naacGrade: 'A', popularity: 5,
+    }));
+    await db.collection('institutions').insertMany(extra);
+    recommend.invalidateRecommendationCache();
+    try {
+      const listFor = async (variant, extraQuery = '', options) => (await api(`/api/insights/home?limit=6&variant=${variant}${extraQuery}`, options)).body.items.map((item) => item.id);
+      const lists = new Map();
+      for (const variant of [1, 2, 3, 4, 5, 6, 7, 8]) lists.set(variant, await listFor(variant, '', { consent: null }));
+      assert.ok(new Set([...lists.values()].map((list) => list.join())).size >= 4, 'different sessions see different default lists');
+      assert.deepEqual(await listFor(3, '', { consent: null }), lists.get(3), 'the same session sees the same list again');
+      for (const list of lists.values()) {
+        assert.equal(list.length, 6);
+        const spread = new Set(list.map((id) => extra.find((item) => item.slug === id)?.state ?? 'other'));
+        assert.ok(spread.size >= 3, `a default list is spread across places, got ${[...spread]}`);
+      }
+      // Without a variant (old clients, bots) the list is the plain ranked one and does not rotate.
+      assert.deepEqual((await api('/api/insights/home?limit=6', { consent: null })).body.items.map((item) => item.id), (await api('/api/insights/home?limit=6&variant=abc', { consent: null })).body.items.map((item) => item.id));
+      // exclude keeps the page the visitor is on out of its own suggestions.
+      assert.ok(!(await listFor(2, '&exclude=rotation-college-0', { consent: null })).includes('rotation-college-0'));
+
+      // A viewer with history gets relevance, not rotation.
+      const visitorId = '88888888-8888-4888-8888-888888888888';
+      await seedEvents(visitorId, [{ type: 'search', query: 'engineering pune', city: 'Pune', state: 'Maharashtra', stream: 'Engineering', results: 2, at: new Date() }]);
+      recommend.invalidateRecommendationCache();
+      const personal = await Promise.all([1, 2, 3].map((variant) => listFor(variant, '&course=btech', { cookie: `gv_visitor=${visitorId}` })));
+      assert.deepEqual(personal[0], personal[1]);
+      assert.deepEqual(personal[1], personal[2]);
+      assert.equal(personal[0][0], 'pune-institute-of-engineering');
+    } finally {
+      await db.collection('institutions').deleteMany({ slug: /^rotation-college-/ });
+      await db.collection('student_events').deleteMany({ visitorId: '88888888-8888-4888-8888-888888888888' });
+      recommend.invalidateRecommendationCache();
+    }
+  });
+
   test('the admin cookie report counts decisions and estimates visitors', async () => {
     assert.equal((await api('/api/admin/insights/consent')).status, 401);
     const report = await api('/api/admin/insights/consent?days=30', { cookie: adminCookie });

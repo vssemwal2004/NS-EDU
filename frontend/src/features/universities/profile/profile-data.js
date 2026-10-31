@@ -17,6 +17,25 @@ const sourceLink = (value) => {
   return label ? { label, url } : null;
 };
 
+// An approximate range the server derived from other institutions' published fees. Never a published figure.
+const estimateOf = (value) => {
+  const low = num(value?.low);
+  const high = num(value?.high);
+  const sample = num(value?.sample);
+  if (low == null || high == null || !sample) return null;
+  return { low, high, sample, period: text(value.period), scope: text(value.scope), ownership: text(value.ownership) };
+};
+export const estimateRange = (estimate) => (estimate.low === estimate.high ? shortInr(estimate.low) : `${shortInr(estimate.low)} – ${shortInr(estimate.high)}`);
+// One headline range for the page: the period most programmes share, and the middle of their ranges.
+function typicalOf(estimates) {
+  if (!estimates.length) return null;
+  const byPeriod = new Map();
+  for (const estimate of estimates) byPeriod.set(estimate.period, [...(byPeriod.get(estimate.period) ?? []), estimate]);
+  const [period, group] = [...byPeriod].sort((a, b) => b[1].length - a[1].length)[0];
+  const middle = (values) => [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)];
+  return { low: middle(group.map((estimate) => estimate.low)), high: middle(group.map((estimate) => estimate.high)), period, scope: group[0].scope, programmes: group.length };
+}
+
 // Columns of the season-by-season placement table; only the ones some season reports are shown.
 const HISTORY_COLUMNS = [
   ['highestPackageLpa', 'Highest package', formatLpa],
@@ -87,24 +106,32 @@ export function profileModel({ item, programmes, courses, similar }, catalogCour
     feeYear: text(row?.feeYear),
     feeNote: text(row?.feeNote),
     sourcePage: text(row?.sourcePage),
+    estimate: estimateOf(row?.estimate),
   })).filter((row) => {
     const key = row.name.toLowerCase();
     if (!row.name || seen.has(key)) return false;
     seen.add(key);
     return true;
-  }).map((row, index) => ({
-    ...row,
-    id: `o${index}`,
+  }).map((row, index) => {
     // Every fee the institution prints for the programme, each with its own period; none is
     // converted into another, so "₹60,000 a semester" never turns into an annual figure.
-    fees: [
+    const fees = [
       row.annualFeeInr != null && { label: 'a year', value: formatInr(row.annualFeeInr) },
       row.semesterFeeInr != null && { label: 'a semester', value: formatInr(row.semesterFeeInr) },
       row.totalFeeInr != null && { label: 'whole programme', value: formatInr(row.totalFeeInr) },
-    ].filter(Boolean),
-    meta: [row.level, row.durationYears ? `${row.durationYears} ${row.durationYears === 1 ? 'year' : 'years'}` : '', row.feeYear && `fees ${row.feeYear}`].filter(Boolean).join(' · '),
-  }));
+    ].filter(Boolean);
+    return {
+      ...row,
+      id: `o${index}`,
+      fees,
+      // Only a programme with no published fee gets an estimate, and it is always shown as one.
+      estimate: fees.length ? null : row.estimate,
+      meta: [row.level, row.durationYears ? `${row.durationYears} ${row.durationYears === 1 ? 'year' : 'years'}` : '', row.feeYear && `fees ${row.feeYear}`].filter(Boolean).join(' · '),
+    };
+  });
   const offeredWithFees = offeredRows.filter((row) => row.fees.length).length;
+  const offeredEstimated = offeredRows.filter((row) => row.estimate).length;
+  const typicalEstimate = typicalOf(offeredRows.map((row) => row.estimate).filter(Boolean));
   const offeredSource = offeredRows.find((row) => row.sourcePage)?.sourcePage || '';
 
   // ---- placements ------------------------------------------------------------------------------
@@ -157,7 +184,9 @@ export function profileModel({ item, programmes, courses, similar }, catalogCour
   const firstStat = placementStats[0];
   const glance = [
     summary?.feeMin != null ? { key: 'fees', icon: 'uniRupee', label: 'Annual tuition', value: lakhRange(summary.feeMin, summary.feeMax), note: summary.tuitionYear || 'published fees' }
-      : scrapedFee ? { key: 'fees', icon: 'uniRupee', label: 'Fees from', value: shortInr(scrapedFee.value), note: `${scrapedFee.period}, lowest published` } : null,
+      : scrapedFee ? { key: 'fees', icon: 'uniRupee', label: 'Fees from', value: shortInr(scrapedFee.value), note: `${scrapedFee.period}, lowest published` }
+        // Nothing published: a typical range, plainly labelled so it is never read as the institution's own figure.
+        : typicalEstimate ? { key: 'fees', icon: 'uniRupee', label: 'Estimated fees', value: estimateRange(typicalEstimate), note: `${typicalEstimate.period}, approximate — not published` } : null,
     firstStat ? { key: 'placement', icon: 'trend', label: firstStat.label, value: firstStat.value, note: placementYear ? `reported for ${placementYear}` : 'reported by the institution' }
       : bestMedian != null ? { key: 'placement', icon: 'trend', label: 'Median package', value: `up to ${formatLpa(bestMedian)}`, note: summary.placementYear } : null,
     offeredRows.length ? { key: 'programmes', icon: 'uniLayers', label: 'Programmes', value: formatCount(offeredRows.length), note: 'listed by the institution' }
@@ -265,7 +294,7 @@ export function profileModel({ item, programmes, courses, similar }, catalogCour
   const sections = [
     { id: 'overview', label: 'Overview' },
     galleryPhotos.length && { id: 'photos', label: 'Photos' },
-    hasCourses && { id: 'courses', label: rows.length || offeredWithFees ? 'Courses & fees' : 'Courses' },
+    hasCourses && { id: 'courses', label: rows.length || offeredWithFees || offeredEstimated ? 'Courses & fees' : 'Courses' },
     hasPlacements && { id: 'placements', label: 'Placements' },
     hasCampus && { id: 'campus', label: 'Campus life' },
     awards.length && { id: 'awards', label: 'Awards' },
@@ -279,7 +308,7 @@ export function profileModel({ item, programmes, courses, similar }, catalogCour
     item, rows, summary, moreCourses, similar, shortName, place, glance, highlights, accreditation, status,
     contacts, address, mapQuery, about, aboutSource, sections, hasCourses, awards,
     directory, snapshotOn, directorySources, sourceUrl, photos: galleryPhotos, heroImage, chips, chipsNote,
-    offeredRows, offeredWithFees, offeredSource,
+    offeredRows, offeredWithFees, offeredEstimated, offeredSource,
     placementStats, recruiters, placementYear, placementNote, placementSource: text(placements.sourcePage) || text(latestSeason?.sourcePage), hasPlacements,
     placementHistory, historyColumns,
     campusFacts, facilities, activities, campusSource: text(campus.sourcePage), hasCampus,

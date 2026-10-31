@@ -13,5 +13,4 @@
 .fallback[data-tone="3"] { --tile-base: linear-gradient(155deg, #8A6249, var(--lux-oxblood)); }
 .fallback[data-tone="4"] { --tile-base: linear-gradient(155deg, #4F1A2B, var(--lux-bronze)); }
 .fallback[data-tone="5"] { --tile-base: linear-gradient(155deg, var(--lux-oxblood), var(--lux-wine)); }
-.name { font-family: var(--lux-font-display); font-weight: 400; font-size: clamp(.875rem, min(12cqi, 30cqb), 2.25rem); line-height: 1.05; letter-spacing: -.01em; text-wrap: balance; overflow-wrap: anywhere; }
-.count { color: var(--lux-champagne); font: 700 clamp(.5625rem, min(4.6cqi, 12cqb), .75rem)/1.2 var(--lux-font-body); letter-spacing: .1em; text-transform: uppercase; }
+.monogram { justify-self: end; align-self: end; font-family: var(--lux-font-display); font-size: clamp(2rem, min(44cqi, 80cqb), 5.5rem); line-height: .8; color: rgb(255 250 245 / 22%); user-select: none; }

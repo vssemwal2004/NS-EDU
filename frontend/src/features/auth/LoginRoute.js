@@ -9,7 +9,7 @@ import { googleErrorMessage } from './google-login';
 // everywhere else — so login never looks like a separate page. After verification the student goes
 // on to `next` (validated on the server); closing the popup leaves them on the homepage underneath.
 // A failed Google attempt lands here as /login?error=<code>&next=…, shown above the form.
-export default function LoginRoute({ next, error = '' }) {
+export default function LoginRoute({ next, error = '', why = '' }) {
   const router = useRouter();
   const { status, loginOpen, openLogin } = useStudentAuth();
   const opened = useRef(false);
@@ -19,8 +19,8 @@ export default function LoginRoute({ next, error = '' }) {
     if (opened.current || status === 'loading') return;
     if (status === 'signed-in') { router.replace(next); return; }
     opened.current = true;
-    openLogin({ reason: loginReasonFor(next), onSuccess: () => router.replace(next), returnTo: next, notice: googleErrorMessage(error) });
-  }, [status, next, error, openLogin, router]);
+    openLogin({ reason: loginReasonFor(next, why), onSuccess: () => router.replace(next), returnTo: next, notice: googleErrorMessage(error) });
+  }, [status, next, error, why, openLogin, router]);
 
   // Closed without logging in: drop /login from the address so a refresh shows the plain homepage.
   // Only once the popup has actually been open — the request to open it lands a render later.

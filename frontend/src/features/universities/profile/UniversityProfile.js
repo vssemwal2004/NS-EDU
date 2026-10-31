@@ -133,10 +133,10 @@ function Photos({ model }) {
 }
 
 function Courses({ model }) {
-  const { item, rows, summary, moreCourses, offeredRows, offeredWithFees, offeredSource } = model;
+  const { item, rows, summary, moreCourses, offeredRows, offeredWithFees, offeredEstimated, offeredSource } = model;
   const target = applyTarget(item);
   return <section id="courses" className={styles.section} aria-labelledby="courses-title">
-    <SectionHead id="courses" eyebrow="Academics" title={rows.length || offeredWithFees ? 'Courses & fees' : 'Courses'}
+    <SectionHead id="courses" eyebrow="Academics" title={rows.length || offeredWithFees || offeredEstimated ? 'Courses & fees' : 'Courses'}
       aside={rows.length ? `${rows.length === 1 ? '1 programme' : `${rows.length} programmes`} with published fees` : ''} />
     {rows.length > 0 && <div className={styles.tableWrap}>
       <table className={styles.table}>
@@ -170,9 +170,9 @@ function Courses({ model }) {
     </>}
     {offeredRows.length > 0 && <>
       <h3 className={styles.subhead}>Programmes listed by the institution
-        <small>{offeredWithFees ? `${offeredWithFees} with a published fee` : 'fees not published'}</small>
+        <small>{[offeredWithFees ? `${offeredWithFees} with a published fee` : 'fees not published', offeredEstimated ? `${offeredEstimated} with an estimated range` : ''].filter(Boolean).join(' · ')}</small>
       </h3>
-      <OfferedProgrammes rows={offeredRows} withFees={offeredWithFees > 0} />
+      <OfferedProgrammes rows={offeredRows} withFees={offeredWithFees > 0} withEstimates={offeredEstimated > 0} />
       {(offeredSource || item.website) && <p className={styles.sourceRow}><Source href={offeredSource || item.website}>From the institution’s website</Source></p>}
     </>}
   </section>;

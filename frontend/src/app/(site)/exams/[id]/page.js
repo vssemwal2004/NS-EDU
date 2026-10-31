@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import ExamDetail from '@/features/courses/ExamDetail';
+import RecommendedUniversities from '@/features/recommendations/RecommendedUniversities';
 import { getCatalog } from '@/lib/api/catalog';
 
 async function findExam(params) {
@@ -16,5 +17,11 @@ export async function generateMetadata({ params }) {
 export default async function ExamPage({ params }) {
   const { exam, catalog } = await findExam(params);
   if (!exam) notFound();
-  return <ExamDetail exam={exam} catalog={catalog} />;
+  const courseNames = Object.fromEntries(catalog.courses.map((item) => [item.id, item.name]));
+  return <>
+    <ExamDetail exam={exam} catalog={catalog} />
+    <div className="lux-container">
+      <RecommendedUniversities limit={3} courseNames={courseNames} eyebrow="Recommended" title="Colleges to explore next" />
+    </div>
+  </>;
 }

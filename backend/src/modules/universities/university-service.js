@@ -3,6 +3,7 @@ import { HttpError } from '../../lib/http-error.js';
 import { pagination, queryString } from '../../lib/query.js';
 import { createTtlCache } from '../../lib/ttl-cache.js';
 import { slugify, validate } from '../../lib/validation.js';
+import { withFeeEstimates } from './fee-estimates.js';
 import { derivedFields, foldText, nameKeyOf, domainOf, queryKeys, siteKeyOf, slugCandidates } from './normalize.js';
 import { IMPORTABLE_FIELDS, INSTITUTION_CATEGORIES, INSTITUTION_FIELDS, INSTITUTION_TYPES, OWNERSHIP } from './schema.js';
 import { isCredibleAward } from '../../scraper/deep.js';
@@ -319,7 +320,7 @@ export async function getUniversity(rawSlug) {
     const courses = await db.collection(COLLECTIONS.courses).find({ active: { $ne: false }, slug: { $in: courseSlugs } }).sort({ order: 1, name: 1 }).toArray();
     const visibleCourses = new Set(courses.map((course) => course.slug));
     return {
-      item: toDetail(doc),
+      item: await withFeeEstimates(toDetail(doc)),
       courses: courses.map((course) => ({ id: course.slug, name: course.name, fullName: course.fullName ?? '', field: course.field ?? '' })),
       programmes: programmes.filter((row) => visibleCourses.has(row.courseSlug)).map((row) => ({
         id: row.slug, courseId: row.courseSlug, annualTuitionInr: row.annualTuitionInr, medianSalaryLpa: row.medianSalaryLpa ?? null,
@@ -368,8 +369,31 @@ function remember(index, doc) {
 // Fields a new value adds to instead of replacing. A placement season the site has since taken down
 // stays on record; a season printed again replaces the stored row for that year.
 const ACCUMULATING = { placementHistory: { key: 'year', max: 6 } };
+const FEE_KEYS = ['annualFeeInr', 'semesterFeeInr', 'totalFeeInr'];
+const hasFee = (row) => FEE_KEYS.some((key) => row?.[key] > 0);
+const rowKey = (row) => String(row?.name ?? '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+
+// A crawl that finds a programme but no fee must not erase a fee someone already recorded from the
+// institution's own fee document. A fee the page prints now still replaces the stored one, and a
+// stored fee row the crawl did not see this time is kept (fee pages are often client-rendered).
+function keepStoredFees(existingRows, incomingRows) {
+  const stored = new Map(existingRows.filter(hasFee).map((row) => [rowKey(row), row]));
+  if (!stored.size) return incomingRows;
+  const seen = new Set();
+  const merged = incomingRows.map((row) => {
+    const key = rowKey(row);
+    seen.add(key);
+    const old = stored.get(key);
+    if (!old || hasFee(row)) return row;
+    return { ...row, ...Object.fromEntries([...FEE_KEYS, 'feeYear', 'feeNote', 'sourcePage'].filter((field) => old[field] != null && old[field] !== '').map((field) => [field, old[field]])) };
+  });
+  for (const [key, row] of stored) if (!seen.has(key) && merged.length < 500) merged.push(row);
+  return merged;
+}
+
 function accumulate(existing, data) {
   const out = { ...data };
+  if (Array.isArray(data.programmesOffered) && Array.isArray(existing.programmesOffered)) out.programmesOffered = keepStoredFees(existing.programmesOffered, data.programmesOffered);
   for (const [field, { key, max }] of Object.entries(ACCUMULATING)) {
     if (!Array.isArray(data[field]) || !Array.isArray(existing[field])) continue;
     const rows = new Map(existing[field].map((row) => [row[key], row]));

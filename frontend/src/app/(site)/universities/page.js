@@ -5,7 +5,6 @@ import DirectoryResults from '@/features/universities/DirectoryResults';
 import { DirectoryProvider } from '@/features/universities/DirectoryState';
 import styles from '@/features/universities/Directory.module.css';
 import { UNIVERSITY_QUERY_KEYS, getCatalog, getUniversities, getUniversityFacets, universityQuery } from '@/lib/api/catalog';
-import { requireStudentSession } from '@/lib/api/session';
 
 const text = (value) => String((Array.isArray(value) ? value[0] : value) ?? '').trim().slice(0, 120);
 
@@ -28,8 +27,9 @@ export default async function UniversitiesPage({ searchParams }) {
   // grid is ever written to the URL. It is not part of the API query.
   const view = text(raw.view) === 'grid' ? 'grid' : 'list';
   if (view === 'grid') params.view = 'grid';
-  const [, result, facets, catalog] = await Promise.all([
-    requireStudentSession(),
+  // No login redirect here: a signed-out visitor gets the free preview (result.preview) and the API
+  // asks for a login only once it is used up.
+  const [result, facets, catalog] = await Promise.all([
     getUniversities(universityQuery(params)),
     getUniversityFacets(params.state),
     getCatalog(),

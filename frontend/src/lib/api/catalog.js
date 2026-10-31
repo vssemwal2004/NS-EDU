@@ -1,31 +1,41 @@
 import { cache } from 'react';
 import { unstable_rethrow } from 'next/navigation';
-import { redirectToLogin, studentCookieHeader } from './session';
+import { directoryCookieHeader, redirectToLogin } from './session';
 
 // Server-side catalog loader. MongoDB (through Express) is the only source: when the API cannot be
 // reached each list is empty and `live` is false, so pages render an unavailable state (no bundled data).
 const apiUrl = process.env.API_URL || 'http://127.0.0.1:4100';
 
-class Unauthorized extends Error {}
+// `limit` is true when the API said the visitor's free university views are used up.
+class Unauthorized extends Error {
+  constructor(path, limit = false) {
+    super(path);
+    this.limit = limit;
+  }
+}
 
 async function getJson(path, { student = false, timeout = 4000 } = {}) {
-  const cookie = student ? await studentCookieHeader() : '';
+  // Directory requests carry the session and the preview id (signed-out visitors' free views).
+  const cookie = student ? await directoryCookieHeader() : '';
   const response = await fetch(`${apiUrl}/api${path}`, { cache: 'no-store', headers: cookie ? { cookie } : {}, signal: AbortSignal.timeout(timeout) });
-  if (response.status === 401 && student) throw new Unauthorized(path);
+  if (response.status === 401 && student) throw new Unauthorized(path, Boolean((await response.json().catch(() => null))?.freeLimitReached));
   if (!response.ok) throw new Error(`${path} responded ${response.status}`);
   return response.json();
 }
 
-// University data needs a student session: a 401 sends the visitor to /login?next=<this page>.
+// University data is free for the first few views and needs a student session after that: a 401 sends
+// the visitor to /login?next=<this page> (with the "free views used up" wording when that was the cause).
 // redirect() throws, so it runs outside every try/catch.
 async function studentJson(path, fallback, options) {
+  let limit;
   try {
     return await getJson(path, { ...options, student: true });
   } catch (error) {
     unstable_rethrow(error);
     if (!(error instanceof Unauthorized)) return fallback(error);
+    limit = error.limit;
   }
-  await redirectToLogin();
+  await redirectToLogin(undefined, limit ? 'limit' : '');
 }
 
 async function load(path, pick, fallback) {
@@ -119,9 +129,10 @@ export const getFeaturedUniversities = cache(async function getFeaturedUniversit
   }
 });
 
-// Colleges in the results need a session: signed out, the API returns colleges: [] and collegesRequireLogin: true.
+// Signed out, the API returns only the first free colleges; collegesLocked counts the rest and
+// collegesRequireLogin says a login unlocks them.
 export async function searchCatalog(query) {
-  const empty = { query, courses: [], exams: [], colleges: [], collegesRequireLogin: false };
+  const empty = { query, courses: [], exams: [], colleges: [], collegesLocked: 0, collegesRequireLogin: false };
   if (!query) return { results: empty, failed: false };
   try {
     return { results: { ...empty, ...await getJson(`/catalog/search?q=${encodeURIComponent(query)}`, { student: true }) }, failed: false };

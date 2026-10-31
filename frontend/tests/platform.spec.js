@@ -4,7 +4,8 @@
 import { test, expect } from '@playwright/test';
 import { mintStudentSession, cleanupStudentSession, closeSessionDb, studentEvents, TEST_EMAIL } from './helpers/student-session.js';
 
-const GATED = ['/universities', '/colleges', '/compare', '/search?q=delhi', '/apply', '/account'];
+// /universities and /search are open with a free preview (see 'free preview' below), so they are not here.
+const GATED = ['/colleges', '/compare', '/apply', '/account'];
 const PUBLIC = ['/', '/courses', '/exams', '/eligibility', '/budget', '/scholarships', '/career-guidance', '/news', '/locations', '/about', '/contact', '/login'];
 
 const h1 = (page) => page.locator('main h1').first();
@@ -75,13 +76,13 @@ test.describe('access gating (logged out)', () => {
     await page.waitForURL((url) => url.pathname === '/');
   });
 
-  test('the home hero search opens the login popup over the page', async ({ page }) => {
+  test('the home hero search goes straight to results with the free preview', async ({ page }) => {
     await page.goto('/');
     const search = page.locator('main input[id$="-query"], main input[type="search"]').first();
     await search.fill('delhi');
     await search.press('Enter');
-    await expect(loginDialog(page)).toBeVisible();
-    expect(new URL(page.url()).pathname).toBe('/');
+    await page.waitForURL((url) => url.pathname === '/universities' || url.pathname === '/search');
+    await expect(loginDialog(page)).toHaveCount(0);
   });
 
   test('a signed-out click on a gated link opens the popup instead of leaving the page', async ({ page }) => {
@@ -89,9 +90,44 @@ test.describe('access gating (logged out)', () => {
     // Until the session check answers, links navigate normally (the proxy then shows the popup on
     // /login); interception starts once the page knows the visitor is signed out.
     await expect(page.locator('header button[aria-haspopup="dialog"]:not([data-pending])').first()).toBeVisible();
-    await page.locator('header a[href="/universities"]').first().click();
+    await page.locator('header a[href="/compare"]').first().click();
     await expect(loginDialog(page)).toBeVisible();
     expect(new URL(page.url()).pathname).toBe('/news');
+  });
+});
+
+// Signed-out visitors see the first FREE_UNIVERSITY_VIEWS (2) search results and open that many different
+// profiles; the next one asks for a login. The count is kept by the API against the gv_preview cookie.
+test.describe('free preview (logged out)', () => {
+  test('the directory shows two results free and says what a login unlocks', async ({ page }) => {
+    await page.goto('/universities');
+    expect(new URL(page.url()).pathname).toBe('/universities');
+    await expect(h1(page)).toBeVisible();
+    const profileLinks = () => page.locator('#directory-results a[href^="/universities/"]').evaluateAll((links) => [...new Set(links.map((link) => link.getAttribute('href')))].length);
+    await expect.poll(profileLinks).toBe(2);
+    await expect(page.getByRole('complementary', { name: /more results need a free login/i })).toBeVisible();
+    await expect(page.locator('dialog[open]')).toHaveCount(0);
+  });
+
+  test('the third different profile asks for a login, earlier ones stay open', async ({ page, request }) => {
+    test.setTimeout(150000); // four profile loads; each compiles on first visit under `next dev`
+    const featured = (await (await request.get('/api/universities/featured?limit=5')).json()).items.map((item) => item.id);
+    expect(featured.length, 'needs three public universities to test the limit').toBeGreaterThanOrEqual(3);
+    const [first, second, third] = featured;
+    await page.goto(`/universities/${first}`);
+    await expect(h1(page)).toBeVisible();
+    await expect(page.getByRole('status').filter({ hasText: /1 of 2 free/i })).toBeVisible();
+    await page.goto(`/universities/${second}`);
+    await expect(page.getByRole('status').filter({ hasText: /last free profile/i })).toBeVisible();
+    await page.goto(`/universities/${first}`);
+    await expect(h1(page)).toBeVisible();
+    await page.goto(`/universities/${third}`);
+    // The profile has already started streaming when the API refuses it, so Next sends the redirect to the browser.
+    await page.waitForURL((address) => address.pathname === '/login');
+    const url = new URL(page.url());
+    expect(url.searchParams.get('next')).toBe(`/universities/${third}`);
+    expect(url.searchParams.get('why')).toBe('limit');
+    await expect(page.locator('dialog[open]').getByRole('heading').first()).toContainText(/keep exploring/i);
   });
 });
 

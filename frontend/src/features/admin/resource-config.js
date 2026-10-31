@@ -31,15 +31,15 @@ export const resourceColumns = {
     { field: 'active', label: 'Visible', badge: true },
   ],
   cities: [
+    { field: 'imageUrl', label: 'Photo', image: true },
     { field: 'name', label: 'City', primary: true, secondary: (item) => item.landmark },
-    { field: 'featured', label: 'Featured tile', format: yesNo },
-    { field: 'order', label: 'Order' },
+    { field: 'imageCredit', label: 'Credit', format: (value) => value ? value.replace(/^Photo:\s*/, '') : '' },
     { field: 'active', label: 'Visible', badge: true },
   ],
   states: [
-    { field: 'name', label: 'State', primary: true, secondary: (item) => item.landmark },
-    { field: 'featured', label: 'Featured tile', format: yesNo },
-    { field: 'order', label: 'Order' },
+    { field: 'imageUrl', label: 'Photo', image: true },
+    { field: 'name', label: 'State / UT', primary: true, secondary: (item) => item.landmark },
+    { field: 'imageCredit', label: 'Credit', format: (value) => value ? value.replace(/^Photo:\s*/, '') : '' },
     { field: 'active', label: 'Visible', badge: true },
   ],
   scholarships: [

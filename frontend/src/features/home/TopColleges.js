@@ -5,6 +5,7 @@ import Icon from '@/components/ui/Icon';
 import UniversityCard from '@/features/universities/UniversityCard';
 import { useCourseSelection } from '@/features/site/useCourseSelection';
 import { api } from '@/lib/api/client';
+import { sessionVariant } from '@/lib/session-variant';
 import { useCatalog } from '@/providers/CatalogProvider';
 import { useConsent } from '@/providers/ConsentProvider';
 import { useContent } from '@/providers/ContentProvider';
@@ -18,8 +19,9 @@ const number = new Intl.NumberFormat('en-IN');
 // With personalisation consent the list is ranked on the visitor's own searches, filters and profile
 // views (recency-weighted, already-seen pages damped), and each card says why it is there. Without
 // consent, or before there is any activity, the same endpoint returns the leading institutions for
-// the course by NIRF rank and NAAC grade. Only basic card details come back, so this stays public;
-// opening a profile asks the student to log in.
+// the course by NIRF rank and NAAC grade, rotated per browser session and spread across states so it
+// is not the same few colleges every visit. Only basic card details come back, so this stays public;
+// opening a profile is free for the first couple of views, then asks the student to log in.
 export default function TopColleges() {
   const { courses, stats } = useCatalog();
   const { ready, personalisation, reopen } = useConsent();
@@ -43,7 +45,8 @@ export default function TopColleges() {
   useEffect(() => {
     if (!ready || results[cacheKey]) return undefined;
     const controller = new AbortController();
-    api(`/insights/home?limit=${SHOWN}${tabId ? `&course=${encodeURIComponent(tabId)}` : ''}`, { signal: controller.signal })
+    // `variant` rotates the default list between browser sessions (see lib/session-variant.js).
+    api(`/insights/home?limit=${SHOWN}&variant=${sessionVariant()}${tabId ? `&course=${encodeURIComponent(tabId)}` : ''}`, { signal: controller.signal })
       .then((data) => { setFailed(false); setResults((previous) => ({ ...previous, [cacheKey]: data })); })
       .catch((error) => { if (error.name !== 'AbortError') setFailed(true); });
     return () => controller.abort();

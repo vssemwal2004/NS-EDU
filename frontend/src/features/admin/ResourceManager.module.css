@@ -24,6 +24,8 @@
 .primaryCell strong { overflow: hidden; color: var(--color-primary); text-overflow: ellipsis; white-space: nowrap; }
 .primaryCell small { overflow: hidden; color: var(--color-muted); font-size: var(--text-caption); text-overflow: ellipsis; white-space: nowrap; }
 .muted { color: var(--color-muted); }
+.thumb { display: block; width: 56px; height: 38px; border-radius: 6px; object-fit: cover; background: #F1ECEA; }
+.noPhoto { display: inline-flex; align-items: center; justify-content: center; width: 56px; height: 38px; border: 1px dashed var(--color-border); border-radius: 6px; color: var(--color-muted); font-size: .625rem; line-height: 1.1; text-align: center; }
 .rowActions { white-space: nowrap; text-align: right; }
 .iconButton { display: inline-grid; place-items: center; width: 36px; height: 36px; border: 1px solid transparent; border-radius: 10px; background: transparent; color: var(--color-muted); transition: background var(--motion-fast), color var(--motion-fast); }
 .iconButton:hover:not(:disabled) { border-color: var(--color-border); background: var(--header-hover); color: var(--color-primary); }

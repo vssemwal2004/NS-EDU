@@ -20,6 +20,39 @@ const PROJECTION = { searchPrefixes: 0 };
 const NAAC_POINTS = { 'A++': 1, 'A+': 0.8, A: 0.6, 'B++': 0.4, 'B+': 0.3, B: 0.2, C: 0.1 };
 const VERBS = { search: 'searched', filter: 'filtered for', view: 'viewed', compare: 'compared', 'apply-open': 'started an application for' };
 
+// With no history to go on, the default list would be the same NIRF/NAAC top few for every visitor on
+// every visit. A rotating seed (the browser session's `variant` plus the day) adds a bounded amount of
+// jitter to the quality score, so rank still matters but the mix changes between sessions and days.
+// 1.1 is a little under the whole spread of the quality points (about 2), so a weak institution
+// cannot jump ahead of a strong one on luck alone. No personal data goes into the seed.
+const COLD_START_JITTER = 1.1;
+const DAY_MS = 86_400_000;
+const seedHash = (text) => {
+  let hash = 2166136261;
+  for (const char of text) hash = Math.imul(hash ^ char.charCodeAt(0), 16777619);
+  return (hash >>> 0) / 4294967296;
+};
+
+// Greedy re-rank for lists built without history: each pick lowers the score of institutions in the
+// same state (and, more, the same city), so six slots do not become six colleges from one region.
+function spreadAcrossPlaces(ranked, size) {
+  const picked = [];
+  const left = [...ranked];
+  const states = new Map(); const cities = new Map();
+  while (picked.length < size && left.length) {
+    let best = 0; let bestValue = -Infinity;
+    left.forEach((entry, index) => {
+      const value = entry.score * 0.8 ** (states.get(entry.doc.state) ?? 0) * 0.7 ** (cities.get(entry.doc.city) ?? 0);
+      if (value > bestValue) { best = index; bestValue = value; }
+    });
+    const [entry] = left.splice(best, 1);
+    picked.push(entry);
+    states.set(entry.doc.state, (states.get(entry.doc.state) ?? 0) + 1);
+    cities.set(entry.doc.city, (cities.get(entry.doc.city) ?? 0) + 1);
+  }
+  return picked;
+}
+
 const decay = (at, now) => 0.5 ** (Math.max(0, now - new Date(at).getTime()) / (HALF_LIFE_DAYS * 86_400_000));
 const top = (map, size) => [...map.entries()].sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1)).slice(0, size);
 const normalise = (map) => {
@@ -141,11 +174,13 @@ async function courseNamesFor(slugs) {
 /**
  * Ranked, explained suggestions for one viewer (student or anonymous visitor).
  * `course` (a course slug) limits the suggestions to institutions offering that course.
- * @param {{ studentId?: import('mongodb').ObjectId|null, visitorId: string|null, limit?: number, exclude?: string, course?: string }} viewer
+ * `variant` (0–99, chosen by the browser per session) rotates the default list for viewers with no history.
+ * @param {{ studentId?: import('mongodb').ObjectId|null, visitorId: string|null, limit?: number, exclude?: string, course?: string, variant?: number|null }} viewer
  */
-export async function recommendUniversities({ studentId = null, visitorId, limit = 8, exclude = '', course = '' }) {
+export async function recommendUniversities({ studentId = null, visitorId, limit = 8, exclude = '', course = '', variant = null }) {
   const size = Math.min(Math.max(Number.parseInt(limit, 10) || 8, 1), MAX_LIMIT);
-  const key = `s:${studentId ?? ''}|v:${visitorId ?? ''}|${size}|${exclude}|${course}`;
+  const seed = Number.isInteger(variant) && variant >= 0 && variant < 100 ? `${variant}:${Math.floor(Date.now() / DAY_MS)}` : '';
+  const key = `s:${studentId ?? ''}|v:${visitorId ?? ''}|${size}|${exclude}|${course}|${seed}`;
   return cache.wrap(key, async () => {
     const since = new Date(Date.now() - WINDOW_DAYS * 86_400_000);
     // A student who searched before signing in keeps those results: both ids are theirs, on this device.
@@ -165,13 +200,19 @@ export async function recommendUniversities({ studentId = null, visitorId, limit
       city: normalise(signals.cities), state: normalise(signals.states),
       stream: normalise(signals.streams), course: normalise(signals.courses),
     };
-    const scored = pool
+    const coldStart = events.length === 0;
+    const ranked = pool
       .filter((doc) => doc.slug !== exclude && !signals.applied.has(doc.slug))
-      .map((doc) => ({ doc, ...scoreOf(doc, signals, weight) }))
+      .map((doc) => {
+        const base = scoreOf(doc, signals, weight);
+        return coldStart && seed ? { doc, ...base, score: base.score + COLD_START_JITTER * seedHash(`${seed}:${doc.slug}`) } : { doc, ...base };
+      })
       .sort((a, b) => b.score - a.score
         || (a.doc.nirfRank ?? 1e9) - (b.doc.nirfRank ?? 1e9)
-        || (a.doc.nameKey < b.doc.nameKey ? -1 : a.doc.nameKey > b.doc.nameKey ? 1 : 0))
-      .slice(0, size);
+        || (a.doc.nameKey < b.doc.nameKey ? -1 : a.doc.nameKey > b.doc.nameKey ? 1 : 0));
+    // A viewer with history keeps pure relevance (they asked for that city or course); a viewer without
+    // any gets a spread across states and cities.
+    const scored = coldStart && seed ? spreadAcrossPlaces(ranked, size) : ranked.slice(0, size);
     return {
       items: scored.map(({ doc, score, matched }) => ({
         ...toSummary(doc),

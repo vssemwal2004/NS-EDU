@@ -1,6 +1,5 @@
 'use client';
 import { useState } from 'react';
-import { institutionLabel } from '@/features/home/placeCounts';
 import styles from './PlaceVisual.module.css';
 
 const TONES = 6;
@@ -10,23 +9,23 @@ const tileImageUrl = (url) => url.replace('/image/upload/', '/image/upload/c_lim
 const toneOf = (name) => [...name].reduce((hash, char) => (hash * 31 + char.charCodeAt(0)) >>> 0, 7) % TONES;
 
 // A designed tile for places without a photo or artwork. It fills the same box (`className` sets the
-// size), so grids keep their rhythm; the link around it already announces the name and count.
-function PlaceFallback({ place, className, count }) {
+// size), so grids keep their rhythm. Every caller already prints the name and count beside the tile,
+// so the tile itself carries only a monogram: repeating them inside the picture read as a duplicate.
+function PlaceFallback({ place, className }) {
   return <span className={`${className ?? ''} ${styles.frame}`} aria-hidden="true">
     <span className={styles.fallback} data-tone={toneOf(place.name)}>
-      <span className={styles.name}>{place.name}</span>
-      {count > 0 && <span className={styles.count}>{institutionLabel({ institutions: count })}</span>}
+      <span className={styles.monogram}>{place.name.trim().slice(0, 1)}</span>
     </span>
   </span>;
 }
 
 // Uploaded photo, then a window into the shared landmark artwork (`art` = { src, width, height }),
 // then the designed tile. A photo that fails to load (deleted from the library) falls through too.
-export default function PlaceVisual({ place, art, className, count = place.institutions, decorative = false }) {
+export default function PlaceVisual({ place, art, className, decorative = false }) {
   const [failed, setFailed] = useState('');
   const image = place.image?.url && place.image.url !== failed ? place.image : null;
   if (image) {
-    return <img className={`${className ?? ''} ${styles.photo}`} src={tileImageUrl(image.url)} alt={decorative ? '' : image.alt || place.name}
+    return <img className={`${className ?? ''} ${styles.photo}`} src={tileImageUrl(image.url)} alt={decorative ? '' : image.alt || place.name} title={image.credit || undefined}
       loading="lazy" decoding="async" onError={() => setFailed(image.url)} />;
   }
   if (art && place.crop) {
@@ -35,5 +34,5 @@ export default function PlaceVisual({ place, art, className, count = place.insti
       <image href={art.src} x="0" y="0" width={art.width} height={art.height} />
     </svg>;
   }
-  return <PlaceFallback place={place} className={className} count={count} />;
+  return <PlaceFallback place={place} className={className} />;
 }

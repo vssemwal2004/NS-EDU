@@ -1,0 +1,53 @@
+// What to photograph for each destination tile. `query` is the Wikimedia Commons search used to find
+// candidates (see scripts/place-images.js); `alt` is the screen-reader description stored with the photo.
+// Every state and union territory the directory has institutions in appears here, plus the curated cities.
+export const statePhotos = [
+  { name: 'Andhra Pradesh', query: 'Tirumala Venkateswara Temple Tirupati', alt: 'Tirumala hill temple complex, Tirupati' },
+  { name: 'Arunachal Pradesh', query: 'Tawang Monastery', alt: 'Tawang Monastery in the Himalayan foothills' },
+  { name: 'Assam', query: 'Kaziranga National Park rhinoceros', alt: 'One-horned rhinoceros in Kaziranga National Park' },
+  { name: 'Bihar', query: 'Nalanda Mahavihara ruins', alt: 'Ruins of the ancient Nalanda Mahavihara university' },
+  { name: 'Chhattisgarh', query: 'Chitrakote Falls', alt: 'Chitrakote Falls on the Indravati river' },
+  { name: 'Goa', query: 'Basilica of Bom Jesus Old Goa', alt: 'Basilica of Bom Jesus, Old Goa' },
+  { name: 'Gujarat', query: 'Statue of Unity Kevadia', alt: 'Statue of Unity, Kevadia' },
+  { name: 'Haryana', query: 'Brahma Sarovar Kurukshetra', alt: 'Brahma Sarovar tank, Kurukshetra' },
+  { name: 'Himachal Pradesh', query: 'Christ Church Shimla Ridge', alt: 'Christ Church on the Ridge, Shimla' },
+  { name: 'Jharkhand', query: 'Hundru Falls Ranchi', alt: 'Hundru Falls near Ranchi' },
+  { name: 'Karnataka', query: 'Mysore Palace', alt: 'Mysore Palace' },
+  { name: 'Kerala', query: 'Alappuzha backwaters houseboat', alt: 'Houseboat on the Alappuzha backwaters' },
+  { name: 'Madhya Pradesh', query: 'Sanchi Stupa', alt: 'Great Stupa at Sanchi' },
+  { name: 'Maharashtra', query: 'Ajanta Caves', alt: 'Rock-cut Ajanta Caves' },
+  { name: 'Manipur', query: 'Loktak Lake Keibul Lamjao', alt: 'Floating phumdis on Loktak Lake' },
+  { name: 'Meghalaya', query: 'Double decker living root bridge Nongriat', alt: 'Living root bridge near Cherrapunji' },
+  { name: 'Mizoram', query: 'Aizawl city Mizoram', alt: 'Hillside city of Aizawl' },
+  { name: 'Nagaland', query: 'Dzukou Valley Nagaland', alt: 'Dzukou Valley on the Nagaland–Manipur border' },
+  { name: 'Odisha', query: 'Konark Sun Temple', alt: 'Konark Sun Temple' },
+  { name: 'Punjab', query: 'Golden Temple Amritsar', alt: 'Golden Temple, Amritsar' },
+  { name: 'Rajasthan', query: 'Hawa Mahal Jaipur', alt: 'Hawa Mahal, Jaipur' },
+  { name: 'Sikkim', query: 'Kangchenjunga Pelling Sikkim', alt: 'Kangchenjunga seen from Sikkim' },
+  { name: 'Tamil Nadu', query: 'Shore Temple Mahabalipuram', alt: 'Shore Temple, Mahabalipuram' },
+  { name: 'Telangana', query: 'Hussain Sagar Buddha statue Hyderabad', alt: 'Buddha statue on Hussain Sagar lake, Hyderabad' },
+  { name: 'Tripura', query: 'Ujjayanta Palace Agartala', alt: 'Ujjayanta Palace, Agartala' },
+  { name: 'Uttar Pradesh', query: 'Taj Mahal Agra', alt: 'Taj Mahal, Agra' },
+  { name: 'Uttarakhand', query: 'Rishikesh Laxman Jhula Ganges', alt: 'River Ganga at Rishikesh' },
+  { name: 'West Bengal', query: 'Victoria Memorial Kolkata', alt: 'Victoria Memorial, Kolkata' },
+  // Union territories: the directory has institutions in these, so they get tiles too.
+  { name: 'Andaman and Nicobar Islands', query: 'Radhanagar Beach Havelock Island', alt: 'Radhanagar Beach, Havelock Island' },
+  { name: 'Chandigarh', query: 'Capitol Complex Chandigarh Le Corbusier', alt: 'Capitol Complex, Chandigarh' },
+  { name: 'Dadra and Nagar Haveli and Daman and Diu', query: 'Nani Daman Fort', alt: 'Seafront fort at Daman' },
+  { name: 'Delhi', query: 'Red Fort Delhi', alt: 'Red Fort, Delhi' },
+  { name: 'Jammu and Kashmir', query: 'Dal Lake Srinagar shikara', alt: 'Shikara boats on Dal Lake, Srinagar' },
+  { name: 'Ladakh', query: 'Pangong Tso lake Ladakh', alt: 'Pangong Lake, Ladakh' },
+  { name: 'Lakshadweep', query: 'Kavaratti Lakshadweep', alt: 'Lagoon and shore at Kavaratti, Lakshadweep' },
+  { name: 'Puducherry', query: 'Promenade Beach Pondicherry', alt: 'Promenade seafront, Puducherry' },
+];
+
+export const cityPhotos = [
+  { name: 'Delhi NCR', query: 'India Gate New Delhi', alt: 'India Gate, New Delhi' },
+  { name: 'Bengaluru', query: 'Vidhana Soudha', alt: 'Vidhana Soudha, Bengaluru' },
+  { name: 'Mumbai', query: 'Gateway of India Mumbai', alt: 'Gateway of India, Mumbai' },
+  { name: 'Hyderabad', query: 'Charminar Hyderabad', alt: 'Charminar, Hyderabad' },
+  { name: 'Pune', query: 'Aga Khan Palace Pune', alt: 'Aga Khan Palace, Pune' },
+  { name: 'Chennai', query: 'Chennai Central railway station', alt: 'Chennai Central railway station' },
+  { name: 'Ahmedabad', query: 'Sidi Saiyyed Mosque Ahmedabad', alt: 'Sidi Saiyyed Mosque, Ahmedabad' },
+  { name: 'Kolkata', query: 'Howrah Bridge Kolkata', alt: 'Howrah Bridge, Kolkata' },
+];
