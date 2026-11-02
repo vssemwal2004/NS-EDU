@@ -7,7 +7,7 @@ import { serializeStudentForAdmin } from './students.js';
 
 export const accountStudentsRouter = Router();
 
-const accessFilter = (staff) => staff.role === 'admin' ? {} : { assignedEmployeeIds: staff._id };
+const accessFilter = (staff) => (staff.isOwner || staff.permissions?.includes('students.manage') ? {} : { assignedEmployeeIds: staff._id });
 
 async function visibleStudent(id, staff) {
   const _id = toObjectId(id);

@@ -1,0 +1,93 @@
+/* Roles: list (left) + editor (right). Dense, neutral; the only colour is the small role swatch. */
+.layout { display: grid; grid-template-columns: 248px minmax(0, 1fr); align-items: start; gap: 12px; min-width: 0; font-size: var(--crm-text-sm); }
+
+.list { position: sticky; top: calc(var(--adm-topbar) + 12px); overflow: hidden; }
+.listHead { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 8px 8px 12px; border-bottom: 1px solid var(--adm-line); }
+.listHead h3 { margin: 0; font-family: inherit; font-size: var(--crm-text-md); font-weight: 700; }
+.listHead h3 small { margin-left: 4px; color: var(--adm-muted); font-size: var(--crm-text-xs); font-weight: 600; }
+.list ul { margin: 0; padding: 4px; list-style: none; }
+.roleRow { display: flex; align-items: center; gap: 2px; border-radius: var(--adm-radius-sm); }
+.roleRow:hover { background: var(--adm-hover); }
+.roleRow[aria-current="true"] { background: var(--adm-accent-soft); box-shadow: inset 2px 0 0 var(--adm-accent); }
+.roleItem { display: flex; flex: 1; align-items: center; gap: 8px; min-width: 0; height: 40px; padding: 0 6px 0 10px; border: 0; background: transparent; color: var(--adm-text); font: inherit; text-align: left; cursor: pointer; }
+.roleItem:focus-visible { border-radius: var(--adm-radius-sm); outline: none; box-shadow: var(--adm-focus); }
+.dot { flex-shrink: 0; width: 8px; height: 8px; border-radius: 50%; background: var(--tone-solid); }
+.roleName { display: grid; min-width: 0; line-height: 1.25; }
+.roleName strong, .roleName small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.roleName strong { font-weight: 650; }
+.roleName small { color: var(--adm-muted); font-size: var(--crm-text-xs); }
+
+.editor { min-width: 0; }
+.editorHead { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px 10px 14px; border-bottom: 1px solid var(--adm-line); }
+.editorTitle { display: grid; min-width: 0; }
+.editorTitle h3 { margin: 0; overflow: hidden; font-family: inherit; font-size: var(--crm-text-md); font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.editorTitle small { color: var(--adm-muted); font-size: var(--crm-text-xs); }
+.editorBody { display: grid; gap: 20px; padding: 14px 16px 16px; }
+.section { display: grid; gap: 4px; min-width: 0; }
+.section > h4 { margin-bottom: 4px; }
+
+/* Sheet rows: muted label column on the left, the setting on the right, one left edge for every value */
+.row { display: grid; grid-template-columns: 140px minmax(0, 1fr); align-items: center; gap: 12px; min-height: 40px; padding: 4px 0; }
+.row[data-top] { align-items: start; }
+.row[data-top] .rowLabel { padding-top: 8px; }
+.rowLabel { color: var(--adm-muted); font-size: var(--crm-text-xs); font-weight: 500; }
+.rowValue { display: grid; justify-items: start; gap: 4px; min-width: 0; }
+.rowValue > textarea { width: 100%; max-width: 640px; }
+.nameInput { width: 100%; max-width: 360px; }
+.counter { justify-self: start; color: var(--adm-faint); font-size: var(--crm-text-xs); font-variant-numeric: tabular-nums; }
+.swatches { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-height: var(--adm-control); }
+.swatch { width: 18px; height: 18px; padding: 0; border: 2px solid var(--adm-surface); border-radius: 50%; background: var(--tone-solid); box-shadow: 0 0 0 1px var(--adm-line-strong); cursor: pointer; }
+.swatch[aria-checked="true"] { box-shadow: 0 0 0 2px var(--adm-text); }
+.swatch:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--adm-surface), 0 0 0 4px var(--adm-accent); }
+.swatch:disabled { cursor: not-allowed; }
+
+/* Permission groups: hairlines only, no nested boxes */
+.permHead { display: flex; align-items: baseline; gap: 8px; margin-bottom: 2px; }
+.permHead > small { color: var(--adm-muted); font-size: var(--crm-text-xs); }
+.permHead > button { margin-left: auto; align-self: center; }
+.groups { border-top: 1px solid var(--adm-line); }
+.group { border-bottom: 1px solid var(--adm-line); }
+.groupHead { margin: 0; font: inherit; }
+.groupHead button { display: flex; align-items: center; gap: 8px; width: 100%; height: 38px; padding: 0 4px; border: 0; background: transparent; color: var(--adm-text); font: inherit; font-weight: 650; text-align: left; cursor: pointer; }
+.groupHead button:hover { background: var(--adm-hover); }
+.groupHead button:focus-visible { outline: none; box-shadow: inset var(--adm-focus); }
+.groupHead small { margin-left: auto; color: var(--adm-text); font-size: var(--crm-text-xs); font-weight: 600; font-variant-numeric: tabular-nums; }
+.groupHead small[data-none] { color: var(--adm-faint); }
+.chev { width: 14px; height: 14px; color: var(--adm-muted); transform: rotate(-90deg); transition: transform 120ms ease; }
+.groupHead button[aria-expanded="true"] .chev { transform: none; }
+/* Two columns of label → switch; every switch in a column shares one right edge */
+.toggles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 40px; padding: 0 4px 8px 26px; }
+.toggle { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 34px; border-bottom: 1px solid var(--adm-line); cursor: pointer; }
+.toggles .toggle:nth-last-child(1), .toggles .toggle:nth-last-child(2):nth-child(odd) { border-bottom: 0; }
+.toggle:hover .toggleName { color: var(--adm-accent); }
+.toggle[data-disabled] { cursor: not-allowed; }
+.toggle[data-disabled] .toggleName { color: var(--adm-muted); }
+.toggleName { display: flex; align-items: center; gap: 2px; min-width: 0; line-height: 1.3; }
+.legend { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 4px; margin: 6px 0 0; color: var(--adm-muted); font-size: var(--crm-text-xs); }
+/* Switch */
+.switch { position: relative; flex-shrink: 0; width: 32px; height: 18px; margin: 0; border-radius: 999px; background: var(--adm-line-strong); cursor: pointer; appearance: none; transition: background 120ms ease; }
+.switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgb(0 0 0 / 20%); transition: transform 120ms ease; }
+.switch:checked { background: var(--adm-accent); }
+.switch:checked::after { transform: translateX(14px); }
+.switch:focus-visible { outline: none; box-shadow: var(--adm-focus); }
+.switch:disabled { opacity: .5; cursor: not-allowed; }
+
+/* Save bar: pinned to the bottom of the screen inside the editor, only while there are unsaved changes */
+.saveBar { position: sticky; bottom: 0; z-index: 5; display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; padding: 8px 14px; border-top: 1px solid var(--adm-line); border-radius: 0 0 var(--adm-radius) var(--adm-radius); background: var(--adm-surface); box-shadow: 0 -4px 12px rgb(33 26 29 / 8%); }
+.saveBar > span { display: inline-flex; align-items: center; gap: 6px; margin-right: auto; color: var(--crm-warn); font-size: var(--crm-text-xs); font-weight: 600; }
+.saveBar > span svg { width: 14px; height: 14px; }
+.riskList { display: grid; gap: 4px; margin: 6px 0; padding-left: 18px; }
+
+@media (max-width: 1100px) { .toggles { grid-template-columns: minmax(0, 1fr); } .toggles .toggle:nth-last-child(2):nth-child(odd) { border-bottom: 1px solid var(--adm-line); } }
+@media (max-width: 860px) {
+  .layout { grid-template-columns: minmax(0, 1fr); }
+  .list { position: static; }
+  .list ul { display: flex; gap: 4px; overflow-x: auto; }
+  .roleRow { flex: 0 0 auto; max-width: 240px; }
+  .row { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  .row[data-top] .rowLabel { padding-top: 0; }
+  .toggles { padding-left: 4px; }
+}
+
+/* Headings inside panels: sans, text colour (the site-wide h3 style is serif wine). */
+:where(.layout) :is(h3, h4, h5) { color: var(--adm-text); font-family: inherit; letter-spacing: normal; }

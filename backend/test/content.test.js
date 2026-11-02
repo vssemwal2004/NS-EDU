@@ -51,7 +51,7 @@ describe('site content API', { skip }, () => {
   after(async () => {
     mock.restoreAll();
     if (server) await new Promise((resolve) => server.close(resolve));
-    if (db) await db.dropDatabase();
+    if (db?.databaseName.startsWith('nsedu_test_')) await db.dropDatabase();
     await closeDb?.();
   });
 

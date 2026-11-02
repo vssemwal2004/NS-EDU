@@ -1,12 +1,13 @@
 import { Router } from 'express';
-import { createDrive, driveQr, findDrive, listDrives, removeDrive, serializeDrive, updateDrive } from './drive-service.js';
+import { bulkUpdateDrives, createDrive, driveQr, findDrive, listDrives, removeDrive, serializeDrive, updateDrive } from './drive-service.js';
 
 // Mounted at /api/admin/drives after the owner-only guard: employees never manage drives.
 export const drivesRouter = Router();
 
 drivesRouter.get('/', async (request, response) => response.json(await listDrives(request.query)));
 drivesRouter.post('/', async (request, response) => response.status(201).json({ item: await createDrive(request.body, request.admin) }));
-drivesRouter.get('/:id', async (request, response) => response.json({ item: serializeDrive(await findDrive(request.params.id)) }));
+drivesRouter.post('/bulk', async (request, response) => response.json(await bulkUpdateDrives(request.body)));
+drivesRouter.get('/:id',async (request, response) => response.json({ item: serializeDrive(await findDrive(request.params.id)) }));
 drivesRouter.patch('/:id', async (request, response) => response.json({ item: await updateDrive(request.params.id, request.body) }));
 drivesRouter.delete('/:id', async (request, response) => response.json(await removeDrive(request.params.id, { permanent: request.query.permanent === '1' })));
 

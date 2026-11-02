@@ -1,134 +1,112 @@
 'use client';
-import { useEffect, useState } from 'react';
+// Search insights (/admin/insights): what opted-in visitors search for and open, and the gaps in the directory.
+import { useState } from 'react';
 import Link from 'next/link';
 import Icon from '@/components/ui/Icon';
 import { useAdminSession } from '../AdminSession';
-import { ColumnChart, RankedBars } from '../BarChart';
+import RangeToolbar from '@/features/admin/analytics/RangeToolbar';
+import { Empty, ErrorBanner, fillDays, InfoHint, n, PanelLink, PanelSkeletons, TableToggle, trendRows, useUrlParams } from '@/features/admin/analytics/shared';
+import styles from '@/features/admin/analytics/Analytics.module.css';
+import { useServerList } from '@/features/admin/table/useServerList';
+import BarList from '@/features/admin/ui/BarList';
+import { Panel, StatStrip, ViewTabs } from '@/features/admin/ui/Page';
+import TrendChart from '@/features/admin/ui/TrendChart';
 import ConsentPanel from './ConsentPanel';
-import dash from '../Dashboard.module.css';
-import styles from './Insights.module.css';
 
-const WINDOWS = [7, 30, 90];
-const PAGE_SIZE = 20;
-const dayShort = new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', timeZone: 'UTC' });
-const dayLong = new Intl.DateTimeFormat('en-IN', { weekday: 'short', day: 'numeric', month: 'long', timeZone: 'UTC' });
+const WINDOWS = ['7d', '30d', '90d'];
+const PAGE_SIZE = 25;
 const dateTime = new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
-const count = (value) => (value ?? 0).toLocaleString('en-IN');
-const bars = (rows, limit = 8) => rows.slice(0, limit).map((row) => ({ label: row.value, value: row.count }));
+const catalogue = (q) => `/admin/institutions?q=${encodeURIComponent(q)}`;
 
-export default function InsightsDashboard() {
-  const { request } = useAdminSession();
-  const [days, setDays] = useState(7);
-  const [data, setData] = useState(null);
-  const [error, setError] = useState('');
-  const [onlyGaps, setOnlyGaps] = useState(false);
+
+/** A ranked list with a dimension switch (states / cities, streams / courses). */
+function SwitchPanel({ title, description, views, rows, empty }) {
+  const [view, setView] = useState(views[0].key);
+  const list = (rows[view] ?? []).slice(0, 10);
+  return <Panel title={title} description={description} actions={<ViewTabs label={title} value={view} onChange={setView} items={views} />}>
+    <BarList label={`${title}: ${views.find((item) => item.key === view)?.label}`} unit="events" emptyText={empty} rows={list.map((row) => ({ key: row.value, label: row.value, value: row.count }))} />
+  </Panel>;
+}
+
+export default function InsightsDashboard({ initial = {} }) {
+  const { admin, request } = useAdminSession();
+  const startRange = WINDOWS.includes(String(initial.range)) ? String(initial.range) : '7d';
+  const [params, choose] = useUrlParams('/admin/insights', { range: startRange }, '7d');
+  const days = Number.parseInt(params.range, 10) || 7;
+  const [gapsOnly, setGapsOnly] = useState(false);
   const [page, setPage] = useState(1);
-  const [searches, setSearches] = useState(null);
+  const [table, setTable] = useState(false);
+  const scope = admin?.id ?? '';
+  const overview = useServerList(request, '/insights/overview', { days }, { scope });
+  const consent = useServerList(request, '/insights/consent', { days }, { scope });
+  const gaps = useServerList(request, '/insights/searches', { days, noResults: 'true', page: 1, limit: PAGE_SIZE }, { scope });
+  const searches = useServerList(request, '/insights/searches', { days, page, limit: PAGE_SIZE, ...(gapsOnly ? { noResults: 'true' } : {}) }, { scope });
+  const data = overview.data;
+  const reload = () => { overview.reload(); consent.reload(); gaps.reload(); searches.reload(); };
+  const busy = overview.busy || overview.refreshing || consent.busy;
+  const pages = Math.max(1, Math.ceil((searches.data?.total ?? 0) / PAGE_SIZE));
+  const searchCount = data?.byType?.find((row) => row.value === 'search')?.count ?? 0;
+  const est = consent.data?.estimatedVisitors;
+  const pick = (next) => { setPage(1); choose(next); };
 
-  useEffect(() => {
-    const controller = new AbortController();
-    request(`/insights/overview?days=${days}`, { signal: controller.signal })
-      .then((value) => { setData(value); setError(''); })
-      .catch((failure) => { if (failure.name !== 'AbortError') setError(failure.message); });
-    return () => controller.abort();
-  }, [days, request]);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    request(`/insights/searches?days=${days}&page=${page}&limit=${PAGE_SIZE}${onlyGaps ? '&noResults=true' : ''}`, { signal: controller.signal })
-      .then(setSearches).catch(() => {});
-    return () => controller.abort();
-  }, [days, onlyGaps, page, request]);
-
-  if (error) return <div className={dash.errorCard} role="alert"><Icon name="shield" /><p>{error}</p></div>;
-
-  const loading = !data || data.days !== days;
-  const daily = (data?.dailyStudents ?? []).map((row) => ({ label: row.day, value: row.count }));
-  const formatDay = (item, size) => (size === 'short' ? dayShort : dayLong).format(new Date(`${item.label}T00:00:00Z`));
-  const pages = Math.max(1, Math.ceil((searches?.total ?? 0) / PAGE_SIZE));
-
-  return <div className={styles.page} aria-busy={loading}>
-    <div className={styles.intro}>
-      <p className={styles.privacy}><Icon name="shield" />
-        This activity is collected only from visitors who chose “Accept all” in the cookie banner, to improve search
-        results and university recommendations. It is visible to administrators only. Searches, filters and the
-        universities opened are stored — never IP addresses, browsers or full web addresses — and rows are deleted
-        automatically after {data?.retentionDays ?? 180} days.
-      </p>
-      <div className={styles.windows} role="group" aria-label="Time window">
-        {WINDOWS.map((value) => <button key={value} type="button" className={styles.window} aria-pressed={days === value}
-          onClick={() => { setDays(value); setPage(1); }}>Last {value} days</button>)}
-      </div>
-    </div>
-
-    <section className={styles.tiles} aria-label="Key figures">
-      {[
-        { label: 'Events', value: data?.total, note: `${count(data?.byType?.find((row) => row.value === 'search')?.count)} searches` },
-        { label: 'From signed-in students', value: data?.fromSignedIn, note: 'Linked to a student account' },
-        { label: 'From visitors', value: data?.fromVisitors, note: 'Not signed in' },
-        { label: 'Searches with no results', value: data?.noResults?.reduce((sum, row) => sum + row.count, 0), note: 'Gaps in the directory', tone: 'warning' },
-      ].map((tile) => <div key={tile.label} className={styles.tile} data-tone={tile.tone}>
-        <span>{tile.label}</span><strong>{data ? count(tile.value) : '…'}</strong><small>{tile.note}</small>
-      </div>)}
-    </section>
-
-    <ConsentPanel days={days} />
-
-    <div className={styles.row}>
-      <section className={dash.card} aria-labelledby="active-title">
-        <header className={dash.cardHeader}><div><h3 id="active-title">Daily active students</h3><p>Signed-in students who searched or opened a university</p></div></header>
-        {daily.length ? <ColumnChart data={daily} label={`Daily active students over the last ${days} days`} formatLabel={formatDay} />
-          : <p className={styles.muted}>No signed-in activity in this window yet.</p>}
-      </section>
-      <section className={dash.card} aria-labelledby="viewed-title">
-        <header className={dash.cardHeader}><div><h3 id="viewed-title">Most viewed universities</h3><p>Profile opens</p></div></header>
-        {data?.topViewed?.length ? <ul className={styles.list}>{data.topViewed.slice(0, 10).map((row) => <li key={row.slug}>
-          <Link href={`/admin/institutions?q=${encodeURIComponent(row.name)}`}>{row.name}</Link>
-          <small>{row.place}</small><strong>{count(row.count)}</strong>
-        </li>)}</ul> : <p className={styles.muted}>{data ? 'No profile views in this window.' : 'Loading…'}</p>}
-      </section>
-    </div>
-
-    <div className={styles.row}>
-      <section className={dash.card} aria-labelledby="states-title">
-        <header className={dash.cardHeader}><div><h3 id="states-title">Where students are looking</h3><p>States and cities in searches and filters</p></div></header>
-        {data?.states?.length ? <RankedBars data={bars(data.states)} /> : <p className={styles.muted}>{data ? 'No state signal yet.' : 'Loading…'}</p>}
-        {data?.cities?.length > 0 && <><h4 className={styles.subhead}>Cities</h4><RankedBars data={bars(data.cities)} /></>}
-      </section>
-      <section className={dash.card} aria-labelledby="streams-title">
-        <header className={dash.cardHeader}><div><h3 id="streams-title">Streams and courses in demand</h3><p>From filters and the apply flow</p></div></header>
-        {data?.streams?.length ? <RankedBars data={bars(data.streams)} /> : <p className={styles.muted}>{data ? 'No stream signal yet.' : 'Loading…'}</p>}
-        {data?.courses?.length > 0 && <><h4 className={styles.subhead}>Courses</h4><RankedBars data={bars(data.courses)} /></>}
-      </section>
-    </div>
-
-    <section className={dash.card} aria-labelledby="searches-title">
-      <header className={dash.cardHeader}>
-        <div><h3 id="searches-title">{onlyGaps ? 'Searches that found nothing' : 'Top searches'}</h3>
-          <p>{onlyGaps ? 'Content gaps: what students look for and the directory does not have' : 'What students typed, case-folded'} · {count(searches?.total)} distinct</p></div>
-        <button type="button" className={dash.linkButton} onClick={() => { setOnlyGaps(!onlyGaps); setPage(1); }}>
-          {onlyGaps ? 'Show all searches' : 'Show only no-result searches'}
-        </button>
-      </header>
-      {searches?.items?.length ? <table className={dash.table}>
-        <thead><tr><th scope="col">Search</th><th scope="col">Times</th><th scope="col">Last seen</th><th scope="col" /></tr></thead>
-        <tbody>{searches.items.map((row) => <tr key={row.query}>
-          <td>{row.query}</td><td>{count(row.count)}</td><td>{row.lastAt ? dateTime.format(new Date(row.lastAt)) : '—'}</td>
-          <td><Link className={dash.linkButton} href={`/admin/institutions?q=${encodeURIComponent(row.query)}`}>Check catalogue</Link></td>
-        </tr>)}</tbody>
-      </table> : <p className={styles.muted}>{searches ? (onlyGaps ? 'Every search in this window returned results.' : 'No searches in this window.') : 'Loading…'}</p>}
-      {pages > 1 && <nav className={styles.pagination} aria-label="Pagination">
-        <span>Page {page} of {pages}</span>
-        <div>
-          <button type="button" className={styles.pageButton} disabled={page <= 1} onClick={() => setPage(page - 1)}>Previous</button>
-          <button type="button" className={styles.pageButton} disabled={page >= pages} onClick={() => setPage(page + 1)}>Next</button>
-        </div>
-      </nav>}
-    </section>
-
-    <p className={styles.footnote}>
-      Open a student from <Link href="/admin/students">Student accounts</Link> or a lead from <Link href="/admin/leads">Leads</Link> to see that
-      student’s own search and view history at <code>/admin/insights/students/&lt;id&gt;</code>.
-    </p>
+  return <div className={styles.page}>
+    <RangeToolbar summary={<><strong>Opted-in visitors</strong> · last {days} days</>} value={params} onChange={pick} presets={WINDOWS} allowCustom={false}
+      generatedAt={data?.generatedAt} busy={busy} onRefresh={reload} />
+    {overview.error && !data ? <ErrorBanner title="Search insights could not load." message={overview.error} onRetry={reload} />
+      : overview.loading || !data ? <><StatStrip loading items={[1, 2, 3, 4, 5, 6].map((key) => ({ key, label: '…', value: 0 }))} /><PanelSkeletons spans={['half', 'half', '', '', '', 'wide']} /></>
+        : <>
+          <StatStrip label="Search activity" items={[
+            { key: 'events', label: 'Events recorded', value: data.total, icon: 'chart', tone: 'neutral' },
+            { key: 'searches', label: 'Searches', value: searchCount, icon: 'search', tone: 'neutral' },
+            { key: 'gaps', label: 'Searches with no results', value: gaps.data?.total ?? '—', icon: 'alert', tone: gaps.data?.total ? 'warn' : 'good', onClick: () => { setGapsOnly(true); setPage(1); document.getElementById('searches')?.scrollIntoView({ behavior: 'smooth' }); }, active: gapsOnly },
+            { key: 'students', label: 'From signed-in students', value: data.fromSignedIn, icon: 'user', tone: 'neutral' },
+            { key: 'visitors', label: 'From visitors', value: data.fromVisitors, icon: 'people', tone: 'neutral' },
+            { key: 'estimate', label: 'Estimated visitors', value: typeof est === 'number' ? `≈ ${n(est)}` : '—', icon: 'eye', tone: 'neutral' },
+          ]} />
+          <div className={styles.grid} data-busy={overview.busy || undefined}>
+            <Panel className={styles.half} title="Daily active students" description="Signed-in students who searched or opened a university"
+              actions={data.dailyStudents?.length > 0 && <TableToggle table={table} onChange={setTable} />}>
+              {data.dailyStudents?.length ? <TrendChart data={trendRows(fillDays(data.dailyStudents, days), 'day')} title={`Daily active students, last ${days} days`} valueLabel="Students" height={240} table={table} />
+                : <Empty title="No signed-in activity in this window" />}
+            </Panel>
+            <ConsentPanel className={styles.half} data={consent.data} />
+            <Panel title="Most viewed universities" meta={<><InfoHint text="University profiles opened by opted-in visitors. Click a row to find it in the directory." />Top 10</>}>
+              <BarList label="Most viewed universities" unit="views" emptyText="No profile views in this window"
+                rows={(data.topViewed ?? []).slice(0, 10).map((row) => ({ key: row.slug, label: row.name, title: [row.name, row.place].filter(Boolean).join(' · '), value: row.count, href: catalogue(row.name) }))} />
+            </Panel>
+            <SwitchPanel title="Where students look" description="Places in searches and filters" empty="No place in searches yet"
+              views={[{ key: 'states', label: 'States' }, { key: 'cities', label: 'Cities' }]} rows={data} />
+            <SwitchPanel title="What they want to study" description="Streams and courses in filters and the apply flow" empty="No stream or course chosen yet"
+              views={[{ key: 'streams', label: 'Streams' }, { key: 'courses', label: 'Courses' }]} rows={data} />
+            <section id="searches" className={styles.wide}>
+              <Panel title={gapsOnly ? 'Searches that found nothing' : 'Top searches'} flush
+                meta={`${n(searches.data?.total)} distinct ${gapsOnly ? 'searches · what the directory is missing' : 'searches'}`}
+                actions={<ViewTabs label="Searches" value={gapsOnly ? 'gaps' : 'all'} onChange={(value) => { setGapsOnly(value === 'gaps'); setPage(1); }}
+                  items={[{ key: 'all', label: 'All searches' }, { key: 'gaps', label: 'No results', count: gaps.data?.total }]} />}>
+                {searches.data?.items?.length ? <div className={styles.tableWrap} role="region" aria-label="Searches" tabIndex={0}>
+                  <table className={styles.table}>
+                    <thead><tr><th scope="col">Search</th><th scope="col">Last seen</th><th scope="col" data-num="">Times</th></tr></thead>
+                    <tbody>{searches.data.items.map((row) => <tr key={row.query}>
+                      <td className={styles.truncate}><Link className={styles.personLink} href={catalogue(row.query)} title={`Look for “${row.query}” in the directory`}>{row.query}</Link></td>
+                      <td>{row.lastAt ? dateTime.format(new Date(row.lastAt)) : <span className={styles.zero}>—</span>}</td>
+                      <td data-num="">{n(row.count)}</td>
+                    </tr>)}</tbody>
+                  </table>
+                </div> : searches.data ? <Empty title={gapsOnly ? 'Every search in this window found results' : 'No searches in this window'} />
+                  : <div className={styles.skeletonPanel} aria-hidden="true"><span /><span /><span /></div>}
+                {pages > 1 && <nav className={styles.pager} aria-label="Searches pages">
+                  <span>Page {page} of {n(pages)}</span>
+                  <div>
+                    <button type="button" className="adm-btn adm-btn--sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>Previous</button>
+                    <button type="button" className="adm-btn adm-btn--sm" disabled={page >= pages} onClick={() => setPage(page + 1)}>Next</button>
+                  </div>
+                </nav>}
+              </Panel>
+            </section>
+            <Panel className={styles.wide} title="About this data" actions={<PanelLink href="/admin/students" label="one student’s own history">Student accounts</PanelLink>}>
+              <p className={styles.privacy}><Icon name="shield" /><span>Only visitors who chose “Accept all” are recorded: searches, filters and universities opened — never IP addresses, browsers or full web addresses — deleted after {data.retentionDays ?? 180} days.</span></p>
+            </Panel>
+          </div>
+        </>}
   </div>;
 }

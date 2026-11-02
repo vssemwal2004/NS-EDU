@@ -65,6 +65,18 @@ async function call(path, form) {
   return data;
 }
 
+/** An already-uploaded image's details (secure_url, public_id, width, height, bytes, format), or null if it does not exist. */
+export async function findImage(publicId) {
+  const { cloudName, apiKey, apiSecret } = requireConfig();
+  const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/resources/image/upload/${publicId.split('/').map(encodeURIComponent).join('/')}`, {
+    headers: { authorization: `Basic ${Buffer.from(`${apiKey}:${apiSecret}`).toString('base64')}` }, signal: AbortSignal.timeout(30_000),
+  });
+  if (response.status === 404) return null;
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || data.error) throw new Error(sanitize(`Cloudinary resource lookup failed: ${data.error?.message || response.status}`));
+  return data;
+}
+
 /** Uploads a local file (path) or Buffer. Returns Cloudinary's response (secure_url, public_id, width, height, bytes, format). */
 export async function uploadImage(source, { publicId, folder, overwrite = false, tags = [] } = {}) {
   const { apiKey, apiSecret } = requireConfig();

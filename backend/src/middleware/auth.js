@@ -2,6 +2,7 @@ import { collection, COLLECTIONS, toObjectId } from '../db/collections.js';
 import { ADMIN_COOKIE, STUDENT_COOKIE, clearStudentCookie } from '../lib/cookies.js';
 import { HttpError } from '../lib/http-error.js';
 import { verifySession } from '../lib/jwt.js';
+import { attachAccess, can } from '../modules/access/access-service.js';
 
 const bearer = (request) => /^Bearer ([\w-]+\.[\w-]+\.[\w-]+)$/.exec(request.get('authorization') ?? '')?.[1];
 
@@ -9,7 +10,10 @@ async function loadAdmin(request) {
   const payload = verifySession(request.cookies?.[ADMIN_COOKIE] ?? bearer(request), 'admin');
   const id = toObjectId(payload?.sub);
   if (!id) return null;
-  return (await collection(COLLECTIONS.admins)).findOne({ _id: id, role: { $in: ['admin', 'employee'] } }, { projection: { passwordHash: 0 } });
+  const admin = await (await collection(COLLECTIONS.admins)).findOne({ _id: id, role: { $in: ['admin', 'employee'] } }, { projection: { passwordHash: 0 } });
+  // A suspended account loses access at once, even with a valid session cookie.
+  if (!admin || admin.status === 'suspended') return null;
+  return attachAccess(admin);
 }
 
 async function loadStudent(request) {
@@ -33,9 +37,15 @@ export function requireReadyStaff(request, _response, next) {
 }
 
 export function requireOwnerAdmin(request, _response, next) {
-  if (request.admin.role !== 'admin') throw new HttpError(403, 'Administrator access required');
+  if (!request.admin.isOwner) throw new HttpError(403, 'Administrator access required');
   next();
 }
+
+/** Passes when the signed-in staff member holds any one of the listed permissions. */
+export const requirePermission = (...keys) => (request, _response, next) => {
+  if (!keys.some((key) => can(request.admin, key))) throw new HttpError(403, 'Your role does not include this action', { permission: keys[0] });
+  next();
+};
 
 export async function requireStudent(request, response, next) {
   const student = await loadStudent(request);

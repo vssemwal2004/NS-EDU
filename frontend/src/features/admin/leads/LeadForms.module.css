@@ -1,0 +1,14 @@
+/* Shared bits of the Add-lead drawer and the lead edit drawer. */
+.duplicate { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border: 1px solid var(--crm-warn-line); border-radius: var(--adm-radius-sm); background: var(--crm-warn-soft); color: var(--crm-warn); font-size: var(--crm-text-sm); }
+.duplicate > svg { flex: none; width: 16px; height: 16px; margin-top: 2px; }
+.duplicate strong { display: block; font-size: var(--crm-text-sm); }
+.duplicate p { margin: 2px 0 0; }
+.duplicateActions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+
+/* Label above the input; the required "*" stays on the label's line (.adm-label is a grid, which would wrap it). */
+.label { display: flex; align-items: baseline; gap: 2px; }
+.req { color: var(--crm-bad); font-weight: 600; }
+/* Add-lead drawer: short section headings and two-column groups. */
+.section { display: grid; gap: 10px; margin: 0; padding: 0; border: 0; min-width: 0; }
+.section + .section { margin-top: 4px; } /* + the form's 12px gap = 16px between sections */
+.sectionTitle { margin: 0 0 8px; padding: 0; color: var(--adm-muted); font-size: var(--crm-text-xs); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }

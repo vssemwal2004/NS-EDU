@@ -1,0 +1,37 @@
+/* Dense, fixed-layout list table (Salesforce / HubSpot list-view density). */
+.wrap { position: relative; }
+.table { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; font-size: var(--crm-text-sm); }
+.table th { position: sticky; top: calc(var(--adm-topbar) + var(--sticky-offset, 0px)); z-index: 2; height: 34px; padding: 0 10px; border-bottom: 1px solid var(--adm-line); background: var(--adm-subtle); color: var(--adm-muted); font-size: var(--crm-text-xs); font-weight: 650; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.table td { height: var(--crm-row); padding: 2px 10px; line-height: 1.25; border-bottom: 1px solid var(--adm-line); color: var(--adm-text); vertical-align: middle; overflow: hidden; }
+.table [data-align="end"] { text-align: right; }
+.table tbody tr:last-child td { border-bottom: 0; }
+.table tbody tr:hover td { background: var(--adm-hover); }
+.table tbody tr[data-clickable] { cursor: pointer; }
+.table tbody tr[data-selected] td { background: var(--adm-accent-soft); }
+.table tbody tr[data-muted] td:not(:last-child):not(.check) { color: var(--adm-muted); }
+.wrap[data-busy] tbody { opacity: .55; transition: opacity 120ms ease; }
+.check { width: 36px; padding-right: 0 !important; text-align: center; }
+.check input { width: 15px; height: 15px; margin: 0; accent-color: var(--adm-accent); vertical-align: middle; cursor: pointer; }
+.skeleton td span { display: block; height: 10px; border-radius: 4px; background: linear-gradient(90deg, var(--adm-hover), var(--adm-subtle), var(--adm-hover)); background-size: 200% 100%; animation: shimmer 1.2s linear infinite; }
+.skeleton .check span { width: 15px; height: 15px; margin: auto; }
+@keyframes shimmer { to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .skeleton td span { animation: none; } }
+
+@media (max-width: 760px) {
+  .table { table-layout: auto; }
+  .table colgroup, .table thead { display: none; }
+  .table, .table tbody, .table tr, .table td { display: block; width: 100%; }
+  .table tr { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); gap: 3px; padding: 8px 40px 8px 12px; border-bottom: 1px solid var(--adm-line); }
+  .table tr:has(> .check) { padding-left: 40px; }
+  .table tbody tr:last-child { border-bottom: 0; }
+  .table td { min-width: 0; height: auto; padding: 0; border: 0; text-align: left !important; }
+  .table td[data-label] { display: flex; align-items: center; gap: 8px; }
+  .table td[data-label]::before { content: attr(data-label); flex: 0 0 76px; color: var(--adm-muted); font-size: var(--crm-text-xs); font-weight: 600; }
+  .table td[data-label] > * { min-width: 0; }
+  .table td:first-child[data-label]::before, .table td.check + td[data-label]::before { display: none; }
+  .table td.check { position: absolute; top: 12px; left: 12px; width: auto; }
+  .table td:last-child:not([data-label]) { position: absolute; top: 6px; right: 6px; width: auto; }
+}
+/* The ⋮ trigger must not set the row height (RowMenu's default is a 38px touch target). */
+.table td[data-align="end"] button[aria-haspopup="menu"] { width: 28px; height: 28px; border-radius: 6px; }
+.table td[data-align="end"] button[aria-haspopup="menu"] svg { width: 16px; height: 16px; }

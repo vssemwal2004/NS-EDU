@@ -1,0 +1,31 @@
+/* Sticky bulk action bar and the bulk dialogs. */
+.bar { position: sticky; bottom: 12px; z-index: 20; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-top: 12px; padding: 10px 12px 10px 16px; border: 1px solid var(--adm-accent-line); border-radius: var(--adm-radius); background: var(--adm-surface); box-shadow: var(--adm-shadow-pop); }
+.count { margin: 0; color: var(--adm-text); font-size: var(--crm-text-sm); white-space: nowrap; }
+.count strong { color: var(--adm-accent); font-size: var(--crm-text-md); }
+.actions { display: flex; flex: 1 1 auto; flex-wrap: wrap; gap: 6px; }
+.hint { color: var(--adm-muted); font-size: var(--crm-text-xs); }
+
+.choices { display: grid; gap: 6px; }
+.choices label { position: relative; display: flex; align-items: center; gap: 12px; min-height: 46px; padding: 8px 12px; border: 1px solid var(--adm-line); border-radius: var(--adm-radius-sm); background: var(--adm-surface); cursor: pointer; font-size: var(--crm-text-sm); }
+.choices label:hover { background: var(--adm-hover); }
+.choices label[data-on] { border-color: var(--adm-accent); background: var(--adm-accent-soft); box-shadow: inset 0 0 0 1px var(--adm-accent); }
+.choices label:has(input:focus-visible) { box-shadow: var(--adm-focus); }
+.choices input { position: absolute; opacity: 0; }
+.choices svg { flex: none; width: 18px; height: 18px; color: var(--tone); }
+.choices span { display: grid; color: var(--adm-text); font-weight: 600; }
+.choices small { color: var(--adm-muted); font-size: var(--crm-text-xs); font-weight: 400; }
+.choices small:empty { display: none; }
+
+.people { display: grid; gap: 2px; max-height: 320px; overflow-y: auto; }
+.people label { display: flex; align-items: center; gap: 12px; min-height: 44px; font-size: var(--crm-text-sm); cursor: pointer; }
+.people input { width: 18px; height: 18px; accent-color: var(--adm-accent); }
+.people span { display: grid; font-weight: 600; }
+.people small { color: var(--adm-muted); font-size: var(--crm-text-xs); font-weight: 400; }
+
+.note { display: flex; align-items: flex-start; gap: 8px; margin: 0; padding: 10px 12px; border: 1px solid var(--crm-warn-line); border-radius: var(--adm-radius-sm); background: var(--crm-warn-soft); color: var(--crm-warn); font-size: var(--crm-text-sm); }
+.note svg { flex: none; width: 18px; height: 18px; }
+
+@media (max-width: 640px) {
+  .bar { bottom: 8px; }
+  .actions :global(.adm-btn) { flex: 1 1 calc(50% - 6px); }
+}

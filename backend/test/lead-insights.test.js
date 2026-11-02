@@ -102,7 +102,7 @@ describe('admin leads dashboard insights', { skip }, () => {
   after(async () => {
     mock.restoreAll();
     if (server) await new Promise((resolve) => server.close(resolve));
-    if (db) await db.dropDatabase();
+    if (db?.databaseName.startsWith('nsedu_test_')) await db.dropDatabase();
     await closeDb?.();
   });
 
@@ -130,7 +130,7 @@ describe('admin leads dashboard insights', { skip }, () => {
 
   test('breaks the range down by channel, status, state, course, school drive and career field', async () => {
     const body = await get('?range=30d');
-    assert.deepEqual(counts(body.byChannel), { 'web-apply': 4, 'school-drive': 2, callback: 1 }, 'legacy leads without a channel count as website');
+    assert.deepEqual(counts(body.byChannel), { 'web-apply': 4, 'school-drive': 2, callback: 1, manual: 0 }, 'legacy leads without a channel count as website');
     assert.deepEqual(body.byStatus.map((row) => row.value), ['new', 'contacted', 'in-progress', 'applied-to-university', 'admitted', 'not-interested', 'closed']);
     assert.deepEqual(counts(body.byStatus), { new: 3, contacted: 2, 'in-progress': 0, 'applied-to-university': 0, admitted: 1, 'not-interested': 0, closed: 1 });
     assert.deepEqual(body.byState, [
@@ -197,7 +197,7 @@ describe('admin leads dashboard insights', { skip }, () => {
     assert.equal(body.total, 3);
     assert.equal(body.employees, null);
     assert.equal(body.unassigned, null);
-    assert.deepEqual(counts(body.byChannel), { 'web-apply': 1, 'school-drive': 2, callback: 0 });
+    assert.deepEqual(counts(body.byChannel), { 'web-apply': 1, 'school-drive': 2, callback: 0, manual: 0 });
     assert.deepEqual(body.kpis, { today: 0, yesterday: 2, last7: 2, last30: 3, open: 2, closed: 1, admitted: 0 });
     // The employee path buckets days in one grouped pass; both 18:30Z-boundary leads are Alice's.
     assert.equal(body.trend.length, 30);

@@ -12,7 +12,7 @@ const capitalize = (value) => value.charAt(0).toUpperCase() + value.slice(1);
 const plural = (count, word) => `${count} ${word}${count === 1 ? '' : 's'}`;
 
 // Public catalogue and university reads are cached in memory; every admin write clears them.
-export const invalidatePublicCaches = () => { invalidateCatalogCache(); invalidateUniversityCaches(); invalidateCareerCache(); };
+export const invalidatePublicCaches = () => { invalidateCatalogCache(); invalidateUniversityCaches(); invalidateCareerCache(); clearResourceStats(); };
 
 // Derived search keys are internal; they never leave the API.
 export const serializeItem = ({ _id, searchPrefixes: _keys, ...rest }) => ({ id: _id.toString(), ...rest });
@@ -69,18 +69,31 @@ function conflict(resource, error) {
   return new HttpError(409, `A ${resource.singular} with this ${label} already exists`, { fields: { [field]: 'Already in use' } });
 }
 
-// Equality filters declared on the resource: an option list, 'boolean' or free 'string'.
+// Filters declared on the resource (see resources.js): an option list, 'boolean', 'flag', 'present',
+// free 'string', or named custom filters. Unknown values are ignored rather than matching nothing.
+const EMPTY = [null, ''];
 function listFilter(resource, query) {
   const filter = {};
+  const extra = [];
   for (const [key, kind] of Object.entries(resource.filters ?? {})) {
     const raw = queryString(query[key], 80);
     if (!raw) continue;
-    if (kind === 'boolean') { if (raw === 'true' || raw === 'false') filter[key] = raw === 'true' ? { $ne: false } : false; }
+    const yes = raw === 'true' || raw === 'yes';
+    const no = raw === 'false' || raw === 'no';
+    if (kind === 'boolean') { if (yes || no) filter[key] = yes ? { $ne: false } : false; }
+    else if (kind === 'flag') { if (yes || no) filter[key] = yes ? true : { $ne: true }; }
+    else if (kind === 'present') { if (yes || no) filter[key] = yes ? { $nin: EMPTY } : { $in: EMPTY }; }
+    else if (kind?.values) { if (Object.hasOwn(kind.values, raw)) extra.push(kind.values[raw]); }
     else if (Array.isArray(kind)) { if (kind.includes(raw)) filter[key] = raw; }
     else filter[key] = raw;
   }
-  return filter;
+  return extra.length ? { ...filter, $and: extra } : filter;
 }
+
+// Only the table's columns leave the list endpoint; the editor loads the full record by id.
+const listProjection = (resource) => (resource.listFields
+  ? Object.fromEntries(resource.listFields.map((field) => [field, 1]))
+  : { searchPrefixes: 0 });
 
 function searchFilter(resource, q) {
   if (!q) return {};
@@ -99,10 +112,34 @@ export async function listItems(name, query) {
   const filter = { ...listFilter(resource, query), ...searchFilter(resource, q) };
   const items = await collection(name);
   const [docs, total] = await Promise.all([
-    items.find(filter, { projection: resource.listProjection }).sort(sortSpec(resource, queryString(query.sort, 20))).skip(skip).limit(limit).toArray(),
+    items.find(filter, { projection: listProjection(resource) }).sort(sortSpec(resource, queryString(query.sort, 20))).skip(skip).limit(limit).toArray(),
     items.countDocuments(filter),
   ]);
   return { items: (resource.decorate ? await resource.decorate(docs) : docs).map(serializeItem), total, page, limit };
+}
+
+// Summary counts and filter options for a list screen. Coverage counts (e.g. "with fees") scan the
+// collection, so results are kept for a minute and dropped on every admin write.
+const STATS_TTL_MS = 60_000;
+const statsCache = new Map();
+export const clearResourceStats = (name) => (name ? statsCache.delete(name) : statsCache.clear());
+
+export async function resourceStats(name) {
+  const resource = getResource(name);
+  const cached = statsCache.get(name);
+  if (cached && Date.now() - cached.at < STATS_TTL_MS) return cached.value;
+  const items = await collection(name);
+  const [counts, facets] = await Promise.all([
+    Promise.all((resource.stats ?? []).map((stat) => items.countDocuments(listFilter(resource, stat.query)))),
+    Promise.all((resource.facets ?? []).map((field) => items.distinct(field))),
+  ]);
+  const value = {
+    stats: (resource.stats ?? []).map((stat, index) => ({ key: stat.key, label: stat.label, query: stat.query, value: counts[index] })),
+    options: Object.fromEntries((resource.facets ?? []).map((field, index) => [field, facets[index].filter((option) => typeof option === 'string' && option).sort((a, b) => a.localeCompare(b))])),
+    countedAt: new Date(),
+  };
+  statsCache.set(name, { at: Date.now(), value });
+  return value;
 }
 
 export async function getItem(name, id) {
@@ -162,4 +199,33 @@ export async function deleteItem(name, id) {
   if (users) throw new HttpError(409, `Remove its ${users} first`);
   await (await collection(name)).deleteOne({ _id: existing._id });
   invalidatePublicCaches();
+}
+
+// Publish, unpublish or delete up to 100 selected records in one request. Deletion keeps the
+// single-record rule: anything still referenced (e.g. a university with programmes) is skipped and reported.
+export const MAX_BULK = 100;
+export async function bulkItems(name, body) {
+  const resource = getResource(name);
+  const action = queryString(body?.action, 20);
+  if (!['publish', 'unpublish', 'delete'].includes(action)) throw new HttpError(400, 'Choose publish, unpublish or delete', { fields: { action: 'Unknown action' } });
+  if (action !== 'delete' && !resource.fields.some((field) => field.name === 'active')) throw new HttpError(400, `${capitalize(resource.label)} have no visibility setting`);
+  const ids = Array.isArray(body?.ids) && body.ids.length <= MAX_BULK ? [...new Set(body.ids)].map(toObjectId) : [];
+  if (!ids.length || ids.some((id) => !id)) throw new HttpError(400, `Select between 1 and ${MAX_BULK} records`, { fields: { ids: 'Invalid selection' } });
+  const items = await collection(name);
+  if (action !== 'delete') {
+    const result = await items.updateMany({ _id: { $in: ids } }, { $set: { active: action === 'publish', updatedAt: new Date() } });
+    invalidatePublicCaches();
+    return { action, matched: result.matchedCount, modified: result.modifiedCount, skipped: [] };
+  }
+  const docs = await items.find({ _id: { $in: ids } }, { projection: { slug: 1, [resource.titleField]: 1 } }).toArray();
+  const skipped = [];
+  const removable = [];
+  for (const doc of docs) {
+    const users = await countReferences(resource, doc.slug);
+    if (users) skipped.push({ id: doc._id.toString(), title: doc[resource.titleField] ?? doc.slug ?? '', reason: `used by ${users}` });
+    else removable.push(doc._id);
+  }
+  const result = removable.length ? await items.deleteMany({ _id: { $in: removable } }) : { deletedCount: 0 };
+  if (result.deletedCount) invalidatePublicCaches();
+  return { action, matched: docs.length, modified: result.deletedCount, skipped };
 }

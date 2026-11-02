@@ -29,8 +29,8 @@ export function formatOf(file) {
   return '';
 }
 
-const dateTime = new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' });
-export const formatDate = (value) => (value ? dateTime.format(new Date(value)) : '—');
+// "31 Oct, 4:05 pm" (the year only when it is not this year).
+export { formatWhen as formatDate } from '../catalogue/CatalogueParts';
 export const formatCount = (value) => Number(value ?? 0).toLocaleString('en-IN');
 export const hostOf = (url) => {
   try { return new URL(url).hostname.replace(/^www\./, ''); } catch { return url || ''; }

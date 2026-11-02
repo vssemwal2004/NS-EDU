@@ -8,6 +8,7 @@ import { queueStats } from '../../scraper/queue.js';
 import { queryKeys } from '../universities/normalize.js';
 import { IMPORTABLE_FIELDS, INSTITUTION_FIELDS, INSTITUTION_TYPES, VERIFICATION } from '../universities/schema.js';
 import { invalidateUniversityCaches, upsertUniversities } from '../universities/university-service.js';
+import { clearResourceStats } from './resource-service.js';
 
 export const MAX_IMPORT_ROWS = 5000;
 export const MAX_IMPORT_BYTES = 5 * 1024 * 1024;
@@ -132,6 +133,7 @@ export async function bulkUpdateInstitutions(body, admin) {
   if (action === 'verify' || action === 'reject') Object.assign(set, { reviewedAt: now, reviewedBy: admin?.email ?? null });
   const result = await (await institutions()).updateMany({ _id: { $in: objectIds } }, { $set: set });
   invalidateUniversityCaches();
+  clearResourceStats('institutions');
   return { action, matched: result.matchedCount, modified: result.modifiedCount };
 }
 
@@ -144,6 +146,9 @@ const REVIEW_VIEWS = {
   all: { verification: 'unverified' },
 };
 
+// The queue's columns only; whole profiles (programmes, gallery …) never leave the database for a list.
+const REVIEW_FIELDS = Object.fromEntries(['slug', 'name', 'city', 'state', 'website', 'type', 'active', 'verification', 'lockedFields', 'source', 'updatedAt'].map((field) => [field, 1]));
+
 export async function listReviewQueue(query = {}) {
   const { page, limit, skip } = pagination(query, { defaultLimit: 20, maxLimit: 100 });
   const view = Object.hasOwn(REVIEW_VIEWS, query.view) ? query.view : 'held';
@@ -152,7 +157,7 @@ export async function listReviewQueue(query = {}) {
   const database = await getDb();
   const collection = database.collection(COLLECTIONS.institutions);
   const [docs, total, held, visible] = await Promise.all([
-    collection.find(filter, { projection: { searchPrefixes: 0 } }).sort({ updatedAt: -1, _id: -1 }).skip(skip).limit(limit).toArray(),
+    collection.find(filter, { projection: REVIEW_FIELDS }).sort({ updatedAt: -1, _id: -1 }).skip(skip).limit(limit).toArray(),
     collection.countDocuments(filter),
     collection.countDocuments(REVIEW_VIEWS.held),
     collection.countDocuments(REVIEW_VIEWS.visible),

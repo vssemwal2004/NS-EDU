@@ -63,7 +63,7 @@ describe('school drive forms', { skip }, () => {
   after(async () => {
     mock.restoreAll();
     if (server) await new Promise((resolve) => server.close(resolve));
-    if (db) await db.dropDatabase();
+    if (db?.databaseName.startsWith('nsedu_test_')) await db.dropDatabase();
     await closeDb?.();
   });
 
@@ -292,5 +292,25 @@ describe('school drive forms', { skip }, () => {
     const created = await api('/api/admin/drives', { method: 'POST', cookie: owner, body: { school: { ...SCHOOL, name: 'Empty School' } } });
     assert.equal((await api(`/api/admin/drives/${created.body.item.id}?permanent=1`, { method: 'DELETE', cookie: owner })).body.deleted, true);
     assert.equal((await api(`/api/admin/drives/${created.body.item.id}`, { cookie: owner })).status, 404);
+  });
+
+  test('the list sorts by place and drives change status in bulk', async () => {
+    const make = async (name, state, district) => (await api('/api/admin/drives', { method: 'POST', cookie: owner, body: { school: { name, state, district }, campaign: 'Bulk test' } })).body.item;
+    const made = [await make('Zeta School', 'Assam', 'Kamrup'), await make('Alpha School', 'Assam', 'Kamrup'), await make('Beta School', 'Assam', 'Barpeta')];
+    const byPlace = await api('/api/admin/drives?q=Bulk%20test&sort=place', { cookie: owner });
+    assert.deepEqual(byPlace.body.items.map((item) => item.school.name), ['Beta School', 'Alpha School', 'Zeta School']);
+    assert.equal((await api('/api/admin/drives?sort=sideways', { cookie: owner })).status, 400);
+
+    const ids = made.map((item) => item.id);
+    assert.equal((await api('/api/admin/drives/bulk', { method: 'POST', cookie: employee, body: { action: 'close', ids } })).status, 403);
+    assert.equal((await api('/api/admin/drives/bulk', { method: 'POST', cookie: owner, body: { action: 'explode', ids } })).status, 400);
+    assert.equal((await api('/api/admin/drives/bulk', { method: 'POST', cookie: owner, body: { action: 'close', ids: [ids[0], ids[0]] } })).status, 400);
+    assert.deepEqual((await api('/api/admin/drives/bulk', { method: 'POST', cookie: owner, body: { action: 'close', ids: ids.slice(0, 2) } })).body, { requested: 2, updated: 2, skipped: 0 });
+    assert.equal((await api(`/api/forms/${made[0].shortCode}`)).status, 410, 'a closed drive stops taking registrations at once');
+    assert.deepEqual((await api('/api/admin/drives/bulk', { method: 'POST', cookie: owner, body: { action: 'archive', ids } })).body, { requested: 3, updated: 3, skipped: 0 });
+    assert.equal((await api('/api/admin/drives?q=Bulk%20test', { cookie: owner })).body.total, 0);
+    assert.deepEqual((await api('/api/admin/drives/bulk', { method: 'POST', cookie: owner, body: { action: 'restore', ids } })).body, { requested: 3, updated: 3, skipped: 0 });
+    assert.deepEqual((await api('/api/admin/drives?q=Bulk%20test', { cookie: owner })).body.counts, { active: 0, closed: 3, archived: 0 });
+    for (const id of ids) await api(`/api/admin/drives/${id}?permanent=1`, { method: 'DELETE', cookie: owner });
   });
 });

@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import ResourceManager from '@/features/admin/ResourceManager';
 import { manageableResources } from '@/features/admin/resource-config';
@@ -8,9 +9,10 @@ export async function generateMetadata({ params }) {
   return { title: adminPages.find((page) => page.resource === resource)?.label || 'Not found' };
 }
 
-export default async function AdminResourcePage({ params, searchParams }) {
+// ?q= (search) and ?new=1 (open the add form) are read in the client screen, so links that change
+// only the query string (command palette, "New" menu) update an already-open list.
+export default async function AdminResourcePage({ params }) {
   const { resource } = await params;
-  const { new: startCreating } = await searchParams;
   if (!manageableResources.includes(resource)) notFound();
-  return <ResourceManager key={resource} resource={resource} startCreating={startCreating === '1'} />;
+  return <Suspense><ResourceManager key={resource} resource={resource} /></Suspense>;
 }

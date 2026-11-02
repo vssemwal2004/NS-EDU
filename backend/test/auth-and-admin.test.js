@@ -59,7 +59,7 @@ describe('auth, catalog and admin API', { skip }, () => {
   after(async () => {
     mock.restoreAll();
     if (server) await new Promise((resolve) => server.close(resolve));
-    if (db) await db.dropDatabase();
+    if (db?.databaseName.startsWith('nsedu_test_')) await db.dropDatabase();
     await closeDb?.();
   });
 
@@ -194,6 +194,26 @@ describe('auth, catalog and admin API', { skip }, () => {
     assert.deepEqual((await api('/api/admin/reference-students/assignments/bulk', { method: 'POST', cookie: owner, body: bulkReferences })).body, { count: 2 });
     assert.deepEqual((await api(`/api/admin/reference-students/${createdByBob.body.item.id}`, { cookie: owner })).body.item.assignedEmployeeIds, [bob.id, alice.id]);
     assert.equal((await api('/api/admin/reference-students', { cookie: alice.cookie })).body.total, 4);
+
+    // Assignee names come with the list; the assignee filter and the assignable-staff list.
+    const listed = (await api('/api/admin/reference-students', { cookie: owner })).body.items.find((item) => item.id === leadId);
+    assert.deepEqual(listed.assignees.map((item) => item.id), [alice.id, bob.id]);
+    assert.equal((await api(`/api/admin/reference-students?assignee=${bob.id}`, { cookie: owner })).body.total, 2);
+    assert.equal((await api('/api/admin/reference-students?assignee=none', { cookie: owner })).body.total, 0);
+    assert.equal((await api('/api/admin/reference-students/assignees', { cookie: alice.cookie })).status, 403);
+    const assignable = (await api('/api/admin/reference-students/assignees', { cookie: owner })).body.items.map((item) => item.email);
+    assert.ok(assignable.includes('alice@nsedu.test') && assignable.includes('bob@nsedu.test') && !assignable.includes(ADMIN.email));
+
+    // Edit and delete: the creator or a students.manage holder; others get 403 (or 404 when they cannot see it).
+    assert.equal((await api(`/api/admin/reference-students/${leadId}`, { method: 'PATCH', cookie: alice.cookie, body: { name: 'Renamed' } })).status, 403);
+    assert.equal((await api(`/api/admin/reference-students/${createdByBob.body.item.id}`, { method: 'PATCH', cookie: bob.cookie, body: { phone: '12' } })).status, 400);
+    const renamed = await api(`/api/admin/reference-students/${createdByBob.body.item.id}`, { method: 'PATCH', cookie: bob.cookie, body: { name: 'Bob Lead Renamed' } });
+    assert.deepEqual([renamed.status, renamed.body.item.name, renamed.body.item.phone], [200, 'Bob Lead Renamed', '+919876543212']);
+    assert.equal((await api(`/api/admin/reference-students/${leadId}`, { method: 'DELETE', cookie: alice.cookie })).status, 403);
+    const removed = await api(`/api/admin/reference-students/${leadId}`, { method: 'DELETE', cookie: owner });
+    assert.deepEqual([removed.status, removed.body.followupsDeleted], [200, 1]);
+    assert.equal((await api(`/api/admin/reference-students/${leadId}`, { cookie: owner })).status, 404);
+    assert.equal((await api('/api/admin/reference-students', { cookie: owner })).body.total, 3);
 
     const { verified: loginStudent } = await signInStudent('email', 'account.followup@example.com');
     const accountId = loginStudent.body.student.id;

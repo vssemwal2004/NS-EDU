@@ -1,0 +1,22 @@
+.dialog { width: min(480px, calc(100vw - 24px)); padding: 0; border: 0; border-radius: 20px; background: #fff; color: var(--color-text, #1f1418); box-shadow: 0 24px 64px rgb(30 12 20 / 35%); }
+.dialog::backdrop { background: rgb(31 20 24 / 55%); backdrop-filter: blur(2px); }
+.panel { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; padding: 26px 26px 22px; }
+.badge { display: grid; grid-row: span 2; width: 46px; height: 46px; place-items: center; border-radius: 50%; background: var(--crm-info-soft, #e4effa); color: var(--crm-info, #1d5a8c); }
+.dialog[data-tone="danger"] .badge { background: var(--crm-bad-soft, #fde8eb); color: var(--crm-bad, #a1213a); }
+.badge svg { width: 23px; height: 23px; }
+.copy h2 { margin: 2px 0 6px; font-size: var(--crm-text-xl, 1.375rem); line-height: 1.25; }
+.body { color: var(--color-muted, #68636e); font-size: var(--crm-text-sm, .9375rem); line-height: 1.55; }
+.body p { margin: 0 0 8px; }
+.type { display: grid; gap: 6px; margin-top: 14px; font-size: var(--crm-text-sm, .9375rem); }
+.type input { height: 44px; padding: 0 12px; border: 1px solid var(--crm-card-line, #e6dad5); border-radius: 10px; font: inherit; }
+.type input:focus-visible { outline: 2px solid var(--crm-bad, #a1213a); outline-offset: 1px; }
+.error { margin: 12px 0 0; padding: 9px 12px; border: 1px solid var(--crm-bad-line, #efb4be); border-radius: 10px; background: var(--crm-bad-soft, #fde8eb); color: var(--crm-bad, #a1213a); font-size: var(--crm-text-sm, .9375rem); }
+.actions { display: flex; grid-column: 1 / -1; flex-wrap: wrap; justify-content: flex-end; gap: 10px; margin-top: 18px; }
+.cancel, .confirm { min-height: 44px; padding: 0 20px; border-radius: 12px; font: inherit; font-size: var(--crm-text-sm, .9375rem); font-weight: 650; cursor: pointer; }
+.cancel { border: 1px solid var(--crm-card-line, #e6dad5); background: #fff; color: var(--color-text, #1f1418); }
+.cancel:hover:not(:disabled) { background: var(--crm-neutral-soft, #f1ecea); }
+.confirm { border: 0; background: var(--color-primary, #72243b); color: #fff; }
+.confirm[data-tone="danger"] { background: var(--crm-bad, #a1213a); }
+.confirm:disabled, .cancel:disabled { opacity: .55; cursor: not-allowed; }
+.confirm:focus-visible, .cancel:focus-visible { outline: 2px solid var(--color-primary, #72243b); outline-offset: 2px; }
+@media (max-width: 480px) { .panel { grid-template-columns: 1fr; padding: 22px 18px 18px; } .badge { grid-row: auto; } .actions > * { flex: 1; } }

@@ -1,6 +1,6 @@
 // Destination photographs for the city and state tiles, from Wikimedia Commons.
 //   plan   npm run places:images -- plan [--out file.json]      finds candidates, writes nothing to the DB
-//   apply  npm run places:images -- apply <plan.json> <picks.json> [--dry-run]
+//   apply  npm run places:images -- apply <plan.json> <picks.json> [--dry-run] [--reuse]
 // `picks.json` maps a place name to the Commons file title chosen from the plan, so a person looks at
 // every photo before it is published. Only CC0, public-domain, CC BY and CC BY-SA files are accepted, and
 // the author, licence and file page are stored with the photo so the site can credit it.
@@ -8,7 +8,7 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import sharp from 'sharp';
 import { COLLECTIONS, closeDb, getDb } from '../db/collections.js';
-import { cloudinaryConfig, cloudinaryFolder, uploadImage } from '../lib/cloudinary.js';
+import { cloudinaryConfig, cloudinaryFolder, findImage, uploadImage } from '../lib/cloudinary.js';
 import { cityPhotos, statePhotos } from '../data/seed/place-photos.js';
 
 const API = 'https://commons.wikimedia.org/w/api.php';
@@ -96,7 +96,9 @@ async function apply() {
     const credit = `Photo: ${candidate.author} · ${candidate.license}`.slice(0, 200);
     if (flag('--dry-run')) { console.log(`dry    ${place.kind}:${place.name} ← ${title} (${credit})`); continue; }
     const publicId = `${place.kind}-${slugOf(place.name)}`;
-    const upload = await uploadImage(await download(title), { publicId, folder: `${cloudinaryFolder()}/place`, overwrite: true, tags: ['gyaan-vidhya', 'place'] });
+    // --reuse links the photo already on Cloudinary (e.g. after a database restore) instead of uploading it again.
+    const existing = flag('--reuse') ? await findImage(`${cloudinaryFolder()}/place/${publicId}`) : null;
+    const upload = existing ?? await uploadImage(await download(title), { publicId, folder: `${cloudinaryFolder()}/place`, overwrite: true, tags: ['gyaan-vidhya', 'place'] });
     await media.updateOne({ publicId: upload.public_id }, { $set: { url: upload.secure_url, publicId: upload.public_id, width: upload.width, height: upload.height, bytes: upload.bytes, format: upload.format, alt: place.alt, usage: 'place', createdAt: now, createdBy: 'places:images' } }, { upsert: true });
     const collection = db.collection(place.kind === 'city' ? COLLECTIONS.cities : COLLECTIONS.states);
     // Upsert: union territories the directory covers had no curated tile until now.

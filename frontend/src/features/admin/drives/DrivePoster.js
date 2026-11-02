@@ -21,17 +21,17 @@ export default function DrivePoster({ id }) {
   }, [id, request]);
 
   if (error) return <p className={styles.error} role="alert">{error} <Link href={`/admin/drives/${id}`}>Back to the drive</Link></p>;
-  if (!item) return <p className={styles.loading} role="status">Preparing the poster…</p>;
+  if (!item) return <div className={styles.wrap}><div className={styles.sheet} aria-busy="true" aria-label="Preparing the poster" /></div>;
   const shortUrl = item.publicUrl.replace(/^https?:\/\//, '');
   const place = [item.school.district, item.school.state].filter(Boolean).join(', ');
 
   return <div className={styles.wrap}>
     <div className={`${styles.toolbar} gv-no-print`}>
-      <Link className="button button--ghost" href={`/admin/drives/${id}?tab=qr`}><Icon name="arrow" className={styles.back} />Back to the drive</Link>
+      <Link className="adm-btn adm-btn--ghost" href={`/admin/drives/${id}?tab=qr`}><Icon name="arrow" className={styles.back} />Back to the drive</Link>
       <p>A4 portrait. In the print dialog, turn off headers and footers for a clean sheet.</p>
-      <button type="button" className="button button--primary" onClick={() => window.print()}><Icon name="comparePrint" />Print or save as PDF</button>
+      <button type="button" className="adm-btn adm-btn--primary" onClick={() => window.print()}><Icon name="printer" />Print or save as PDF</button>
     </div>
-    {item.status !== 'active' && <p className={`${styles.warning} gv-no-print`} role="note"><Icon name="shield" />This drive is {item.status === 'archived' ? 'archived' : 'closed'}: students who scan the code will see “Registration closed”.</p>}
+    {item.status !== 'active' && <p className={`${styles.warning} gv-no-print`} role="note"><Icon name="alert" />This drive is {item.status === 'archived' ? 'archived' : 'closed'}: students who scan the code will see “Registration closed”.</p>}
 
     <article className={`${styles.sheet} gv-poster-sheet`} aria-label="Poster preview">
       <div className={styles.brand}><Brand priority /></div>

@@ -53,8 +53,8 @@ test.describe('admin leads platform', () => {
 
   test('leads dashboard renders KPIs and charts', async ({ page }) => {
     await page.goto('/admin/leads/dashboard');
-    await expect(page.getByText('Last 7 days').first()).toBeVisible({ timeout: 20000 });
-    await expect(page.getByText(/Status funnel|Funnel/i).first()).toBeVisible();
+    await expect(page.getByText('Leads per day').first()).toBeVisible({ timeout: 20000 });
+    await expect(page.getByText(/Funnel/i).first()).toBeVisible();
     await shot(page, 'dashboard');
     await page.setViewportSize({ width: 390, height: 844 });
     await noOverflow(page);

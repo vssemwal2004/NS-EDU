@@ -1,0 +1,45 @@
+/* Members table, bulk bar and the staff dialogs. */
+.table { table-layout: fixed; }
+.table th:nth-last-child(1) { width: 40px; }
+.table tbody tr { cursor: pointer; }
+.table tbody tr[data-suspended] .person { opacity: .62; }
+.personCell { max-width: 0; }
+.colRole { width: 18%; } .colMentor { width: 17%; } .colReports { width: 80px; } .colStatus { width: 112px; } .colSeen { width: 136px; }
+.mentor { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.mentor > span:first-child { flex-shrink: 0; }
+.person { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.personText { display: grid; grid-template-columns: auto 1fr; align-items: baseline; column-gap: 6px; min-width: 0; line-height: 1.3; }
+.personText small { grid-column: 1 / -1; color: var(--adm-muted); font-size: var(--crm-text-xs); }
+.nameButton { min-width: 0; padding: 0; overflow: hidden; border: 0; background: none; color: var(--adm-text); font: inherit; font-weight: 650; text-align: left; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+.nameButton:hover { color: var(--adm-accent); text-decoration: underline; text-underline-offset: 3px; }
+.nameButton:focus-visible { border-radius: 4px; outline: none; box-shadow: var(--adm-focus); }
+.you { justify-self: start; color: var(--adm-muted); font-size: var(--crm-text-xs); }
+
+.seenCell { color: var(--adm-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* Bulk bar: sticks above the table header while rows are selected */
+.bulk { position: sticky; top: 0; z-index: 3; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 5px 10px; border-bottom: 1px solid var(--adm-accent-line); background: var(--adm-accent-soft); }
+.bulk > span { margin-right: 6px; color: var(--adm-text); font-size: var(--crm-text-sm); }
+
+/* Dialog bits */
+.passwordRow { display: flex; flex-wrap: wrap; gap: 8px; }
+.passwordRow input { flex: 1 1 180px; min-width: 0; }
+.mono { font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace; letter-spacing: .03em; }
+.skipNote { display: flex; align-items: flex-start; gap: 8px; margin: 8px 0 0; color: var(--crm-warn); font-size: var(--crm-text-xs); line-height: 1.45; }
+.skipNote svg { flex-shrink: 0; width: 15px; height: 15px; margin-top: 1px; }
+
+/* Phones: each person becomes a compact two-line card (no sideways scroll) */
+@media (max-width: 760px) {
+  .table { min-width: 0; }
+  .table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .table tbody, .table tr { display: block; }
+  .table tr { display: grid !important; grid-template-columns: auto auto minmax(0, 1fr) auto; grid-template-areas: "check person person menu" "check role status menu"; align-items: center; column-gap: 8px; row-gap: 4px; padding: 8px 10px; border-bottom: 1px solid var(--adm-line); }
+  .table tbody tr:last-child { border-bottom: 0; }
+  .table td { display: block; height: auto !important; padding: 0 !important; border: 0 !important; }
+  .table td:first-child:has(input) { grid-area: check; align-self: start; padding-top: 5px !important; }
+  .personCell { grid-area: person; width: auto; max-width: none; }
+  .roleCell { grid-area: role; padding-left: 34px !important; }
+  .statusCell { grid-area: status; justify-self: start; }
+  .mentorCell, .reportsCell, .seenCell { display: none !important; }
+  .menuCell { grid-area: menu; align-self: start; width: auto; }
+}

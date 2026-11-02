@@ -1,0 +1,13 @@
+/* Quiet value renderers (lead-bits.js). */
+.dash { color: var(--adm-faint); }
+.follow { display: inline-flex; align-items: center; gap: 5px; max-width: 100%; color: var(--adm-text); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.follow[data-urgent] { color: var(--tone); font-weight: 600; }
+.follow svg { flex: none; width: 13px; height: 13px; }
+.follow span { overflow: hidden; text-overflow: ellipsis; }
+.priority { display: inline-flex; align-items: center; gap: 4px; color: var(--tone); font-weight: 600; white-space: nowrap; }
+.priority svg { width: 13px; height: 13px; }
+.person { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; min-width: 0; vertical-align: middle; }
+.personName { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.person small { flex: none; color: var(--adm-muted); font-size: var(--crm-text-xs); }
+.stage { display: inline-flex; align-items: center; gap: 7px; max-width: 100%; color: var(--adm-text); white-space: nowrap; }
+.stage i { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--tone-solid); }

@@ -1,0 +1,15 @@
+/* You: an access summary (definition list) and the full permission sheet, grouped by area. */
+.you { display: grid; gap: 12px; min-width: 0; font-size: var(--crm-text-sm); }
+.muted { color: var(--adm-muted); font-size: var(--crm-text-xs); }
+
+/* Permission sheet: areas flow in two columns; inside an area each row is label … state, states share a right edge */
+.areas { columns: 2 340px; column-gap: 40px; padding: 12px 14px 4px; }
+.area { break-inside: avoid; margin-bottom: 16px; }
+.area dl { margin: 4px 0 0; }
+.perm { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 30px; border-bottom: 1px solid var(--adm-line); cursor: default; }
+.perm:last-child { border-bottom: 0; }
+.perm dt { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.perm dd { display: inline-flex; flex-shrink: 0; align-items: center; gap: 4px; width: 72px; margin: 0; color: var(--adm-faint); font-size: var(--crm-text-xs); }
+.perm dd[data-on] { color: var(--adm-text); }
+.perm dd svg { width: 13px; height: 13px; color: var(--crm-good); }
+.none { margin: 0; padding: 16px 14px; color: var(--adm-muted); text-align: center; }

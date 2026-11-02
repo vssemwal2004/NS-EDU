@@ -18,8 +18,8 @@ function Field({ id, label, required, error, help, children }) {
   return <div className={form.formField}>
     <label className={form.fieldLabel} htmlFor={id}>{label}{required && <em aria-hidden="true">*</em>}</label>
     {children}
-    {help && <p className={form.help}>{help}</p>}
-    {error && <p className={form.fieldError}>{error}</p>}
+    {help && <p className="adm-hint">{help}</p>}
+    {error && <p className="adm-error">{error}</p>}
   </div>;
 }
 
@@ -42,16 +42,16 @@ export function AddSourceForm({ onDone, onCancel }) {
   }
 
   return <form className={form.form} onSubmit={submit} noValidate>
-    <p className={form.help}>Add one institution to crawl. Use its official website only (the domain the institution owns), not a portal or aggregator.</p>
+    <p className="adm-hint">Add one institution to crawl. Use its official website only (the domain the institution owns), not a portal or aggregator.</p>
     <div className={form.formGrid}>
-      <Field id="source-name" label="Institution name" required error={errors.name}><input id="source-name" className={form.input} maxLength={200} value={values.name} onChange={set('name')} aria-invalid={Boolean(errors.name)} /></Field>
-      <Field id="source-website" label="Official website" required error={errors.website}><input id="source-website" className={form.input} inputMode="url" placeholder="https://www.example.ac.in" maxLength={500} value={values.website} onChange={set('website')} aria-invalid={Boolean(errors.website)} /></Field>
-      <Field id="source-state" label="State / UT" error={errors.state} help="Needed to publish automatically."><select id="source-state" className={form.input} value={values.state} onChange={set('state')}><option value="">Detect from the website</option>{STATES.map((state) => <option key={state}>{state}</option>)}</select></Field>
-      <Field id="source-city" label="City" error={errors.city}><input id="source-city" className={form.input} maxLength={80} value={values.city} onChange={set('city')} /></Field>
-      <Field id="source-type" label="Type" error={errors.type}><select id="source-type" className={form.input} value={values.type} onChange={set('type')}><option value="">Detect from the name</option>{TYPES.map((type) => <option key={type}>{type}</option>)}</select></Field>
+      <Field id="source-name" label="Institution name" required error={errors.name}><input id="source-name" className="adm-input" maxLength={200} value={values.name} onChange={set('name')} aria-invalid={Boolean(errors.name)} /></Field>
+      <Field id="source-website" label="Official website" required error={errors.website}><input id="source-website" className="adm-input" inputMode="url" placeholder="https://www.example.ac.in" maxLength={500} value={values.website} onChange={set('website')} aria-invalid={Boolean(errors.website)} /></Field>
+      <Field id="source-state" label="State / UT" error={errors.state} help="Needed to publish automatically."><select id="source-state" className="adm-select" value={values.state} onChange={set('state')}><option value="">Detect from the website</option>{STATES.map((state) => <option key={state}>{state}</option>)}</select></Field>
+      <Field id="source-city" label="City" error={errors.city}><input id="source-city" className="adm-input" maxLength={80} value={values.city} onChange={set('city')} /></Field>
+      <Field id="source-type" label="Type" error={errors.type}><select id="source-type" className="adm-select" value={values.type} onChange={set('type')}><option value="">Detect from the name</option>{TYPES.map((type) => <option key={type}>{type}</option>)}</select></Field>
     </div>
     {formError && <p className={form.formError} role="alert"><Icon name="shield" />{formError}</p>}
-    <div className={form.formActions}><button type="button" className="button button--ghost" onClick={onCancel} disabled={busy}>Cancel</button><button type="submit" className="button button--primary" disabled={busy}>{busy ? 'Saving…' : 'Add source'}</button></div>
+    <div className={form.formActions}><button type="button" className="adm-btn adm-btn--ghost" onClick={onCancel} disabled={busy}>Cancel</button><button type="submit" className="adm-btn adm-btn--primary" disabled={busy}>{busy ? 'Saving…' : 'Add source'}</button></div>
   </form>;
 }
 
@@ -82,18 +82,18 @@ export function SeedUploadForm({ onDone, onCancel }) {
   }
 
   return <div className={form.form}>
-    <p className={form.help}>A seed list names the institutions to crawl, for example a directory list downloaded from an official source. Columns: <strong>name</strong> and <strong>website</strong> (required), <strong>state</strong>, <strong>city</strong>, <strong>type</strong>, <strong>category</strong>. Common header variants such as “Name of the Institution” or “Website URL” are recognised. Rows without a website are skipped. Existing sources are matched by website and updated.</p>
+    <p className="adm-hint">A seed list names the institutions to crawl, for example a directory list downloaded from an official source. Columns: <strong>name</strong> and <strong>website</strong> (required), <strong>state</strong>, <strong>city</strong>, <strong>type</strong>, <strong>category</strong>. Common header variants such as “Name of the Institution” or “Website URL” are recognised. Rows without a website are skipped. Existing sources are matched by website and updated.</p>
     <label className={styles.drop}>
       <Icon name="document" />
       <input type="file" accept=".csv,.json,.tsv,.txt,text/csv,application/json" onChange={(event) => choose(event.target.files?.[0])} />
       <strong>{file ? file.name : 'Select a CSV or JSON seed list'}</strong><span>Up to 5 MB</span>
     </label>
-    <div className={form.formField}><label className={form.fieldLabel} htmlFor="seed-name">Seed list name</label><input id="seed-name" className={form.input} maxLength={80} value={listName} onChange={(event) => setListName(event.target.value)} placeholder="e.g. State universities, Oct 2026" /><p className={form.help}>Shown on each source so you can filter and re-queue a list later.</p></div>
+    <div className={form.formField}><label className={form.fieldLabel} htmlFor="seed-name">Seed list name</label><input id="seed-name" className="adm-input" maxLength={80} value={listName} onChange={(event) => setListName(event.target.value)} placeholder="e.g. State universities, Oct 2026" /><p className="adm-hint">Shown on each source so you can filter and re-queue a list later.</p></div>
     {result && <dl className={styles.summary}>
       {[['Added', result.inserted], ['Updated', result.updated], ['Duplicate rows', result.duplicates], ['Rejected', result.failed, 'bad']].map(([label, value, tone]) => <div key={label} data-tone={tone && value ? tone : undefined}><dt>{label}</dt><dd>{formatCount(value)}</dd></div>)}
     </dl>}
-    {result?.errors?.length > 0 && <ul className={form.help}>{result.errors.slice(0, 8).map((item) => <li key={item.row}>Row {item.row} {item.name}: {Object.values(item.errors).join('; ')}</li>)}</ul>}
+    {result?.errors?.length > 0 && <ul className="adm-hint">{result.errors.slice(0, 8).map((item) => <li key={item.row}>Row {item.row} {item.name}: {Object.values(item.errors).join('; ')}</li>)}</ul>}
     {error && <p className={form.formError} role="alert"><Icon name="shield" />{error}</p>}
-    <div className={form.formActions}><button type="button" className="button button--ghost" onClick={onCancel}>{result ? 'Close' : 'Cancel'}</button><button type="button" className="button button--primary" disabled={!file || busy} onClick={upload}>{busy ? 'Uploading…' : 'Upload seed list'}</button></div>
+    <div className={form.formActions}><button type="button" className="adm-btn adm-btn--ghost" onClick={onCancel}>{result ? 'Close' : 'Cancel'}</button><button type="button" className="adm-btn adm-btn--primary" disabled={!file || busy} onClick={upload}>{busy ? 'Uploading…' : 'Upload seed list'}</button></div>
   </div>;
 }

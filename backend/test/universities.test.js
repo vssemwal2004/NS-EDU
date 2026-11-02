@@ -27,7 +27,7 @@ describe('universities service', { skip }, () => {
     service = await import('../src/modules/universities/university-service.js');
   });
   after(async () => {
-    if (db) await db.dropDatabase();
+    if (db?.databaseName.startsWith('nsedu_test_')) await db.dropDatabase();
     await closeDb?.();
   });
 

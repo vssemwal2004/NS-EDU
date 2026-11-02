@@ -1,0 +1,59 @@
+.chart { display: grid; min-width: 0; font-size: var(--crm-text-sm); }
+.section { display: grid; gap: 8px; min-width: 0; padding: 12px 14px; }
+.section + .section { border-top: 1px solid var(--adm-line); }
+.section h3 { display: flex; align-items: baseline; gap: 6px; margin: 0; font-family: inherit; font-size: var(--crm-text-md); font-weight: 700; }
+.section h3 small { color: var(--adm-muted); font-size: var(--crm-text-xs); font-weight: 600; }
+.empty { padding: 16px; color: var(--adm-muted); text-align: center; }
+.scroller { overflow-x: auto; padding-bottom: 2px; }
+.teamRow { display: flex; flex-wrap: wrap; gap: 10px; }
+.team { min-width: 0; max-width: 100%; padding: 10px; border: 1px solid var(--adm-line); border-radius: var(--adm-radius-sm); background: var(--adm-subtle); }
+
+.card { display: flex; align-items: center; gap: 8px; width: 200px; height: 44px; padding: 0 10px; border: 1px solid var(--adm-line); border-radius: var(--adm-radius-sm); background: var(--adm-surface); color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.card:hover { border-color: var(--adm-line-strong); background: var(--adm-hover); }
+.card:focus-visible { outline: none; box-shadow: var(--adm-focus); }
+.card[data-suspended] { opacity: .6; }
+.cardText { display: grid; flex: 1; min-width: 0; line-height: 1.25; }
+.cardText strong, .cardText small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cardText strong { font-weight: 650; }
+.cardText small { color: var(--adm-muted); font-size: var(--crm-text-xs); }
+.count { flex-shrink: 0; min-width: 20px; padding: 0 5px; border-radius: 999px; background: var(--adm-hover); color: var(--adm-muted); font-size: var(--crm-text-xs); font-weight: 650; font-variant-numeric: tabular-nums; text-align: center; }
+
+/* The connected tree: each <li> draws the line above itself and to its siblings. */
+.tree, .tree ul { display: flex; justify-content: center; margin: 0; padding: 0; list-style: none; }
+.tree ul { position: relative; padding-top: 14px; }
+.tree { width: max-content; min-width: 100%; }
+.tree li { position: relative; display: flex; flex-direction: column; align-items: center; padding: 14px 4px 0; }
+.tree > li { padding-top: 0; }
+.tree ul::before { content: ''; position: absolute; top: 0; left: 50%; height: 14px; border-left: 1px solid var(--adm-line-strong); }
+.tree ul > li::before, .tree ul > li::after { content: ''; position: absolute; top: 0; right: 50%; width: 50%; height: 14px; border-top: 1px solid var(--adm-line-strong); }
+.tree ul > li::after { right: auto; left: 50%; border-left: 1px solid var(--adm-line-strong); }
+.tree ul > li:only-child::before { display: none; }
+.tree ul > li:only-child::after { border-top: 0; }
+.tree ul > li:first-child::before, .tree ul > li:last-child::after { border-top: 0; }
+.tree ul > li:last-child::before { border-right: 1px solid var(--adm-line-strong); border-radius: 0 6px 0 0; }
+.tree ul > li:first-child::after { border-radius: 6px 0 0 0; }
+
+.loose { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+
+/* Phones: an indented list instead of a wide tree. */
+@media (max-width: 700px) {
+  .scroller { overflow: visible; }
+  .team { flex: 1 1 100%; }
+  .tree, .tree ul { display: block; width: auto; min-width: 0; }
+  .tree ul { margin-left: 12px; padding: 0 0 0 14px; }
+  .tree ul::before { display: none; }
+  .tree li { display: block; padding: 6px 0 0 12px; }
+  .tree > li { padding-left: 0; }
+  .tree ul > li::before { top: 28px; right: auto; left: 0; width: 12px; height: 0; border-top: 1px solid var(--adm-line-strong); border-right: 0; border-radius: 0; }
+  .tree ul > li::after { top: 0; right: auto; left: 0; width: 0; height: 100%; border-top: 0; border-left: 1px solid var(--adm-line-strong); border-radius: 0; }
+  .tree ul > li:last-child::after { height: 28px; }
+  .tree ul > li:only-child::before { display: block; }
+  .tree ul > li:first-child::before, .tree ul > li:last-child::before { border-top: 1px solid var(--adm-line-strong); border-radius: 0; border-right: 0; }
+  .tree ul > li:first-child::after, .tree ul > li:last-child::after { border-radius: 0; }
+  .tree ul > li:only-child::after { border-left: 1px solid var(--adm-line-strong); }
+  .card, .loose li { width: 100%; }
+  .loose { display: grid; }
+}
+
+/* Headings inside panels: sans, text colour (the site-wide h3 style is serif wine). */
+.chart :is(h3, h4) { color: var(--adm-text); font-family: inherit; letter-spacing: normal; }

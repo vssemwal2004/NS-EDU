@@ -2,7 +2,7 @@ import { collection, COLLECTIONS, toObjectId } from '../../db/collections.js';
 import { HttpError } from '../../lib/http-error.js';
 import { pagination, queryString } from '../../lib/query.js';
 import { assertValid, escapeRegex } from '../../lib/validation.js';
-import { employeeAssignmentIds } from './employee-assignments.js';
+import { employeeAssignmentIds, staffNames } from './employee-assignments.js';
 
 const STATUSES = ['active', 'blocked'];
 const updateFields = [
@@ -22,8 +22,9 @@ export const serializeStudentForAdmin = (student) => ({
   assignedEmployeeIds: (student.assignedEmployeeIds ?? []).map(String),
 });
 
+const LIST_PROJECTION = { email: 1, phone: 1, name: 1, status: 1, createdAt: 1, lastLoginAt: 1, loginCount: 1, assignedEmployeeIds: 1 };
 export async function listStudents(query) {
-  const { page, limit, skip } = pagination(query);
+  const { page, limit, skip } = pagination(query, { defaultLimit: 25, maxLimit: 100 });
   const q = queryString(query.q);
   const status = queryString(query.status, 20);
   if (status && !STATUSES.includes(status)) throw new HttpError(400, 'Status must be active or blocked', { fields: { status: 'Choose active or blocked' } });
@@ -33,10 +34,12 @@ export async function listStudents(query) {
   };
   const students = await collection(COLLECTIONS.students);
   const [docs, total] = await Promise.all([
-    students.find(filter).sort({ createdAt: -1, _id: -1 }).skip(skip).limit(limit).toArray(),
+    students.find(filter, { projection: LIST_PROJECTION }).sort({ createdAt: -1, _id: -1 }).skip(skip).limit(limit).toArray(),
     students.countDocuments(filter),
   ]);
-  return { items: docs.map(serializeStudentForAdmin), total, page, limit };
+  const items = docs.map(serializeStudentForAdmin);
+  const names = await staffNames(items.flatMap((item) => item.assignedEmployeeIds));
+  return { items: items.map((item) => ({ ...item, assignees: item.assignedEmployeeIds.map((id) => ({ id, name: names.get(id) ?? 'Removed staff' })) })), total, page, limit };
 }
 
 export async function updateStudent(id, body) {

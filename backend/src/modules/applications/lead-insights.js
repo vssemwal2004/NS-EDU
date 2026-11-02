@@ -8,10 +8,11 @@
 //   only their own channel's documents through the channel index;
 // - admin workload is one $group over the range (createdAt index) by assignee list and status.
 // Measured on 200k synthetic leads: see src/scripts/seed-synthetic-leads.js.
-import { collection, COLLECTIONS } from '../../db/collections.js';
+import { collection, COLLECTIONS, toObjectId } from '../../db/collections.js';
 import { HttpError } from '../../lib/http-error.js';
 import { queryString } from '../../lib/query.js';
 import { createTtlCache } from '../../lib/ttl-cache.js';
+import { leadScopeOf } from './scope.js';
 import { CLOSED_STATUSES, INDIAN_STATES, STATUSES } from './schema.js';
 import { accessFilter, applications, CHANNEL_LABELS, CHANNELS, countLeads, DAY, filterKey, IST_OFFSET, istDayStart, istToday, leadFilter, staffEmails, statusLabel } from './service.js';
 
@@ -30,7 +31,7 @@ const istDate = (instant) => new Date(instant.getTime() + IST_OFFSET).toISOStrin
 const shiftDay = (day, count) => istDate(new Date(istDayStart(day).getTime() + count * DAY));
 // istDayStart rolls "2026-02-31" over into March; the dashboard rejects such days instead.
 const realDay = (value) => { const start = istDayStart(value); return Boolean(start) && istDate(start) === value; };
-const scopeOf = (staff) => (staff.role === 'admin' ? 'admin' : staff._id.toString());
+const scopeOf = (staff) => (leadScopeOf(staff) === 'all' ? 'all' : staff._id.toString());
 
 function span(preset, from, to) {
   const start = istDayStart(from);
@@ -73,10 +74,11 @@ const ranked = (key, label, limit) => [
  * and the status/state, so counts would read other people's leads; one `facts` pass over just their
  * own leads (assignee index) groups day × status × channel × state instead.
  */
-export function insightQueries(range, staff) {
-  const access = accessFilter(staff);
+export function insightQueries(range, staff, employee = null) {
+  // One person (an ObjectId within the viewer's scope): their leads only, through the assignee index.
+  const access = employee ? { $and: [accessFilter(staff), { assignedEmployeeIds: employee }].filter((clause) => Object.keys(clause).length) } : accessFilter(staff);
   const match = { ...access, createdAt: { $gte: range.start, $lt: range.end } };
-  const admin = staff.role === 'admin';
+  const admin = leadScopeOf(staff) === 'all' && !employee;
   // Pin the index: without a scope filter the planner may walk a `<field>, createdAt` index across all time.
   const scan = { hint: admin ? CHANNEL_INDEX : ASSIGNEE_INDEX };
   return {
@@ -117,12 +119,15 @@ async function mapLimit(items, limit, run) {
 const dayCounts = createTtlCache({ ttlMs: 10 * 60_000, maxEntries: 20_000 });
 
 // KPIs are fixed windows (not the chosen range) and share the list's count cache keys.
-async function kpis(staff) {
+async function kpis(staff, employee = '') {
   const scope = scopeOf(staff);
-  const windowCount = (range) => countLeads(leadFilter({ range }, staff), filterKey({ range }, staff));
+  const person = employee ? { assignee: employee } : {};
+  const windowCount = (range) => countLeads(leadFilter({ range, ...person }, staff), filterKey({ range, ...person }, staff));
   const [today, yesterday, last7, last30, ...byStatus] = await Promise.all([
     windowCount('today'), windowCount('yesterday'), windowCount('7d'), windowCount('30d'),
-    ...STATUSES.map((status) => countLeads({ ...accessFilter(staff), status }, `${scope}|status=${status}`)),
+    ...STATUSES.map((status) => (employee
+      ? countLeads(leadFilter({ status, ...person }, staff), filterKey({ status, ...person }, staff))
+      : countLeads({ ...accessFilter(staff), status }, `${scope}|status=${status}`))),
   ]);
   const statusTotal = (list) => list.reduce((sum, status) => {
     const { total } = byStatus[STATUSES.indexOf(status)];
@@ -149,7 +154,7 @@ async function schoolRows(rows) {
 
 // {assigned: [ids], status} groups → per-person totals. Every current employee appears (idle ones
 // too); people who left keep a row while leads still name them, so an admin can reassign those.
-async function workload(rows) {
+async function workload(rows, staff) {
   const people = new Map();
   let unassigned = 0;
   for (const { _id: { assigned, status }, count } of rows) {
@@ -164,7 +169,9 @@ async function workload(rows) {
       people.set(id, row);
     }
   }
-  const employees = await (await collection(COLLECTIONS.admins)).find({ role: 'employee' }, { projection: { email: 1 } }).toArray();
+  // Everyone for company-wide viewers; a mentor sees their team, a counsellor only themselves.
+  const roster = leadScopeOf(staff) === 'all' ? {} : { _id: { $in: [staff._id, ...(staff.teamIds ?? [])] } };
+  const employees = await (await collection(COLLECTIONS.admins)).find({ role: 'employee', ...roster }, { projection: { email: 1 } }).toArray();
   const current = new Set(employees.map((doc) => doc._id.toString()));
   const former = await staffEmails([...people.keys()].filter((id) => !current.has(id)));
   const listed = [...employees.map((doc) => [doc._id.toString(), doc.email]), ...[...people.keys()].filter((id) => !current.has(id)).map((id) => [id, former.get(id) ?? 'Former staff'])];
@@ -173,6 +180,15 @@ async function workload(rows) {
     employees: listed.map(([id, email]) => ({ id, email, assigned: 0, open: 0, contacted: 0, admitted: 0, ...people.get(id) }))
       .sort((a, b) => b.assigned - a.assigned || a.email.localeCompare(b.email)),
   };
+}
+
+// Who the person filter can offer: everyone for company-wide viewers, the team for a mentor, nobody for a counsellor.
+async function peopleInScope(staff) {
+  const scope = leadScopeOf(staff);
+  if (scope !== 'all' && scope !== 'team') return null;
+  const filter = { role: { $in: ['admin', 'employee'] }, status: { $ne: 'suspended' }, ...(scope === 'team' ? { _id: { $in: [staff._id, ...(staff.teamIds ?? [])] } } : {}) };
+  const docs = await (await collection(COLLECTIONS.admins)).find(filter, { projection: { email: 1, name: 1 } }).sort({ name: 1, email: 1 }).limit(500).toArray();
+  return docs.map((doc) => ({ id: doc._id.toString(), email: doc.email, name: doc.name ?? '' }));
 }
 
 function tally(rows) {
@@ -195,12 +211,25 @@ const insightsCache = createTtlCache({ ttlMs: 60_000, maxEntries: 200 });
 export const clearLeadInsights = () => { insightsCache.clear(); dayCounts.clear(); };
 
 /** GET /api/admin/leads/insights. Employees see only their assigned leads and no workload table. */
+/** `?employee=<id>`: one person's leads. Team leads may pick their team; counsellors only see themselves anyway. */
+function employeeOf(query, staff) {
+  const value = queryString(query.employee, 30);
+  if (!value) return null;
+  const id = toObjectId(value);
+  if (!id) throw new HttpError(400, 'Choose a valid employee', { fields: { employee: 'Unknown person.' } });
+  const scope = leadScopeOf(staff);
+  const allowed = scope === 'all' ? null : scope === 'team' ? [staff._id, ...(staff.teamIds ?? [])] : [staff._id];
+  if (allowed && !allowed.some((member) => member.equals(id))) throw new HttpError(403, 'That person is outside your team');
+  return id;
+}
+
 export async function leadInsights(query, staff) {
   const range = insightRange(query);
+  const employee = employeeOf(query, staff);
   const scope = scopeOf(staff);
-  return insightsCache.wrap(`${scope}|${range.from}|${range.to}|${range.preset}`, async () => {
+  return insightsCache.wrap(`${scope}|${range.from}|${range.to}|${range.preset}|${employee ?? ''}`, async () => {
     const leads = await applications();
-    const queries = insightQueries(range, staff);
+    const queries = insightQueries(range, staff, employee);
     const today = istToday();
     const count = (filter) => leads.countDocuments(filter, { maxTimeMS: QUERY_MS });
     const countNames = Object.keys(queries.counts);
@@ -209,7 +238,7 @@ export async function leadInsights(query, staff) {
       mapLimit(queries.days.filter((day) => day.filter), PARALLEL, ({ date, filter }) => (date < today ? dayCounts.wrap(`${scope}|${date}`, () => count(filter)) : count(filter))),
       mapLimit(countNames, PARALLEL, (name) => count(queries.counts[name])),
       Promise.all(groupNames.map((name) => leads.aggregate(queries.groups[name].pipeline, { ...queries.groups[name].options, maxTimeMS: QUERY_MS }).toArray())),
-      kpis(staff),
+      kpis(staff, employee ? employee.toString() : ''),
     ]).catch(timedOut);
     const grouped = Object.fromEntries(groupNames.map((name, index) => [name, groups[index]]));
     // Both paths end in the same shape: per-day totals and `kind:value` counts.
@@ -218,9 +247,10 @@ export async function leadInsights(query, staff) {
     const total = trendCounts.reduce((sum, value) => sum + value, 0);
     const counter = (key) => counted[key] ?? 0;
     const byOtherChannels = CHANNELS.filter((channel) => channel !== 'web-apply').reduce((sum, channel) => sum + counter(`channel:${channel}`), 0);
-    const [bySchool, team] = await Promise.all([schoolRows(grouped.bySchool), grouped.workload ? workload(grouped.workload) : null]);
+    const [bySchool, team, people] = await Promise.all([schoolRows(grouped.bySchool), grouped.workload ? workload(grouped.workload, staff) : null, peopleInScope(staff)]);
     return {
       range: { preset: range.preset, from: range.from, to: range.to, days: range.days },
+      employee: employee ? employee.toString() : null,
       kpis: kpiCounts,
       total,
       trend: queries.days.map(({ date }, index) => ({ date, count: trendCounts[index] })),
@@ -231,6 +261,7 @@ export async function leadInsights(query, staff) {
       byCourse: grouped.byCourse.map((row) => ({ value: row._id, label: row.label || row._id, count: row.count })),
       bySchool,
       byCareerField: grouped.byCareerField.map((row) => ({ value: row._id, label: row.label || row._id, count: row.count })),
+      people,
       unassigned: team?.unassigned ?? null,
       employees: team?.employees ?? null,
       generatedAt: new Date().toISOString(),

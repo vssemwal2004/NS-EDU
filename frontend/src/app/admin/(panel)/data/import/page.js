@@ -1,11 +1,8 @@
-import ImportCourses from '@/features/admin/data/ImportCourses';
-import ImportUniversities from '@/features/admin/data/ImportUniversities';
+import ImportScreen from '@/features/admin/data/ImportScreen';
 
 export const metadata = { title: 'Import universities and courses' };
 
-export default function ImportUniversitiesPage() {
-  return <>
-    <ImportUniversities />
-    <ImportCourses />
-  </>;
+export default async function ImportPage({ searchParams }) {
+  const { kind } = await searchParams;
+  return <ImportScreen initialKind={typeof kind === 'string' ? kind : 'universities'} />;
 }

@@ -1,34 +1,40 @@
 'use client';
+// Data pipeline › Scraper: crawl sources and the job queue. Crawling itself runs in a server-side worker
+// (`npm run scrape -- work`); this screen queues, retries and cancels jobs and manages the sources.
 import { useCallback, useEffect, useState } from 'react';
 import Icon from '@/components/ui/Icon';
 import { useAdminSession } from '../AdminSession';
-import AdminDrawer from '../AdminDrawer';
+import ConfirmDialog from '../crm/ConfirmDialog';
+import RowMenu from '../crm/RowMenu';
+import { useToaster } from '../crm/toast';
+import { PageToolbar, StatStrip, ViewTabs } from '../ui/Page';
 import { formatCount, formatDate } from './data-api';
 import JobsPanel from './JobsPanel';
 import SourcesPanel from './SourcesPanel';
-import { useToast } from './useToast';
-import styles from './DataOps.module.css';
-import table from '../ResourceManager.module.css';
+import { EmptyState, FormSkeleton } from '../catalogue/CatalogueParts';
+import styles from '../catalogue/Catalogue.module.css';
 
+const RUN_MODES = { never: 'Never crawled', stale: 'Over 30 days old', all: 'All active', selected: 'Chosen by hand' };
 const ENQUEUE = [
-  { mode: 'never', label: 'Never crawled', help: 'Sources without any crawl yet' },
-  { mode: 'stale', label: 'Older than 30 days', help: 'Refresh sources last crawled over a month ago', staleDays: 30 },
-  { mode: 'all', label: 'All active sources', help: 'Every active source; can be thousands of jobs', confirm: true },
+  { mode: 'never', label: 'Never-crawled sources', hint: 'new' },
+  { mode: 'stale', label: 'Last crawled over 30 days ago', hint: 'refresh', staleDays: 30 },
+  { mode: 'all', label: 'Every active source…', hint: 'slow', confirm: true },
 ];
 
 export default function ScraperConsole() {
   const { request } = useAdminSession();
+  const toast = useToaster();
   const [stats, setStats] = useState(null);
-  const [runs, setRuns] = useState([]);
+  const [runs, setRuns] = useState(null);
   const [error, setError] = useState('');
   const [tab, setTab] = useState('sources');
+  const [jobStatus, setJobStatus] = useState('');
   const [reloadKey, setReloadKey] = useState(0);
-  const [busy, setBusy] = useState('');
+  const [busy, setBusy] = useState(false);
   const [confirmAll, setConfirmAll] = useState(false);
-  const [toast, notify] = useToast();
 
-  // Stats refresh every 20 s while the tab is visible, so worker progress shows without reloading.
-  const loadStats = useCallback(() => Promise.all([request('/data-ops/scraper/stats'), request('/data-ops/scraper/runs?limit=5')])
+  // Counts refresh every 20 s while the tab is visible, so worker progress shows without reloading.
+  const loadStats = useCallback(() => Promise.all([request('/data-ops/scraper/stats'), request('/data-ops/scraper/runs?limit=8')])
     .then(([nextStats, nextRuns]) => { setStats(nextStats); setRuns(nextRuns.items); setError(''); })
     .catch((failure) => setError(failure.message)), [request]);
   useEffect(() => {
@@ -38,67 +44,65 @@ export default function ScraperConsole() {
   }, [loadStats]);
   const refresh = useCallback(() => { loadStats(); setReloadKey((key) => key + 1); }, [loadStats]);
 
-  async function enqueue(body, after) {
-    setBusy(body.mode); setConfirmAll(false);
+  const enqueue = useCallback(async (body, after) => {
+    setBusy(true); setConfirmAll(false);
     try {
       const result = await request('/data-ops/scraper/enqueue', { method: 'POST', body });
-      notify(result.queued ? `${formatCount(result.queued)} job${result.queued === 1 ? '' : 's'} queued${result.alreadyQueued ? `; ${formatCount(result.alreadyQueued)} already had an open job` : ''}. Start a worker to crawl them.` : `Nothing new to queue (${formatCount(result.selected)} matching source${result.selected === 1 ? '' : 's'}, all already queued).`);
+      if (result.queued) toast.success(`${formatCount(result.queued)} job${result.queued === 1 ? '' : 's'} queued${result.alreadyQueued ? `; ${formatCount(result.alreadyQueued)} already had an open job` : ''}. A worker on the server crawls them.`);
+      else toast.info(`Nothing new to queue: ${formatCount(result.selected)} matching source${result.selected === 1 ? '' : 's'} already queued.`);
       after?.();
       refresh();
-    } catch (failure) { notify(failure.message, 'error'); }
-    setBusy('');
-  }
+    } catch (failure) { toast.error(failure.message); }
+    setBusy(false);
+  }, [refresh, request, toast]);
 
   const jobs = stats?.jobs;
-  return <div className={styles.page}>
-    <div className={styles.notice} role="note">
-      <Icon name="guidesClock" />
-      <div>
-        <p><strong>Crawling runs on the server, not in this browser.</strong> This screen manages crawl sources and the job queue. A worker process leases queued jobs, visits each institution’s official website politely (robots.txt, a few seconds between requests, at most a handful of pages) and saves what it finds as unverified records.</p>
-        <code className={styles.code}>npm run scrape --workspace backend -- work{'\n'}npm run scrape --workspace backend -- status</code>
-        <p>{stats?.workers?.length ? `${stats.workers.length} worker${stats.workers.length === 1 ? ' is' : 's are'} crawling right now.` : 'No worker is running right now; queued jobs wait until one starts.'}</p>
-      </div>
+  const workers = stats?.workers?.length ?? 0;
+  const showJobs = (status) => { setTab('jobs'); setJobStatus(status); };
+  const jobStat = (key, label, icon, tone) => ({ key, label, value: jobs?.[key] ?? 0, icon, tone, onClick: () => showJobs(key), active: tab === 'jobs' && jobStatus === key });
+
+  return <div className={styles.screen}>
+    <PageToolbar summary={stats ? <>{workers ? <><strong>{workers}</strong> worker{workers === 1 ? '' : 's'} crawling</> : <>No worker running · queued jobs wait for <code>npm run scrape -- work</code></>}</> : 'Loading the crawler status…'}>
+      <button type="button" className="adm-btn adm-btn--ghost adm-btn--icon" onClick={refresh} aria-label="Refresh" title="Refresh"><Icon name="refresh" /></button>
+      <RowMenu label="Queue a crawl" className={styles.menuButton} trigger={<><Icon name="play" /><span>{busy ? 'Queueing…' : 'Queue crawl'}</span></>}
+        items={[{ heading: 'Queue one job per source' }, ...ENQUEUE.map((option) => ({ key: option.mode, label: option.label, hint: option.hint, icon: 'play', disabled: busy,
+          onSelect: () => (option.confirm ? setConfirmAll(true) : enqueue({ mode: option.mode, staleDays: option.staleDays })) }))]} />
+    </PageToolbar>
+
+    {error && <p className={styles.alert} role="alert"><Icon name="alert" />{error}<button type="button" className="adm-btn adm-btn--sm" style={{ marginLeft: 'auto' }} onClick={refresh}>Try again</button></p>}
+
+    <StatStrip label="Crawler queue" loading={!stats} items={[
+      jobStat('queued', 'Queued', 'clock', 'info'),
+      jobStat('running', 'Running', 'refresh', 'purple'),
+      jobStat('done', 'Done', 'check', 'good'),
+      jobStat('failed', 'Failed', 'alert', 'bad'),
+      jobStat('skipped', 'Skipped', 'ban', 'warn'),
+      { key: 'never', label: 'Never crawled', value: stats?.sources.neverCrawled ?? 0, icon: 'guidesGlobe' },
+    ]} />
+
+    <div style={{ marginBottom: 10 }}>
+      <ViewTabs label="Scraper views" value={tab} onChange={(next) => { setTab(next); if (next === 'jobs') setJobStatus(''); }} items={[
+        { key: 'sources', label: 'Sources', icon: 'guidesGlobe', count: stats?.sources.total },
+        { key: 'jobs', label: 'Job queue', icon: 'layers', count: jobs ? Object.values(jobs).reduce((sum, value) => sum + value, 0) : undefined },
+        { key: 'runs', label: 'Recent runs', icon: 'history' },
+      ]} />
     </div>
 
-    {error && <div className={table.errorBox} role="alert"><Icon name="shield" />{error}</div>}
-    <div className={styles.tiles}>
-      <div className={styles.tile}><span>Queued</span><strong>{jobs ? formatCount(jobs.queued) : '…'}</strong><small>{stats ? `${formatCount(stats.dueNow)} due now` : ' '}</small></div>
-      <div className={styles.tile}><span>Running</span><strong>{jobs ? formatCount(jobs.running) : '…'}</strong><small>Leased by workers</small></div>
-      <div className={styles.tile} data-tone="success"><span>Done</span><strong>{jobs ? formatCount(jobs.done) : '…'}</strong><small>Saved to the catalogue</small></div>
-      <div className={styles.tile} data-tone="warning"><span>Failed / skipped</span><strong>{jobs ? `${formatCount(jobs.failed)} / ${formatCount(jobs.skipped)}` : '…'}</strong><small>Skipped = robots.txt or not HTML</small></div>
-      <div className={styles.tile}><span>Sources</span><strong>{stats ? formatCount(stats.sources.total) : '…'}</strong><small>{stats ? `${formatCount(stats.sources.active)} active · ${formatCount(stats.sources.neverCrawled)} never crawled` : ' '}</small></div>
-    </div>
+    {tab === 'sources' && <SourcesPanel onChanged={loadStats} onEnqueue={enqueue} reloadKey={reloadKey} />}
+    {tab === 'jobs' && <JobsPanel status={jobStatus} onStatus={setJobStatus} onChanged={loadStats} reloadKey={reloadKey} />}
+    {tab === 'runs' && <div className={styles.card}>
+      {!runs ? <div className={styles.runs}><FormSkeleton rows={3} /></div> : !runs.length ? <EmptyState title="No crawl runs yet. Queue a crawl to start one." />
+        : <div className={styles.runs}><table className={styles.miniTable} style={{ fontSize: 'var(--crm-text-sm)' }}>
+          <thead><tr><th scope="col">Queued</th><th scope="col">Sources</th><th scope="col">By</th><th scope="col" className={styles.num}>Done</th><th scope="col" className={styles.num}>Failed / skipped</th><th scope="col" className={styles.num}>Open</th></tr></thead>
+          <tbody>{runs.map((run) => <tr key={run.id}>
+            <td>{formatDate(run.createdAt)}</td><td>{RUN_MODES[run.mode] ?? run.mode}</td><td><span className={styles.truncate} title={run.createdBy}>{run.createdBy}</span></td>
+            <td className={styles.num}>{formatCount(run.counts.done)}</td><td className={styles.num}>{formatCount(run.counts.failed + run.counts.skipped)}</td><td className={styles.num}>{formatCount(run.counts.queued + run.counts.running)}</td>
+          </tr>)}</tbody>
+        </table></div>}
+    </div>}
 
-    <div className={styles.grid}>
-      <section className={styles.card} aria-labelledby="enqueue-title">
-        <div className={styles.cardHeader}><h2 id="enqueue-title">Queue a crawl</h2><button type="button" className={styles.linkButton} onClick={refresh}>Refresh</button></div>
-        <p>Creates one job per active source. Sources that already have a queued or running job are left alone. To crawl specific institutions, tick them in the sources table.</p>
-        <div className={styles.actions}>{ENQUEUE.map((option) => <button key={option.mode} type="button" className="button button--outline" title={option.help} disabled={Boolean(busy)}
-          onClick={() => (option.confirm ? setConfirmAll(true) : enqueue({ mode: option.mode, staleDays: option.staleDays }))}>{busy === option.mode ? 'Queueing…' : option.label}</button>)}</div>
-      </section>
-      <section className={styles.card} aria-labelledby="runs-title">
-        <h2 id="runs-title">Recent runs</h2>
-        {!runs.length && <p>No runs yet.</p>}
-        <ul className={styles.bars}>{runs.map((run) => <li key={run.id} style={{ gridTemplateColumns: 'minmax(0, 1fr) auto' }}>
-          <span><strong>{formatDate(run.createdAt)}</strong> · {run.mode} · {run.createdBy}</span>
-          <span className={styles.muted}>{formatCount(run.counts.done)} done, {formatCount(run.counts.failed + run.counts.skipped)} failed/skipped, {formatCount(run.counts.queued + run.counts.running)} open</span>
-        </li>)}</ul>
-      </section>
-    </div>
-
-    <div className={styles.segmentedScroll}><div className={table.segmented} role="group" aria-label="Show">
-      {[['sources', 'Sources'], ['jobs', 'Jobs']].map(([value, label]) => <button key={value} type="button" aria-pressed={tab === value} onClick={() => setTab(value)}>{label}</button>)}
-    </div></div>
-    {tab === 'sources'
-      ? <SourcesPanel notify={notify} onChanged={loadStats} onEnqueue={enqueue} reloadKey={reloadKey} />
-      : <JobsPanel notify={notify} onChanged={loadStats} reloadKey={reloadKey} />}
-
-    <AdminDrawer open={confirmAll} onClose={() => setConfirmAll(false)} title="Queue every active source?" variant="confirm">
-      <div className={table.confirm}>
-        <p>This queues {stats ? formatCount(stats.sources.active) : 'all'} active sources. With the default politeness settings (8 pages per site, 3 s apart, 4 sites at a time) one worker gets through only a few hundred sites an hour, so tens of thousands of sources take days. Prefer “Never crawled” or “Older than 30 days” for routine refreshes.</p>
-        <div className={table.formActions}><button type="button" className="button button--ghost" onClick={() => setConfirmAll(false)}>Cancel</button><button type="button" className="button button--primary" onClick={() => enqueue({ mode: 'all' })}>Queue all</button></div>
-      </div>
-    </AdminDrawer>
-    {toast && <p className={table.toast} data-tone={toast.tone} role="status"><Icon name={toast.tone === 'error' ? 'shield' : 'check'} />{toast.message}</p>}
+    <ConfirmDialog open={confirmAll} title="Queue every active source?" confirmLabel="Queue all" icon="play" busy={busy} onConfirm={() => enqueue({ mode: 'all' })} onCancel={() => setConfirmAll(false)}>
+      <p>This queues {stats ? formatCount(stats.sources.active) : 'all'} active sources. With the default politeness settings one worker crawls a few hundred sites an hour, so a full run takes days. Prefer “Never-crawled” or “Over 30 days” for routine refreshes.</p>
+    </ConfirmDialog>
   </div>;
 }

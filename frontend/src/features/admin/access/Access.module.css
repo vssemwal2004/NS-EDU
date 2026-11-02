@@ -1,0 +1,93 @@
+/* Team & access: page frame and the small pieces every tab shares (tables, fields, states, segmented control). */
+.page { display: grid; gap: 12px; min-width: 0; color: var(--adm-text); font-size: var(--crm-text-sm); }
+.page > * { min-width: 0; }
+.panel { display: grid; gap: 12px; min-width: 0; outline: none; }
+.panel > * { min-width: 0; }
+
+/* Risk: a small icon with a tooltip */
+.risk { display: inline-grid; flex-shrink: 0; width: 22px; height: 22px; place-items: center; border-radius: 6px; color: var(--crm-warn); cursor: help; }
+.risk[data-risk="high"] { color: var(--crm-bad); }
+.risk svg { width: 15px; height: 15px; }
+
+/* Segmented control (List / Org chart; Own / Team / All) */
+.segmented { display: inline-flex; max-width: 100%; padding: 3px; overflow-x: auto; border-radius: 8px; background: #ece7e4; scrollbar-width: none; }
+.segmented::-webkit-scrollbar { display: none; }
+.segmented button { display: inline-flex; flex-shrink: 0; align-items: center; gap: 7px; height: calc(var(--adm-control) - 6px); padding: 0 10px; border: 0; border-radius: 6px; background: transparent; color: var(--adm-muted); font: inherit; font-size: var(--crm-text-xs); font-weight: 650; white-space: nowrap; cursor: pointer; }
+.segmented button svg { width: 15px; height: 15px; }
+.segmented button:hover:not(:disabled) { color: var(--adm-text); }
+.segmented button[aria-checked="true"] { background: var(--adm-surface); color: var(--adm-text); box-shadow: 0 1px 3px rgb(33 26 29 / 14%); }
+.segmented button:disabled { opacity: .45; cursor: not-allowed; }
+.segmented button:focus-visible { outline: none; box-shadow: var(--adm-focus); }
+
+/* Form fields */
+.field { display: grid; align-content: start; gap: 6px; min-width: 0; }
+.field > label { display: block; }
+.field :is(input, select, textarea):disabled { background: var(--adm-subtle); color: var(--adm-muted); cursor: not-allowed; }
+.formError { display: flex; align-items: flex-start; gap: 8px; margin: 0; padding: 10px 12px; border: 1px solid var(--crm-bad-line); border-radius: var(--adm-radius-sm); background: var(--crm-bad-soft); color: var(--crm-bad); font-size: var(--crm-text-sm); font-weight: 600; }
+.formError svg { flex-shrink: 0; width: 16px; height: 16px; margin-top: 2px; }
+.required { color: var(--crm-bad); font-weight: 600; }
+/* A quiet one-line note: small icon + muted text, no box. */
+.note { display: flex; align-items: flex-start; gap: 6px; margin: 0; color: var(--adm-muted); font-size: var(--crm-text-xs); line-height: 1.5; }
+.note svg { flex-shrink: 0; width: 14px; height: 14px; margin-top: 2px; color: var(--adm-muted); }
+
+/* Status: dot + word */
+.status { display: inline-flex; align-items: center; gap: 6px; color: var(--adm-text); white-space: nowrap; }
+.status i { flex-shrink: 0; width: 7px; height: 7px; border-radius: 50%; background: var(--tone-solid); }
+.status[data-tone="bad"] { color: var(--crm-bad); }
+
+/* Definition list: label left (muted 12px), value right. Used by drawers and the You tab. */
+.sheet { display: grid; grid-template-columns: 140px minmax(0, 1fr); margin: 0; }
+.sheet > dt, .sheet > dd { display: flex; align-items: center; min-height: 34px; margin: 0; padding: 6px 0; border-bottom: 1px solid var(--adm-line); }
+.sheet > dt { padding-right: 12px; color: var(--adm-muted); font-size: var(--crm-text-xs); font-weight: 500; }
+.sheet > dd { min-width: 0; gap: 8px; overflow-wrap: anywhere; }
+.sheet > dt:nth-last-child(2), .sheet > dd:last-child { border-bottom: 0; }
+.sectionLabel { margin: 0; color: var(--adm-muted); font-family: inherit; font-size: var(--crm-text-xs); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+
+/* Search box with icon, used in toolbars */
+.search { position: relative; display: flex; flex: 1 1 200px; align-items: center; min-width: 0; max-width: 300px; }
+.search svg { position: absolute; left: 11px; width: 16px; height: 16px; color: var(--adm-faint); pointer-events: none; }
+.search input { padding-left: 34px; }
+.compactSelect { width: auto; min-width: 0; max-width: 200px; padding-right: 26px; }
+
+/* Data tables (Members, Activity) */
+.tablePanel { overflow: hidden; }
+.scroll { position: relative; max-height: max(360px, calc(100dvh - 190px)); overflow: auto; overscroll-behavior-x: contain; }
+.scroll[data-busy="true"] tbody { opacity: .55; }
+.table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: var(--crm-text-sm); }
+.table th { position: sticky; top: 0; z-index: 2; height: 34px; padding: 0 10px; border-bottom: 1px solid var(--adm-line); background: var(--adm-subtle); color: var(--adm-muted); font-size: var(--crm-text-xs); font-weight: 650; text-align: left; white-space: nowrap; }
+.table td { height: var(--crm-row); padding: 4px 10px; border-bottom: 1px solid var(--adm-line); vertical-align: middle; }
+.table tbody tr:last-child td { border-bottom: 0; }
+.table tbody tr:hover { background: var(--adm-hover); }
+.table tbody tr[data-selected="true"] { background: var(--adm-accent-soft); }
+.num { text-align: right !important; font-variant-numeric: tabular-nums; }
+.check { width: 36px; padding-right: 0 !important; }
+.check input { width: 16px; height: 16px; margin: 0; accent-color: var(--adm-accent); cursor: pointer; }
+.menuCell { width: 40px; padding: 0 4px !important; text-align: right; }
+.muted { color: var(--adm-faint); }
+.truncate { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Loading and error states */
+.tableSkeleton { overflow: hidden; }
+.skHead { height: 34px; border-bottom: 1px solid var(--adm-line); background: var(--adm-subtle); }
+.skRow { display: flex; align-items: center; gap: 20px; height: var(--crm-row); padding: 0 16px; border-bottom: 1px solid var(--adm-line); }
+.skRow:last-child { border-bottom: 0; }
+.skRow span, .skAvatar { display: block; flex: 0 1 auto; height: 10px; border-radius: 6px; background: linear-gradient(90deg, var(--adm-hover), var(--adm-bg), var(--adm-hover)); background-size: 200% 100%; animation: shimmer 1.2s linear infinite; }
+.skRow .skAvatar { flex: none; width: 24px; height: 24px; border-radius: 50%; }
+@keyframes shimmer { to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .skRow span, .skAvatar { animation: none; } }
+.stateCard { display: grid; justify-items: center; gap: 6px; padding: 20px 16px; text-align: center; }
+.stateCard strong { font-size: var(--crm-text-md); }
+.stateCard p { max-width: 52ch; margin: 0 0 8px; color: var(--adm-muted); }
+.stateIcon { display: grid; width: 24px; height: 24px; place-items: center; border-radius: 50%; background: var(--crm-bad-soft); color: var(--crm-bad); }
+.stateIcon svg { width: 15px; height: 15px; }
+.empty { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 10px; padding: 24px 16px; color: var(--adm-muted); text-align: center; }
+.empty strong { color: var(--adm-text); font-size: var(--crm-text-sm); }
+.empty p { margin: 0; }
+.emptyIcon { display: none; }
+.emptyIcon svg { width: 20px; height: 20px; }
+
+@media (max-width: 480px) { .sheet { grid-template-columns: 104px minmax(0, 1fr); } }
+@media (max-width: 640px) {
+  .search { flex-basis: 100%; max-width: none; }
+  .compactSelect { flex: 1 1 140px; max-width: none; }
+}

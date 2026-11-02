@@ -113,7 +113,7 @@ describe('student login: Google, MSG91 and linking', { skip }, () => {
     mock.restoreAll();
     if (server) await new Promise((resolve) => server.close(resolve));
     if (fakeServer) await new Promise((resolve) => fakeServer.close(resolve));
-    if (db) await db.dropDatabase();
+    if (db?.databaseName.startsWith('nsedu_test_')) await db.dropDatabase();
     await closeDb?.();
   });
 

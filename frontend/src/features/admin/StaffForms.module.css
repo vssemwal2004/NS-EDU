@@ -1,18 +1,20 @@
-.layout { display: grid; gap: var(--space-5); max-width: 950px; }
-.card { padding: clamp(1.25rem, 3vw, 2rem); border: 1px solid var(--color-border); border-radius: 16px; background: var(--color-surface); }
-.card h1, .card h2 { margin-bottom: var(--space-2); color: var(--color-primary); }
-.card > p { margin-bottom: var(--space-5); color: var(--color-muted); }
-.form { display: grid; gap: var(--space-4); max-width: 500px; }
-.form label { display: grid; gap: 7px; color: var(--color-text); font-size: var(--text-small); font-weight: 600; }
-.form input { width: 100%; min-height: 44px; padding: var(--space-2) var(--space-3); border: 1px solid var(--color-input-border); border-radius: var(--radius-control); background: var(--color-page); color: var(--color-text); font: inherit; }
-.form input:focus { border-color: var(--color-primary); outline: 3px solid var(--login-focus-ring); }
-.hint { color: var(--color-muted); font-size: var(--text-caption); }
-.error { color: var(--login-error); font-size: var(--text-small); }
-.success { color: var(--admin-success); font-size: var(--text-small); }
-.form button { justify-self: start; }
-.tableWrap { overflow-x: auto; }
-.tableWrap table { width: 100%; border-collapse: collapse; font-size: var(--text-small); text-align: left; }
-.tableWrap th, .tableWrap td { padding: var(--space-3); border-bottom: 1px solid var(--color-border); }
-.tableWrap th { color: var(--color-muted); }
-.passwordPage { display: grid; place-items: center; min-height: 100dvh; padding: var(--space-5); background: var(--admin-workspace); }
-.passwordPage .card { width: min(100%, 540px); }
+/* Forced password change (first sign-in). Same calm card as the sign-in page. */
+.passwordPage { display: grid; min-height: 100dvh; place-items: center; padding: 32px 16px; background: var(--adm-bg); color: var(--adm-text); font-size: var(--crm-text-sm); }
+.column { display: grid; gap: 20px; width: min(420px, 100%); }
+.brand { --brand-height: 52px; display: flex; align-items: center; justify-content: center; gap: 14px; }
+.brand span { padding-left: 14px; border-left: 1px solid var(--adm-line-strong); color: var(--adm-muted); font-size: .75rem; font-weight: 650; letter-spacing: .08em; text-transform: uppercase; }
+.card { padding: 28px; border: 1px solid var(--adm-line); border-radius: var(--adm-radius); background: var(--adm-surface); box-shadow: 0 1px 2px rgb(33 26 29 / 5%), 0 12px 32px rgb(33 26 29 / 6%); }
+.card h1 { margin: 0; color: var(--adm-text); font-family: inherit; font-size: 1.375rem; font-weight: 700; letter-spacing: 0; }
+.lead { margin: 4px 0 0; color: var(--adm-muted); }
+.form { display: grid; gap: 14px; margin-top: 20px; }
+.form :global(.adm-input) { min-height: 44px; }
+.error { display: flex; align-items: flex-start; gap: 6px; margin: 0; color: var(--crm-bad); font-size: var(--crm-text-xs); font-weight: 600; }
+.error svg { flex-shrink: 0; width: 14px; height: 14px; margin-top: 1px; }
+.required { color: var(--crm-bad); font-weight: 600; }
+.form :global(.adm-hint) { font-weight: 400; }
+.submit { width: 100%; height: 44px; }
+@media (max-width: 480px) {
+  .passwordPage { place-items: start center; padding-top: 40px; }
+  .card { padding: 22px 18px; }
+  .brand { --brand-height: 44px; }
+}

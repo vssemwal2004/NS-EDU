@@ -22,6 +22,8 @@
     "fees:estimate": "node --env-file-if-exists=.env --env-file-if-exists=.env.local src/scripts/build-fee-estimates.js",
     "research:apply": "node --env-file-if-exists=.env --env-file-if-exists=.env.local src/scripts/apply-research.js",
     "places:images": "node --env-file-if-exists=.env --env-file-if-exists=.env.local src/scripts/place-images.js",
+    "crm:demo": "node --env-file-if-exists=.env --env-file-if-exists=.env.local src/scripts/seed-crm-demo.js",
+    "crm:backfill": "node --env-file-if-exists=.env --env-file-if-exists=.env.local src/scripts/backfill-crm.js",
     "leads:backfill": "node --env-file-if-exists=.env --env-file-if-exists=.env.local src/scripts/backfill-leads.js",
     "leads:synthetic": "node --env-file-if-exists=.env --env-file-if-exists=.env.local src/scripts/seed-synthetic-leads.js",
     "db:local":"node scripts/local-mongo.mjs",

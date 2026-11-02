@@ -1,4 +1,6 @@
 import { HttpError } from '../../lib/http-error.js';
+import { HEAT_LABELS, PRIORITY_LABELS } from '../crm/crm-model.js';
+import { leadScopeOf } from './scope.js';
 import { CLASS_LEVELS, SCHOOL_STREAMS } from './schema.js';
 import { CHANNEL_LABELS, channelOf, IST_OFFSET, modeOf, statusLabel } from './service.js';
 
@@ -16,6 +18,13 @@ export const LEAD_COLUMNS = [
   { key: 'mode', label: 'Form', group: 'Lead', fields: ['mode', 'channel'], read: (doc) => (channelOf(doc) !== 'web-apply' ? '' : modeOf(doc) === 'quick' ? 'Quick apply' : 'Detailed') },
   { key: 'updatedAt', label: 'Last updated (IST)', group: 'Lead', fields: ['updatedAt'], read: (doc) => istDateTime(doc.updatedAt) },
   { key: 'assigned', label: 'Assigned to', group: 'Lead', default: true, adminOnly: true, pdfWidth: 1.4, fields: ['assignedEmployeeIds'], read: (doc, ctx) => (doc.assignedEmployeeIds ?? []).map((id) => ctx.people?.get(id.toString()) ?? '').filter(Boolean).join('; ') },
+  // CRM: the table draws chips from `crm`; exports get the words.
+  { key: 'heat', label: 'Temperature', group: 'CRM', default: true, pdfWidth: 0.9, fields: ['crm'], read: (doc) => HEAT_LABELS[doc.crm?.heat] ?? '' },
+  { key: 'priority', label: 'Priority', group: 'CRM', pdfWidth: 0.8, fields: ['crm'], read: (doc) => PRIORITY_LABELS[doc.crm?.priority ?? 'normal'] },
+  { key: 'nextFollowUp', label: 'Next follow-up (IST)', group: 'CRM', default: true, pdfWidth: 1.2, fields: ['crm'], read: (doc) => istDateTime(doc.crm?.nextFollowUpAt) },
+  { key: 'score', label: 'Lead score', group: 'CRM', pdfWidth: 0.7, fields: ['crm'], read: (doc) => doc.crm?.score ?? '' },
+  { key: 'tags', label: 'Tags', group: 'CRM', pdfWidth: 1, fields: ['crm'], read: (doc) => (doc.crm?.tags ?? []).join('; ') },
+  { key: 'lastActivity', label: 'Last activity (IST)', group: 'CRM', pdfWidth: 1.2, fields: ['crm'], read: (doc) => istDateTime(doc.crm?.lastActivityAt) },
 
   { key: 'fullName', label: 'Full name', group: 'Applicant', default: true, pdfWidth: 1.4, fields: ['applicant.fullName'], read: (doc) => doc.applicant?.fullName },
   { key: 'phone', label: 'Mobile', group: 'Applicant', default: true, pdfWidth: 1.1, fields: ['applicant.phone'], read: (doc) => doc.applicant?.phone },
@@ -86,7 +95,7 @@ export function resolveColumns(keys, { staff, form = null } = {}) {
   const extra = new Map(answerColumns(form).map((column) => [column.key, column]));
   const unknown = keys.filter((key) => !byKey.has(key) && !extra.has(key));
   if (unknown.length) throw new HttpError(400, `Unknown column: ${unknown[0]}`, { fields: { columns: 'Choose columns from the list' } });
-  return [...new Set(keys)].map((key) => byKey.get(key) ?? extra.get(key)).filter((column) => staff?.role === 'admin' || !column.adminOnly);
+  return [...new Set(keys)].map((key) => byKey.get(key) ?? extra.get(key)).filter((column) => leadScopeOf(staff) === 'all' || !column.adminOnly);
 }
 
 // Mongo rejects a projection naming both "a" and "a.b", so sub-paths of an included parent are dropped.

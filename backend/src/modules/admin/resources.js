@@ -28,10 +28,34 @@ const placeFields = [
   { ...order, help: byCountNote }, active,
 ];
 
+// Coverage filters shared with the data overview: a university "has fees" when any programme row
+// prints an amount for some period.
+const FEES = { $or: [{ 'programmesOffered.annualFeeInr': { $type: 'number' } }, { 'programmesOffered.semesterFeeInr': { $type: 'number' } }, { 'programmesOffered.totalFeeInr': { $type: 'number' } }] };
+const visibilityStats = [
+  { key: 'total', label: 'Total', query: {} },
+  { key: 'visible', label: 'Visible', query: { active: 'true' } },
+  { key: 'hidden', label: 'Hidden', query: { active: 'false' } },
+];
+const placeList = {
+  listFields: ['name', 'landmark', 'imageUrl', 'imageCredit', 'featured', 'order', 'active', 'updatedAt'],
+  filters: { active: 'boolean', imageUrl: 'present', featured: 'flag' },
+  stats: [...visibilityStats, { key: 'noPhoto', label: 'Without photo', query: { imageUrl: 'no' } }],
+};
+
 // One registry drives validation, list search, the admin form metadata and slug rules.
+// Lists:
+//   listFields  only these fields leave the list endpoint (the table's columns); GET /:id returns the whole record.
+//   filters     equality filters from the query string: an option list, 'boolean' (visible-style: missing = true),
+//               'flag' (missing = false), 'present' (non-empty or not), 'string', or { values: { key: mongoFilter } }.
+//   stats       counts for the screen's summary strip; each is the list filtered by `query`.
+//   facets      distinct values offered as filter options (small collections, or indexed fields only).
 export const resources = {
   courses: {
     label: 'Courses', singular: 'course', titleField: 'name', uniqueField: 'slug', searchFields: ['name', 'fullName', 'field', 'slug', 'aliases'],
+    listFields: ['name', 'fullName', 'field', 'level', 'popular', 'order', 'active', 'slug', 'updatedAt'],
+    filters: { level: PROGRAMME_LEVELS, field: 'string', popular: 'flag', active: 'boolean' },
+    facets: ['field'],
+    stats: [...visibilityStats, { key: 'popular', label: 'Popular', query: { popular: 'true' } }],
     referencedBy: 'courseSlug', slugFrom: (doc) => doc.name,
     fields: [
       { name: 'name', label: 'Short name', type: 'string', required: true, maxLength: 80 },
@@ -48,6 +72,10 @@ export const resources = {
   },
   exams: {
     label: 'Exams', singular: 'exam', titleField: 'name', uniqueField: 'slug', searchFields: ['name', 'field', 'slug'],
+    listFields: ['name', 'field', 'level', 'href', 'order', 'active', 'slug', 'updatedAt'],
+    filters: { field: 'string', level: ['UG', 'PG'], active: 'boolean' },
+    facets: ['field'],
+    stats: visibilityStats,
     slugFrom: (doc) => doc.name,
     fields: [
       { name: 'name', label: 'Name', type: 'string', required: true, maxLength: 80 },
@@ -66,8 +94,21 @@ export const resources = {
   // derived search keys on every write, and admin-edited fields locked against importer/scraper overwrites.
   institutions: {
     label: 'Universities', singular: 'university', titleField: 'name', uniqueField: 'slug', searchFields: ['name', 'shortName', 'city', 'state', 'slug'],
-    searchMode: 'prefixes', sortField: 'nameKey', listProjection: { searchPrefixes: 0 },
-    filters: { verification: VERIFICATION, type: INSTITUTION_TYPES, state: 'string', active: 'boolean', 'source.kind': ['seed', 'admin', 'import', 'scrape'] },
+    searchMode: 'prefixes', sortField: 'nameKey',
+    // ~1 kB per row instead of the whole profile (programmes, gallery, about …), which ran to ~5 kB.
+    listFields: ['name', 'shortName', 'slug', 'type', 'city', 'state', 'website', 'verification', 'active', 'source.kind', 'updatedAt'],
+    filters: {
+      verification: VERIFICATION, type: INSTITUTION_TYPES, state: 'string', active: 'boolean', 'source.kind': ['seed', 'admin', 'import', 'scrape'],
+      website: 'present', fees: { values: { yes: FEES, no: { $nor: [FEES] } } },
+    },
+    facets: ['state'],
+    stats: [
+      { key: 'total', label: 'Universities', query: {} },
+      { key: 'published', label: 'Published', query: { active: 'true' } },
+      { key: 'held', label: 'Held for review', query: { verification: 'unverified', active: 'false' } },
+      { key: 'fees', label: 'With fees', query: { fees: 'yes' } },
+      { key: 'noWebsite', label: 'No website', query: { website: 'no' } },
+    ],
     referencedBy: 'institutionSlug', slugFrom: (doc) => doc.name,
     fields: [...INSTITUTION_FIELDS, ...LEGACY_INSTITUTION_FIELDS],
     beforeWrite(data, existing) {
@@ -84,6 +125,9 @@ export const resources = {
   },
   programmes: {
     label: 'Programmes', singular: 'programme', titleField: 'slug', uniqueField: 'slug', searchFields: ['slug', 'institutionSlug', 'courseSlug'],
+    listFields: ['slug', 'institutionSlug', 'courseSlug', 'annualTuitionInr', 'medianSalaryLpa', 'tuitionYear', 'order', 'active', 'updatedAt'],
+    filters: { active: 'boolean' },
+    stats: visibilityStats,
     slugFrom: (doc) => doc.institutionSlug && doc.courseSlug ? `${doc.institutionSlug}-${doc.courseSlug}` : '',
     // Institution names for the rows on this page only (the directory is too large to preload).
     async decorate(docs) {
@@ -105,14 +149,19 @@ export const resources = {
   },
   cities: {
     label: 'Cities', singular: 'city', titleField: 'name', uniqueField: 'name', searchFields: ['name', 'landmark'],
+    ...placeList,
     fields: placeFields,
   },
   states: {
     label: 'States', singular: 'state', titleField: 'name', uniqueField: 'name', searchFields: ['name', 'landmark'],
+    ...placeList,
     fields: placeFields,
   },
   scholarships: {
     label: 'Scholarships', singular: 'scholarship', titleField: 'label', uniqueField: 'slug', searchFields: ['label', 'description', 'slug'],
+    listFields: ['label', 'description', 'href', 'order', 'active', 'slug', 'updatedAt'],
+    filters: { active: 'boolean' },
+    stats: visibilityStats,
     slugFrom: (doc) => doc.label,
     fields: [
       { name: 'label', label: 'Name', type: 'string', required: true, maxLength: 120 },
@@ -126,6 +175,9 @@ export const resources = {
   // so renaming a field is safe and its slug is frozen while counsellors use it.
   career_fields: {
     label: 'Career fields', singular: 'career field', titleField: 'name', uniqueField: 'slug', searchFields: ['name', 'slug', 'description'],
+    listFields: ['name', 'slug', 'description', 'icon', 'order', 'active', 'updatedAt'],
+    filters: { active: 'boolean' },
+    stats: visibilityStats,
     slugFrom: (doc) => doc.name,
     references: [{ collection: COLLECTIONS.counsellors, field: 'fieldSlug', noun: 'counsellor' }],
     fields: [
@@ -138,6 +190,10 @@ export const resources = {
   },
   counsellors: {
     label: 'Counsellors', singular: 'counsellor', titleField: 'name', searchFields: ['name', 'title', 'fieldSlug', 'languages'],
+    listFields: ['name', 'title', 'fieldSlug', 'isMaster', 'phone', 'photoUrl', 'order', 'active', 'updatedAt'],
+    filters: { fieldSlug: 'string', isMaster: 'flag', active: 'boolean' },
+    facets: ['fieldSlug'],
+    stats: [...visibilityStats, { key: 'leads', label: 'Lead counsellors', query: { isMaster: 'true' } }],
     fields: [
       { name: 'name', label: 'Name', type: 'string', required: true, minLength: 2, maxLength: 80 },
       { name: 'title', label: 'Title', type: 'string', maxLength: 80, help: 'e.g. Engineering admissions counsellor' },
@@ -157,14 +213,17 @@ export const resources = {
 
 export const generateSlug = (resource, doc) => slugify(resource.slugFrom?.(doc) ?? '');
 
-const OPTIONAL_FIELD_KEYS = ['options', 'ref', 'min', 'max', 'maxLength', 'maxItems', 'nullable', 'default', 'help', 'usage'];
+// `machine` marks structured fields (programme rows, gallery …) that no plain input can edit.
+const OPTIONAL_FIELD_KEYS = ['options', 'ref', 'min', 'max', 'maxLength', 'maxItems', 'nullable', 'default', 'help', 'usage', 'machine'];
 
 export function describeResources() {
   return Object.fromEntries(Object.entries(resources).map(([name, resource]) => [name, {
     label: resource.label,
     singular: resource.singular,
     searchFields: resource.searchFields,
-    filters: resource.filters ?? {},
+    // Filter kinds only (custom Mongo filters stay on the server); `values` lists the accepted keys.
+    filters: Object.fromEntries(Object.entries(resource.filters ?? {}).map(([key, kind]) => [key, kind?.values ? Object.keys(kind.values) : kind])),
+    stats: (resource.stats ?? []).map(({ key, label, query }) => ({ key, label, query })),
     fields: resource.fields.map((field) => ({
       name: field.name, label: field.label, type: field.type, required: Boolean(field.required),
       ...Object.fromEntries(OPTIONAL_FIELD_KEYS.filter((key) => field[key] !== undefined).map((key) => [key, field[key]])),

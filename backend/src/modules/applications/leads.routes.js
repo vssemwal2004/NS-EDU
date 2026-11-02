@@ -4,7 +4,10 @@ import { HttpError } from '../../lib/http-error.js';
 import { encodeCursor, pagination, queryString } from '../../lib/query.js';
 import { createTtlCache } from '../../lib/ttl-cache.js';
 import { assertValid } from '../../lib/validation.js';
-import { requireOwnerAdmin } from '../../middleware/auth.js';
+import { requirePermission } from '../../middleware/auth.js';
+import { assignableIds } from '../access/access-service.js';
+import { crmUpdate } from '../crm/crm-model.js';
+import { leadScopeOf } from './scope.js';
 import { employeeAssignmentIds } from '../admin/employee-assignments.js';
 import { answerColumns, DEFAULT_COLUMN_KEYS, describeColumn, LEAD_COLUMNS, LEGACY_CSV_KEYS, projectionFor, resolveColumns } from './lead-columns.js';
 import { EXPORT_FORMATS, withExportSlot, writeCsv, writePdf, writeXlsx } from './lead-export.js';
@@ -29,7 +32,7 @@ async function detail(doc, staff) {
 // "next" stays fast at any depth while a jump to an arbitrary deep page asks for narrower filters.
 export const MAX_SKIP = 50_000;
 const PAGE_SIZES = [25, 50, 100];
-const SUMMARY_FIELDS = ['applicant', 'preference', 'ref', 'channel', 'mode', 'status', 'school', 'academics.classLevel', 'academics.schoolStream', 'careerField', 'assignedEmployeeIds', 'updatedAt'];
+const SUMMARY_FIELDS = ['applicant', 'preference', 'ref', 'channel', 'mode', 'status', 'school', 'academics.classLevel', 'academics.schoolStream', 'careerField', 'assignedEmployeeIds', 'crm', 'updatedAt'];
 
 async function employeeEmails() {
   const employees = await (await collection(COLLECTIONS.admins)).find({ role: 'employee' }, { projection: { email: 1 } }).toArray();
@@ -86,7 +89,7 @@ leadsRouter.get('/stats', async (request, response) => {
   const formId = formParam ? toObjectId(formParam) : null;
   if (formParam && !formId) throw new HttpError(400, 'Invalid school drive filter', { fields: { form: 'Choose a valid school drive' } });
   const match = { ...accessFilter(request.admin), ...(formId && { formId }) };
-  const scope = `${request.admin.role === 'admin' ? 'admin' : request.admin._id.toString()}${formId ? `|form=${formId}` : ''}`;
+  const scope = `${leadScopeOf(request.admin) === 'all' ? 'all' : request.admin._id.toString()}${formId ? `|form=${formId}` : ''}`;
   const [byStatus, byDay] = await Promise.all([
     Promise.all(STATUSES.map((status) => countLeads({ ...match, status }, `${scope}|status=${status}`))),
     (await applications()).aggregate([
@@ -105,6 +108,27 @@ leadsRouter.get('/stats', async (request, response) => {
   });
 });
 
+// Quick-view counts for the leads list (the clickable strip above the table), in one request. Each is
+// an indexed, cached count over the viewer's scope (no documents are read). "Unassigned" and "Mine"
+// only exist for people who see more than their own leads.
+export const QUICK_VIEW_PARAMS = {
+  hot: { heat: 'hot' },
+  today: { followUp: 'today' },
+  overdue: { followUp: 'overdue' },
+  untouched: { status: 'new', idle: '2' },
+  unassigned: { assignee: 'unassigned' },
+  mine: { assignee: 'me' },
+};
+leadsRouter.get('/view-counts', async (request, response) => {
+  const wide = leadScopeOf(request.admin) !== 'own';
+  const keys = Object.keys(QUICK_VIEW_PARAMS).filter((key) => wide || (key !== 'unassigned' && key !== 'mine'));
+  const counts = await Promise.all(keys.map(async (key) => {
+    const params = QUICK_VIEW_PARAMS[key];
+    return countLeads(await resolveLeadFilter(params, request.admin), filterKey(params, request.admin));
+  }));
+  response.json({ counts: Object.fromEntries(keys.map((key, index) => [key, counts[index].total])), exact: counts.every((count) => count.exact) });
+});
+
 // Leads dashboard (KPIs, trend, breakdowns); scoped to the viewer like the list.
 leadsRouter.get('/insights', async (request, response) => {
   response.json(await leadInsights(request.query, request.admin));
@@ -112,7 +136,7 @@ leadsRouter.get('/insights', async (request, response) => {
 
 leadsRouter.get('/columns', async (request, response) => {
   const form = await formFor(request.query);
-  const visible = (column) => request.admin.role === 'admin' || !column.adminOnly;
+  const visible = (column) => leadScopeOf(request.admin) === 'all' || !column.adminOnly;
   response.json({
     items: [...LEAD_COLUMNS, ...answerColumns(form)].filter(visible).map(describeColumn),
     defaults: DEFAULT_COLUMN_KEYS.filter((key) => visible(LEAD_COLUMNS.find((column) => column.key === key))),
@@ -157,7 +181,7 @@ async function exportRequest(request) {
 }
 
 // What the download dialog shows before the file is generated: row count and format limits.
-leadsRouter.get('/export/check', requireOwnerAdmin, async (request, response) => {
+leadsRouter.get('/export/check', requirePermission('leads.export'), async (request, response) => {
   const { spec, filter } = await exportRequest(request);
   const count = await countLeads(filter, filterKey(request.query, request.admin));
   const keys = columnKeys(request.query.columns);
@@ -197,28 +221,36 @@ async function sendExport(request, response, { format, spec, filter }, columns) 
   });
 }
 
-leadsRouter.get('/export', requireOwnerAdmin, async (request, response) => {
+leadsRouter.get('/export', requirePermission('leads.export'), async (request, response) => {
   const job = await exportRequest(request);
   const keys = columnKeys(request.query.columns);
   await sendExport(request, response, job, resolveColumns(keys.length ? keys : DEFAULT_COLUMN_KEYS, { staff: request.admin, form: await formFor(request.query) }));
 });
 
 // The original fixed-column CSV link; kept so bookmarked downloads keep working.
-leadsRouter.get('/export.csv', requireOwnerAdmin, async (request, response) => {
+leadsRouter.get('/export.csv', requirePermission('leads.export'), async (request, response) => {
   await sendExport(request, response, { format: 'csv', spec: EXPORT_FORMATS.csv, filter: await resolveLeadFilter(request.query, request.admin) }, resolveColumns(LEGACY_CSV_KEYS, { staff: request.admin }));
 });
 
-leadsRouter.post('/assignments/bulk', requireOwnerAdmin, async (request, response) => {
+// Mentors may only hand leads to themselves and their team; owners and `view_all` roles may pick anyone.
+function assertAssignable(staff, employeeIds) {
+  const allowed = assignableIds(staff);
+  if (allowed && employeeIds.some((id) => !allowed.some((member) => member.equals(id)))) throw new HttpError(403, 'You can only assign leads to yourself and the people who report to you');
+}
+
+leadsRouter.post('/assignments/bulk', requirePermission('leads.assign'), async (request, response) => {
   const values = request.body?.applicationIds;
   if (!Array.isArray(values) || values.length < 1 || values.length > 100 || values.some((id) => !toObjectId(id)) || new Set(values.map((id) => id.toLowerCase())).size !== values.length) {
     throw new HttpError(400, 'Choose 1 to 100 distinct leads');
   }
   const ids = values.map(toObjectId);
-  const employeeIds = await employeeAssignmentIds(request.body?.employeeIds);
+  const employeeIds = await employeeAssignmentIds(request.body?.employeeIds, { includeOwners: true });
   if (!employeeIds.length) throw new HttpError(400, 'Choose at least one employee');
+  assertAssignable(request.admin, employeeIds);
   const leads = await applications();
-  if (await leads.countDocuments({ _id: { $in: ids } }) !== ids.length) throw new HttpError(404, 'One or more leads were not found');
-  const result = await leads.updateMany({ _id: { $in: ids } }, { $addToSet: { assignedEmployeeIds: { $each: employeeIds } }, $set: { updatedAt: new Date() } });
+  const inScope = { _id: { $in: ids }, ...accessFilter(request.admin) };
+  if (await leads.countDocuments(inScope) !== ids.length) throw new HttpError(404, 'One or more leads were not found');
+  const result = await leads.updateMany(inScope, { $addToSet: { assignedEmployeeIds: { $each: employeeIds } }, $set: { updatedAt: new Date() } });
   clearLeadCounts();
   response.json({ count: result.matchedCount });
 });
@@ -227,14 +259,14 @@ leadsRouter.get('/:id', async (request, response) => {
   response.json({ item: await detail(await visibleLead(request.params.id, request.admin), request.admin) });
 });
 
-leadsRouter.patch('/:id/status', async (request, response) => {
+leadsRouter.patch('/:id/status', requirePermission('leads.change_status'), async (request, response) => {
   const { status } = assertValid([{ name: 'status', type: 'select', options: STATUSES, required: true }], request.body);
   const lead = await visibleLead(request.params.id, request.admin);
   if (lead.status === status) return response.json({ item: await detail(lead, request.admin) });
   const now = new Date();
   const updated = await (await applications()).findOneAndUpdate(
     { _id: lead._id, ...accessFilter(request.admin) },
-    { $set: { status, updatedAt: now }, $push: { statusHistory: { status, at: now, byAdminId: request.admin._id } } },
+    { $set: { status, updatedAt: now, ...crmUpdate({ ...lead, status }, now, { lastActivityAt: now }) }, $push: { statusHistory: { status, at: now, byAdminId: request.admin._id } } },
     { returnDocument: 'after' },
   );
   if (!updated) throw new HttpError(404, 'Lead not found');
@@ -242,11 +274,12 @@ leadsRouter.patch('/:id/status', async (request, response) => {
   response.json({ item: await detail(updated, request.admin) });
 });
 
-leadsRouter.patch('/:id/assignments', requireOwnerAdmin, async (request, response) => {
-  const employeeIds = await employeeAssignmentIds(request.body?.employeeIds);
+leadsRouter.patch('/:id/assignments', requirePermission('leads.assign'), async (request, response) => {
+  const employeeIds = await employeeAssignmentIds(request.body?.employeeIds, { includeOwners: true });
+  assertAssignable(request.admin, employeeIds);
   const _id = toObjectId(request.params.id);
   const lead = _id && await (await applications()).findOneAndUpdate(
-    { _id }, { $set: { assignedEmployeeIds: employeeIds, updatedAt: new Date() } }, { returnDocument: 'after' },
+    { _id, ...accessFilter(request.admin) }, { $set: { assignedEmployeeIds: employeeIds, updatedAt: new Date() } }, { returnDocument: 'after' },
   );
   if (!lead) throw new HttpError(404, 'Lead not found');
   clearLeadCounts();
@@ -265,11 +298,11 @@ leadsRouter.get('/:id/notes', async (request, response) => {
   response.json({ items: docs.map(serializeNote), total, page, limit });
 });
 
-leadsRouter.post('/:id/notes', async (request, response) => {
+leadsRouter.post('/:id/notes', requirePermission('leads.notes'), async (request, response) => {
   const lead = await visibleLead(request.params.id, request.admin);
   const { text } = assertValid([{ name: 'text', type: 'text', required: true, maxLength: 2000 }], request.body);
   const note = { applicationId: lead._id, text, authorId: request.admin._id, authorEmail: request.admin.email, authorRole: request.admin.role, createdAt: new Date() };
   await (await applicationNotes()).insertOne(note);
-  await (await applications()).updateOne({ _id: lead._id }, { $set: { updatedAt: note.createdAt } });
+  await (await applications()).updateOne({ _id: lead._id }, { $set: { updatedAt: note.createdAt, ...crmUpdate(lead, note.createdAt, { lastActivityAt: note.createdAt }) } });
   response.status(201).json({ item: serializeNote(note) });
 });

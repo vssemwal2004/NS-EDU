@@ -4,32 +4,26 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Brand from '@/components/ui/Brand';
 import Icon from '@/components/ui/Icon';
-import { getHeroImage } from '@/lib/hero-image';
 import { api } from '@/lib/api/client';
+import { canOpen, findAdminPage, homeFor } from '@/data/admin-navigation';
+// The sign-in page sits outside the console layout, so it loads the console tokens itself.
+import '@/features/admin/crm/crm-tokens.css';
 import styles from './AdminLogin.module.css';
 
-const capabilities = [
-  { icon: 'building', title: 'Colleges & programmes', text: 'Publish institutions, fees and placement data.' },
-  { icon: 'book', title: 'Courses & exams', text: 'Keep the catalogue students search accurate.' },
-  { icon: 'people', title: 'Student accounts', text: 'Monitor sign-ups and manage access.' },
-  { icon: 'map', title: 'Locations & funding', text: 'Curate destinations and scholarship links.' },
-];
-const destination = (admin, next) => admin.mustChangePassword ? '/admin/change-password' : admin.role === 'employee' ? '/admin/reference-students' : next;
+// A requested page is honoured only if the role may open it; otherwise the role's own home.
+const destination = (admin, next) => (admin.mustChangePassword ? '/admin/change-password' : next && next !== '/admin' && canOpen(admin, findAdminPage(next)) ? next : homeFor(admin));
 
 export default function AdminLogin({ next }) {
   const router = useRouter();
-  const photo = getHeroImage();
   const [form, setForm] = useState({ email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [state, setState] = useState({ busy: false, error: '', checking: true });
-  const [stats, setStats] = useState(null);
 
   useEffect(() => {
     const controller = new AbortController();
     api('/admin/auth/me', { signal: controller.signal })
       .then(({ admin }) => router.replace(destination(admin, next)))
       .catch((error) => { if (error.name !== 'AbortError') setState((previous) => ({ ...previous, checking: false })); });
-    api('/platform/stats', { signal: controller.signal }).then(setStats).catch(() => {});
     return () => controller.abort();
   }, [next, router]);
 
@@ -47,54 +41,39 @@ export default function AdminLogin({ next }) {
     }
   }
 
-  const statItems = stats ? [
-    { label: 'Programmes', value: stats.programmes },
-    { label: 'Colleges', value: stats.institutions },
-    { label: 'Courses', value: stats.courses },
-  ] : [];
-
   return <main className={styles.page}>
-    <section className={styles.showcase} aria-labelledby="admin-about">
-      <svg className={styles.linework} viewBox="0 0 450 300" fill="none" aria-hidden="true"><path d="M25 230h390M60 230V120h110v110m-97-87h20v27H73zm48 0h20v27h-20zM82 230v-34h38v34M170 230V85h170v145M184 85l71-47 71 47M225 230v-55h60v55M190 108h26v33h-26zm51 0h26v33h-26zm51 0h26v33h-26zM340 230V120h60v110M360 140h20v30h-20zM55 247h345M205 66V45m100 21V45" /><circle cx="255" cy="75" r="8" /></svg>
-      <header className={styles.brand}><Brand tone="light" priority /><small>Admin console</small></header>
-      <div className={styles.showcaseBody}>
-        <div className={styles.about}>
-          <p className={styles.eyebrow}><Icon name="shield" />Platform administration</p>
-          <h2 id="admin-about">The information students <em>rely on</em>, managed in one place.</h2>
-          <p className={styles.aboutText}>Gyaan Vidhya helps students across India discover colleges, compare programmes, check eligibility and plan their budget. Everything they see is published from this console.</p>
-          <ul className={styles.capabilities}>{capabilities.map((item) => <li key={item.title}><span><Icon name={item.icon} /></span><div><strong>{item.title}</strong><small>{item.text}</small></div></li>)}</ul>
-        </div>
-        <figure className={styles.visual}>
-          <svg className={styles.photo} viewBox="945 160 600 524" preserveAspectRatio="xMidYMid slice" role="img" aria-label={photo.alt}><image href={photo.src} x="0" y="0" width="1672" height="941" /></svg>
-          <figcaption className={styles.floatCard}>
-            <span className={styles.floatIcon}><Icon name="trend" /></span>
-            <span><strong>{stats ? `${stats.programmes} programmes live` : 'Live catalogue'}</strong><small>Published to students instantly</small></span>
-          </figcaption>
-          {statItems.length > 0 && <dl className={styles.stats}>{statItems.map((item) => <div key={item.label}><dd>{item.value}</dd><dt>{item.label}</dt></div>)}</dl>}
-        </figure>
-      </div>
-      <p className={styles.showcaseFooter}>© {new Date().getFullYear()} Gyaan Vidhya · Discover · Learn · Belong</p>
-    </section>
+    <div className={styles.column}>
+      <header className={styles.brand}><Brand priority /><span>Admin console</span></header>
 
-    <section className={styles.formSide} aria-labelledby="admin-login-title">
-      <div className={styles.formCard}>
-        <span className={styles.lockBadge}><Icon name="lock" /></span>
-        <h1 id="admin-login-title">Welcome back</h1>
-        <p className={styles.formLead}>Sign in to manage the Gyaan Vidhya platform.</p>
+      <section className={styles.card} aria-labelledby="admin-login-title">
+        <h1 id="admin-login-title">Sign in</h1>
+        <p className={styles.lead}>Authorised staff only. Sessions last 8 hours.</p>
         <form className={styles.form} onSubmit={submit} noValidate aria-busy={state.busy}>
-          <label className={styles.field}><span>Email address</span>
-            <span className={styles.inputWrap} data-invalid={Boolean(state.error)}><Icon name="mail" /><input type="email" autoComplete="username" inputMode="email" placeholder="admin@example.com" value={form.email} maxLength={254} onChange={(event) => setForm({ ...form, email: event.target.value })} disabled={state.busy} autoFocus /></span>
-          </label>
-          <label className={styles.field}><span>Password</span>
-            <span className={styles.inputWrap} data-invalid={Boolean(state.error)}><Icon name="lock" /><input type={showPassword ? 'text' : 'password'} autoComplete="current-password" placeholder="Enter your password" value={form.password} maxLength={200} onChange={(event) => setForm({ ...form, password: event.target.value })} disabled={state.busy} />
-              <button type="button" className={styles.reveal} aria-label={showPassword ? 'Hide password' : 'Show password'} aria-pressed={showPassword} onClick={() => setShowPassword(!showPassword)}><Icon name={showPassword ? 'eyeOff' : 'eye'} /></button></span>
-          </label>
-          {state.error && <p className={styles.error} role="alert"><Icon name="shield" />{state.error}</p>}
-          <button className={styles.submit} type="submit" disabled={state.busy || state.checking}>{state.busy && <span className={styles.spinner} aria-hidden="true" />}{state.checking ? 'Checking session…' : state.busy ? 'Signing in…' : 'Sign in'}{!state.busy && !state.checking && <Icon name="arrow" />}</button>
+          <label className="adm-label" htmlFor="admin-email">Email address</label>
+          <span className={styles.inputWrap} data-invalid={Boolean(state.error)}>
+            <Icon name="mail" />
+            <input id="admin-email" type="email" autoComplete="username" inputMode="email" placeholder="you@example.com" value={form.email} maxLength={254}
+              onChange={(event) => setForm({ ...form, email: event.target.value })} disabled={state.busy} autoFocus aria-invalid={Boolean(state.error) || undefined} aria-describedby={state.error ? 'admin-login-error' : undefined} />
+          </span>
+          <label className="adm-label" htmlFor="admin-password">Password</label>
+          <span className={styles.inputWrap} data-invalid={Boolean(state.error)}>
+            <Icon name="lock" />
+            <input id="admin-password" type={showPassword ? 'text' : 'password'} autoComplete="current-password" placeholder="Your password" value={form.password} maxLength={200}
+              onChange={(event) => setForm({ ...form, password: event.target.value })} disabled={state.busy} aria-invalid={Boolean(state.error) || undefined} aria-describedby={state.error ? 'admin-login-error' : undefined} />
+            <button type="button" className={styles.reveal} aria-label={showPassword ? 'Hide password' : 'Show password'} aria-pressed={showPassword} onClick={() => setShowPassword(!showPassword)}><Icon name={showPassword ? 'eyeOff' : 'eye'} /></button>
+          </span>
+          {state.error && <p id="admin-login-error" className={styles.error} role="alert"><Icon name="alert" />{state.error}</p>}
+          <button className={`adm-btn adm-btn--primary ${styles.submit}`} type="submit" disabled={state.busy || state.checking}>
+            {state.busy && <span className={styles.spinner} aria-hidden="true" />}
+            {state.checking ? 'Checking session…' : state.busy ? 'Signing in…' : 'Sign in'}
+          </button>
         </form>
-        <p className={styles.secureNote}><Icon name="shield" />Authorised staff only. Sessions use signed, http-only tokens and expire after 8 hours.</p>
+      </section>
+
+      <footer className={styles.footer}>
         <Link className={styles.back} href="/"><Icon name="arrow" />Back to Gyaan Vidhya</Link>
-      </div>
-    </section>
+        <span>© {new Date().getFullYear()} Gyaan Vidhya</span>
+      </footer>
+    </div>
   </main>;
 }

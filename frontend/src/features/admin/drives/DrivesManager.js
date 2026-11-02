@@ -1,178 +1,267 @@
 'use client';
+// School drive list: one dense, server-paged table for thousands of schools. Search, state/district/status
+// filters and the sort run on the server; "By place" adds State › District headings between the rows.
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Icon from '@/components/ui/Icon';
 import { useAdminSession } from '@/features/admin/AdminSession';
-import { useToast } from '@/features/admin/data/useToast';
-import { formatCount, formatDate } from '@/features/admin/leads/lead-format';
-import { useServerList } from '@/features/admin/table/useServerList';
-import rm from '@/features/admin/ResourceManager.module.css';
-import { copyText, driveStatusLabel, STATUS_FILTERS } from './drive-format';
+import ConfirmDialog from '@/features/admin/crm/ConfirmDialog';
+import RowMenu from '@/features/admin/crm/RowMenu';
+import { useToaster } from '@/features/admin/crm/toast';
+import { Chip } from '@/features/admin/crm/ui';
+import { formatWhen, StatusDot } from '@/features/admin/catalogue/CatalogueParts';
+import { formatCount, formatDate, formatDateTime } from '@/features/admin/leads/lead-format';
+import Pagination from '@/features/admin/table/Pagination';
+import { clearServerListCache, useServerList } from '@/features/admin/table/useServerList';
+import { PageToolbar, StatStrip } from '@/features/admin/ui/Page';
+import t from '@/features/admin/table/Table.module.css';
+import { copyText, driveStatusLabel, qrUrl, SORTS, STATUS_ICONS, STATUS_TONES } from './drive-format';
 import NewDriveDrawer from './NewDriveDrawer';
 import styles from './Drives.module.css';
 
-const PAGE_SIZE = 60;
+const START = { q: '', status: 'current', state: '', district: '', sort: 'place', page: 1, limit: 25 };
 const plural = (count, one, many) => `${formatCount(count)} ${count === 1 ? one : many}`;
+const sameName = (a = '', b = '') => a.trim().toLowerCase() === b.trim().toLowerCase();
+const nameOf = (item) => item.school.name || 'Unnamed school';
 
-// Cards on the current page, grouped State → District (the server sorts newest first).
-function groupItems(items) {
-  const states = new Map();
-  for (const item of items) {
-    const state = states.get(item.school.state) ?? { state: item.school.state, districts: new Map() };
-    const district = state.districts.get(item.school.district) ?? [];
-    district.push(item);
-    state.districts.set(item.school.district, district);
-    states.set(item.school.state, state);
-  }
-  return [...states.values()].sort((a, b) => a.state.localeCompare(b.state))
-    .map((entry) => ({ state: entry.state, districts: [...entry.districts.entries()].sort(([a], [b]) => a.localeCompare(b)) }));
+/** Drive status: a pill on the drive page header, a dot + word in the list (`dot`). */
+export function DriveStatus({ status, closedReason, dot = false }) {
+  const title = closedReason === 'limit' ? 'Closed: the registration limit was reached' : undefined;
+  if (dot) return <StatusDot tone={STATUS_TONES[status] ?? 'neutral'} title={title}>{driveStatusLabel(status)}</StatusDot>;
+  return <Chip tone={STATUS_TONES[status] ?? 'neutral'} icon={STATUS_ICONS[status]} size="sm" title={title}>{driveStatusLabel(status)}</Chip>;
 }
 
-function DriveCard({ item, onCopy }) {
-  return <article className={styles.card} data-status={item.status}>
-    <div className={styles.cardHead}>
-      <span className={styles.pill} data-status={item.status}>{driveStatusLabel(item.status)}</span>
-      <small>{formatDate(item.createdAt)}</small>
-    </div>
-    <h3 className={styles.cardTitle}><Link href={`/admin/drives/${item.id}`}>{item.school.name}</Link></h3>
-    <p className={styles.cardMeta}>{[item.school.city !== item.school.district && item.school.city, item.school.district, item.school.state].filter(Boolean).join(', ')}</p>
-    {item.campaign && <p className={styles.campaign}>{item.campaign}</p>}
-    <div className={styles.cardStats}>
-      <strong>{formatCount(item.submissionCount)}</strong>
-      <span>{item.submissionCount === 1 ? 'registration' : 'registrations'}{item.maxSubmissions ? ` of ${formatCount(item.maxSubmissions)}` : ''}</span>
-    </div>
-    <div className={styles.cardActions}>
-      <button type="button" className={rm.iconButton} onClick={() => onCopy(item)} aria-label={`Copy link for ${item.school.name}`} title="Copy link"><Icon name="compareLink" /></button>
-      <a className={rm.iconButton} href={`/api/admin/drives/${item.id}/qr.png?size=1024&download=1`} aria-label={`Download QR code for ${item.school.name}`} title="Download QR (PNG)"><Icon name="arrowUp" className={styles.down} /></a>
-      <Link className="button button--outline" href={`/admin/drives/${item.id}`}>Open<Icon name="arrow" /></Link>
-    </div>
-  </article>;
-}
+/** Status changes shared by the list's row menu and the drive page. Returns the toast message and the undo patch. */
+export const STATUS_STEPS = {
+  close: { body: { status: 'closed' }, done: 'Registration closed. The link now says “Registration closed”.', undo: 'active' },
+  reopen: { body: { status: 'active' }, done: 'Registration reopened.', undo: 'closed' },
+  restore: { body: { status: 'closed' }, done: 'Drive restored as closed.', undo: 'archived' },
+};
 
 export default function DrivesManager() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { admin, request } = useAdminSession();
-  const [toast, notify] = useToast();
+  const toast = useToaster();
   const [query, setQuery] = useState('');
-  const [filters, setFilters] = useState({ q: '', status: 'current', state: '', district: '', page: 1 });
-  const [open, setOpen] = useState(() => new Set());
-  const [collapsed, setCollapsed] = useState(() => new Set());
+  const [filters, setFilters] = useState(START);
+  const [selected, setSelected] = useState([]);
   const [creating, setCreating] = useState(false);
-  const [foldersOpen, setFoldersOpen] = useState(false);
-  const list = useServerList(request, '/drives', { ...filters, page: filters.page > 1 ? filters.page : '', status: filters.status === 'current' ? '' : filters.status, limit: PAGE_SIZE }, { scope: admin?.id ?? '' });
+  const [confirm, setConfirm] = useState(null);
+  const [working, setWorking] = useState(false);
+  // `?add=1` (the shell's New menu) opens the New drive drawer; closing it removes the parameter.
+  const addAsked = searchParams.get('add') === '1';
+  const drawerOpen = creating || addAsked;
+
+  const list = useServerList(request, '/drives', {
+    q: filters.q, status: filters.status === 'current' ? '' : filters.status, state: filters.state, district: filters.district,
+    sort: filters.sort, page: filters.page > 1 ? filters.page : '', limit: filters.limit,
+  }, { scope: admin?.id ?? '' });
   const data = list.data;
   const items = useMemo(() => data?.items ?? [], [data]);
-  const grouped = useMemo(() => groupItems(items), [items]);
-  const groups = data?.groups ?? [];
+  const groups = useMemo(() => data?.groups ?? [], [data]);
+  const counts = data?.counts;
 
   useEffect(() => {
     const timer = window.setTimeout(() => setFilters((current) => (current.q === query.trim() ? current : { ...current, q: query.trim(), page: 1 })), 300);
     return () => window.clearTimeout(timer);
   }, [query]);
 
-  const update = (patch) => setFilters((current) => ({ ...current, page: 1, ...patch }));
-  const toggle = (setter, key) => setter((current) => { const next = new Set(current); if (next.has(key)) next.delete(key); else next.add(key); return next; });
+  const update = (patch) => { setSelected([]); setFilters((current) => ({ ...current, page: 1, ...patch })); };
+  const refresh = () => { clearServerListCache('/drives'); list.reload(); };
+  const closeDrawer = () => { setCreating(false); if (addAsked) window.history.replaceState(null, '', '/admin/drives'); };
+  const filtered = Boolean(filters.q || filters.state || filters.status !== 'current');
+
+  const stateGroup = groups.find((group) => group.state === filters.state);
+  const districts = stateGroup?.districts ?? [];
+  const inScope = filters.district ? districts.filter((item) => sameName(item.district, filters.district)) : filters.state ? (stateGroup ? [stateGroup] : []) : groups;
+  const registrations = inScope.reduce((sum, item) => sum + item.submissions, 0);
+  const placeCount = (state, district) => groups.find((group) => group.state === state)?.districts.find((item) => sameName(item.district, district));
+
   async function copy(item) {
-    if (await copyText(item.publicUrl)) notify(`Link copied: ${item.publicUrl}`);
-    else notify('Copy failed. Open the drive to copy the link.', 'error');
+    if (await copyText(item.publicUrl)) toast.success(`Link copied: ${item.publicUrl.replace(/^https?:\/\//, '')}`);
+    else toast.error('Copy failed. Open the drive to copy the link.');
   }
 
-  const counts = data?.counts;
-  const statusCount = (value) => (!counts ? null : value === 'current' ? counts.active + counts.closed : value === 'all' ? counts.active + counts.closed + counts.archived : counts[value]);
-  const totalSubmissions = groups.reduce((sum, group) => sum + group.submissions, 0);
-  const lastPage = data ? Math.max(1, Math.ceil(data.total / PAGE_SIZE)) : 1;
-  const folderLabel = filters.district ? `${filters.district}, ${filters.state}` : filters.state;
+  async function patchStatus(item, step) {
+    const { body, done, undo } = STATUS_STEPS[step];
+    try {
+      await request(`/drives/${item.id}`, { method: 'PATCH', body });
+      refresh();
+      toast.success(done, { action: { label: 'Undo', onClick: () => request(`/drives/${item.id}`, { method: 'PATCH', body: { status: undo } }).then(refresh).catch((failure) => toast.error(failure.message)) } });
+    } catch (failure) { toast.error(failure.fields?.status || failure.message); }
+  }
 
-  const folders = <nav id="drive-folders" className={styles.folders} aria-label="Drives by place">
-    <button type="button" className={styles.folderAll} aria-pressed={!filters.state} onClick={() => update({ state: '', district: '' })}>
-      <Icon name="map" /><span>All places</span><small>{data ? formatCount(groups.reduce((sum, group) => sum + group.drives, 0)) : ''}</small>
-    </button>
-    {groups.map((group) => {
-      const expanded = open.has(group.state) || filters.state === group.state;
-      return <div key={group.state} className={styles.folder}>
-        <div className={styles.folderRow}>
-          <button type="button" className={styles.folderToggle} aria-expanded={expanded} aria-label={`${expanded ? 'Hide' : 'Show'} districts in ${group.state}`} onClick={() => toggle(setOpen, group.state)}><Icon name="chevron" /></button>
-          <button type="button" className={styles.folderButton} aria-pressed={filters.state === group.state && !filters.district} onClick={() => update({ state: group.state, district: '' })}>
-            <span>{group.state}</span><small>{formatCount(group.drives)}</small>
-          </button>
-        </div>
-        {expanded && <ul className={styles.districts}>{group.districts.map((district) => <li key={district.key}>
-          <button type="button" className={styles.folderButton} aria-pressed={filters.state === group.state && filters.district === district.district}
-            onClick={() => update({ state: group.state, district: district.district })}>
-            <span>{district.district}</span><small title={`${plural(district.submissions, 'registration', 'registrations')}`}>{formatCount(district.drives)}</small>
-          </button>
-        </li>)}</ul>}
-      </div>;
-    })}
-    {data && !groups.length && <p className={styles.folderEmpty}>Folders appear as you add drives.</p>}
-  </nav>;
+  async function runConfirm() {
+    const { kind, items: targets } = confirm;
+    setWorking(true);
+    try {
+      if (kind === 'delete') {
+        await request(`/drives/${targets[0].id}?permanent=1`, { method: 'DELETE' });
+        toast.success(`${nameOf(targets[0])} deleted.`);
+      } else if (kind === 'archive' && targets.length === 1) {
+        const previous = targets[0].status;
+        await request(`/drives/${targets[0].id}`, { method: 'DELETE' });
+        toast.success('Drive archived. Its link now says “Registration closed”.', { action: { label: 'Undo', onClick: () => request(`/drives/${targets[0].id}`, { method: 'PATCH', body: { status: previous } }).then(refresh).catch((failure) => toast.error(failure.message)) } });
+      } else {
+        const result = await request('/drives/bulk', { method: 'POST', body: { action: kind, ids: targets.map((item) => item.id) } });
+        const verb = { close: 'closed', archive: 'archived', restore: 'restored' }[kind];
+        toast.success(`${plural(result.updated, 'drive', 'drives')} ${verb}${result.skipped ? ` · ${formatCount(result.skipped)} already ${verb} or not applicable` : ''}.`);
+        setSelected([]);
+      }
+      setConfirm(null);
+      refresh();
+    } catch (failure) {
+      setConfirm((current) => current && { ...current, error: failure.message });
+    } finally { setWorking(false); }
+  }
 
-  return <div className={styles.manager}>
-    <div className={styles.toolbar}>
-      <div className={styles.summary}>
-        <span className={styles.summaryIcon}><Icon name="building" /></span>
-        <div><strong>School drives</strong><small aria-live="polite">{data ? `${plural(data.total, 'drive', 'drives')}${folderLabel ? ` in ${folderLabel}` : ''} · ${plural(totalSubmissions, 'registration', 'registrations')}` : 'Loading drives…'}</small></div>
-      </div>
-      <button type="button" className="button button--primary" onClick={() => setCreating(true)}><Icon name="plus" />New drive</button>
-    </div>
+  const menuFor = (item) => [
+    { key: 'open', label: 'Open form builder', icon: 'edit', href: `/admin/drives/${item.id}` },
+    { key: 'qr', label: 'QR & link', icon: 'link', href: `/admin/drives/${item.id}?tab=qr` },
+    { key: 'registrations', label: 'Registrations', icon: 'people', href: `/admin/drives/${item.id}?tab=submissions`, hint: formatCount(item.submissionCount) },
+    { key: 'settings', label: 'Settings', icon: 'settings', href: `/admin/drives/${item.id}?tab=settings` },
+    { divider: true },
+    { key: 'copy', label: 'Copy link', icon: 'copy', onSelect: () => copy(item) },
+    { key: 'download', label: 'Download QR (PNG)', icon: 'download', onSelect: () => window.location.assign(qrUrl(item.id)) },
+    { key: 'poster', label: 'Print poster', icon: 'printer', onSelect: () => window.open(`/admin/drives/${item.id}/poster`, '_blank', 'noopener') },
+    { divider: true },
+    { key: 'close', label: 'Close registration', icon: 'lock', hidden: item.status !== 'active', onSelect: () => patchStatus(item, 'close') },
+    { key: 'reopen', label: 'Reopen registration', icon: 'refresh', hidden: item.status !== 'closed', onSelect: () => patchStatus(item, 'reopen') },
+    { key: 'restore', label: 'Restore drive', icon: 'undo', hidden: item.status !== 'archived', onSelect: () => patchStatus(item, 'restore') },
+    { key: 'archive', label: 'Archive…', icon: 'archive', hidden: item.status === 'archived', onSelect: () => setConfirm({ kind: 'archive', items: [item] }) },
+    { key: 'delete', label: 'Delete permanently…', icon: 'trash', tone: 'danger', disabled: item.submissionCount > 0, reason: 'Drives with registrations can only be archived', onSelect: () => setConfirm({ kind: 'delete', items: [item] }) },
+  ];
 
-    <div className={styles.filterBar}>
+  const byPlace = filters.sort === 'place';
+  const columnCount = byPlace ? 7 : 8;
+  const ids = items.map((item) => item.id);
+  const allChosen = ids.length > 0 && ids.every((id) => selected.includes(id));
+  const someChosen = ids.some((id) => selected.includes(id));
+  const chosenItems = items.filter((item) => selected.includes(item.id));
+  const openRow = (event, item) => { if (!event.target.closest('a, button, input, label, [role="menu"]')) router.push(`/admin/drives/${item.id}`); };
+
+  const rows = [];
+  let lastPlace = '';
+  for (const item of items) {
+    const place = `${item.school.state}|${item.school.district.toLowerCase()}`;
+    if (byPlace && place !== lastPlace) {
+      const total = placeCount(item.school.state, item.school.district);
+      rows.push(<tr key={`place-${place}`} className={styles.groupRow}><th scope="rowgroup" colSpan={columnCount}>
+        <span><Icon name="location" />{item.school.state || 'No state'}<span aria-hidden="true">›</span>{item.school.district || 'No district'}</span>
+        {total && <small>{plural(total.drives, 'drive', 'drives')} · {plural(total.submissions, 'registration', 'registrations')}</small>}
+      </th></tr>);
+      lastPlace = place;
+    }
+    const sub = [item.school.city && !sameName(item.school.city, item.school.district) && item.school.city, item.campaign].filter(Boolean).join(' · ');
+    rows.push(<tr key={item.id} className={styles.clickRow} data-selected={selected.includes(item.id) || undefined} onClick={(event) => openRow(event, item)}>
+      <td className={t.checkCell}><input type="checkbox" aria-label={`Select ${nameOf(item)}`} checked={selected.includes(item.id)}
+        onChange={(event) => setSelected((current) => (event.target.checked ? [...current, item.id] : current.filter((id) => id !== item.id)))} /></td>
+      <td className={styles.mainCell}><div className={styles.oneLine}><Link href={`/admin/drives/${item.id}`} className={styles.rowLink} title={nameOf(item)}>{nameOf(item)}</Link>{sub && <small title={sub}>{sub}</small>}</div></td>
+      {!byPlace && <td data-label="Place" className={styles.optional}><span className={styles.clip} title={`${item.school.district}, ${item.school.state}`}>{item.school.district}<span className={styles.muted}>, {item.school.state}</span></span></td>}
+      <td data-label="Status"><DriveStatus status={item.status} closedReason={item.closedReason} dot /></td>
+      <td data-label="Registrations" className={styles.num}><span className="crm-tabnum">{formatCount(item.submissionCount)}</span>{item.maxSubmissions ? <small className="crm-tabnum">of {formatCount(item.maxSubmissions)}</small> : null}</td>
+      <td data-label="Last registration" className={styles.optional} title={item.lastSubmissionAt ? formatDateTime(item.lastSubmissionAt) : undefined}>{item.lastSubmissionAt ? formatWhen(item.lastSubmissionAt) : <span className={styles.muted}>—</span>}</td>
+      <td data-label="Created" className={styles.optional}>{formatDate(item.createdAt)}</td>
+      <td className={styles.menuCell}><RowMenu label={`Actions for ${nameOf(item)}`} items={menuFor(item)} /></td>
+    </tr>);
+  }
+
+  const statusItem = (key, label, value, icon, tone) => ({ key, label, value: value ?? 0, icon, tone, active: filters.status === key, onClick: () => update({ status: filters.status === key && key !== 'current' ? 'current' : key }) });
+  const scopeLabel = filters.district ? `${filters.district}, ${filters.state}` : filters.state;
+
+  return <div className={styles.screen}>
+    <PageToolbar start={<>
       <label className={styles.search}><Icon name="search" /><span className="sr-only">Search drives</span>
-        <input type="search" value={query} maxLength={100} placeholder="Search school, district, campaign or code…" onChange={(event) => setQuery(event.target.value)} />
+        <input type="search" value={query} maxLength={100} placeholder="School, district, campaign or code" onChange={(event) => setQuery(event.target.value)} />
       </label>
-      <div className={styles.statusChips} role="group" aria-label="Filter by status">
-        {STATUS_FILTERS.map((option) => <button key={option.value} type="button" aria-pressed={filters.status === option.value} onClick={() => update({ status: option.value })}>
-          {option.label}{statusCount(option.value) !== null && <span>{formatCount(statusCount(option.value))}</span>}
-        </button>)}
-      </div>
-    </div>
+      <label className={styles.inlineSelect}><span className="sr-only">State</span>
+        <select className="adm-select" value={filters.state} onChange={(event) => update({ state: event.target.value, district: '' })}>
+          <option value="">All states</option>
+          {groups.map((group) => <option key={group.state} value={group.state}>{group.state} ({formatCount(group.drives)})</option>)}
+          {filters.state && !stateGroup && <option value={filters.state}>{filters.state}</option>}
+        </select>
+      </label>
+      <label className={styles.inlineSelect}><span className="sr-only">District</span>
+        <select className="adm-select" value={filters.district} disabled={!filters.state} title={filters.state ? undefined : 'Choose a state first'} onChange={(event) => update({ district: event.target.value })}>
+          <option value="">{filters.state ? 'All districts' : 'District'}</option>
+          {districts.map((item) => <option key={item.key} value={item.district}>{item.district} ({formatCount(item.drives)})</option>)}
+        </select>
+      </label>
+      <label className={styles.inlineSelect}><span className="sr-only">Sort</span>
+        <select className="adm-select" value={filters.sort} onChange={(event) => update({ sort: event.target.value })}>
+          {SORTS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+        </select>
+      </label>
+      {filtered && <button type="button" className="adm-btn adm-btn--ghost adm-btn--sm" onClick={() => { setQuery(''); update({ ...START, sort: filters.sort, limit: filters.limit }); }}>Clear</button>}
+    </>}>
+      <button type="button" className="adm-btn adm-btn--primary" onClick={() => setCreating(true)}><Icon name="plus" />New drive</button>
+    </PageToolbar>
 
-    <div className={styles.layout}>
-      <aside className={styles.sidebar} data-open={foldersOpen || undefined}>
-        {/* Phones: the folder tree folds away behind this button; wider screens always show it. */}
-        <button type="button" className={styles.folderSwitch} aria-expanded={foldersOpen} aria-controls="drive-folders" onClick={() => setFoldersOpen((value) => !value)}>
-          <Icon name="map" /><span>Browse by place{folderLabel ? `: ${folderLabel}` : ''}</span><Icon name="chevron" />
-        </button>
-        {folders}
-      </aside>
+    <StatStrip loading={!counts} label="Drives by status" items={[
+      statusItem('current', 'Open & closed', counts && counts.active + counts.closed, 'building', 'neutral'),
+      statusItem('active', 'Open', counts?.active, 'checkCircle', 'good'),
+      statusItem('closed', 'Closed', counts?.closed, 'lock', 'warn'),
+      statusItem('archived', 'Archived', counts?.archived, 'archive', 'neutral'),
+      { key: 'registrations', label: `Registrations${scopeLabel ? ` in ${scopeLabel}` : ''}`, value: registrations, icon: 'people', tone: 'info' },
+    ]} />
 
-      <section className={styles.results} aria-label="Drives" aria-busy={list.loading || list.busy}>
-        {list.error && <div className={styles.errorBox} role="alert"><Icon name="shield" /><p>{list.error}</p><button type="button" className="button button--outline" onClick={list.reload}>Try again</button></div>}
-        {list.loading && <div className={styles.skeleton} aria-hidden="true">{Array.from({ length: 6 }, (_, index) => <span key={index} />)}</div>}
-        {data && !items.length && !list.error && <div className={styles.empty}>
-          <Icon name="building" />
-          <p>{filters.q || filters.state || filters.status !== 'current' ? 'No drives match these filters.' : 'No school drives yet. Create one to get a QR code and link for the school.'}</p>
-          {filters.q || filters.state || filters.status !== 'current'
-            ? <button type="button" className="button button--outline" onClick={() => { setQuery(''); setFilters({ q: '', status: 'current', state: '', district: '', page: 1 }); }}>Clear filters</button>
-            : <button type="button" className="button button--primary" onClick={() => setCreating(true)}><Icon name="plus" />New drive</button>}
+    <section className={`adm-panel ${styles.tablePanel}`} aria-label="School drives">
+      {selected.length > 0 && <div className={styles.bulkBar} role="region" aria-label="Bulk actions">
+        <strong>{plural(selected.length, 'drive', 'drives')} selected</strong>
+        <button type="button" className="adm-btn adm-btn--sm" onClick={() => setConfirm({ kind: 'close', items: chosenItems })}><Icon name="lock" />Close registration</button>
+        <button type="button" className="adm-btn adm-btn--sm" onClick={() => setConfirm({ kind: 'archive', items: chosenItems })}><Icon name="archive" />Archive</button>
+        {chosenItems.some((item) => item.status === 'archived') && <button type="button" className="adm-btn adm-btn--sm" onClick={() => setConfirm({ kind: 'restore', items: chosenItems })}><Icon name="undo" />Restore</button>}
+        <button type="button" className="adm-btn adm-btn--ghost adm-btn--sm" onClick={() => setSelected([])}>Clear selection</button>
+      </div>}
+      {list.error ? <div className={t.state} role="alert"><Icon name="alert" /><p>{list.error}</p><button type="button" className="adm-btn adm-btn--sm" onClick={list.reload}>Try again</button></div>
+        : <div className={t.scroll} data-busy={list.busy || undefined}>
+          <table className={`${t.table} ${styles.table}`} aria-busy={list.loading || list.busy}>
+            <caption className="sr-only">School drives{scopeLabel ? ` in ${scopeLabel}` : ''}</caption>
+            <thead><tr>
+              <th scope="col" className={t.checkCell}><input type="checkbox" aria-label="Select all drives on this page" checked={allChosen} disabled={!ids.length}
+                ref={(node) => { if (node) node.indeterminate = someChosen && !allChosen; }}
+                onChange={(event) => setSelected(event.target.checked ? [...new Set([...selected, ...ids])] : selected.filter((id) => !ids.includes(id)))} /></th>
+              <th scope="col">School</th>
+              {!byPlace && <th scope="col" className={styles.optional} style={{ width: '17%' }}>Place</th>}
+              <th scope="col" style={{ width: 104 }}>Status</th>
+              <th scope="col" className={styles.num} style={{ width: 110 }}>Registrations</th>
+              <th scope="col" className={styles.optional} style={{ width: 130 }}>Last registration</th>
+              <th scope="col" className={styles.optional} style={{ width: 110 }}>Created</th>
+              <th scope="col" className={styles.menuCell}><span className="sr-only">Actions</span></th>
+            </tr></thead>
+            <tbody>
+              {list.loading && !items.length ? Array.from({ length: 10 }, (_, index) => <tr key={index} className={t.skeletonRow} aria-hidden="true">
+                {Array.from({ length: columnCount }, (_, cell) => <td key={cell} className={cell === 0 ? t.checkCell : undefined}><span style={{ width: cell === 1 ? '60%' : '70%' }} /></td>)}
+              </tr>) : rows}
+            </tbody>
+          </table>
+          {data && !items.length && <div className={styles.emptyLine}>
+            {filtered ? <><span>No drives match these filters.</span><button type="button" className="adm-btn adm-btn--sm" onClick={() => { setQuery(''); update({ ...START, sort: filters.sort, limit: filters.limit }); }}>Clear filters</button></>
+              : <><span title="A drive gives a school its own registration form, link and QR code.">No school drives yet.</span><button type="button" className="adm-btn adm-btn--sm" onClick={() => setCreating(true)}><Icon name="plus" />New drive</button></>}
+          </div>}
         </div>}
-        {grouped.map((group) => {
-          const hidden = collapsed.has(group.state);
-          const total = groups.find((entry) => entry.state === group.state);
-          return <div key={group.state} className={styles.group} data-busy={list.busy || undefined}>
-            <h2 className={styles.groupHead}>
-              <button type="button" aria-expanded={!hidden} onClick={() => toggle(setCollapsed, group.state)}>
-                <Icon name="chevron" /><span>{group.state || 'No state'}</span>
-                {total && <small>{plural(total.drives, 'drive', 'drives')} · {plural(total.submissions, 'registration', 'registrations')}</small>}
-              </button>
-            </h2>
-            {!hidden && group.districts.map(([district, rows]) => <div key={district} className={styles.district}>
-              <h3 className={styles.districtHead}><Icon name="location" />{district}<small>{plural(rows.length, 'drive', 'drives')}{data.total > items.length ? ' on this page' : ''}</small></h3>
-              <div className={styles.cards}>{rows.map((item) => <DriveCard key={item.id} item={item} onCopy={copy} />)}</div>
-            </div>)}
-          </div>;
-        })}
-        {data && data.total > PAGE_SIZE && <nav className={styles.pager} aria-label="Pagination">
-          <span>Page {formatCount(filters.page)} of {formatCount(lastPage)}</span>
-          <button type="button" className="button button--ghost" disabled={filters.page <= 1 || list.busy} onClick={() => setFilters((current) => ({ ...current, page: current.page - 1 }))}>Previous</button>
-          <button type="button" className="button button--ghost" disabled={filters.page >= lastPage || list.busy} onClick={() => setFilters((current) => ({ ...current, page: current.page + 1 }))}>Next</button>
-        </nav>}
-      </section>
-    </div>
+      {data && data.total > 0 && <Pagination page={filters.page} pageSize={filters.limit} total={data.total} rowCount={items.length} noun="drives"
+        hasNext={filters.page * filters.limit < data.total} hasPrevious={filters.page > 1} disabled={list.busy}
+        onPage={(page) => { setSelected([]); setFilters((current) => ({ ...current, page })); }} onPageSize={(limit) => update({ limit })} />}
+    </section>
 
-    <NewDriveDrawer open={creating} onClose={() => setCreating(false)} request={request} groups={groups}
-      onCreated={(item) => { setCreating(false); list.reload(); router.push(`/admin/drives/${item.id}?tab=builder`); }} />
-    {toast && <p className={rm.toast} data-tone={toast.tone} role="status"><Icon name={toast.tone === 'error' ? 'shield' : 'check'} />{toast.message}</p>}
+    <NewDriveDrawer open={drawerOpen} onClose={closeDrawer} request={request} groups={groups}
+      onCreated={(item) => { closeDrawer(); refresh(); toast.success(`${nameOf(item)} created. Add your questions, then print the QR code.`); router.push(`/admin/drives/${item.id}`); }} />
+
+    <ConfirmDialog open={Boolean(confirm)} busy={working} error={confirm?.error} tone={confirm?.kind === 'delete' || confirm?.kind === 'archive' ? 'danger' : 'primary'}
+      requireText={confirm?.kind === 'delete' ? 'DELETE' : undefined}
+      icon={confirm?.kind === 'close' ? 'lock' : confirm?.kind === 'restore' ? 'undo' : undefined}
+      title={!confirm ? '' : confirm.kind === 'delete' ? `Delete ${nameOf(confirm.items[0])}?`
+        : confirm.items.length === 1 ? `${{ archive: 'Archive', close: 'Close registration for', restore: 'Restore' }[confirm.kind]} ${nameOf(confirm.items[0])}?`
+          : `${{ archive: 'Archive', close: 'Close registration for', restore: 'Restore' }[confirm.kind]} ${plural(confirm.items.length, 'drive', 'drives')}?`}
+      confirmLabel={!confirm ? '' : { delete: 'Delete drive', archive: 'Archive', close: 'Close registration', restore: 'Restore' }[confirm.kind]}
+      onConfirm={runConfirm} onCancel={() => setConfirm(null)}>
+      {confirm?.kind === 'delete' && 'The drive has no registrations. Its form, link and QR code are removed for good; printed posters stop working.'}
+      {confirm?.kind === 'archive' && 'The link and QR code will show “Registration closed” and the drive leaves this list. Registrations stay in Leads, and you can restore it later.'}
+      {confirm?.kind === 'close' && 'Students who scan the QR code will see “Registration closed”. You can reopen each drive from its menu.'}
+      {confirm?.kind === 'restore' && 'Archived drives come back to the list as closed. Reopen them one by one when you visit the school again.'}
+    </ConfirmDialog>
   </div>;
 }

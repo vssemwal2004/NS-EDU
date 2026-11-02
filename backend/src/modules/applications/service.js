@@ -5,19 +5,22 @@ import { decodeCursor, queryString } from '../../lib/query.js';
 import { createTtlCache } from '../../lib/ttl-cache.js';
 import { escapeRegex, slugify } from '../../lib/validation.js';
 import { PUBLIC_FILTER } from '../universities/university-service.js';
+import { HEATS, PRIORITIES } from '../crm/crm-model.js';
+import { isOwnerStaff, leadScopeOf } from './scope.js';
 import { CLASS_LEVELS, CLOSED_STATUSES, INDIAN_STATES, SCHOOL_STREAMS, STATUS_LABELS, STATUSES } from './schema.js';
 
 export const COUNTERS = 'counters';
 const IST_OFFSET_MS = 330 * 60 * 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
+const csv = (value) => queryString(value, 200).split(',').map((part) => part.trim().toLowerCase()).filter(Boolean);
 
 export const applications = () => collection(COLLECTIONS.applications);
 export const applicationNotes = () => collection(COLLECTIONS.applicationNotes);
 
 // Every lead is one `applications` document; `channel` says where it came from.
 // Documents written before channels existed have no `channel` and count as web-apply.
-export const CHANNELS = ['web-apply', 'school-drive', 'callback'];
-export const CHANNEL_LABELS = { 'web-apply': 'Website apply', 'school-drive': 'School drive', callback: 'Counsellor callback' };
+export const CHANNELS = ['web-apply', 'school-drive', 'callback', 'manual'];
+export const CHANNEL_LABELS = { 'web-apply': 'Website apply', 'school-drive': 'School drive', callback: 'Counsellor callback', manual: 'Added by staff' };
 export const channelOf = (doc) => doc.channel ?? 'web-apply';
 
 // Name search keys: accent-folded lowercase words, matched by anchored prefix ("asha r" → asha*, r*).
@@ -115,9 +118,20 @@ export const serializeLeadSummary = (doc) => ({
   schoolStream: doc.academics?.schoolStream ?? '',
   careerField: doc.careerField ?? null,
   assignedEmployeeIds: (doc.assignedEmployeeIds ?? []).map(String),
+  crm: crmSummary(doc),
   createdAt: doc.createdAt,
   updatedAt: doc.updatedAt,
 });
+
+// The CRM block with safe defaults, so leads created before the CRM existed still render.
+function crmSummary(doc) {
+  const crm = doc.crm ?? {};
+  return {
+    heat: crm.heat ?? '', heatSource: crm.heatSource ?? 'auto', score: crm.score ?? null, priority: crm.priority ?? 'normal',
+    tags: crm.tags ?? [], nextFollowUpAt: crm.nextFollowUpAt ?? null, lastContactedAt: crm.lastContactedAt ?? null,
+    lastActivityAt: crm.lastActivityAt ?? doc.updatedAt ?? doc.createdAt ?? null, reasons: crm.reasons ?? [], lostReason: crm.lostReason ?? '',
+  };
+}
 
 // Staff detail: every submitted field. The IP stays in the database for audit only.
 export function serializeLeadDetail(doc, { staff, people = new Map() }) {
@@ -136,7 +150,7 @@ export function serializeLeadDetail(doc, { staff, people = new Map() }) {
     consent: {
       contactConsent: doc.consent?.contactConsent ?? false, privacyAccepted: doc.consent?.privacyAccepted ?? false, at: doc.consent?.at ?? null, version: doc.consent?.version ?? '',
       text: doc.consent?.text ?? {},
-      ...(staff.role === 'admin' ? { userAgent: doc.consent?.userAgent ?? '' } : {}),
+      ...(isOwnerStaff(staff) ? { userAgent: doc.consent?.userAgent ?? '' } : {}),
     },
     source: doc.source ?? {},
     statusHistory: (doc.statusHistory ?? []).map((entry) => ({ status: entry.status, at: entry.at, by: person(entry.byAdminId) })),
@@ -144,9 +158,16 @@ export function serializeLeadDetail(doc, { staff, people = new Map() }) {
   };
 }
 
-export const serializeNote = (note) => ({ id: note._id.toString(), text: note.text, authorEmail: note.authorEmail, authorRole: note.authorRole, createdAt: note.createdAt });
+export const serializeNote = (note) => ({ id: note._id.toString(), text: note.text, kind: note.kind ?? 'note', outcome: note.outcome ?? '', authorEmail: note.authorEmail, authorRole: note.authorRole, createdAt: note.createdAt });
 
-export const accessFilter = (staff) => (staff.role === 'admin' ? {} : { assignedEmployeeIds: staff._id });
+// What a staff member may see: everything, their team's leads (mentors), only their own, or nothing,
+// following the lead-visibility ladder in modules/access/permissions.js.
+export const accessFilter = (staff) => {
+  if (leadScopeOf(staff) === 'all') return {};
+  if (leadScopeOf(staff) === 'team') return { assignedEmployeeIds: { $in: [staff._id, ...(staff.teamIds ?? [])] } };
+  if (leadScopeOf(staff) === 'own') return { assignedEmployeeIds: staff._id };
+  return { _id: { $in: [] } };
+};
 
 export async function visibleLead(id, staff) {
   const _id = toObjectId(id);
@@ -278,26 +299,50 @@ export function leadFilter(query, staff, { districtFormIds } = {}) {
     clauses.push({ createdAt: dates });
   }
   const assignee = queryString(query.assignee, 30);
-  if (assignee && staff.role === 'admin') {
+  if (assignee && leadScopeOf(staff) !== 'own') {
     if (assignee === 'unassigned') clauses.push({ assignedEmployeeIds: [] });
+    else if (assignee === 'me') clauses.push({ assignedEmployeeIds: staff._id });
     else {
       const id = toObjectId(assignee);
       if (!id) throw new HttpError(400, 'Invalid employee filter', { fields: { assignee: 'Choose a valid employee' } });
       clauses.push({ assignedEmployeeIds: id });
     }
+  } else if (assignee === 'me') clauses.push({ assignedEmployeeIds: staff._id });
+  // CRM filters: temperature, priority, follow-up state, idle time and tags.
+  const heats = csv(query.heat).filter((value) => HEATS.includes(value));
+  if (heats.length) clauses.push({ 'crm.heat': { $in: heats } });
+  const priorities = csv(query.priority).filter((value) => PRIORITIES.includes(value));
+  if (priorities.length) clauses.push({ 'crm.priority': { $in: priorities } });
+  const tag = queryString(query.tag, 40).toLowerCase();
+  if (tag) clauses.push({ 'crm.tags': tag });
+  const followUp = queryString(query.followUp, 12);
+  if (followUp) {
+    const today = istDayStart(istToday());
+    const open = { status: { $nin: CLOSED_STATUSES } };
+    if (followUp === 'overdue') clauses.push({ ...open, 'crm.nextFollowUpAt': { $lt: new Date() } });
+    // "Today" = still to come today (IST); anything already past is Overdue, so the two never overlap.
+    else if (followUp === 'today') clauses.push({ ...open, 'crm.nextFollowUpAt': { $gte: new Date(), $lt: new Date(today.getTime() + DAY_MS) } });
+    else if (followUp === 'upcoming') clauses.push({ ...open, 'crm.nextFollowUpAt': { $gte: new Date(today.getTime() + DAY_MS) } });
+    else if (followUp === 'none') clauses.push({ ...open, 'crm.nextFollowUpAt': null });
+    else throw new HttpError(400, 'Unknown follow-up filter', { fields: { followUp: 'Choose overdue, today, upcoming or none' } });
   }
+  const idleDays = Number(queryString(query.idle, 4));
+  if (idleDays >= 1 && idleDays <= 365) clauses.push({ status: { $nin: CLOSED_STATUSES }, 'crm.lastActivityAt': { $lt: new Date(Date.now() - idleDays * DAY_MS) } });
   const q = queryString(query.q, 100);
   if (q) clauses.push(searchFilter(q));
   const filled = clauses.filter((clause) => Object.keys(clause).length);
   return filled.length > 1 ? { $and: filled } : filled[0] ?? {};
 }
 
-const FILTER_PARAMS = ['status', 'channel', 'form', 'institution', 'course', 'state', 'city', 'district', 'class', 'stream', 'careerField', 'mode', 'range', 'from', 'to', 'assignee', 'q'];
-// Stable cache key for a filter: sorted parameters plus the viewer's scope (employees see only their leads).
+const FILTER_PARAMS = ['status', 'channel', 'form', 'institution', 'course', 'state', 'city', 'district', 'class', 'stream', 'careerField', 'mode', 'range', 'from', 'to', 'assignee', 'heat', 'priority', 'tag', 'followUp', 'idle', 'q'];
+// Stable cache key for a filter: sorted parameters plus the viewer's scope (everyone with the same
+// scope shares counts; mentors and counsellors each get their own). "assignee=me" means a different
+// person for each viewer, so it never shares a key, even between people who see every lead.
 export function filterKey(query, staff) {
   const parts = FILTER_PARAMS.map((name) => [name, queryString(query[name], 400)]).filter(([, value]) => value);
-  if (['range', 'from', 'to'].some((name) => queryString(query[name]))) parts.push(['day', istToday()]);
-  return `${staff.role === 'admin' ? 'admin' : staff._id.toString()}|${new URLSearchParams(parts).toString()}`;
+  if (['range', 'from', 'to', 'followUp'].some((name) => queryString(query[name]))) parts.push(['day', istToday()]);
+  const personal = leadScopeOf(staff) !== 'all' || queryString(query.assignee, 30) === 'me';
+  return `${personal ? staff._id.toString() : 'all'}|${new URLSearchParams(parts).toString()}`;
 }
 
 export const LIST_SORTS = { newest: -1, oldest: 1 };

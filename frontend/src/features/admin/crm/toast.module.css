@@ -1,0 +1,12 @@
+.stack { position: fixed; z-index: 1200; bottom: 18px; left: calc(var(--nav-w, 72px) + 18px); display: grid; gap: 10px; width: min(440px, calc(100vw - 28px)); pointer-events: none; }
+.toast { display: flex; align-items: center; gap: 12px; padding: 12px 10px 12px 14px; border: 1px solid var(--tone-line); border-left: 5px solid var(--tone-solid); border-radius: 12px; background: #fff; color: var(--color-text, #1f1418); box-shadow: 0 10px 30px rgb(40 20 28 / 20%); pointer-events: auto; animation: toast-in .18s ease-out; }
+@keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .toast { animation: none; } }
+.icon { display: grid; flex-shrink: 0; width: 30px; height: 30px; place-items: center; border-radius: 50%; background: var(--tone-soft); color: var(--tone); }
+.icon svg { width: 17px; height: 17px; }
+.message { flex: 1; min-width: 0; font-size: var(--crm-text-sm, .9375rem); font-weight: 550; line-height: 1.4; overflow-wrap: anywhere; }
+.action { flex-shrink: 0; min-height: 36px; padding: 0 12px; border: 1px solid var(--tone-line); border-radius: 9px; background: var(--tone-soft); color: var(--tone); font: inherit; font-size: var(--crm-text-xs, .8125rem); font-weight: 700; cursor: pointer; }
+.close { display: grid; flex-shrink: 0; width: 32px; height: 32px; place-items: center; border: 0; border-radius: 8px; background: transparent; color: var(--color-muted, #68636e); cursor: pointer; }
+.close:hover { background: var(--crm-neutral-soft, #f1ecea); }
+.close svg { width: 15px; height: 15px; }
+@media (max-width: 900px) { .stack { left: 14px; bottom: 14px; } }

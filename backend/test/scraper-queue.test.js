@@ -31,7 +31,7 @@ describe('scraper queue and worker', { skip }, () => {
   });
 
   after(async () => {
-    if (db) await db.dropDatabase();
+    if (db?.databaseName.startsWith('nsedu_test_')) await db.dropDatabase();
     await closeDb?.();
   });
 

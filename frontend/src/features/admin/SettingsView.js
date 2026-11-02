@@ -1,50 +1,91 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Icon from '@/components/ui/Icon';
 import { api } from '@/lib/api/client';
 import { useAdminSession } from './AdminSession';
-import styles from './Dashboard.module.css';
+import { dateTimeOf, timeOf } from './crm/format';
+import { Avatar } from './crm/ui';
+import { PageToolbar, Panel } from './ui/Page';
+import styles from './Settings.module.css';
 
-const dateTime = new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+// /platform/stats also returns objects (courseCounts, fieldCounts) for the public pages; only these
+// whole-number totals are shown here. Rendering every entry put an object into JSX and crashed the page.
+const PUBLISHED = [
+  { key: 'institutions', label: 'Universities and colleges' },
+  { key: 'programmes', label: 'Programmes' },
+  { key: 'courses', label: 'Courses' },
+  { key: 'exams', label: 'Exam guides' },
+  { key: 'scholarships', label: 'Scholarships' },
+  { key: 'cities', label: 'Cities' },
+  { key: 'states', label: 'States' },
+  { key: 'statesWithInstitutions', label: 'States with a listed college' },
+];
 
+// Static notes about how this deployment is configured (not live checks).
+const CHECKLIST = [
+  { key: 'password', label: 'Owner password', text: <>Replace the demo password: set <code>ADMIN_PASSWORD</code>, then run the seed with <code>--reset-admin</code></> },
+  { key: 'otp', label: 'Email and SMS', text: <>One-time codes print to the API console while <code>OTP_DELIVERY=console</code></> },
+  { key: 'limits', label: 'Rate limits', text: 'Kept in memory; they reset when the API restarts' },
+];
 export default function SettingsView() {
   const { admin, logout } = useAdminSession();
-  const [health, setHealth] = useState({ state: 'checking' });
-  const [stats, setStats] = useState(null);
+  const [health, setHealth] = useState({ state: 'checking', at: null });
+  const [stats, setStats] = useState({ state: 'loading', data: null });
+  const [attempt, setAttempt] = useState(0);
+
   useEffect(() => {
     const controller = new AbortController();
-    api('/health', { signal: controller.signal }).then((data) => setHealth({ state: 'ok', data })).catch((error) => { if (error.name !== 'AbortError') setHealth({ state: 'down', error: error.message }); });
-    api('/platform/stats', { signal: controller.signal }).then(setStats).catch(() => {});
+    const started = window.performance.now();
+    api('/health', { signal: controller.signal })
+      .then(() => setHealth({ state: 'ok', at: new Date(), ms: Math.round(window.performance.now() - started) }))
+      .catch((error) => { if (error.name !== 'AbortError') setHealth({ state: 'down', at: new Date(), error: error.message }); });
+    api('/platform/stats', { signal: controller.signal })
+      .then((data) => setStats({ state: 'ready', data }))
+      .catch((error) => { if (error.name !== 'AbortError') setStats({ state: 'error', data: null, error: error.message }); });
     return () => controller.abort();
-  }, []);
+  }, [attempt]);
+  const recheck = useCallback(() => { setHealth({ state: 'checking', at: null }); setStats({ state: 'loading', data: null }); setAttempt((value) => value + 1); }, []);
 
-  return <div className={styles.dashboard}>
-    <div className={styles.row}>
-      <section className={styles.card} aria-labelledby="profile-title">
-        <header className={styles.cardHeader}><div><h3 id="profile-title">Your admin session</h3><p>Signed in with an http-only JWT cookie (8-hour lifetime).</p></div></header>
-        <dl className={styles.health}>
-          <div><dt><Icon name="user" />Name</dt><dd>{admin?.name || '—'}</dd></div>
-          <div><dt><Icon name="mail" />Email</dt><dd className={styles.smallValue}>{admin?.email}</dd></div>
-          <div><dt><Icon name="calendar" />Last sign-in</dt><dd className={styles.smallValue}>{admin?.lastLoginAt ? dateTime.format(new Date(admin.lastLoginAt)) : '—'}</dd></div>
-          <div><dt><Icon name="shield" />Role</dt><dd className={styles.smallValue}>Administrator</dd></div>
+  const counts = stats.data ? PUBLISHED.filter((row) => Number.isFinite(stats.data[row.key])) : PUBLISHED;
+  const apiTone = health.state === 'ok' ? 'good' : health.state === 'down' ? 'bad' : 'neutral';
+
+  return <>
+    <PageToolbar summary={<>Signed in as <strong>{admin?.email}</strong></>}>
+      <button type="button" className="adm-btn" onClick={recheck} disabled={health.state === 'checking'}><Icon name="refresh" />Check again</button>
+      <button type="button" className="adm-btn" onClick={logout}><Icon name="logout" />Log out</button>
+    </PageToolbar>
+
+    <div className={styles.grid}>
+      <Panel title="Your account" meta="Session ends after 8 hours">
+        <dl className={styles.sheet}>
+          <dt>Name</dt><dd><Avatar name={admin?.name} email={admin?.email} size={20} /><span>{admin?.name || '—'}</span></dd>
+          <dt>Email</dt><dd>{admin?.email || '—'}</dd>
+          <dt>Role</dt><dd>{admin?.roleName || <span className={styles.muted}>—</span>}</dd>
+          <dt>Job title</dt><dd>{admin?.title || <span className={styles.muted}>—</span>}</dd>
+          <dt>Last sign-in</dt><dd className="crm-tabnum">{admin?.lastLoginAt ? dateTimeOf(admin.lastLoginAt) : <span className={styles.muted}>—</span>}</dd>
+          <dt>Permissions</dt><dd className="crm-tabnum">{admin?.isOwner ? 'All (owner)' : `${admin?.permissions?.length ?? 0} granted`}</dd>
         </dl>
-        <button type="button" className="button button--outline" onClick={logout}><Icon name="logout" />Log out of the console</button>
-      </section>
-      <section className={styles.card} aria-labelledby="status-title">
-        <header className={styles.cardHeader}><div><h3 id="status-title">Platform status</h3><p>Live checks against the Gyaan Vidhya API</p></div></header>
-        <dl className={styles.health}>
-          <div><dt><Icon name="trend" />API</dt><dd className={styles.smallValue}><span className={styles.status} data-status={health.state === 'down' ? 'blocked' : 'active'}>{health.state === 'checking' ? 'Checking…' : health.state === 'ok' ? 'Online' : 'Unreachable'}</span></dd></div>
-          {stats && Object.entries(stats).map(([key, value]) => <div key={key}><dt><Icon name="layers" />Published {key}</dt><dd>{value}</dd></div>)}
+      </Panel>
+
+      <Panel title="Platform status" meta={health.at ? `Checked ${timeOf(health.at)}` : undefined}>
+        <dl className={styles.sheet}>
+          <dt>API</dt>
+          <dd role="status"><span className={`crm-tone ${styles.dot}`} data-tone={apiTone} aria-hidden="true" />
+            {health.state === 'checking' ? 'Checking…' : health.state === 'ok' ? <>Online <span className={styles.muted}>· answered in <span className="crm-tabnum">{health.ms}</span> ms</span></> : <>Unreachable <span className={styles.muted}>· {health.error}</span></>}</dd>
         </dl>
-      </section>
+        <h3 className={styles.subhead}>Published records</h3>
+        {stats.state === 'error' ? <p className="adm-error" role="alert">Could not load published counts: {stats.error}</p> : <dl className={styles.counts}>
+          {counts.map((row) => <div key={row.key}>
+            <dt>{row.label}</dt>
+            <dd className="crm-tabnum">{stats.data ? stats.data[row.key].toLocaleString('en-IN') : <span className={styles.skeleton} />}</dd>
+          </div>)}
+        </dl>}
+      </Panel>
     </div>
-    <section className={styles.card} aria-labelledby="security-title">
-      <header className={styles.cardHeader}><div><h3 id="security-title">Before going live</h3><p>Items that are intentionally development-only today</p></div></header>
-      <ul className={styles.checklist}>
-        <li><Icon name="lock" /><span><strong>Change the demo admin password.</strong> Run the seed script with <code>--reset-admin</code> after setting a strong <code>ADMIN_PASSWORD</code> in the backend environment.</span></li>
-        <li><Icon name="mail" /><span><strong>Connect email and SMS delivery.</strong> One-time codes are printed to the API console while <code>OTP_DELIVERY=console</code>.</span></li>
-        <li><Icon name="shield" /><span><strong>Use a shared rate-limit store.</strong> Login limits are kept in memory and reset when the API restarts.</span></li>
-      </ul>
-    </section>
-  </div>;
+
+    <Panel title="Before going live" description="How this deployment is set up today. Change these before real students sign in.">
+      <dl className={styles.sheet}>
+        {CHECKLIST.map((item) => <div key={item.key} className={styles.sheetRow}><dt>{item.label}</dt><dd className={styles.note}>{item.text}</dd></div>)}
+      </dl>
+    </Panel>  </>;
 }

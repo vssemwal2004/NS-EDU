@@ -1,0 +1,37 @@
+/* Dialog bodies shared by "Log call" and "Schedule / reschedule follow-up" (dense console style). */
+.form { display: grid; gap: 12px; }
+.who { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; margin: 0; padding-bottom: 10px; border-bottom: 1px solid var(--adm-line); color: var(--adm-muted); font-size: var(--crm-text-xs); font-variant-numeric: tabular-nums; }
+.who strong { color: var(--adm-text); font-size: var(--crm-text-sm); }
+.field { display: grid; gap: 6px; min-width: 0; border: 0; margin: 0; padding: 0; }
+.label { color: var(--adm-text); font-size: var(--crm-text-xs); font-weight: 650; }
+.label small { margin-left: 6px; color: var(--adm-muted); font-weight: 400; }
+.options { display: flex; flex-wrap: wrap; gap: 4px; }
+.option { display: inline-flex; align-items: center; gap: 5px; height: 28px; padding: 0 10px; border: 1px solid var(--adm-line-strong); border-radius: var(--adm-radius-sm); background: var(--adm-surface); color: var(--adm-text); font: inherit; font-size: var(--crm-text-xs); font-weight: 600; cursor: pointer; }
+.option svg { width: 13px; height: 13px; color: var(--adm-muted); }
+.option:hover { background: var(--adm-hover); }
+.option[aria-checked="true"] { border-color: var(--adm-accent); background: var(--adm-accent-soft); color: var(--adm-accent); }
+.option[aria-checked="true"] svg { color: var(--adm-accent); }
+.option:focus-visible, .check input:focus-visible { outline: none; box-shadow: var(--adm-focus); }
+.option small { color: var(--adm-muted); font-weight: 400; }
+.presets { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; }
+.presets .option { flex-direction: column; align-items: flex-start; justify-content: center; gap: 0; height: auto; min-height: 40px; padding: 4px 10px; text-align: left; }
+.presets .option span { font-weight: 650; }
+.presets .option small { font-size: .6875rem; }
+.input, .textarea, .select { width: 100%; min-height: var(--adm-control); padding: 0 10px; border: 1px solid var(--adm-line-strong); border-radius: var(--adm-radius-sm); background: var(--adm-surface); color: var(--adm-text); font: inherit; font-size: var(--crm-text-sm); }
+.textarea { min-height: 72px; padding: 8px 10px; resize: vertical; line-height: 1.45; }
+.input:focus-visible, .textarea:focus-visible, .select:focus-visible { border-color: var(--adm-accent); outline: none; box-shadow: var(--adm-focus); }
+.input[aria-invalid="true"], .textarea[aria-invalid="true"] { border-color: var(--crm-bad-solid); }
+.fieldError { color: var(--crm-bad); font-size: var(--crm-text-xs); font-weight: 600; }
+.check { display: flex; align-items: center; gap: 8px; color: var(--adm-text); font-size: var(--crm-text-sm); cursor: pointer; }
+.check input { width: 15px; height: 15px; accent-color: var(--adm-accent); }
+.error { display: flex; align-items: center; gap: 6px; margin: 0; color: var(--crm-bad); font-size: var(--crm-text-sm); font-weight: 600; }
+.error svg { width: 15px; height: 15px; flex-shrink: 0; }
+.actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; padding-top: 4px; }
+.primary, .ghost { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: var(--adm-control); padding: 0 12px; border-radius: var(--adm-radius-sm); font: inherit; font-size: var(--crm-text-sm); font-weight: 600; cursor: pointer; }
+.primary { border: 1px solid var(--adm-accent); background: var(--adm-accent); color: #fff; }
+.primary:hover:not(:disabled) { background: var(--adm-accent-hover); }
+.primary:disabled { opacity: .6; cursor: progress; }
+.ghost { border: 1px solid var(--adm-line-strong); background: var(--adm-surface); color: var(--adm-text); }
+.ghost:hover { background: var(--adm-hover); }
+.primary:focus-visible, .ghost:focus-visible { outline: none; box-shadow: var(--adm-focus); }
+@media (max-width: 520px) { .actions > * { flex: 1 1 auto; } }

@@ -1,5 +1,5 @@
 const specs = {
-  admins: [[{ email: 1 }, { unique: true }]],
+  admins: [[{ email: 1 }, { unique: true }], [{ managerId: 1 }], [{ roleId: 1 }]],
   students: [
     [{ email: 1 }, { unique: true, partialFilterExpression: { email: { $type: 'string' } } }],
     [{ phone: 1 }, { unique: true, partialFilterExpression: { phone: { $type: 'string' } } }],
@@ -34,6 +34,8 @@ const specs = {
     [{ nirfRank: 1 }, { partialFilterExpression: { nirfRank: { $type: 'number' } } }],
     [{ domain: 1 }],
     [{ verification: 1, updatedAt: -1 }],
+    // Admin "held for review" list: unverified + hidden, in admin order.
+    [{ verification: 1, active: 1, order: 1, nameKey: 1 }],
   ],
   programmes: [[{ slug: 1 }, { unique: true }], [{ institutionSlug: 1 }], [{ courseSlug: 1 }], [{ order: 1 }]],
   cities: [[{ name: 1 }, { unique: true }]],
@@ -60,17 +62,30 @@ const specs = {
     [{ cityKey: 1, createdAt: -1, _id: -1 }],
     // "New school-drive leads" style views: the commonest two-filter combination on the list.
     [{ channel: 1, status: 1, createdAt: -1, _id: -1 }],
+    // CRM: temperature and priority filters, the pipeline board (best-first inside a stage), follow-up queues and idle leads.
+    [{ 'crm.heat': 1, createdAt: -1, _id: -1 }],
+    [{ 'crm.priority': 1, createdAt: -1, _id: -1 }],
+    [{ status: 1, 'crm.score': -1, createdAt: -1 }],
+    [{ 'crm.nextFollowUpAt': 1 }, { partialFilterExpression: { 'crm.nextFollowUpAt': { $type: 'date' } } }],
+    [{ 'crm.lastActivityAt': 1 }],
+    [{ 'crm.tags': 1, createdAt: -1 }],
+    [{ assignedEmployeeIds: 1, 'crm.nextFollowUpAt': 1 }],
     // Class/stream exist only on drive leads and career field only on callbacks; leadFilter adds the
     // matching channel to those clauses so these smaller partial indexes are chosen.
     [{ 'academics.classLevel': 1, createdAt: -1, _id: -1 }, { partialFilterExpression: { channel: 'school-drive' } }],
     [{ 'academics.schoolStream': 1, createdAt: -1, _id: -1 }, { partialFilterExpression: { channel: 'school-drive' } }],
     [{ 'careerField.slug': 1, createdAt: -1, _id: -1 }, { partialFilterExpression: { channel: 'callback' } }],
   ],
-  application_notes: [[{ applicationId: 1, createdAt: -1 }]],
+  application_notes: [[{ applicationId: 1, createdAt: -1 }], [{ createdAt: -1 }], [{ authorId: 1, createdAt: -1 }]],
   // School drive registration forms: the public QR link resolves by the immutable short code.
   lead_forms: [[{ shortCode: 1 }, { unique: true }], [{ status: 1, 'school.state': 1, 'school.districtKey': 1 }], [{ createdAt: -1 }]],
   career_fields: [[{ slug: 1 }, { unique: true }], [{ order: 1 }]],
   counsellors: [[{ fieldSlug: 1, order: 1 }]],
+  roles: [[{ slug: 1 }, { unique: true }]],
+  applications_trash: [[{ deletedAt: -1 }]],
+  audit_logs: [[{ at: -1, _id: -1 }], [{ action: 1, at: -1 }], [{ actorEmail: 1, at: -1 }]],
+  // Follow-ups: the "My day" queue is (assignee, open, due) and a lead's own list is (lead, due).
+  lead_tasks: [[{ assigneeId: 1, doneAt: 1, dueAt: 1 }], [{ leadId: 1, dueAt: 1 }], [{ dueAt: 1, doneAt: 1 }]],
   // Derived by `npm run fees:estimate`; one group per course, fee period, area and ownership class.
   fee_estimates: [[{ courseSlug: 1, field: 1, scope: 1, scopeValue: 1, ownership: 1 }, { unique: true }]],
   // Scraper queue: partial unique indexes give one open job per source and one running job per domain.

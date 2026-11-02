@@ -1,0 +1,130 @@
+/* Design tokens for the staff CRM. Loaded once by the admin panel layout.
+ *
+ * Rules these tokens encode:
+ *  - Colour is never the only signal: every status chip also carries an icon or a word.
+ *  - Green = healthy / won, amber = needs attention soon, red = overdue / hot / at risk,
+ *    blue = informational, purple = in progress. Text on a "soft" background always passes WCAG AA.
+ *  - Work screens read larger than the public site: 15px body, 14.5px tables, 2rem KPI numbers.
+ *    Staff can scale text (default / large / extra large) and density (comfortable / compact);
+ *    both are remembered per browser and set on the shell as data attributes.
+ */
+:root {
+  --crm-good: #1b6a45;      --crm-good-soft: #e5f3ea;   --crm-good-line: #b4d9c4;   --crm-good-solid: #2e8b5e;
+  --crm-warn: #7a4d00;      --crm-warn-soft: #fff1cf;   --crm-warn-line: #efd083;   --crm-warn-solid: #e0a21a;
+  --crm-bad: #a1213a;       --crm-bad-soft: #fde8eb;    --crm-bad-line: #efb4be;    --crm-bad-solid: #d03a55;
+  --crm-info: #1d5a8c;      --crm-info-soft: #e4effa;   --crm-info-line: #b3cfe9;   --crm-info-solid: #3b7fba;
+  --crm-purple: #58399a;    --crm-purple-soft: #eee9f8; --crm-purple-line: #cbbfe8; --crm-purple-solid: #7a5bc0;
+  --crm-teal: #11675f;      --crm-teal-soft: #e0f3f0;   --crm-teal-line: #aad8d2;   --crm-teal-solid: #2a9a8f;
+  --crm-neutral: #4f4348;   --crm-neutral-soft: #f1ecea; --crm-neutral-line: #ddd2cd; --crm-neutral-solid: #8d7f85;
+  --crm-wine: #72243b;      --crm-wine-soft: #f7e9ed;   --crm-wine-line: #e4bfca;   --crm-wine-solid: #72243b;
+  --crm-orange: #8f4208;    --crm-orange-soft: #ffe9d6; --crm-orange-line: #f2c49b; --crm-orange-solid: #e07a1f;
+
+  /* Lead temperature */
+  --crm-hot: var(--crm-bad);    --crm-hot-soft: var(--crm-bad-soft);    --crm-hot-line: var(--crm-bad-line);    --crm-hot-solid: var(--crm-bad-solid);
+  --crm-warm: var(--crm-warn);  --crm-warm-soft: var(--crm-warn-soft);  --crm-warm-line: var(--crm-warn-line);  --crm-warm-solid: var(--crm-warn-solid);
+  --crm-cold: var(--crm-info);  --crm-cold-soft: var(--crm-info-soft);  --crm-cold-line: var(--crm-info-line);  --crm-cold-solid: var(--crm-info-solid);
+
+  /* Console surfaces (shared by the shell and every admin screen). One accent (brand wine); everything
+     else is neutral so the status colours above are the only colour on a work screen. */
+  --adm-bg: #f5f3f2;
+  --adm-surface: #ffffff;
+  --adm-subtle: #faf8f7;
+  --adm-hover: #f4efed;
+  --adm-line: #e7e1de;
+  --adm-line-strong: #d6cdc9;
+  --adm-text: #211a1d;
+  --adm-muted: #6a6066;
+  --adm-faint: #958b90;
+  --adm-accent: #72243b;
+  --adm-accent-hover: #5c1c2f;
+  --adm-accent-soft: #f6eaee;
+  --adm-accent-line: #e5c3cd;
+  --adm-focus: 0 0 0 3px rgb(114 36 59 / 22%);
+  --adm-radius: 8px;
+  --adm-radius-sm: 6px;
+  --adm-shadow: 0 1px 2px rgb(33 26 29 / 5%);
+  --adm-shadow-pop: 0 12px 40px rgb(33 26 29 / 16%);
+  --adm-sidebar: #33111f;
+  --adm-sidebar-text: #f4eaee;
+  --adm-sidebar-muted: #bfa5af;
+  --adm-sidebar-hover: rgb(255 255 255 / 7%);
+  --adm-sidebar-active: rgb(255 255 255 / 13%);
+  --adm-sidebar-w: 220px;
+  --adm-sidebar-rail: 56px;
+  --adm-topbar: 48px;
+
+  /* Surfaces and lines used by cards on work screens */
+  --crm-card: #ffffff;
+  --crm-card-line: #e7e1de;
+  --crm-card-shadow: 0 1px 2px rgb(60 30 40 / 6%), 0 6px 18px rgb(60 30 40 / 5%);
+  --crm-radius: 10px;
+  --crm-radius-sm: 7px;
+
+  /* Type scale (multiplied by --crm-scale). Dense by default: a work console shows many rows at once;
+     people who need bigger text use the Text size setting. */
+  --crm-scale: 1;
+
+  /* Density: table row height, panel padding, gaps. Control heights follow --adm-control. */
+  --crm-row: 2.5rem;
+  --crm-pad: .75rem;
+  --crm-gap: .75rem;
+  --adm-control: 32px;
+}
+
+/* var() inside a custom property is resolved where it is declared, so the scale is declared on :root AND
+   on the element that carries data-crm-text; otherwise the text-size switch would never reach the screens. */
+:root, [data-crm-text] {
+  --crm-text-xs: calc(.75rem * var(--crm-scale));
+  --crm-text-sm: calc(.8125rem * var(--crm-scale));
+  --crm-text-md: calc(.875rem * var(--crm-scale));
+  --crm-text-lg: calc(1rem * var(--crm-scale));
+  --crm-text-xl: calc(1.25rem * var(--crm-scale));
+  --crm-kpi: calc(1.5rem * var(--crm-scale));
+}
+[data-crm-text="large"] { --crm-scale: 1.12; }
+[data-crm-text="xlarge"] { --crm-scale: 1.25; }
+[data-density="compact"] { --crm-row: 2.125rem; --crm-pad: .5rem; --crm-gap: .5rem; --adm-control: 28px; }
+
+/* Shared building blocks (plain classes so every admin screen can use them without importing a module). */
+.crm-card { background: var(--crm-card); border: 1px solid var(--crm-card-line); border-radius: var(--crm-radius); box-shadow: var(--crm-card-shadow); }
+.crm-muted { color: var(--color-muted, #68636e); }
+.crm-tabnum { font-variant-numeric: tabular-nums; }
+
+/* Tone helpers: <span class="crm-tone" data-tone="good|warn|bad|info|purple|teal|neutral|wine|orange"> */
+.crm-tone { --tone: var(--crm-neutral); --tone-soft: var(--crm-neutral-soft); --tone-line: var(--crm-neutral-line); --tone-solid: var(--crm-neutral-solid); }
+.crm-tone[data-tone="good"] { --tone: var(--crm-good); --tone-soft: var(--crm-good-soft); --tone-line: var(--crm-good-line); --tone-solid: var(--crm-good-solid); }
+.crm-tone[data-tone="warn"] { --tone: var(--crm-warn); --tone-soft: var(--crm-warn-soft); --tone-line: var(--crm-warn-line); --tone-solid: var(--crm-warn-solid); }
+.crm-tone[data-tone="bad"] { --tone: var(--crm-bad); --tone-soft: var(--crm-bad-soft); --tone-line: var(--crm-bad-line); --tone-solid: var(--crm-bad-solid); }
+.crm-tone[data-tone="info"] { --tone: var(--crm-info); --tone-soft: var(--crm-info-soft); --tone-line: var(--crm-info-line); --tone-solid: var(--crm-info-solid); }
+.crm-tone[data-tone="purple"] { --tone: var(--crm-purple); --tone-soft: var(--crm-purple-soft); --tone-line: var(--crm-purple-line); --tone-solid: var(--crm-purple-solid); }
+.crm-tone[data-tone="teal"] { --tone: var(--crm-teal); --tone-soft: var(--crm-teal-soft); --tone-line: var(--crm-teal-line); --tone-solid: var(--crm-teal-solid); }
+.crm-tone[data-tone="wine"] { --tone: var(--crm-wine); --tone-soft: var(--crm-wine-soft); --tone-line: var(--crm-wine-line); --tone-solid: var(--crm-wine-solid); }
+.crm-tone[data-tone="orange"] { --tone: var(--crm-orange); --tone-soft: var(--crm-orange-soft); --tone-line: var(--crm-orange-line); --tone-solid: var(--crm-orange-solid); }
+
+/* Console controls (plain classes; use these instead of per-screen button/input styles).
+   <button class="adm-btn adm-btn--primary">  variants: --primary --secondary (default) --ghost --danger; sizes: --sm --icon */
+.adm-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: var(--adm-control); padding: 0 12px; border: 1px solid var(--adm-line-strong); border-radius: var(--adm-radius-sm); background: var(--adm-surface); color: var(--adm-text); font: inherit; font-size: var(--crm-text-sm); font-weight: 600; line-height: 1; text-decoration: none; white-space: nowrap; cursor: pointer; transition: background 120ms ease, border-color 120ms ease; }
+.adm-btn:hover { background: var(--adm-hover); }
+.adm-btn:focus-visible { outline: none; box-shadow: var(--adm-focus); }
+.adm-btn:disabled, .adm-btn[aria-disabled="true"] { opacity: .5; cursor: not-allowed; }
+.adm-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
+.adm-btn--primary { border-color: var(--adm-accent); background: var(--adm-accent); color: #fff; }
+.adm-btn--primary:hover { border-color: var(--adm-accent-hover); background: var(--adm-accent-hover); }
+.adm-btn--ghost { border-color: transparent; background: transparent; }
+.adm-btn--danger { border-color: var(--crm-bad-line); background: var(--adm-surface); color: var(--crm-bad); }
+.adm-btn--danger:hover { background: var(--crm-bad-soft); }
+.adm-btn--sm { height: 26px; padding: 0 8px; font-size: var(--crm-text-xs); }
+.adm-btn--icon { width: var(--adm-control); padding: 0; }
+.adm-btn--sm.adm-btn--icon { width: 26px; }
+.adm-input, .adm-select, .adm-textarea { width: 100%; min-height: var(--adm-control); padding: 0 10px; border: 1px solid var(--adm-line-strong); border-radius: var(--adm-radius-sm); background: var(--adm-surface); color: var(--adm-text); font: inherit; font-size: var(--crm-text-sm); }
+.adm-textarea { min-height: 72px; padding: 8px 10px; resize: vertical; }
+.adm-input:focus, .adm-select:focus, .adm-textarea:focus { outline: none; border-color: var(--adm-accent); box-shadow: var(--adm-focus); }
+.adm-input[aria-invalid="true"], .adm-select[aria-invalid="true"], .adm-textarea[aria-invalid="true"] { border-color: var(--crm-bad-solid); }
+.adm-label { display: block; color: var(--adm-text); font-size: var(--crm-text-xs); font-weight: 650; }
+/* Block, not grid: label text and a required "*" stay on one line; controls/hints start on the next line. */
+.adm-label > :is(input, select, textarea, .adm-input, .adm-select, .adm-textarea, div, .adm-hint, .adm-error) { display: block; margin-top: 6px; }
+.adm-label > :is(input, select, textarea, .adm-input, .adm-select, .adm-textarea) { width: 100%; }
+.adm-label > .adm-hint, .adm-label > .adm-error { margin-top: 4px; }
+.adm-hint { color: var(--adm-muted); font-size: var(--crm-text-xs); font-weight: 400; }
+.adm-error { color: var(--crm-bad); font-size: var(--crm-text-xs); font-weight: 600; }
+.adm-panel { border: 1px solid var(--adm-line); border-radius: var(--adm-radius); background: var(--adm-surface); box-shadow: var(--adm-shadow); }

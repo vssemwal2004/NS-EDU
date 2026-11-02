@@ -1,12 +1,13 @@
 import { collection, COLLECTIONS, toObjectId } from '../../db/collections.js';
 import { HttpError } from '../../lib/http-error.js';
 
-export async function employeeAssignmentIds(value) {
+// `includeOwners`: lead assignment may also pick owner accounts (the CRM assignee list offers them).
+export async function employeeAssignmentIds(value, { includeOwners = false } = {}) {
   if (!Array.isArray(value) || value.length > 50 || value.some((id) => !toObjectId(id)) || new Set(value.map((id) => id.toLowerCase())).size !== value.length) {
     throw new HttpError(400, 'Choose up to 50 distinct employees');
   }
   const ids = value.map(toObjectId);
-  if (ids.length && await (await collection(COLLECTIONS.admins)).countDocuments({ _id: { $in: ids }, role: 'employee' }) !== ids.length) {
+  if (ids.length && await (await collection(COLLECTIONS.admins)).countDocuments({ _id: { $in: ids }, role: includeOwners ? { $in: ['admin', 'employee'] } : 'employee' }) !== ids.length) {
     throw new HttpError(400, 'Choose valid employees');
   }
   return ids;
@@ -28,4 +29,12 @@ export async function bulkAssignStudents(collectionName, body, { touchUpdatedAt 
     ...(touchUpdatedAt ? { $set: { updatedAt: new Date() } } : {}),
   });
   return { count: result.matchedCount };
+}
+
+// Display names for staff ids (one $in query for a whole page of rows).
+export async function staffNames(ids) {
+  const unique = [...new Set(ids.map(String))].map(toObjectId).filter(Boolean);
+  if (!unique.length) return new Map();
+  const docs = await (await collection(COLLECTIONS.admins)).find({ _id: { $in: unique } }, { projection: { name: 1, email: 1 } }).toArray();
+  return new Map(docs.map((doc) => [doc._id.toString(), doc.name || doc.email]));
 }

@@ -1,136 +1,173 @@
 'use client';
-import { useCallback, useEffect, useState } from 'react';
+// Student sign-in accounts (created on a student's first one-time-code login): block / restore access
+// and assign staff for follow-up. Server-paged; search and the status filter run on the server.
+import { useEffect, useMemo, useState } from 'react';
 import Icon from '@/components/ui/Icon';
 import { useAdminSession } from './AdminSession';
-import AdminDrawer from './AdminDrawer';
-import styles from './ResourceManager.module.css';
+import ConfirmDialog from './crm/ConfirmDialog';
+import RowMenu from './crm/RowMenu';
+import { useToaster } from './crm/toast';
+import { formatWhen, StatusDot } from './catalogue/CatalogueParts';
+import { formatCount, formatDate, formatDateTime } from './leads/lead-format';
+import Pagination from './table/Pagination';
+import { useServerList } from './table/useServerList';
+import { PageToolbar } from './ui/Page';
+import t from './table/Table.module.css';
+import { AssignDrawer, Assignees, contactOf, StudentDrawer, studentName, studentRights, useAssignees } from './students-ui';
+import styles from './ReferenceStudentsManager.module.css';
 
-const PAGE_SIZE = 20;
-const dateTime = new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' });
-const format = (value) => value ? dateTime.format(new Date(value)) : '—';
-const filters = [{ value: '', label: 'All' }, { value: 'active', label: 'Active' }, { value: 'blocked', label: 'Blocked' }];
+const STATUS_OPTIONS = [{ value: '', label: 'All statuses' }, { value: 'active', label: 'Active' }, { value: 'blocked', label: 'Blocked' }];
 
 export default function StudentsManager() {
-  const { request } = useAdminSession();
+  const { admin, request } = useAdminSession();
+  const toast = useToaster();
+  const rights = studentRights(admin);
   const [query, setQuery] = useState('');
-  const [search, setSearch] = useState('');
-  const [status, setStatus] = useState('');
-  const [page, setPage] = useState(1);
-  const [list, setList] = useState({ items: [], total: 0, loading: true, error: '' });
-  const [confirm, setConfirm] = useState(null);
+  const [filters, setFilters] = useState({ q: '', status: '', page: 1, limit: 25 });
+  const [selected, setSelected] = useState([]);
+  const [open, setOpen] = useState(null);
   const [assigning, setAssigning] = useState(null);
-  const [assignedIds, setAssignedIds] = useState([]);
-  const [selectedIds, setSelectedIds] = useState([]);
-  const [bulkOpen, setBulkOpen] = useState(false);
-  const [bulkEmployeeIds, setBulkEmployeeIds] = useState([]);
-  const [bulkState, setBulkState] = useState({ busy: false, error: '' });
-  const [employees, setEmployees] = useState([]);
-  const [toast, setToast] = useState('');
+  const [assignState, setAssignState] = useState({ busy: false, error: '' });
+  const [blocking, setBlocking] = useState(null);
+  const [working, setWorking] = useState(false);
+  const staff = useAssignees(request, rights.manage);
 
-  useEffect(() => { const timer = window.setTimeout(() => { setSearch(query.trim()); setPage(1); }, 250); return () => window.clearTimeout(timer); }, [query]);
-  useEffect(() => { if (!toast) return undefined; const timer = window.setTimeout(() => setToast(''), 3200); return () => window.clearTimeout(timer); }, [toast]);
+  const list = useServerList(request, '/students', { q: filters.q, status: filters.status, page: filters.page > 1 ? filters.page : '', limit: filters.limit },
+    { scope: admin?.id ?? '', enabled: Boolean(admin) && rights.manage });
+  const data = list.data;
+  const rows = useMemo(() => data?.items ?? [], [data]);
+
   useEffect(() => {
-    request('/employees').then(({ items }) => setEmployees(items)).catch(() => {});
-  }, [request]);
+    const timer = window.setTimeout(() => setFilters((current) => (current.q === query.trim() ? current : { ...current, q: query.trim(), page: 1 })), 300);
+    return () => window.clearTimeout(timer);
+  }, [query]);
+  const update = (patch) => { setSelected([]); setFilters((current) => ({ ...current, page: 1, ...patch })); };
 
-  const load = useCallback(async (signal) => {
-    setList((previous) => ({ ...previous, loading: true, error: '' }));
-    const params = new URLSearchParams({ page: String(page), limit: String(PAGE_SIZE) });
-    if (search) params.set('q', search);
-    if (status) params.set('status', status);
-    try { const data = await request(`/students?${params}`, { signal }); setList({ items: data.items, total: data.total, loading: false, error: '' }); } catch (failure) {
-      if (failure.name !== 'AbortError') setList((previous) => ({ ...previous, loading: false, error: failure.message }));
+  async function setStatus(student, status) {
+    try {
+      await request(`/students/${student.id}`, { method: 'PATCH', body: { status } });
+      list.reload();
+      return true;
+    } catch (failure) { toast.error(failure.message); return false; }
+  }
+  async function block() {
+    setWorking(true);
+    const student = blocking;
+    if (await setStatus(student, 'blocked')) {
+      setBlocking(null);
+      toast.success(`${studentName(student)} blocked. Their next request signs them out.`, { action: { label: 'Undo', onClick: () => setStatus(student, 'active') } });
     }
-  }, [page, request, search, status]);
-  useEffect(() => { const controller = new AbortController(); load(controller.signal); return () => controller.abort(); }, [load]);
-
-  async function applyStatus() {
-    const student = confirm;
-    const next = student.status === 'blocked' ? 'active' : 'blocked';
-    setConfirm({ ...student, busy: true });
-    try {
-      await request(`/students/${student.id}`, { method: 'PATCH', body: { status: next } });
-      setConfirm(null);
-      setToast(next === 'blocked' ? 'Student blocked. Their next request will be signed out.' : 'Student access restored.');
-      load();
-    } catch (failure) { setConfirm({ ...student, busy: false, error: failure.message }); }
+    setWorking(false);
+  }
+  async function restore(student) {
+    if (await setStatus(student, 'active')) toast.success(`${studentName(student)} can sign in again.`, { action: { label: 'Undo', onClick: () => setStatus(student, 'blocked') } });
   }
 
-  async function saveAssignments() {
-    if (!assigning) return;
-    setAssigning((previous) => ({ ...previous, busy: true, error: '' }));
+  async function saveAssign(employeeIds) {
+    setAssignState({ busy: true, error: '' });
     try {
-      const { item } = await request(`/students/${assigning.id}/assignments`, { method: 'PATCH', body: { employeeIds: assignedIds } });
-      setList((previous) => ({ ...previous, items: previous.items.map((student) => student.id === item.id ? item : student) }));
-      setAssigning(null);
-      setToast('Employee assignments saved.');
-    } catch (error) { setAssigning((previous) => ({ ...previous, busy: false, error: error.message })); }
+      if (assigning.bulk) {
+        const { count } = await request('/students/assignments/bulk', { method: 'POST', body: { studentIds: assigning.ids, employeeIds } });
+        toast.success(`Staff assigned to ${formatCount(count)} ${count === 1 ? 'student' : 'students'}. Earlier assignments were kept.`);
+        setSelected([]);
+      } else {
+        await request(`/students/${assigning.student.id}/assignments`, { method: 'PATCH', body: { employeeIds } });
+        toast.success(`Assignment saved for ${studentName(assigning.student)}.`);
+        setOpen(null);
+      }
+      setAssigning(null); setAssignState({ busy: false, error: '' });
+      list.reload();
+    } catch (failure) { setAssignState({ busy: false, error: failure.message }); }
   }
 
-  async function saveBulkAssignments() {
-    setBulkState({ busy: true, error: '' });
-    try {
-      const { count } = await request('/students/assignments/bulk', { method: 'POST', body: { studentIds: selectedIds, employeeIds: bulkEmployeeIds } });
-      setBulkOpen(false); setSelectedIds([]); setBulkEmployeeIds([]); setBulkState({ busy: false, error: '' });
-      setToast(`Employees assigned to ${count} students.`);
-      load();
-    } catch (error) { setBulkState({ busy: false, error: error.message }); }
-  }
+  if (admin && !rights.manage) return <p className={`adm-panel ${styles.notice}`} role="alert"><Icon name="lock" />Student accounts need the “Student accounts” permission.</p>;
 
-  const pages = Math.max(1, Math.ceil(list.total / PAGE_SIZE));
-  const allVisibleSelected = list.items.length > 0 && list.items.every((student) => selectedIds.includes(student.id));
-  return <div className={styles.manager}>
-    <div className={styles.toolbar}>
-      <div className={styles.summary}><span className={styles.summaryIcon}><Icon name="people" /></span><div><strong>{list.total.toLocaleString('en-IN')} students</strong><small>Accounts are created on first one-time-code login</small></div></div>
-      {selectedIds.length > 0 && <button type="button" className="button button--primary" onClick={() => { setBulkOpen(true); setBulkEmployeeIds([]); setBulkState({ busy: false, error: '' }); }}>Assign selected ({selectedIds.length})</button>}
-      <div className={styles.segmented} role="group" aria-label="Filter by status">{filters.map((filter) => <button key={filter.label} type="button" aria-pressed={status === filter.value} onClick={() => { setStatus(filter.value); setPage(1); setSelectedIds([]); }}>{filter.label}</button>)}</div>
-      <label className={styles.search}><Icon name="search" /><span className="sr-only">Search students</span><input type="search" value={query} onChange={(event) => { setQuery(event.target.value); setSelectedIds([]); }} placeholder="Search name, email or mobile…" maxLength={120} /></label>
-    </div>
-    <div className={styles.tableCard}>
-      {list.error ? <div className={styles.errorBox} role="alert"><Icon name="shield" />{list.error}</div> : <div className={styles.tableScroll}>
-        <table className={styles.table} aria-busy={list.loading}>
-          <thead><tr><th scope="col"><input type="checkbox" aria-label="Select all visible students" checked={allVisibleSelected} onChange={(event) => setSelectedIds(event.target.checked ? list.items.map((student) => student.id) : [])} /></th><th scope="col">Student</th><th scope="col">Contact</th><th scope="col">Joined</th><th scope="col">Last sign-in</th><th scope="col">Sign-ins</th><th scope="col">Assigned</th><th scope="col">Status</th><th scope="col"><span className="sr-only">Actions</span></th></tr></thead>
-          <tbody>{list.items.map((student) => <tr key={student.id} data-hidden={student.status === 'blocked'}>
-            <td><input type="checkbox" aria-label={`Select ${student.name || student.email || student.phone || student.id}`} checked={selectedIds.includes(student.id)} onChange={(event) => setSelectedIds((previous) => event.target.checked ? [...previous, student.id] : previous.filter((id) => id !== student.id))} /></td>
-            <td><div className={styles.primaryCell}><strong>{student.name || 'Unnamed student'}</strong><small>ID {student.id.slice(-6)}</small></div></td>
-            <td><div className={styles.primaryCell}>{student.email && <span>{student.email}</span>}{student.phone && <small>{student.phone}</small>}</div></td>
-            <td>{format(student.createdAt)}</td>
-            <td>{format(student.lastLoginAt)}</td>
-            <td>{student.loginCount ?? 0}</td>
-            <td>{student.assignedEmployeeIds?.length ?? 0}</td>
-            <td><span className={styles.badge} data-on={student.status !== 'blocked'}>{student.status === 'blocked' ? 'Blocked' : 'Active'}</span></td>
-            <td className={styles.rowActions}><button type="button" className="button button--outline" onClick={() => { setAssigning(student); setAssignedIds(student.assignedEmployeeIds ?? []); }}>Assign</button> <button type="button" className={`button ${student.status === 'blocked' ? 'button--outline' : 'button--ghost'}`} onClick={() => setConfirm(student)}>{student.status === 'blocked' ? 'Restore' : 'Block'}</button></td>
-          </tr>)}</tbody>
-        </table>
-        {!list.loading && !list.items.length && <div className={styles.empty}><Icon name="people" /><p>{search || status ? 'No students match these filters.' : 'No students yet. They appear after their first login with an email or mobile code.'}</p></div>}
+  const menuFor = (student) => [
+    { key: 'open', label: 'Open notes', icon: 'note', onSelect: () => setOpen(student) },
+    { key: 'assign', label: 'Assign staff…', icon: 'userPlus', onSelect: () => setAssigning({ student }) },
+    { divider: true },
+    student.status === 'blocked'
+      ? { key: 'restore', label: 'Restore access', icon: 'undo', onSelect: () => restore(student) }
+      : { key: 'block', label: 'Block sign-in…', icon: 'ban', tone: 'danger', onSelect: () => setBlocking(student) },
+  ];
+  const ids = rows.map((row) => row.id);
+  const allChosen = ids.length > 0 && ids.every((id) => selected.includes(id));
+  const someChosen = ids.some((id) => selected.includes(id));
+  const openRow = (event, student) => { if (!event.target.closest('a, button, input, label')) setOpen(student); };
+  const filtered = Boolean(filters.q || filters.status);
+
+  return <div className={styles.screen}>
+    <PageToolbar start={<>
+      <label className={styles.search}><Icon name="search" /><span className="sr-only">Search students</span>
+        <input type="search" value={query} maxLength={120} placeholder="Name, email or mobile" onChange={(event) => setQuery(event.target.value)} />
+      </label>
+      <label className={styles.inlineSelect}><span className="sr-only">Status</span>
+        <select className="adm-select" value={filters.status} onChange={(event) => update({ status: event.target.value })}>
+          {STATUS_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+        </select>
+      </label>
+    </>} />
+
+    <section className={`adm-panel ${styles.tablePanel}`} aria-label="Student accounts">
+      {selected.length > 0 && <div className={styles.bulkBar} role="region" aria-label="Bulk actions">
+        <strong>{formatCount(selected.length)} selected</strong>
+        <button type="button" className="adm-btn adm-btn--sm" onClick={() => setAssigning({ bulk: true, ids: selected })}><Icon name="userPlus" />Assign staff</button>
+        <button type="button" className="adm-btn adm-btn--ghost adm-btn--sm" onClick={() => setSelected([])}>Clear selection</button>
       </div>}
-      {pages > 1 && <nav className={styles.pagination} aria-label="Pagination"><span>Page {page} of {pages}</span><div><button type="button" className={styles.iconButton} disabled={page <= 1} onClick={() => { setPage(page - 1); setSelectedIds([]); }} aria-label="Previous page"><Icon name="arrow" /></button><button type="button" className={styles.iconButton} disabled={page >= pages} onClick={() => { setPage(page + 1); setSelectedIds([]); }} aria-label="Next page"><Icon name="arrow" /></button></div></nav>}
-    </div>
-    <AdminDrawer open={Boolean(confirm)} onClose={() => setConfirm(null)} variant="confirm" title={confirm?.status === 'blocked' ? 'Restore access?' : 'Block this student?'}>
-      {confirm && <div className={styles.confirm}>
-        <p><strong>{confirm.name || confirm.email || confirm.phone}</strong> {confirm.status === 'blocked' ? 'will be able to log in again.' : 'will be signed out on their next request and cannot log in until restored.'}</p>
-        {confirm.error && <p className={styles.formError} role="alert"><Icon name="shield" />{confirm.error}</p>}
-        <div className={styles.formActions}><button type="button" className="button button--ghost" onClick={() => setConfirm(null)}>Cancel</button><button type="button" className={`button ${confirm.status === 'blocked' ? 'button--primary' : styles.dangerButton}`} onClick={applyStatus} disabled={confirm.busy}>{confirm.busy ? 'Saving…' : confirm.status === 'blocked' ? 'Restore access' : 'Block student'}</button></div>
-      </div>}
-    </AdminDrawer>
-    <AdminDrawer open={Boolean(assigning)} onClose={() => setAssigning(null)} title={`Assign ${assigning?.name || assigning?.email || assigning?.phone || 'student'}`}>
-      {assigning && <div className={styles.form}>
-        <p className={styles.help}>Choose one or more employees. Each will see this student in View students and can add follow-up comments.</p>
-        {employees.map((employee) => <label className={styles.switch} key={employee.id}><input type="checkbox" checked={assignedIds.includes(employee.id)} onChange={(event) => setAssignedIds((previous) => event.target.checked ? [...previous, employee.id] : previous.filter((id) => id !== employee.id))} /><span /><span>{employee.email}</span></label>)}
-        {!employees.length && <p className={styles.help}>Add an employee before assigning students.</p>}
-        {assigning.error && <p className={styles.formError} role="alert">{assigning.error}</p>}
-        <div className={styles.formActions}><button type="button" className="button button--ghost" onClick={() => setAssigning(null)}>Cancel</button><button type="button" className="button button--primary" disabled={assigning.busy} onClick={saveAssignments}>{assigning.busy ? 'Saving…' : 'Save assignments'}</button></div>
-      </div>}
-    </AdminDrawer>
-    <AdminDrawer open={bulkOpen} onClose={() => setBulkOpen(false)} title={`Assign ${selectedIds.length} students`}>
-      <div className={styles.form}>
-        <p className={styles.help}>Select employees to add to every selected student. Existing assignments stay in place.</p>
-        {employees.map((employee) => <label className={styles.switch} key={employee.id}><input type="checkbox" checked={bulkEmployeeIds.includes(employee.id)} onChange={(event) => setBulkEmployeeIds((previous) => event.target.checked ? [...previous, employee.id] : previous.filter((id) => id !== employee.id))} /><span /><span>{employee.email}</span></label>)}
-        {!employees.length && <p className={styles.help}>Add an employee before assigning students.</p>}
-        {bulkState.error && <p className={styles.formError} role="alert">{bulkState.error}</p>}
-        <div className={styles.formActions}><button type="button" className="button button--ghost" onClick={() => setBulkOpen(false)}>Cancel</button><button type="button" className="button button--primary" disabled={bulkState.busy || !bulkEmployeeIds.length} onClick={saveBulkAssignments}>{bulkState.busy ? 'Saving…' : 'Assign employees'}</button></div>
-      </div>
-    </AdminDrawer>
-    {toast && <p className={styles.toast} role="status"><Icon name="check" />{toast}</p>}
+      {list.error ? <div className={t.state} role="alert"><Icon name="alert" /><p>{list.error}</p><button type="button" className="adm-btn adm-btn--sm" onClick={list.reload}>Try again</button></div>
+        : <div className={t.scroll} data-busy={list.busy || undefined}>
+          <table className={`${t.table} ${styles.table}`} aria-busy={list.loading || list.busy}>
+            <caption className="sr-only">Student accounts</caption>
+            <thead><tr>
+              <th scope="col" className={t.checkCell}><input type="checkbox" aria-label="Select all students on this page" checked={allChosen} disabled={!ids.length}
+                ref={(node) => { if (node) node.indeterminate = someChosen && !allChosen; }}
+                onChange={(event) => setSelected(event.target.checked ? [...new Set([...selected, ...ids])] : selected.filter((id) => !ids.includes(id)))} /></th>
+              <th scope="col">Student</th>
+              <th scope="col" className={styles.optional}>Contact</th>
+              <th scope="col" style={{ width: 96 }}>Status</th>
+              <th scope="col" style={{ width: '17%' }}>Assigned to</th>
+              <th scope="col" className={styles.optional} style={{ width: 136 }}>Last sign-in</th>
+              <th scope="col" className={`${styles.num} ${styles.optional}`} style={{ width: 76 }}>Sign-ins</th>
+              <th scope="col" className={styles.optional} style={{ width: 110 }}>Joined</th>
+              <th scope="col" className={styles.menuCell}><span className="sr-only">Actions</span></th>
+            </tr></thead>
+            <tbody>
+              {list.loading && !rows.length ? Array.from({ length: 10 }, (_, index) => <tr key={index} className={t.skeletonRow} aria-hidden="true">
+                {Array.from({ length: 9 }, (_, cell) => <td key={cell} className={cell === 0 ? t.checkCell : undefined}><span style={{ width: '65%' }} /></td>)}
+              </tr>) : rows.map((student) => <tr key={student.id} className={styles.clickRow} data-selected={selected.includes(student.id) || undefined} data-muted={student.status === 'blocked' || undefined} onClick={(event) => openRow(event, student)}>
+                <td className={t.checkCell}><input type="checkbox" aria-label={`Select ${studentName(student)}`} checked={selected.includes(student.id)}
+                  onChange={(event) => setSelected((current) => (event.target.checked ? [...current, student.id] : current.filter((id) => id !== student.id)))} /></td>
+                <td className={styles.mainCell}><button type="button" className={styles.rowLink} title={studentName(student)} onClick={() => setOpen(student)}>{student.name || <span className={styles.muted}>No name yet</span>}</button></td>
+                <td data-label="Contact" className={styles.optional}><span className={styles.clip} title={contactOf(student)}>{contactOf(student) || '—'}</span></td>
+                <td data-label="Status">{student.status === 'blocked' ? <StatusDot tone="bad">Blocked</StatusDot> : <StatusDot tone="good">Active</StatusDot>}</td>
+                <td data-label="Assigned to" className={styles.assignCell}><Assignees people={student.assignees} /></td>
+                <td data-label="Last sign-in" className={styles.optional} title={student.lastLoginAt ? formatDateTime(student.lastLoginAt) : undefined}>{student.lastLoginAt ? formatWhen(student.lastLoginAt) : <span className={styles.muted}>—</span>}</td>
+                <td data-label="Sign-ins" className={`${styles.num} ${styles.optional} crm-tabnum`}>{formatCount(student.loginCount ?? 0)}</td>
+                <td data-label="Joined" className={styles.optional}>{formatDate(student.createdAt)}</td>
+                <td className={styles.menuCell}><RowMenu label={`Actions for ${studentName(student)}`} items={menuFor(student)} /></td>
+              </tr>)}
+            </tbody>
+          </table>
+          {data && !rows.length && <div className={styles.emptyLine}>
+            {filtered ? <><span>No accounts match.</span><button type="button" className="adm-btn adm-btn--sm" onClick={() => { setQuery(''); update({ q: '', status: '' }); }}>Clear filters</button></>
+              : <span title="Accounts are created on a student’s first sign-in with an email or mobile code.">No student accounts yet.</span>}
+          </div>}
+        </div>}
+      {data && data.total > 0 && <Pagination page={filters.page} pageSize={filters.limit} total={data.total} rowCount={rows.length} noun="accounts"
+        hasNext={filters.page * filters.limit < data.total} hasPrevious={filters.page > 1} disabled={list.busy}
+        onPage={(page) => { setSelected([]); setFilters((current) => ({ ...current, page })); }} onPageSize={(limit) => update({ limit })} />}
+    </section>
+
+    <StudentDrawer key={open?.id ?? 'none'} student={open} base="/account-students" request={request} toast={toast} canAssign
+      meta={open && `Joined ${formatDate(open.createdAt)} · last sign-in ${open.lastLoginAt ? formatWhen(open.lastLoginAt) : 'never'}`}
+      onAssign={() => setAssigning({ student: open })} onClose={() => setOpen(null)} />
+    <AssignDrawer open={Boolean(assigning)} staff={staff} mode={assigning?.bulk ? 'add' : 'replace'} busy={assignState.busy} error={assignState.error}
+      initial={assigning?.student?.assignedEmployeeIds ?? []}
+      title={assigning?.bulk ? `Assign ${formatCount(assigning.ids.length)} students` : 'Assign staff'} subtitle={assigning?.student ? studentName(assigning.student) : undefined}
+      onSave={saveAssign} onClose={() => { setAssigning(null); setAssignState({ busy: false, error: '' }); }} />
+    <ConfirmDialog open={Boolean(blocking)} tone="danger" busy={working} icon="ban" title={blocking ? `Block ${studentName(blocking)}?` : ''} confirmLabel="Block sign-in"
+      onConfirm={block} onCancel={() => setBlocking(null)}>
+      They are signed out on their next request and cannot sign in until you restore access. Their saved data stays.
+    </ConfirmDialog>
   </div>;
 }

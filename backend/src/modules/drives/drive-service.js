@@ -84,6 +84,13 @@ export function serializeDrive(doc) {
   };
 }
 
+// `place` keeps a State → District → school order so the list can show group headings across pages.
+const LIST_SORTS = {
+  recent: { createdAt: -1, _id: -1 },
+  place: { 'school.state': 1, 'school.districtKey': 1, 'school.name': 1, _id: 1 },
+  registrations: { submissionCount: -1, createdAt: -1, _id: -1 },
+  school: { 'school.name': 1, _id: 1 },
+};
 const LIST_PROJECTION = { shortCode: 1, title: 1, school: 1, campaign: 1, status: 1, submissionCount: 1, lastSubmissionAt: 1, maxSubmissions: 1, createdAt: 1, updatedAt: 1 };
 const summary = (doc) => ({
   id: doc._id.toString(), shortCode: doc.shortCode, publicUrl: publicUrl(doc.shortCode), title: doc.title,
@@ -115,10 +122,13 @@ export async function listDrives(query) {
   }
   const district = slugify(queryString(query.district, 80));
   if (district) folder['school.districtKey'] = district;
+  const sortKey = queryString(query.sort, 20) || 'recent';
+  const sort = LIST_SORTS[sortKey];
+  if (!sort) throw new HttpError(400, 'Unknown sort', { fields: { sort: `Use ${Object.keys(LIST_SORTS).join(', ')}` } });
   const forms = await leadForms();
   const filter = { ...base, ...statusFilter, ...folder };
   const [docs, total, statusRows, tree] = await Promise.all([
-    forms.find(filter, { projection: LIST_PROJECTION }).sort({ createdAt: -1, _id: -1 }).skip(skip).limit(limit).toArray(),
+    forms.find(filter, { projection: LIST_PROJECTION }).sort(sort).skip(skip).limit(limit).toArray(),
     forms.countDocuments(filter),
     forms.aggregate([{ $match: { ...base, ...folder } }, { $group: { _id: '$status', count: { $sum: 1 } } }]).toArray(),
     forms.aggregate([
@@ -135,7 +145,30 @@ export async function listDrives(query) {
     groups.set(row._id.state, group);
   }
   const counts = Object.fromEntries(DRIVE_STATUSES.map((name) => [name, statusRows.find((row) => row._id === name)?.count ?? 0]));
-  return { items: docs.map(summary), total, page, limit, counts, groups: [...groups.values()] };
+  return { items: docs.map(summary), total, page, limit, sort: sortKey, counts, groups: [...groups.values()] };
+}
+
+// Status changes for many drives at once (list bulk bar). Reopening stays per drive because it checks the limit.
+const BULK_ACTIONS = {
+  close: { from: ['active'], set: { status: 'closed' } },
+  archive: { from: ['active', 'closed'], set: { status: 'archived' } },
+  restore: { from: ['archived'], set: { status: 'closed' } },
+};
+export async function bulkUpdateDrives(body) {
+  if (!isPlainObject(body)) throw new HttpError(400, 'Request body must be a JSON object');
+  const action = BULK_ACTIONS[body.action];
+  if (!action) throw new HttpError(400, 'Choose close, archive or restore', { fields: { action: `Use ${Object.keys(BULK_ACTIONS).join(', ')}` } });
+  const values = body.ids;
+  if (!Array.isArray(values) || values.length < 1 || values.length > 100 || values.some((id) => !toObjectId(id)) || new Set(values.map((id) => String(id).toLowerCase())).size !== values.length) {
+    throw new HttpError(400, 'Choose 1 to 100 distinct drives', { fields: { ids: 'Choose 1 to 100 distinct drives' } });
+  }
+  const now = new Date();
+  const result = await (await leadForms()).updateMany(
+    { _id: { $in: values.map(toObjectId) }, status: { $in: action.from } },
+    { $set: { ...action.set, closedReason: null, statusChangedAt: now, updatedAt: now } },
+  );
+  clearPublicForms();
+  return { requested: values.length, updated: result.modifiedCount, skipped: values.length - result.modifiedCount };
 }
 
 export async function findDrive(id) {

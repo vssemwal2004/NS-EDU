@@ -6,6 +6,17 @@ export const DRIVE_STATUSES = [
 ];
 export const STATUS_FILTERS = [{ value: 'current', label: 'Open & closed' }, ...DRIVE_STATUSES, { value: 'all', label: 'All' }];
 export const driveStatusLabel = (status) => DRIVE_STATUSES.find((item) => item.value === status)?.label ?? status;
+// Status chip tone: green while students can register; closed is a warning; archived is out of the way.
+export const STATUS_TONES = { active: 'good', closed: 'warn', archived: 'neutral' };
+export const STATUS_ICONS = { active: 'checkCircle', closed: 'lock', archived: 'archive' };
+// `place` lists drives State → District → school, so the table shows place headings (mirrors backend LIST_SORTS).
+export const SORTS = [
+  { value: 'place', label: 'By place' },
+  { value: 'recent', label: 'Newest first' },
+  { value: 'registrations', label: 'Most registrations' },
+  { value: 'school', label: 'School A–Z' },
+];
+export const qrUrl = (id, format = 'png', size = 1024) => `/api/admin/drives/${id}/qr.${format}?${format === 'png' ? `size=${size}&` : ''}download=1`;
 
 export const FIELD_TYPES = [
   { value: 'text', label: 'Short answer', icon: 'edit' },

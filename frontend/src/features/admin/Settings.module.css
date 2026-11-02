@@ -1,0 +1,27 @@
+/* Settings: account, platform status and the go-live notes — all as label → value definition lists. */
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: stretch; gap: 12px; margin-bottom: 12px; }
+.muted { color: var(--adm-muted); }
+
+/* Definition list: muted 12px label column, value on the right with one shared left edge */
+.sheet { display: grid; grid-template-columns: 140px minmax(0, 1fr); margin: 0; font-size: var(--crm-text-sm); }
+.sheet dt, .sheet dd { display: flex; align-items: center; min-height: 34px; margin: 0; padding: 6px 0; border-bottom: 1px solid var(--adm-line); }
+.sheet dt { padding-right: 12px; color: var(--adm-muted); font-size: var(--crm-text-xs); font-weight: 500; }
+.sheet dd { gap: 8px; min-width: 0; overflow-wrap: anywhere; }
+.sheet > dt:nth-last-child(2), .sheet > dd:last-child, .sheetRow:last-child > * { border-bottom: 0; }
+.sheetRow { display: contents; }
+.note { color: var(--adm-muted); line-height: 1.5; }
+.note code { padding: 1px 5px; border-radius: 5px; background: var(--adm-hover); color: var(--adm-text); font-size: var(--crm-text-xs); overflow-wrap: anywhere; }
+.dot { flex-shrink: 0; width: 8px; height: 8px; border-radius: 50%; background: var(--tone-solid); }
+
+.subhead { margin: 16px 0 2px; color: var(--adm-muted); font-family: inherit; font-size: var(--crm-text-xs); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+/* Published counts: label left, number right-aligned with tabular digits */
+.counts { margin: 0; font-size: var(--crm-text-sm); }
+.counts > div { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 30px; border-bottom: 1px solid var(--adm-line); }
+.counts > div:last-child { border-bottom: 0; }
+.counts dd { margin: 0; font-weight: 600; text-align: right; }
+
+.skeleton { display: inline-block; width: 44px; height: 12px; border-radius: 6px; background: linear-gradient(90deg, var(--adm-hover), var(--adm-subtle), var(--adm-hover)); background-size: 200% 100%; animation: shimmer 1.2s linear infinite; }
+@keyframes shimmer { to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .skeleton { animation: none; } }
+@media (max-width: 900px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 480px) { .sheet { grid-template-columns: 112px minmax(0, 1fr); } }

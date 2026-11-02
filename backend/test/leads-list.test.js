@@ -132,7 +132,7 @@ describe('admin leads list, columns and exports', { skip }, () => {
   after(async () => {
     mock.restoreAll();
     if (server) await new Promise((resolve) => server.close(resolve));
-    if (db) await db.dropDatabase();
+    if (db?.databaseName.startsWith('nsedu_test_')) await db.dropDatabase();
     await closeDb?.();
   });
 
@@ -211,7 +211,7 @@ describe('admin leads list, columns and exports', { skip }, () => {
     assert.ok(!employee.defaults.includes('assigned'));
 
     const options = (await api('/api/admin/leads/filter-options')).body;
-    assert.deepEqual(options.channels.map((item) => item.value), ['web-apply', 'school-drive', 'callback']);
+    assert.deepEqual(options.channels.map((item) => item.value), ['web-apply', 'school-drive', 'callback', 'manual']);
     assert.equal(options.forms.length, 3);
     assert.deepEqual(options.forms[0], { id: formId.toString(), title: 'DPS Dehradun drive', school: 'DPS Dehradun', district: 'Dehradun', state: 'Uttarakhand', status: 'active', submissions: DRIVE });
     assert.deepEqual(options.districts, [

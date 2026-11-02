@@ -2,7 +2,6 @@
 import { useEffect, useId, useMemo, useState } from 'react';
 import Icon from '@/components/ui/Icon';
 import FormFields from '@/features/registration/FormFields';
-import rm from '@/features/admin/ResourceManager.module.css';
 import { CHOICE_TYPES, FIELD_TYPES, fieldsPayload, fieldTypeLabel, LOCKED_FIELDS, MAX_FIELDS, MAX_OPTIONS, newField, previewField, sameFields, withKeys } from './drive-format';
 import styles from './Drives.module.css';
 
@@ -23,22 +22,22 @@ function OptionsEditor({ field, onChange, error, idBase }) {
   const options = field.options;
   const set = (next) => onChange({ options: next });
   return <fieldset className={styles.options}>
-    <legend className={rm.fieldLabel}>Choices</legend>
+    <legend className="adm-label">Choices</legend>
     <ol>
       {options.map((option, index) => <li key={index}>
         <span className={styles.optionMark} data-type={field.type} aria-hidden="true" />
-        <input className={rm.input} value={option} maxLength={80} aria-label={`Choice ${index + 1}`} id={`${idBase}-option-${index}`}
+        <input className="adm-input" value={option} maxLength={80} aria-label={`Choice ${index + 1}`} id={`${idBase}-option-${index}`}
           onChange={(event) => set(options.map((item, at) => (at === index ? event.target.value : item)))}
           onKeyDown={(event) => {
             if (event.key !== 'Enter') return;
             event.preventDefault();
             if (options.length < MAX_OPTIONS) { set([...options.slice(0, index + 1), '', ...options.slice(index + 1)]); window.requestAnimationFrame(() => document.getElementById(`${idBase}-option-${index + 1}`)?.focus()); }
           }} />
-        <button type="button" className={rm.iconButton} data-tone="danger" disabled={options.length <= 1} aria-label={`Remove choice ${option || index + 1}`} onClick={() => set(options.filter((_, at) => at !== index))}><Icon name="close" /></button>
+        <button type="button" className="adm-btn adm-btn--ghost adm-btn--icon adm-btn--sm" data-tone="danger" disabled={options.length <= 1} aria-label={`Remove choice ${option || index + 1}`} onClick={() => set(options.filter((_, at) => at !== index))}><Icon name="close" /></button>
       </li>)}
     </ol>
-    <button type="button" className="button button--ghost" disabled={options.length >= MAX_OPTIONS} onClick={() => set([...options, ''])}><Icon name="plus" />Add choice</button>
-    {error ? <span className={rm.fieldError}>{error}</span> : <span className={rm.help}>Up to {MAX_OPTIONS} choices, 80 characters each. Press Enter to add the next one.</span>}
+    <button type="button" className="adm-btn adm-btn--ghost adm-btn--sm" disabled={options.length >= MAX_OPTIONS} onClick={() => set([...options, ''])}><Icon name="plus" />Add choice</button>
+    {error ? <span className="adm-error">{error}</span> : <span className="adm-hint">Up to {MAX_OPTIONS} choices, 80 characters each. Press Enter to add the next one.</span>}
   </fieldset>;
 }
 
@@ -49,8 +48,8 @@ function FieldEditor({ field, index, count, expanded, onToggle, onChange, onMove
   return <li className={styles.fieldCard} data-field-key={field.key} data-expanded={expanded || undefined} data-hidden={!field.enabled || undefined} data-invalid={Object.keys(errors).length ? true : undefined}>
     <div className={styles.fieldRow}>
       <div className={styles.reorder}>
-        <button type="button" className={rm.iconButton} disabled={index === 0} onClick={() => onMove(-1)} aria-label={`Move “${title}” up`}><Icon name="arrowUp" /></button>
-        <button type="button" className={rm.iconButton} disabled={index === count - 1} onClick={() => onMove(1)} aria-label={`Move “${title}” down`}><Icon name="arrowUp" className={styles.down} /></button>
+        <button type="button" className="adm-btn adm-btn--ghost adm-btn--icon adm-btn--sm" disabled={index === 0} onClick={() => onMove(-1)} aria-label={`Move “${title}” up`}><Icon name="arrowUp" /></button>
+        <button type="button" className="adm-btn adm-btn--ghost adm-btn--icon adm-btn--sm" disabled={index === count - 1} onClick={() => onMove(1)} aria-label={`Move “${title}” down`}><Icon name="arrowUp" className={styles.down} /></button>
       </div>
       <button type="button" className={styles.fieldSummary} aria-expanded={expanded} aria-controls={`${idBase}-panel`} onClick={onToggle}>
         <span className={styles.typeIcon}><Icon name={typeIcon(field.type)} /></span>
@@ -60,42 +59,42 @@ function FieldEditor({ field, index, count, expanded, onToggle, onChange, onMove
         {locked && <Icon name="lock" className={styles.lockIcon} />}
         <Icon name="chevron" className={styles.chevron} />
       </button>
-      {!field.builtIn && <button type="button" className={rm.iconButton} data-tone="danger" onClick={onRemove} aria-label={`Delete “${title}”`} title="Delete question"><Icon name="trash" /></button>}
+      {!field.builtIn && <button type="button" className="adm-btn adm-btn--ghost adm-btn--icon adm-btn--sm" data-tone="danger" onClick={onRemove} aria-label={`Delete “${title}”`} title="Delete question"><Icon name="trash" /></button>}
     </div>
     {expanded && <div id={`${idBase}-panel`} className={styles.fieldPanel}>
-      <div className={rm.formGrid}>
-        <div className={rm.formField} data-wide="true">
-          <label className={rm.fieldLabel} htmlFor={`${idBase}-label`}>Question<em aria-hidden="true">*</em></label>
-          <input id={`${idBase}-label`} className={rm.input} value={field.label} maxLength={120} aria-invalid={errors.label ? true : undefined} onChange={(event) => onChange({ label: event.target.value })} />
-          {errors.label && <span className={rm.fieldError}>{errors.label}</span>}
+      <div className={styles.grid}>
+        <div className={styles.field} data-wide="true">
+          <label className="adm-label" htmlFor={`${idBase}-label`}><span>Question<span className={styles.req} aria-hidden="true">*</span></span></label>
+          <input id={`${idBase}-label`} className="adm-input" value={field.label} maxLength={120} aria-invalid={errors.label ? true : undefined} onChange={(event) => onChange({ label: event.target.value })} />
+          {errors.label && <span className="adm-error">{errors.label}</span>}
         </div>
-        <div className={rm.formField} data-wide="true">
-          <label className={rm.fieldLabel} htmlFor={`${idBase}-help`}>Help text</label>
-          <input id={`${idBase}-help`} className={rm.input} value={field.help} maxLength={200} placeholder="Optional hint under the question" onChange={(event) => onChange({ help: event.target.value })} />
+        <div className={styles.field} data-wide="true">
+          <label className="adm-label" htmlFor={`${idBase}-help`}>Help text</label>
+          <input id={`${idBase}-help`} className="adm-input" value={field.help} maxLength={200} placeholder="Optional hint under the question" onChange={(event) => onChange({ help: event.target.value })} />
         </div>
-        {!field.builtIn && <div className={rm.formField}>
-          <label className={rm.fieldLabel} htmlFor={`${idBase}-type`}>Answer type</label>
-          <select id={`${idBase}-type`} className={rm.input} value={field.type} disabled={typeLocked} aria-describedby={typeLocked ? `${idBase}-type-help` : undefined}
+        {!field.builtIn && <div className={styles.field}>
+          <label className="adm-label" htmlFor={`${idBase}-type`}>Answer type</label>
+          <select id={`${idBase}-type`} className="adm-select" value={field.type} disabled={typeLocked} aria-describedby={typeLocked ? `${idBase}-type-help` : undefined}
             onChange={(event) => onChange({ type: event.target.value, options: CHOICE_TYPES.includes(event.target.value) && !field.options.length ? ['Option 1', 'Option 2'] : field.options })}>
             {FIELD_TYPES.map((type) => <option key={type.value} value={type.value}>{type.label}</option>)}
           </select>
-          {typeLocked && <span id={`${idBase}-type-help`} className={rm.help}>Students have answered this question, so its type is fixed. Add a new question instead.</span>}
-          {errors.type && <span className={rm.fieldError}>{errors.type}</span>}
+          {typeLocked && <span id={`${idBase}-type-help`} className="adm-hint">Students have answered this question, so its type is fixed. Add a new question instead.</span>}
+          {errors.type && <span className="adm-error">{errors.type}</span>}
         </div>}
       </div>
-      {field.builtIn && CHOICE_TYPES.includes(field.type) && <p className={rm.help}>Choices: {field.options.join(', ')}. These are fixed so leads can be filtered by class and stream.</p>}
+      {field.builtIn && CHOICE_TYPES.includes(field.type) && <p className="adm-hint">Choices: {field.options.join(', ')}. These are fixed so leads can be filtered by class and stream.</p>}
       {!field.builtIn && CHOICE_TYPES.includes(field.type) && <OptionsEditor field={field} onChange={onChange} error={errors.options} idBase={idBase} />}
       <div className={styles.switches}>
-        <label className={rm.switch}><input type="checkbox" checked={field.enabled} disabled={locked} onChange={(event) => onChange({ enabled: event.target.checked, required: event.target.checked && field.required })} /><span /><span>Show on form</span></label>
-        <label className={rm.switch}><input type="checkbox" checked={field.required} disabled={locked || !field.enabled} onChange={(event) => onChange({ required: event.target.checked })} /><span /><span>Required</span></label>
+        <label className={styles.switch}><input type="checkbox" checked={field.enabled} disabled={locked} onChange={(event) => onChange({ enabled: event.target.checked, required: event.target.checked && field.required })} /><span /><span>Show on form</span></label>
+        <label className={styles.switch}><input type="checkbox" checked={field.required} disabled={locked || !field.enabled} onChange={(event) => onChange({ required: event.target.checked })} /><span /><span>Required</span></label>
       </div>
-      {locked && <p className={rm.help}><Icon name="lock" /> Name and mobile number are always asked: every registration needs them for follow-up.</p>}
-      {errors.id && <span className={rm.fieldError}>{errors.id}</span>}
+      {locked && <p className="adm-hint"><Icon name="lock" /> Name and mobile number are always asked: every registration needs them for follow-up.</p>}
+      {errors.id && <span className="adm-error">{errors.id}</span>}
     </div>}
   </li>;
 }
 
-export default function FormBuilder({ item, request, onSaved, onDirtyChange, notify }) {
+export default function FormBuilder({ item, request, onSaved, onDirtyChange, toast }) {
   const [fields, setFields] = useState(() => withKeys(item.fields));
   const [expanded, setExpanded] = useState('');
   const [errors, setErrors] = useState({});
@@ -129,7 +128,7 @@ export default function FormBuilder({ item, request, onSaved, onDirtyChange, not
       const { item: saved } = await request(`/drives/${item.id}`, { method: 'PATCH', body: { fields: fieldsPayload(fields), expectedUpdatedAt: item.updatedAt } });
       setFields(withKeys(saved.fields)); setErrors({}); setState({ busy: false, error: '' });
       onSaved(saved);
-      notify('Form saved. The link and QR code are unchanged.');
+      toast.success('Form saved. The link and QR code are unchanged.');
     } catch (failure) {
       const mapped = errorsByField(fields, failure.fields ?? {});
       setErrors(mapped);
@@ -149,7 +148,7 @@ export default function FormBuilder({ item, request, onSaved, onDirtyChange, not
           onRemove={() => setFields((current) => current.filter((entry) => entry.key !== field.key))} />)}
       </ol>
       <div className={styles.addPanel}>
-        <p className={rm.fieldLabel}>Add a question <small className={rm.help}>{fields.length} of {MAX_FIELDS}</small></p>
+        <p className="adm-label">Add a question <small className="adm-hint">{fields.length} of {MAX_FIELDS}</small></p>
         <div className={styles.addTypes}>
           {FIELD_TYPES.map((type) => <button key={type.value} type="button" className={styles.addType} disabled={fields.length >= MAX_FIELDS} onClick={() => add(type.value)}>
             <Icon name={type.icon} />{type.label}
@@ -157,9 +156,9 @@ export default function FormBuilder({ item, request, onSaved, onDirtyChange, not
         </div>
       </div>
       <div className={styles.saveBar} data-dirty={dirty || undefined}>
-        <span role="status">{state.error ? <span className={rm.fieldError}>{state.error}</span> : dirty ? 'Unsaved changes' : 'All changes saved'}</span>
-        <button type="button" className="button button--ghost" disabled={!dirty || state.busy} onClick={discard}>Discard</button>
-        <button type="button" className="button button--primary" disabled={!dirty || state.busy} onClick={save}>{state.busy ? 'Saving…' : 'Save form'}</button>
+        <span role="status">{state.error ? <span className="adm-error">{state.error}</span> : dirty ? 'Unsaved changes' : 'All changes saved'}</span>
+        <button type="button" className="adm-btn" disabled={!dirty || state.busy} onClick={discard}>Discard</button>
+        <button type="button" className="adm-btn adm-btn--primary" disabled={!dirty || state.busy} onClick={save}>{state.busy ? 'Saving…' : 'Save form'}</button>
       </div>
     </div>
 
