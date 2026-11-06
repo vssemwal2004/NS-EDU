@@ -1,30 +1,31 @@
 'use client';
 import { useEffect, useId, useRef, useState } from 'react';
 import Link from 'next/link';
+import Brand from '@/components/ui/Brand';
 import Icon from '@/components/ui/Icon';
 import { api } from '@/lib/api/client';
 import { useAuthConfig } from './auth-config';
 import GoogleButton from './GoogleButton';
 import OtpInput from './OtpInput';
-import { clock, emailSuggestion, formatPhone, maskIdentifier, phoneDigits, readChannel, rememberChannel, validateIdentifier } from './login-helpers';
+import { clock, domainCompletions, emailSuggestion, formatPhone, maskIdentifier, phoneDigits, readChannel, rememberChannel, validateIdentifier } from './login-helpers';
 import styles from './OtpLoginForm.module.css';
-
-const channelMeta = {
-  email: { label: 'Email', icon: 'mail' },
-  phone: { label: 'Mobile', icon: 'phone' },
-};
 
 /**
  * Passwordless student login (the one implementation used by /login and the login popup).
+ * Layout follows the familiar pattern: email field and Continue first, then "or" Google / mobile
+ * number. /auth/config says which methods work today: one that is not switched on yet says
+ * "coming soon" instead of disappearing.
  * identify → verify → (name, when the account has none) → done. "Continue with Google" leaves the
  * page instead and comes back to `returnTo` (default: this page). The API creates the account on
  * the first successful verification. `askNameFor` (a signed-in student) opens straight on the name
  * step: Google accounts without a profile name come back with ?welcome=name.
+ * `onDismiss` adds a quiet "Maybe later" under the first step (used by the login nudge).
  * @param {{ onSuccess: (student, meta: { isNew: boolean }) => void, onVerified?: (student) => void,
  *   title?: string, lead?: string, titleId?: string, headingLevel?: 'h1'|'h2', active?: boolean,
- *   onLinkClick?: () => void, doneText?: string, returnTo?: string, notice?: string, askNameFor?: object }} props
+ *   onLinkClick?: () => void, doneText?: string, returnTo?: string, notice?: string, askNameFor?: object,
+ *   onDismiss?: () => void, dismissLabel?: string }} props
  */
-export default function OtpLoginForm({ onSuccess, onVerified, title, lead, titleId, headingLevel = 'h2', active = true, autoFocus = true, onLinkClick, doneText = 'Taking you back…', returnTo, notice = '', askNameFor = null }) {
+export default function OtpLoginForm({ onSuccess, onVerified, title, lead, titleId, headingLevel = 'h2', active = true, autoFocus = true, onLinkClick, doneText = 'Taking you back…', returnTo, notice = '', askNameFor = null, onDismiss, dismissLabel = 'Maybe later' }) {
   const config = useAuthConfig(active);
   const id = useId();
   const identifierRef = useRef(null);
@@ -48,16 +49,24 @@ export default function OtpLoginForm({ onSuccess, onVerified, title, lead, title
   const [cooldownUntil, setCooldownUntil] = useState(0);
   const [focusRequest, setFocusRequest] = useState(0);
   const [smsPaused, setSmsPaused] = useState(false);
+  const [googleNote, setGoogleNote] = useState(false);
+
+  const [phoneNote, setPhoneNote] = useState(false);
 
   const channels = config.channels;
-  const stored = preferred ?? (typeof window === 'undefined' ? 'email' : readChannel());
-  const channel = channels.includes(stored) ? stored : channels[0];
+  const usable = (item) => channels.includes(item);
+  // Email is the main way in and is on screen at once. Mobile is one tap away ("Continue with mobile
+  // number") and is chosen up front only for a browser that last signed in with it and while SMS works.
+  const remembered = typeof window === 'undefined' ? '' : readChannel();
+  const channel = preferred ?? (remembered === 'phone' && usable('phone') ? 'phone' : 'email');
+  const channelReady = usable(channel);
 
   useEffect(() => {
     if (!active || (!autoFocus && step === 'identify' && focusRequest === 0)) return;
     const targets = { identify: identifierRef.current, verify: otpRef.current?.querySelector('input:not(:disabled)'), name: nameRef.current, done: statusRef.current, blocked: statusRef.current };
     targets[step]?.focus({ preventScroll: true });
-  }, [active, autoFocus, step, focusRequest]);
+    // channelReady: the field only exists once /auth/config has answered, so focus it then.
+  }, [active, autoFocus, step, focusRequest, channelReady]);
 
   const cooldownLeft = Math.max(0, Math.ceil((cooldownUntil - now) / 1000));
   const ticking = active && (step === 'verify' || cooldownLeft > 0);
@@ -72,16 +81,24 @@ export default function OtpLoginForm({ onSuccess, onVerified, title, lead, title
   const resendLeft = Math.max(secondsLeft(challenge?.resendInSeconds), cooldownLeft);
   const expired = Boolean(challenge && (challenge.expired || expiresLeft === 0));
   const masked = challenge ? maskIdentifier(challenge.channel, challenge.identifier) : '';
-  const value = values[channel];
+  const value = values[channel] ?? '';
   const suggestion = channel === 'email' ? emailSuggestion(value) : '';
+  const completions = channel === 'email' && !suggestion ? domainCompletions(value, 3) : [];
   const identifyError = fieldError || error;
   const verifyError = expired ? 'This code has expired. Send a new one to continue.' : error;
   const minutes = Math.round((challenge?.expiresInSeconds || config.otpTtlSeconds) / 60);
   const Heading = headingLevel;
 
   const refocus = () => setFocusRequest((count) => count + 1);
-  function switchChannel(next) { setPreferred(next); setFieldError(''); setError(''); setSmsPaused(false); }
+  function switchChannel(next) { setPreferred(next); setFieldError(''); setError(''); setSmsPaused(false); setGoogleNote(false); setPhoneNote(false); refocus(); }
+  // Mobile codes need an SMS provider; until one is set up the button says so instead of switching.
+  function choosePhone() {
+    if (usable('phone')) switchChannel('phone');
+    else if (config.loaded) { setPhoneNote(true); setGoogleNote(false); }
+  }
+  function completeEmail(address) { setValues((current) => ({ ...current, email: address })); setFieldError(''); setError(''); identifierRef.current?.focus(); }
   function updateValue(next) {
+    if (!channel) return;
     const clean = channel === 'phone' ? phoneDigits(next) : next;
     setValues((current) => ({ ...current, [channel]: clean }));
     setError('');
@@ -112,7 +129,7 @@ export default function OtpLoginForm({ onSuccess, onVerified, title, lead, title
   }
   function requestCode(event) {
     event.preventDefault();
-    if (busy || cooldownLeft > 0) return;
+    if (busy || cooldownLeft > 0 || !channelReady) return;
     setAttempted(true);
     const problem = validateIdentifier(channel, value);
     if (problem) { setFieldError(problem); refocus(); return; }
@@ -164,27 +181,24 @@ export default function OtpLoginForm({ onSuccess, onVerified, title, lead, title
   const announcement = step === 'name' ? `${challenge ? 'Code verified.' : 'You’re signed in.'} One last step: tell us what to call you, or skip.`
     : step === 'verify' && challenge ? `Code sent to ${masked}.${expired ? ' The code has expired.' : resendLeft === 0 ? ' You can request a new code now.' : ''}` : '';
   const heading = {
-    identify: title || 'Log in to Gyaan Vidhya',
-    verify: challenge?.channel === 'phone' ? 'Check your messages' : 'Check your inbox',
+    identify: title || 'Log in or sign up',
+    verify: challenge?.channel === 'phone' ? 'Check your phone' : 'Check your email',
     name: 'What should we call you?',
     done: 'You’re signed in',
     blocked: 'We couldn’t sign you in',
   }[step];
-  const codeWay = channels.length > 1 ? 'a one-time code on your email or mobile' : 'a one-time code by email';
   const leadText = {
-    identify: lead || (config.google ? `Continue with Google, or get ${codeWay}. No password, no separate sign-up.`
-      : channels.length > 1 ? 'Get a one-time code on your email or mobile. No password, no separate sign-up.' : 'We’ll email you a one-time code. No password, no separate sign-up.'),
+    identify: lead || 'Welcome to Gyaan Vidhya. No password needed — we’ll send you a one-time code.',
     verify: null,
-    name: 'Your counsellor will use this name when they get in touch. You can change it any time in your account.',
+    name: 'Your counsellor will use this name when they get in touch.',
     done: doneText,
     blocked: 'This sign-in can’t continue.',
   }[step];
-  const stepLabel = { identify: 'Step 1 of 2 · Get a code', verify: 'Step 2 of 2 · Verify', name: `${challenge ? 'Verified' : 'Signed in'} · One last thing`, done: 'Verified', blocked: 'Sign-in stopped' }[step];
 
   return <div className={styles.root} data-step={step}>
     <p className="sr-only" aria-live="polite">{announcement}</p>
+    <Brand className={styles.brand} />
     <div className={styles.heading}>
-      <p className={styles.stepTag}><span aria-hidden="true" data-on={step !== 'identify' || undefined} />{stepLabel}</p>
       <Heading id={titleId} className={styles.title}>{heading}</Heading>
       {step === 'verify' && challenge
         ? <p className={styles.lead}>Enter the 6-digit code we sent to <strong>{masked}</strong>.
@@ -194,20 +208,7 @@ export default function OtpLoginForm({ onSuccess, onVerified, title, lead, title
 
     {step === 'identify' && notice && <p className={styles.notice} role="alert"><Icon name="shield" /><span>{notice}</span></p>}
 
-    {step === 'identify' && config.google && <div className={styles.alternatives}>
-      <GoogleButton returnTo={returnTo} />
-      <p className={styles.divider}>or use a one-time code</p>
-    </div>}
-
     {step === 'identify' && <form className={styles.form} onSubmit={requestCode} noValidate>
-      {channels.length > 1 && <fieldset className={styles.segmented} data-active={channel}>
-        <legend className="sr-only">Log in with</legend>
-        {channels.map((item) => <label key={item} className={styles.segment}>
-          <input className="sr-only" type="radio" name={`${id}-channel`} value={item} checked={channel === item} onChange={() => switchChannel(item)} />
-          <Icon name={channelMeta[item].icon} />{channelMeta[item].label}
-        </label>)}
-      </fieldset>}
-
       <div className={styles.field}>
         <label className={styles.label} htmlFor={`${id}-identifier`}>{channel === 'phone' ? 'Mobile number' : 'Email address'}</label>
         <div className={styles.inputWrap} data-invalid={Boolean(fieldError) || undefined}>
@@ -215,22 +216,39 @@ export default function OtpLoginForm({ onSuccess, onVerified, title, lead, title
           <input ref={identifierRef} id={`${id}-identifier`} data-otp-identifier="" value={channel === 'phone' ? formatPhone(value) : value}
             {...(channel === 'phone'
               ? { type: 'tel', inputMode: 'numeric', autoComplete: 'tel-national', placeholder: '98765 43210', maxLength: 16 }
-              : { type: 'email', inputMode: 'email', autoComplete: 'email', placeholder: 'you@example.com', maxLength: 254, autoCapitalize: 'none', spellCheck: false })}
+              : { type: 'email', inputMode: 'email', autoComplete: 'email', placeholder: 'name@example.com', maxLength: 254, autoCapitalize: 'none', spellCheck: false })}
             onChange={(event) => updateValue(event.target.value)}
             onBlur={() => { if (attempted) setFieldError(validateIdentifier(channel, value)); }}
             aria-invalid={Boolean(fieldError)} aria-describedby={identifyError ? `${id}-error` : undefined} />
         </div>
-        {suggestion && <button type="button" className={styles.suggest} onClick={() => { setValues((current) => ({ ...current, email: suggestion })); setFieldError(''); identifierRef.current?.focus(); }}>Did you mean <strong>{suggestion}</strong>?</button>}
+        {completions.length > 0 && <div className={styles.completions} role="group" aria-label="Complete your email address">
+          {completions.map((address) => <button key={address} type="button" className={styles.completion} onClick={() => completeEmail(address)}>
+            @{address.split('@')[1]}<span className="sr-only"> — use {address}</span>
+          </button>)}
+        </div>}
+        {suggestion && <button type="button" className={styles.suggest} onClick={() => completeEmail(suggestion)}>Did you mean <strong>{suggestion}</strong>?</button>}
         {identifyError && <p id={`${id}-error`} className={styles.error} role="alert"><Icon name="close" />{identifyError}</p>}
-        {smsPaused && channel === 'phone' && channels.includes('email') && <button type="button" className={styles.suggest} onClick={() => { switchChannel('email'); refocus(); }}>Use my <strong>email address</strong> instead</button>}
+        {smsPaused && channel === 'phone' && <button type="button" className={styles.suggest} onClick={() => switchChannel('email')}>Use my <strong>email address</strong> instead</button>}
       </div>
 
-      <button className={styles.primary} type="submit" disabled={busy || cooldownLeft > 0}>
+      <button className={styles.primary} type="submit" disabled={busy || cooldownLeft > 0 || !channelReady}>
         {busy ? <><span className={styles.spinner} aria-hidden="true" />Sending code…</>
           : cooldownLeft > 0 ? <><Icon name="loginClock" />Try again in {clock(cooldownLeft)}</>
-            : <>{channel === 'phone' ? 'Text me a code' : 'Email me a code'}<Icon name="arrow" /></>}
+            : 'Continue'}
       </button>
     </form>}
+
+    {step === 'identify' && <div className={styles.alternatives}>
+      <p className={styles.divider}>or</p>
+      <GoogleButton returnTo={returnTo} available={config.google} describedBy={googleNote ? `${id}-method-note` : undefined}
+        onUnavailable={() => { if (config.loaded) { setGoogleNote(true); setPhoneNote(false); } }} />
+      {channel === 'email'
+        ? <button type="button" className={styles.secondary} onClick={choosePhone} aria-describedby={phoneNote ? `${id}-method-note` : undefined}><Icon name="phone" />Continue with mobile number</button>
+        : <button type="button" className={styles.secondary} onClick={() => switchChannel('email')}><Icon name="mail" />Continue with email</button>}
+      {(googleNote || phoneNote) && <p id={`${id}-method-note`} className={styles.methodNote} role="status">
+        <Icon name="clock" /><span>{googleNote ? 'Google sign-in' : 'Mobile number sign-in'} is coming soon. Please continue with your email for now.</span>
+      </p>}
+    </div>}
 
     {step === 'verify' && challenge && <form className={styles.form} onSubmit={(event) => { event.preventDefault(); if (expired) resend(); else verify(); }} noValidate>
       {challenge.devCode && <div className={styles.devCode}>
@@ -280,6 +298,9 @@ export default function OtpLoginForm({ onSuccess, onVerified, title, lead, title
       <Icon name="shield" /><p>{error || 'This account is suspended.'} <Link href="/contact" onClick={onLinkClick}>Contact support</Link></p>
     </div>}
 
-    {(step === 'identify' || step === 'verify') && <p className={styles.legal}><Icon name="lock" /><span>Codes expire in {minutes} minutes and work once. By continuing you agree to the <Link href="/terms-and-conditions" onClick={onLinkClick}>Terms</Link> and <Link href="/privacy-policy" onClick={onLinkClick}>Privacy policy</Link>.</span></p>}
+    {step === 'identify' && <p className={styles.legal}>By continuing, you agree to our <Link href="/terms-and-conditions" onClick={onLinkClick}>Terms</Link> and <Link href="/privacy-policy" onClick={onLinkClick}>Privacy Policy</Link>.</p>}
+    {step === 'verify' && <p className={styles.legal}><Icon name="lock" />The code expires in {minutes} minutes and works once.</p>}
+
+    {step === 'identify' && onDismiss && <button type="button" className={styles.skip} onClick={onDismiss}>{dismissLabel}</button>}
   </div>;
 }

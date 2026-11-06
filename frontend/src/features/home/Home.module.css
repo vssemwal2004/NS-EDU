@@ -13,11 +13,12 @@
 .cardIcon { display: grid; place-items: center; flex-shrink: 0; width: 48px; height: 48px; border-radius: 14px; background: var(--home-icon-background); color: var(--color-primary); }
 .cardIcon :global(.icon) { width: 24px; height: 24px; }
 
-/* Small course chips used in stream and exam cards; the ::before extends the hit area to 44px. */
-.streamChips, .examCourses { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
-.streamChips a, .examCourses a { position: relative; display: inline-flex; align-items: center; min-height: 34px; padding: 0 var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-pill); background: var(--color-surface); color: var(--color-primary); font-size: var(--text-caption); font-weight: 600; text-decoration: none; transition: background var(--motion-fast), border-color var(--motion-fast); }
-.streamChips a::before, .examCourses a::before { content: ''; position: absolute; inset: -5px 0; }
-.streamChips a:hover, .examCourses a:hover { border-color: var(--color-accent); background: var(--color-accent-soft); }
+/* Small course chips used in exam cards; the ::before extends the hit area to 44px.
+   (Stream cards have their own themed chips: StreamBand.module.css.) */
+.examCourses { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
+.examCourses a { position: relative; display: inline-flex; align-items: center; min-height: 34px; padding: 0 var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-pill); background: var(--color-surface); color: var(--color-primary); font-size: var(--text-caption); font-weight: 600; text-decoration: none; transition: background var(--motion-fast), border-color var(--motion-fast); }
+.examCourses a::before { content: ''; position: absolute; inset: -5px 0; }
+.examCourses a:hover { border-color: var(--color-accent); background: var(--color-accent-soft); }
 
 /* A · At a glance — a dark wine band with champagne figures: the one deep-coloured moment between
    the light hero and the light sections below, so the numbers read as the platform's proof. */
@@ -39,37 +40,7 @@
 .statList strong { color: var(--lux-champagne); font: 400 clamp(1.9rem, 1.4rem + 1.2vw, 2.6rem)/1 var(--lux-font-display); font-variant-numeric: lining-nums; }
 .statList strong + span { color: var(--lux-text-on-dark-muted); font-size: var(--text-caption); line-height: 1.35; }
 
-/* B · Explore by stream
-   A card per field: a wine icon tile, the field in the display serif, how many directory
-   institutions offer it, and its top courses with their own counts. A gold rule grows along the
-   top edge on hover so the whole grid reads as one set of doors rather than eight boxes. */
-.streamGrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-4); margin: 0; padding: 0; list-style: none; }
-.streamCard { position: relative; isolation: isolate; display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; padding: var(--space-5); overflow: hidden; border: 1px solid var(--lux-border); border-radius: var(--lux-radius-lg); background: linear-gradient(180deg, var(--lux-surface-raised), var(--lux-ivory)); box-shadow: var(--lux-shadow-soft); transition: transform var(--lux-dur-2) var(--lux-ease-out), border-color var(--lux-dur-2), box-shadow var(--lux-dur-2); }
-.streamCard::before { content: ''; position: absolute; inset: 0 auto auto 0; width: 100%; height: 3px; background: linear-gradient(90deg, var(--lux-wine), var(--lux-champagne)); transform: scaleX(0); transform-origin: left; transition: transform var(--lux-dur-3) var(--lux-ease-out); }
-.streamCard::after { content: ''; position: absolute; z-index: -1; right: -40px; bottom: -40px; width: 140px; height: 140px; border-radius: 50%; background: radial-gradient(circle, rgb(201 164 106 / 16%), transparent 70%); opacity: 0; transition: opacity var(--lux-dur-3); }
-.streamCard:hover { transform: translateY(-4px); border-color: var(--lux-border-strong); box-shadow: var(--lux-shadow-card); }
-.streamCard:hover::before { transform: scaleX(1); }
-.streamCard:hover::after { opacity: 1; }
-.streamTop { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: var(--space-2); }
-.streamIcon { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 16px; background: linear-gradient(145deg, var(--lux-wine), var(--lux-oxblood)); color: #FFFFFF; box-shadow: 0 10px 22px -12px rgb(114 36 59 / 70%), inset 0 0 0 1px rgb(201 164 106 / 35%); }
-.streamIcon :global(.icon) { width: 25px; height: 25px; }
-.streamCard h3 { font: 400 clamp(1.3rem, 1rem + .7vw, 1.6rem)/1.15 var(--lux-font-display); letter-spacing: -.01em; }
-.stretched { color: var(--lux-ink); text-decoration: none; transition: color var(--lux-dur-2); }
-.streamCard:hover .stretched { color: var(--lux-wine); }
-.stretched::after { content: ''; position: absolute; inset: 0; border-radius: inherit; }
-.stretched:focus-visible { outline: none; }
-.stretched:focus-visible::after { outline: 3px solid var(--color-focus); outline-offset: 3px; border-radius: var(--lux-radius-lg); }
-.streamMeta { margin: 0 0 var(--space-3); color: var(--lux-text-muted); font-size: var(--lux-small); }
-.streamMeta strong { color: var(--lux-wine); font-weight: 700; font-variant-numeric: tabular-nums; }
-.streamChips { position: relative; z-index: 1; margin-top: auto; padding-top: var(--space-3); border-top: 1px solid var(--lux-border); }
-.streamChips a { gap: 6px; }
-.chipCount { padding: 1px 6px; border-radius: var(--lux-radius-pill); background: var(--lux-blush-soft); color: var(--lux-bronze-ink); font-size: .6875rem; font-weight: 700; font-variant-numeric: tabular-nums; }
-.streamArrow { width: 20px; height: 20px; margin-top: 4px; color: var(--lux-bronze); transform: rotate(-45deg); transition: transform var(--lux-dur-2), color var(--lux-dur-2); }
-.streamCard:hover .streamArrow { transform: rotate(0deg) translateX(2px); color: var(--lux-wine); }
-@media (prefers-reduced-motion: reduce) {
-  .streamCard, .streamCard::before, .streamArrow { transition: none; }
-  .streamCard:hover { transform: none; }
-}
+/* B · Explore by stream — StreamBand.module.css */
 
 /* C · Compare promo */
 .promoBand { padding-block: var(--space-6); background: var(--color-page); border-top: 1px solid var(--color-border); }
@@ -121,7 +92,7 @@
   .statsInner { grid-template-columns: 1fr; }
   .statList li:first-child { border-left: 0; }
   .statList li:first-child a { padding-left: 0; }
-  .streamGrid, .examGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .examGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .promo { grid-template-columns: auto minmax(0, 1fr); }
   .promo:has(.promoPoints) { grid-template-columns: auto minmax(0, 1fr); }
   .promoChips, .promoPoints, .promoAction { grid-column: 1 / -1; }
@@ -138,16 +109,6 @@
   .statList a, .statList li:first-child a { padding: var(--space-3); border-radius: 0; }
   .statIcon { display: none; }
   .statList strong { font-size: 1.6rem; }
-  /* Phones: two compact tiles per row — icon, field and count; the course chips move to /courses. */
-  .streamGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); }
-  .streamCard { gap: var(--space-1); padding: var(--space-4); }
-  .streamTop { margin-bottom: var(--space-1); }
-  .streamIcon { width: 42px; height: 42px; border-radius: 13px; }
-  .streamIcon :global(.icon) { width: 21px; height: 21px; }
-  .streamCard h3 { font-size: 1.15rem; }
-  .streamMeta { margin: 0; font-size: .75rem; }
-  .streamChips { display: none; }
-  .streamArrow { width: 16px; height: 16px; }
   .promo { padding: var(--space-5); }
   .promo::after { display: none; }
   .promoIcon { width: 48px; height: 48px; border-radius: 14px; }
@@ -162,8 +123,7 @@
   .sectionActions :global(.text-link) { justify-content: center; }
   .sectionButton { width: 100%; white-space: normal; }
 }
-/* Phones (≤ 640px): denser bands. Stream tiles become a compact two-column list (icon beside the field);
-   the exam guides become one swipe rail with their two actions side by side; small links and chips get a
+/* Phones (≤ 640px): denser bands. The exam guides become one swipe rail with their two actions side by side; small links and chips get a
    36–44px tap height. Same sections, same content — only size and arrangement change. */
 @media (max-width: 640px) {
   .band { padding-block: var(--lux-section); }
@@ -181,18 +141,6 @@
   .statList a, .statList li:first-child a { padding: var(--space-3) var(--space-3) 10px; }
   .statList strong { font-size: 1.5rem; }
   .statList strong + span { font-size: .75rem; }
-
-  /* Streams: icon | field + count, four rows of two. The field link is the card's 36px+ tap target. */
-  .streamGrid { gap: var(--space-2); }
-  .streamCard { display: grid; grid-template-columns: 36px minmax(0, 1fr); align-items: center; gap: 0 10px; padding: 0 var(--space-3) var(--space-3); border-radius: var(--lux-radius-md); }
-  .streamCard:hover { transform: none; }
-  .streamTop { grid-row: 1 / 3; align-self: center; margin: var(--space-3) 0 0; }
-  .streamIcon { width: 36px; height: 36px; border-radius: 11px; }
-  .streamIcon :global(.icon) { width: 18px; height: 18px; }
-  .streamArrow { display: none; }
-  .streamCard h3 { font-size: 1.0625rem; line-height: 1.2; overflow-wrap: anywhere; }
-  .stretched { display: block; padding-top: var(--space-3); min-height: 36px; }
-  .streamMeta { font-size: .75rem; line-height: 1.35; }
 
   /* Compare promo: tighter card, the four points as small tags. */
   .promoBand { padding-block: var(--lux-space-4); }

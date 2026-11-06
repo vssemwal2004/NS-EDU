@@ -17,6 +17,7 @@ import { insightsRouter } from './modules/insights/insights.routes.js';
 import { consentRouter } from './modules/consent/consent.routes.js';
 import { careerRouter } from './modules/career/career.routes.js';
 import { formsRouter } from './modules/drives/forms.routes.js';
+import { searchRouter } from './modules/search/search.routes.js';
 
 const isDatabaseUnavailable = (error) => /^Mongo(ServerSelection|Network|NotConnected|Topology)/.test(error?.name ?? '')
   || error?.message?.startsWith('Set MONGODB_URI');
@@ -36,6 +37,7 @@ app.use('/api/catalog', catalogRouter);
 app.use('/api/platform', platformRouter);
 app.use('/api/content', contentRouter);
 app.use('/api/universities', universitiesRouter);
+app.use('/api/search', searchRouter);
 app.use('/api/insights', insightsRouter);
 app.use('/api/consent', consentRouter);
 app.use('/api/auth', studentAuthRouter);

@@ -5,10 +5,11 @@
 // Run it through the scraper CLI: `npm run scrape --workspace backend -- enrich-images [options]`.
 import { COLLECTIONS, getDb } from '../db/collections.js';
 import { compressionRatio } from '../lib/image-pipeline.js';
+import { isRetiredImage, retiredImagePattern } from '../lib/retired-images.js';
 import { upsertUniversities } from '../modules/universities/university-service.js';
 import { scraperConfig } from '../scraper/config.js';
 import { galleryCandidates } from '../scraper/deep.js';
-import { parsePage, pickLinks } from '../scraper/extract.js';
+import { logoFrom, parsePage, pickLinks } from '../scraper/extract.js';
 import { CrawlError, createFetcher } from '../scraper/fetcher.js';
 import { normalizeWebsite, registrableDomain } from '../scraper/urls.js';
 import { pipelineFor } from '../scraper/worker.js';
@@ -19,10 +20,15 @@ async function selectInstitutions({ slugs = [], sourceUrl = '', state = '', limi
   const filter = { website: { $nin: [null, ''] } };
   if (slugs.length) filter.slug = { $in: slugs };
   if (state) filter.state = state;
-  // "missing" skips anything that already has photographs of ours; "all" redoes them.
+  // "missing" skips anything that already has photographs of ours; "all" redoes them; "retired"
+  // picks records whose photos, cover or logo sit on a Cloudinary account that no longer serves them.
   if (mode === 'missing' && !slugs.length) filter.$or = [{ gallery: { $exists: false } }, { gallery: { $size: 0 } }];
+  if (mode === 'retired') {
+    const dead = retiredImagePattern();
+    filter.$or = [{ 'gallery.url': dead }, { coverUrl: dead }, { logoUrl: dead }];
+  }
   const docs = await (await getDb()).collection(COLLECTIONS.institutions)
-    .find(filter, { projection: { slug: 1, name: 1, city: 1, state: 1, website: 1, coverUrl: 1, lockedFields: 1 } })
+    .find(filter, { projection: { slug: 1, name: 1, city: 1, state: 1, website: 1, coverUrl: 1, logoUrl: 1, gallery: 1, lockedFields: 1 } })
     .sort({ nirfRank: 1, popularity: -1, _id: 1 }).limit(Math.max(1, limit)).toArray();
   if (sourceUrl) {
     const crawlWebsite = normalizeWebsite(sourceUrl);
@@ -45,7 +51,45 @@ async function gatherCandidates(doc, { fetcher, config }) {
       pages.push({ ...parsePage(result.html, result.url), category: link.category });
     } catch { /* one missing sub-page is not worth failing over */ }
   }
-  return { domain, candidates: galleryCandidates(pages, { domain }) };
+  return { domain, home: pages[0], candidates: galleryCandidates(pages, { domain }) };
+}
+
+/**
+ * Replaces images on the retired Cloudinary account for one institution: new photographs from the
+ * official site (plus any still-working ones), the cover from the first of them, and the logo
+ * found on the home page. Only dead links are touched, never a field an admin locked, and a field
+ * with no replacement is cleared (it could not load anyway). Returns what changed.
+ */
+async function replaceRetired(doc, { home, domain, stored, images }) {
+  const locked = new Set(doc.lockedFields ?? []);
+  const set = {};
+  const unset = {};
+  const changed = [];
+  const oldGallery = doc.gallery ?? [];
+  if (!locked.has('gallery') && oldGallery.some((row) => isRetiredImage(row?.url))) {
+    const live = oldGallery.filter((row) => row?.url && !isRetiredImage(row.url));
+    const rows = [...stored, ...live.filter((row) => !stored.some((item) => item.url === row.url))].slice(0, 12);
+    set.gallery = rows;
+    changed.push(`gallery ${oldGallery.length}→${rows.length}`);
+  }
+  const gallery = set.gallery ?? oldGallery.filter((row) => !isRetiredImage(row?.url));
+  if (!locked.has('coverUrl') && isRetiredImage(doc.coverUrl)) {
+    if (gallery[0]?.url) set.coverUrl = gallery[0].url; else unset.coverUrl = '';
+    changed.push(`cover ${set.coverUrl ? 'replaced' : 'cleared'}`);
+  }
+  if (!locked.has('logoUrl') && isRetiredImage(doc.logoUrl)) {
+    const found = logoFrom(home);
+    const logo = found ? await images.process({ url: found, slug: doc.slug, kind: 'logo', domain, sourcePage: home.url }) : null;
+    if (logo?.url) set.logoUrl = logo.url; else unset.logoUrl = '';
+    changed.push(`logo ${logo?.url ? 'replaced' : 'cleared'}`);
+  }
+  if (!changed.length) return changed;
+  // updatedAt changes, so the running API notices and rebuilds its search index within a minute.
+  await (await getDb()).collection(COLLECTIONS.institutions).updateOne({ _id: doc._id }, {
+    $set: { ...set, updatedAt: new Date() },
+    ...(Object.keys(unset).length && { $unset: unset }),
+  });
+  return changed;
 }
 
 /**
@@ -67,7 +111,18 @@ export async function enrichImages({ slugs = [], sourceUrl = '', state = '', lim
     while (queue.length && !signal?.aborted) {
       const doc = queue.shift();
       try {
-        const { domain, candidates } = await gatherCandidates(doc, { fetcher, config });
+        const { domain, home, candidates } = await gatherCandidates(doc, { fetcher, config });
+        if (mode === 'retired') {
+          if (dryRun) { log(`[dry-run] ${doc.slug} — ${candidates.length} candidate photographs`); continue; }
+          const stored = candidates.length ? await images.processMany(candidates, { slug: doc.slug, kind: 'photo', want: perInstitution, domain }) : [];
+          const rows = stored.map(({ bytes: _bytes, originalBytes: _originalBytes, ...row }) => row);
+          const changed = await replaceRetired(doc, { home, domain, stored: rows, images });
+          summary.updated += 1;
+          summary.stored += rows.length;
+          if (summary.examples.length < 5 && rows[0]) summary.examples.push({ slug: doc.slug, images: rows.length, first: rows[0].url });
+          log(`[ok] ${doc.slug} — ${changed.join(', ') || 'nothing to change'}`);
+          continue;
+        }
         if (!candidates.length) { summary.empty += 1; log(`[none] ${doc.slug} — no usable photographs on the site`); continue; }
         if (dryRun) { log(`[dry-run] ${doc.slug} — ${candidates.length} candidates`); continue; }
         const stored = await images.processMany(candidates, { slug: doc.slug, kind: 'photo', want: perInstitution, domain });

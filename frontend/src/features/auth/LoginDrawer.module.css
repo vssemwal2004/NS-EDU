@@ -1,12 +1,13 @@
-.dialog { width: min(940px, calc(100% - 48px)); max-width: none; max-height: min(680px, calc(100dvh - 48px)); margin: auto; padding: 0; border: 0; border-radius: var(--lux-radius-xl); background: var(--lux-ivory); color: var(--lux-ink); box-shadow: 0 40px 100px -30px rgb(31 20 24 / 60%), 0 0 0 1px rgb(201 164 106 / 28%); overflow: hidden; overscroll-behavior: contain; }
+.dialog { width: min(940px, calc(100% - 48px)); max-width: none; max-height: min(720px, calc(100dvh - 48px)); margin: auto; padding: 0; border: 0; border-radius: var(--lux-radius-xl); background: var(--lux-ivory); color: var(--lux-ink); box-shadow: 0 40px 100px -30px rgb(31 20 24 / 60%), 0 0 0 1px rgb(201 164 106 / 28%); overflow: hidden; overscroll-behavior: contain; }
 .dialog::backdrop { background: rgb(31 20 24 / 55%); backdrop-filter: blur(6px) saturate(1.1); -webkit-backdrop-filter: blur(6px) saturate(1.1); }
 .dialog[open] { animation: login-in var(--lux-dur-3) var(--lux-ease-out) both; }
 .dialog[open]::backdrop { animation: lux-fade-in var(--lux-dur-2) ease both; }
 @keyframes login-in { from { opacity: 0; transform: translateY(14px) scale(.985); } to { opacity: 1; transform: none; } }
 
 /* Drawing on the left, the form on the right; both columns share the dialog's full height. */
-.shell { position: relative; display: grid; grid-template-columns: minmax(0, 420px) minmax(0, 1fr); height: min(680px, calc(100dvh - 48px)); }
-.main { display: grid; align-content: center; min-width: 0; min-height: 0; padding: var(--lux-space-8) clamp(1.75rem, 1rem + 3vw, 3.5rem) var(--lux-space-7); overflow-y: auto; }
+.shell { position: relative; display: grid; grid-template-columns: minmax(0, 420px) minmax(0, 1fr); height: min(720px, calc(100dvh - 48px)); }
+/* `safe center`: a form taller than the dialog starts at the top and scrolls, never clipped above. */
+.main { display: grid; align-content: safe center; min-width: 0; min-height: 0; padding: var(--lux-space-7) clamp(1.75rem, 1rem + 3vw, 3.5rem) var(--lux-space-6); overflow-y: auto; }
 .handle { display: none; }
 .close { position: absolute; z-index: 2; top: var(--lux-space-4); right: var(--lux-space-4); display: grid; place-items: center; width: 44px; height: 44px; border: 1px solid var(--lux-border); border-radius: 50%; background: var(--lux-surface-raised); color: var(--lux-wine); cursor: pointer; transition: background-color var(--lux-dur-2), border-color var(--lux-dur-2), transform var(--lux-dur-2); }
 .close:hover { background: var(--lux-sand); border-color: var(--lux-border-strong); transform: rotate(90deg); }

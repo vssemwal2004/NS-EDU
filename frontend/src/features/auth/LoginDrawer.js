@@ -8,12 +8,23 @@ import styles from './LoginDrawer.module.css';
 
 // Copy for openLogin({ reason }). Any other string is shown as the lead line.
 const reasons = {
-  apply: { title: 'Log in to apply', lead: 'Sign in once. Your quick-apply form opens right after.' },
-  compare: { title: 'Log in to compare', lead: 'Comparisons use the full university directory, which is open to signed-in students.' },
-  directory: { title: 'Log in to explore', lead: 'The full university directory is open to signed-in students. Signing in takes a minute.' },
-  account: { title: 'Your student space', lead: 'Log in to see your applications and saved preferences.' },
-  limit: { title: 'Log in to keep exploring', lead: 'You have used your free university views. Log in — it is free and takes a minute — to open every profile and search result.' },
+  // Short on purpose: one line of title, one line of reason.
+  apply: { title: 'Log in to apply', lead: 'Your application form opens right after.' },
+  compare: { title: 'Log in to compare', lead: 'Compare fees, placements and more — it’s free.' },
+  directory: { title: 'Log in to explore', lead: 'See every university profile and result — it’s free.' },
+  account: { title: 'Your student account', lead: 'See your applications and saved preferences.' },
+  limit: { title: 'Log in to keep exploring', lead: 'You’ve used your free views. Log in free to see everything.' },
+  // Shown by the login nudge after a few searches or pages. Closable at any time ("Maybe later" or ×).
+  nudge: { title: 'Get the full experience', lead: 'Log in free to save your shortlist and talk to a counsellor.', dismissible: true },
 };
+
+// What a login actually gives today (see gated-routes.js and the counsellor rules); no numbers.
+const BENEFITS = [
+  { icon: 'building', text: 'Open every university profile and search result' },
+  { icon: 'scales', text: 'Compare universities and keep your shortlist' },
+  { icon: 'chat', text: 'Call or WhatsApp a counsellor for your field' },
+];
+const WITH_BENEFITS = new Set(['nudge', 'limit', 'directory']);
 
 // The one login surface on the site: always this popup, over whatever page the student is on
 // (/login itself opens it over the homepage). A centred dialog on larger screens, a bottom sheet
@@ -51,16 +62,18 @@ export default function LoginDrawer() {
   function verified(student) { verifiedStudent.current = student; timer.current = window.setTimeout(finish, 650); }
 
   const copy = reasons[loginReason] ?? (loginReason ? { title: 'Log in to continue', lead: loginReason } : {});
+  const benefits = WITH_BENEFITS.has(loginReason) ? BENEFITS : [];
   return <dialog ref={dialog} className={styles.dialog} aria-labelledby={`${id}-title`}
     onCancel={(event) => { event.preventDefault(); close(); }}
     onPointerDown={(event) => { pressedBackdrop.current = event.target === event.currentTarget; }}
     onClick={(event) => { if (pressedBackdrop.current && event.target === event.currentTarget) close(); pressedBackdrop.current = false; }}>
     {session.count > 0 && <div className={styles.shell}>
-      <LoginArt />
+      <LoginArt benefits={benefits} />
       <div className={styles.main}>
         <OtpLoginForm key={session.count} active={loginOpen} titleId={`${id}-title`} title={copy.title} lead={copy.lead}
           onVerified={verifiedCode} onSuccess={verified} onLinkClick={close} doneText="Continuing where you left off…"
-          returnTo={loginReturnTo || undefined} notice={loginNotice} askNameFor={loginAskName ? student : null} />
+          returnTo={loginReturnTo || undefined} notice={loginNotice} askNameFor={loginAskName ? student : null}
+          onDismiss={copy.dismissible ? close : undefined} />
       </div>
       {/* Pinned to the dialog's corner: over the form on desktop, over the drawing on a phone sheet. */}
       <span className={styles.handle} aria-hidden="true" />

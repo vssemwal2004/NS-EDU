@@ -129,4 +129,32 @@ describe('universities service', { skip }, () => {
     assert.equal(detail.item.naacGrade, 'A+');
     await assert.rejects(service.getUniversity('held-back-university'), { status: 404 });
   });
+
+  test('text search is answered from the in-memory index: typos, short forms, filters, hidden records', async () => {
+    const store = await import('../src/modules/search/search-store.js');
+    await service.upsertUniversities([
+      { name: 'University of Petroleum and Energy Studies, Dehradun', city: 'Dehradun', state: 'Uttarakhand', popularity: 5 },
+      { name: 'Graphic Era University, Dehradun', city: 'Dehradun', state: 'Uttarakhand' },
+    ], { source: { kind: 'import', name: 'Test list' } });
+    service.invalidateUniversityCaches();
+    await store.warmSearch();
+    assert.equal(store.searchStatus().ready, true);
+
+    const short = await service.listUniversities({ q: 'UPES' });
+    assert.equal(short.items[0].id, 'university-of-petroleum-and-energy-studies-dehradun');
+    assert.equal(short.items[0].matchedShortForm, 'UPES');
+    assert.deepEqual(short.search, { corrected: '', mode: 'exact' });
+
+    const typo = await service.listUniversities({ q: 'grafic era' });
+    assert.equal(typo.total, 1);
+    assert.equal(typo.search.corrected, 'graphic era');
+    assert.equal((await service.listUniversities({ q: 'dehradun', state: 'Maharashtra' })).total, 0, 'filters apply to indexed results');
+    assert.equal((await service.listUniversities({ q: 'held back' })).total, 0, 'unpublished records are not in the index');
+
+    const suggest = await service.suggestUniversities('petrolium');
+    assert.equal(suggest.corrected, 'petroleum');
+    assert.equal(suggest.items[0].name, 'University of Petroleum and Energy Studies, Dehradun');
+    const everything = store.suggestEverything('dehra');
+    assert.deepEqual(everything.places.map((place) => [place.kind, place.name, place.institutions]), [['city', 'Dehradun', 2]]);
+  });
 });

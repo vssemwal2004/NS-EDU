@@ -34,7 +34,11 @@ const consentEvents = async () => (await getDb()).collection(COLLECTIONS.consent
 export async function recordConsent(body, { previous = null } = {}) {
   const choice = body?.choice;
   if (!CONSENT_CHOICES.includes(choice)) throw new HttpError(400, 'choice must be "all" or "essential"', { fields: { choice: 'Choose all or essential' } });
-  await (await consentEvents()).insertOne({ choice, changed: Boolean(previous), at: new Date() });
+  // The visitor's choice is the cookie, set at once by the route; this anonymous counter row is only
+  // for the admin report, so the banner never waits on the database for it.
+  const at = new Date();
+  consentEvents().then((events) => events.insertOne({ choice, changed: Boolean(previous), at }))
+    .catch((error) => console.error('[consent] could not log a decision:', error.message));
   return choice;
 }
 

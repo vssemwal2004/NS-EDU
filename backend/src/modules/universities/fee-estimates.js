@@ -112,7 +112,7 @@ export async function rebuildFeeEstimates({ log = () => {} } = {}) {
   return { groups: groups.length, institutions: institutions.length };
 }
 
-const estimateCache = createTtlCache({ ttlMs: 10 * 60_000, maxEntries: 4 });
+const estimateCache = createTtlCache({ ttlMs: 10 * 60_000, staleMs: 60 * 60_000, maxEntries: 4 });
 const loadIndex = () => estimateCache.wrap('index', async () => indexGroups(await (await getDb()).collection(COLLECTIONS.feeEstimates).find({}, { projection: { _id: 0, computedAt: 0 } }).toArray()));
 
 /** Adds `estimate` to every programme row that has a catalogue course but no published fee. */

@@ -138,7 +138,8 @@ async function enrichImagesCommand() {
     limit: positiveInt(option('limit'), 'limit') ?? 50,
     want: positiveInt(option('want'), 'want'),
     concurrency: positiveInt(option('concurrency'), 'concurrency'),
-    mode: flag('all') ? 'all' : 'missing',
+    // --retired: replace photos, covers and logos stored on a Cloudinary account that no longer serves them.
+    mode: flag('retired') ? 'retired' : flag('all') ? 'all' : 'missing',
     dryRun: flag('dry-run'),
     signal: controller.signal,
     log: (line) => console.log(line),

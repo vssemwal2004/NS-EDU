@@ -21,7 +21,33 @@ export const FLOW_SECONDS = 10 * 60;
 const endpoint = (name, fallback) => (process.env.NODE_ENV === 'test' && process.env[name]) || fallback;
 
 export const googleEnabled = () => Boolean(env.google.clientId && env.google.clientSecret);
-export const googleRedirectUri = () => `${env.publicSiteUrl}/api/auth/google/callback`;
+export const googleRedirectUri = (origin = env.publicSiteUrl) => `${origin}/api/auth/google/callback`;
+
+const LOOPBACK = new Set(['localhost', '127.0.0.1']);
+const bareHost = (host) => host.replace(/^www\./, '');
+
+/**
+ * The site address this sign-in started on, when it is one we serve: PUBLIC_SITE_URL itself, its
+ * www / bare-domain twin, or (outside production) localhost ↔ 127.0.0.1 on the same port. Google
+ * must send the student back to the same address, because the browser keeps the flow cookie per
+ * host: starting on localhost and returning to 127.0.0.1 loses it ("started in another tab").
+ * Anything else (a forged Host header, an unknown domain) falls back to PUBLIC_SITE_URL.
+ * Every address used must also be listed as a redirect URI in the Google Cloud console.
+ */
+export function siteOriginFor(request) {
+  const canonical = new URL(env.publicSiteUrl);
+  let url;
+  try {
+    url = new URL(`${request.protocol}://${request.host}`);
+  } catch {
+    return canonical.origin;
+  }
+  const samePort = url.port === canonical.port && url.protocol === canonical.protocol;
+  if (url.origin === canonical.origin) return url.origin;
+  if (samePort && bareHost(url.hostname) === bareHost(canonical.hostname)) return url.origin;
+  if (!env.isProduction && samePort && LOOPBACK.has(url.hostname) && LOOPBACK.has(canonical.hostname)) return url.origin;
+  return canonical.origin;
+}
 
 // `code` is what the site shows (/login?error=<code>); the message is for the server log only.
 export class GoogleError extends Error {
@@ -36,14 +62,15 @@ const random = (bytes) => randomBytes(bytes).toString('base64url');
 const flowKey = () => new TextEncoder().encode(requireJwtSecret());
 
 /** The Google URL to send the browser to, plus the signed cookie that remembers this attempt. */
-export async function beginGoogleFlow({ returnTo, studentId = null }) {
-  const flow = { state: random(24), nonce: random(24), verifier: random(48), returnTo, studentId };
+export async function beginGoogleFlow({ returnTo, studentId = null, origin = env.publicSiteUrl }) {
+  // The redirect URI travels in the signed cookie: the token exchange must repeat it exactly.
+  const flow = { state: random(24), nonce: random(24), verifier: random(48), returnTo, studentId, redirectUri: googleRedirectUri(origin) };
   const cookie = await new SignJWT(flow).setProtectedHeader({ alg: 'HS256' })
     .setAudience(FLOW_AUDIENCE).setIssuedAt().setExpirationTime(`${FLOW_SECONDS}s`).sign(flowKey());
   const url = new URL(AUTH_URL);
   url.search = new URLSearchParams({
     client_id: env.google.clientId,
-    redirect_uri: googleRedirectUri(),
+    redirect_uri: flow.redirectUri,
     response_type: 'code',
     scope: 'openid email profile',
     state: flow.state,
@@ -84,7 +111,7 @@ export async function completeGoogleFlow({ code, flow }) {
       headers: { 'content-type': 'application/x-www-form-urlencoded', accept: 'application/json' },
       body: new URLSearchParams({
         code, client_id: env.google.clientId, client_secret: env.google.clientSecret,
-        redirect_uri: googleRedirectUri(), grant_type: 'authorization_code', code_verifier: flow.verifier,
+        redirect_uri: typeof flow.redirectUri === 'string' ? flow.redirectUri : googleRedirectUri(), grant_type: 'authorization_code', code_verifier: flow.verifier,
       }),
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });

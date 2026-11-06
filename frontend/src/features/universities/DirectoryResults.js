@@ -83,6 +83,9 @@ export default function DirectoryResults({ params, result, facets, courses, view
           <p className={styles.resultsCount} role="status">{result.failed ? 'The directory is temporarily unavailable.'
             : result.total ? <><strong>{formatCount(result.total)}</strong> {result.total === 1 ? 'result' : 'results'}{(pages > 1 || result.preview) && <> · showing {formatCount(from)}–{formatCount(to)}</>}</>
               : 'No universities match these filters.'}</p>
+          {result.search?.corrected && result.total > 0 && <p className={styles.resultsCount}>
+            <Icon name="spark" /> Showing results for <strong>{result.search.corrected}</strong> · you searched “{params.q}”
+          </p>}
         </div>
         <div className={styles.headSide}>
           <ActiveFilters chips={chips} />

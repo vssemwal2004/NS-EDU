@@ -13,7 +13,9 @@ export async function connectDatabase() {
     throw new Error(`Refusing to open database "${env.mongodbDatabase}" from a test: set MONGODB_DATABASE=nsedu_test_* before importing src/.`);
   }
   if (!client) {
-    const connection = new MongoClient(env.mongodbUri, { serverSelectionTimeoutMS: 5000 });
+    // A few connections stay open (each new TLS connection to Atlas costs several round trips), and
+    // replies are compressed — university documents are large and mostly text.
+    const connection = new MongoClient(env.mongodbUri, { serverSelectionTimeoutMS: 5000, minPoolSize: 4, maxPoolSize: 50, compressors: ['zlib'] });
     try {
       await connection.connect();
       client = connection;

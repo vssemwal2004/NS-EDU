@@ -1,0 +1,103 @@
+/* Homepage · Explore by stream.
+   Each field is a small "door": a coloured scene with line-art of the field's real tools (flask and
+   atom, gears and blueprint, ledger and coins…), an icon badge sitting on the scene's edge, the
+   field in the display serif, its institution count with a reach bar, its top courses, and an
+   "Explore" cue. Colours come per card from streamThemes.js via --stream-from / --stream-to. */
+
+.grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: clamp(14px, 1.4vw, 22px); margin: 0; padding: 0; list-style: none; }
+
+.card {
+  --stream-from: #5A1A2E; --stream-to: #A4485F;
+  position: relative; display: flex; flex-direction: column; min-width: 0; overflow: hidden;
+  border: 1px solid var(--lux-border); border-radius: 20px; background: var(--lux-surface-raised);
+  box-shadow: 0 1px 2px rgb(40 20 25 / 5%), 0 12px 28px -20px rgb(40 20 25 / 35%);
+  transition: transform var(--lux-dur-2) var(--lux-ease-out), box-shadow var(--lux-dur-2), border-color var(--lux-dur-2);
+  animation: stream-rise .6s var(--lux-ease-out) both; animation-delay: var(--stream-delay, 0ms);
+}
+.card:hover, .card:focus-within { transform: translateY(-6px); border-color: color-mix(in srgb, var(--stream-to) 35%, var(--lux-border)); box-shadow: 0 2px 4px rgb(40 20 25 / 6%), 0 26px 44px -24px color-mix(in srgb, var(--stream-from) 70%, transparent); }
+@keyframes stream-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
+/* The scene: gradient + texture + soft light + line-art. */
+/* Not clipped: the icon badge hangs over the scene's bottom edge (the card itself clips). */
+.scene { position: relative; isolation: isolate; height: 132px; background: linear-gradient(135deg, var(--stream-from), var(--stream-to)); color: #FFFFFF; }
+.scene::before { content: ''; position: absolute; z-index: -1; inset: 0; opacity: .5; }
+.scene::after { content: ''; position: absolute; z-index: -1; inset: 0; background: radial-gradient(120% 90% at 0% 0%, rgb(255 255 255 / 22%), transparent 55%), linear-gradient(180deg, transparent 55%, rgb(0 0 0 / 18%)); }
+.card[data-texture="dots"] .scene::before { background-image: radial-gradient(circle at 1px 1px, rgb(255 255 255 / 35%) 1px, transparent 1.6px); background-size: 14px 14px; }
+.card[data-texture="grid"] .scene::before { background-image: linear-gradient(rgb(255 255 255 / 16%) 1px, transparent 1px), linear-gradient(90deg, rgb(255 255 255 / 16%) 1px, transparent 1px); background-size: 16px 16px; }
+.card[data-texture="blueprint"] .scene::before { background-image: linear-gradient(rgb(255 255 255 / 22%) 1px, transparent 1px), linear-gradient(90deg, rgb(255 255 255 / 22%) 1px, transparent 1px), linear-gradient(rgb(255 255 255 / 10%) 1px, transparent 1px), linear-gradient(90deg, rgb(255 255 255 / 10%) 1px, transparent 1px); background-size: 48px 48px, 48px 48px, 12px 12px, 12px 12px; }
+.card[data-texture="ledger"] .scene::before { background-image: repeating-linear-gradient(180deg, rgb(255 255 255 / 16%) 0 1px, transparent 1px 14px), linear-gradient(90deg, transparent 22px, rgb(255 255 255 / 28%) 22px 23px, transparent 23px); }
+.card[data-texture="paper"] .scene::before { background-image: repeating-linear-gradient(45deg, rgb(255 255 255 / 9%) 0 2px, transparent 2px 9px); }
+.card[data-texture="chalk"] .scene::before { background-image: radial-gradient(40% 30% at 30% 40%, rgb(255 255 255 / 16%), transparent 70%), radial-gradient(30% 25% at 75% 70%, rgb(255 255 255 / 12%), transparent 70%); opacity: .9; }
+
+/* Sized by the scene's height (not the card's width) so the drawing always fits inside it. */
+.art { position: absolute; right: -4px; bottom: 6px; height: calc(100% - 18px); width: auto; max-width: 74%; opacity: .88; filter: drop-shadow(0 6px 10px rgb(0 0 0 / 18%)); transform-origin: 80% 80%; transition: transform .6s var(--lux-ease-out), opacity var(--lux-dur-2); }
+.card:hover .art, .card:focus-within .art { transform: scale(1.06) translate(-4px, -2px); opacity: 1; }
+
+.rank { position: absolute; top: 14px; left: 18px; color: rgb(255 255 255 / 78%); font: 600 .75rem/1 var(--lux-font-body); letter-spacing: .18em; }
+.rank::after { content: ''; display: inline-block; width: 18px; height: 1px; margin-left: 8px; vertical-align: middle; background: rgb(255 255 255 / 55%); }
+
+/* The icon badge straddles the scene's bottom edge. */
+.badge { position: absolute; z-index: 2; left: 18px; bottom: -26px; display: grid; place-items: center; width: 54px; height: 54px; border: 3px solid var(--lux-surface-raised); border-radius: 16px; background: #FFFFFF; color: var(--stream-from); box-shadow: 0 10px 20px -10px rgb(0 0 0 / 45%); transition: transform var(--lux-dur-2) var(--lux-ease-out); }
+.badge :global(.icon) { width: 25px; height: 25px; }
+.card:hover .badge { transform: rotate(-6deg) scale(1.04); }
+
+.body { display: flex; flex: 1; flex-direction: column; gap: 6px; padding: 38px 20px 18px; }
+.title { margin: 0; font: 400 clamp(1.3rem, 1rem + .6vw, 1.55rem)/1.15 var(--lux-font-display); letter-spacing: -.01em; }
+.stretched { color: var(--lux-ink); text-decoration: none; transition: color var(--lux-dur-2); }
+.card:hover .stretched { color: var(--stream-from); }
+.stretched::after { content: ''; position: absolute; inset: 0; z-index: 1; border-radius: inherit; }
+.stretched:focus-visible { outline: none; }
+.stretched:focus-visible::after { outline: 3px solid var(--color-focus, var(--lux-focus)); outline-offset: 3px; border-radius: 20px; }
+
+.meta { margin: 0; color: var(--lux-text-muted); font-size: var(--lux-small); }
+.meta strong { color: var(--stream-from); font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* Reach: this field's institutions against the most widely offered field. */
+.reach { height: 6px; margin: 4px 0 8px; overflow: hidden; border-radius: 99px; background: color-mix(in srgb, var(--stream-to) 14%, var(--lux-sand)); }
+.reach span { display: block; width: var(--share); height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--stream-from), var(--stream-to)); transform-origin: left; animation: stream-grow 1s var(--lux-ease-out) both; animation-delay: calc(var(--stream-delay, 0ms) + 200ms); }
+@keyframes stream-grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+.chips { position: relative; z-index: 2; display: flex; flex-wrap: wrap; gap: 8px; margin: 2px 0 0; padding: 0; list-style: none; }
+.chips a { position: relative; display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 12px; border: 1px solid color-mix(in srgb, var(--stream-to) 28%, var(--lux-border)); border-radius: 99px; background: color-mix(in srgb, var(--stream-to) 6%, #FFFFFF); color: var(--lux-ink); font-size: .8125rem; font-weight: 600; text-decoration: none; transition: background-color var(--lux-dur-1), border-color var(--lux-dur-1), color var(--lux-dur-1); }
+.chips a::before { content: ''; position: absolute; inset: -5px 0; }
+.chips a:hover { border-color: var(--stream-to); background: color-mix(in srgb, var(--stream-to) 14%, #FFFFFF); color: var(--stream-from); }
+.chips a:focus-visible { outline: 2px solid var(--stream-to); outline-offset: 2px; }
+.chipCount { padding: 1px 7px; border-radius: 99px; background: color-mix(in srgb, var(--stream-to) 16%, #FFFFFF); color: var(--stream-from); font-size: .6875rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+.explore { display: inline-flex; align-items: center; gap: 6px; margin-top: auto; padding-top: 14px; border-top: 1px dashed color-mix(in srgb, var(--stream-to) 30%, var(--lux-border)); color: var(--stream-from); font-size: .8125rem; font-weight: 700; letter-spacing: .01em; }
+.explore :global(.icon) { width: 16px; height: 16px; transition: transform var(--lux-dur-2) var(--lux-ease-out); }
+.card:hover .explore :global(.icon) { transform: translateX(4px); }
+
+@media (prefers-reduced-motion: reduce) {
+  .card, .reach span { animation: none; }
+  .card, .art, .badge, .explore :global(.icon) { transition: none; }
+  .card:hover, .card:focus-within { transform: none; }
+  .card:hover .art, .card:hover .badge { transform: none; }
+}
+
+/* Tablets: two per row, same anatomy. */
+@media (max-width: 1100px) {
+  .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .scene { height: 120px; }
+}
+/* Phones: two compact tiles per row — scene, badge, field, count and reach. The course chips live on /courses. */
+@media (max-width: 767px) {
+  .grid { gap: 12px; }
+  .card { border-radius: 16px; }
+  .scene { height: 86px; }
+  .art { right: -6px; bottom: 4px; height: calc(100% - 14px); max-width: 80%; }
+  .rank { top: 10px; left: 12px; font-size: .6875rem; }
+  .rank::after { width: 12px; margin-left: 6px; }
+  .badge { left: 12px; bottom: -20px; width: 42px; height: 42px; border-radius: 13px; }
+  .badge :global(.icon) { width: 20px; height: 20px; }
+  .body { gap: 4px; padding: 28px 12px 14px; }
+  .title { font-size: 1.125rem; overflow-wrap: anywhere; }
+  .meta { font-size: .75rem; }
+  .reach { height: 5px; margin: 4px 0 0; }
+  .chips, .explore { display: none; }
+  .card:hover, .card:focus-within { transform: none; }
+}
+@media (max-width: 360px) {
+  .scene { height: 74px; }
+  .title { font-size: 1.0625rem; }
+}

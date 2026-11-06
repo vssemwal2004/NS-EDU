@@ -8,7 +8,7 @@ import { createTtlCache } from '../../lib/ttl-cache.js';
 import { slugify } from '../../lib/validation.js';
 import { PUBLIC_FILTER } from '../universities/university-service.js';
 
-const cache = createTtlCache({ ttlMs: 5 * 60_000, maxEntries: 500 });
+const cache = createTtlCache({ ttlMs: 5 * 60_000, staleMs: 30 * 60_000, maxEntries: 500 });
 export const invalidateOfferingsCache = () => cache.clear();
 
 const SORTS = ['popular', 'fee', '-fee', 'name'];

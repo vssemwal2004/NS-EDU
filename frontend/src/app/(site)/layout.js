@@ -1,8 +1,10 @@
+import { Suspense } from 'react';
 import Header from '@/components/layout/Header';
 import SiteFooter from '@/components/layout/SiteFooter';
 import Icon from '@/components/ui/Icon';
 import GatedNavigation from '@/features/auth/GatedNavigation';
 import LoginDrawer from '@/features/auth/LoginDrawer';
+import LoginNudge from '@/features/auth/LoginNudge';
 import CookieConsent from '@/features/consent/CookieConsent';
 import { getCatalog } from '@/lib/api/catalog';
 import { getSharedContent } from '@/lib/api/content';
@@ -31,6 +33,8 @@ export default async function SiteLayout({ children }) {
                 <SiteFooter />
                 <LoginDrawer />
                 <GatedNavigation />
+                {/* useSearchParams needs its own boundary so pages stay statically rendered. */}
+                <Suspense fallback={null}><LoginNudge /></Suspense>
                 <CookieConsent />
                 {unavailable && <p className={styles.notice} role="status"><Icon name="coursesInfo" />Some information is temporarily unavailable. Please refresh in a moment.</p>}
               </TrackingProvider>

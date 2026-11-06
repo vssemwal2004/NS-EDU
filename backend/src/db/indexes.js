@@ -34,6 +34,8 @@ const specs = {
     [{ nirfRank: 1 }, { partialFilterExpression: { nirfRank: { $type: 'number' } } }],
     [{ domain: 1 }],
     [{ verification: 1, updatedAt: -1 }],
+    // The search index's once-a-minute "anything changed?" check reads the newest updatedAt.
+    [{ updatedAt: -1 }],
     // Admin "held for review" list: unverified + hidden, in admin order.
     [{ verification: 1, active: 1, order: 1, nameKey: 1 }],
   ],

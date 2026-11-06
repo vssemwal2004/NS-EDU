@@ -23,7 +23,7 @@ export default function SearchBox() {
         const value = event.target.value;
         setQuery(value);
         window.clearTimeout(timer.current);
-        timer.current = window.setTimeout(() => search(value), 350);
+        timer.current = window.setTimeout(() => search(value), 250);
       }} />
     {pending && <span className={styles.spinner} aria-hidden="true" />}
     <button type="submit" className={`lux-button lux-button--gold ${styles.searchButton}`}><span className={styles.searchButtonText}>Search</span><Icon name="arrow" /></button>

@@ -277,7 +277,12 @@ describe('search tracking and recommendations', { skip }, () => {
 
     const withdrawn = await api('/api/consent', { method: 'POST', consent: 'all', cookie: 'gv_visitor=66666666-6666-4666-8666-666666666666', body: { choice: 'essential' } });
     assert.match(cookieFrom(withdrawn, 'gv_visitor'), /^gv_visitor=;/, 'the personalisation id is removed straight away');
-    const rows = await db.collection('consent_events').find({}).toArray();
+    // The counter row is written in the background (the response does not wait for it), so give it a moment.
+    let rows = [];
+    for (let attempt = 0; attempt < 40 && rows.length < 2; attempt += 1) {
+      rows = await db.collection('consent_events').find({}).sort({ at: 1 }).toArray();
+      if (rows.length < 2) await new Promise((resolve) => { setTimeout(resolve, 50); });
+    }
     assert.deepEqual(rows.map((row) => [row.choice, row.changed]), [['all', false], ['essential', true]]);
     assert.deepEqual(Object.keys(rows[0]).toSorted(), ['_id', 'at', 'changed', 'choice'], 'no visitor id, IP or browser details');
   });

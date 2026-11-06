@@ -1,7 +1,8 @@
 import { COLLECTIONS, getDb } from '../../db/collections.js';
 import { createTtlCache } from '../../lib/ttl-cache.js';
+import { institutionRecords, searchInstitutions } from '../search/search-store.js';
 import { foldText, queryKeys } from '../universities/normalize.js';
-import { PUBLIC_FILTER, toSummary } from '../universities/university-service.js';
+import { PUBLIC_FILTER, SUMMARY_PROJECTION, toSummary } from '../universities/university-service.js';
 import { eventsCollection } from './events.js';
 
 // Recommendations are explainable on purpose: every point in the score comes from a stored event
@@ -13,7 +14,9 @@ const PER_QUERY_LIMIT = 24;
 const MAX_LIMIT = 24;
 
 const cache = createTtlCache({ ttlMs: 60_000, maxEntries: 2000 });
-export const invalidateRecommendationCache = () => cache.clear();
+// Lists for viewers with no history are the same for everyone (per course, size and daily seed).
+const coldCache = createTtlCache({ ttlMs: 5 * 60_000, staleMs: 30 * 60_000, maxEntries: 500 });
+export const invalidateRecommendationCache = () => { cache.clear(); coldCache.clear(); };
 
 const SORT = { popularity: -1, nameKey: 1, _id: 1 };
 const PROJECTION = { searchPrefixes: 0 };
@@ -81,8 +84,40 @@ export function buildSignals(events, now = Date.now()) {
   return { states, cities, streams, courses, tokens, searches, viewed, applied };
 }
 
+// The same candidate rules as candidatePool below, answered from the in-memory search index
+// (search-store.js): no database round trips, and no full documents loaded just to be scored.
+function candidatePoolFromMemory(records, signals, limit, course = '') {
+  const inScope = course ? (record) => record.courseSlugs.includes(course) : () => true;
+  const take = (keep, size = PER_QUERY_LIMIT) => {
+    const out = [];
+    for (const record of records) {
+      if (out.length >= size) break;
+      if (inScope(record) && keep(record)) out.push(record);
+    }
+    return out;
+  };
+  const sets = [
+    ...top(signals.cities, 3).map(([city]) => take((record) => record.city === city)),
+    ...top(signals.states, 2).map(([state]) => take((record) => record.state === state)),
+    ...top(signals.streams, 3).map(([stream]) => take((record) => record.streams.includes(stream))),
+    ...top(signals.courses, 3).filter(([slug]) => slug !== course).map(([slug]) => take((record) => record.courseSlugs.includes(slug))),
+    ...top(signals.searches, 3).map(([keys]) => (searchInstitutions(keys, { allowStale: true })?.hits ?? [])
+      .map((hit) => hit.record).filter(inScope).slice(0, PER_QUERY_LIMIT)),
+  ];
+  const pool = new Map();
+  for (const record of sets.flat()) pool.set(record.slug, record);
+  // Always keep a sensible floor so a brand-new (or very narrow) viewer still gets a full set.
+  if (pool.size < limit * 3) {
+    const ranked = records.filter((record) => record.nirfRank !== null && inScope(record))
+      .sort((a, b) => a.nirfRank - b.nirfRank).slice(0, limit * 3);
+    for (const record of [...ranked, ...take(() => true, limit * 3)]) pool.set(record.slug, record);
+  }
+  return [...pool.values()];
+}
+
 // A handful of indexed lookups (state, city, streams, courseSlugs, searchPrefixes), each capped,
 // instead of one scan: the candidate pool stays small whatever the viewer has been doing.
+// Used only while the in-memory index is still building.
 async function candidatePool(signals, limit, course = '') {
   const collection = (await getDb()).collection(COLLECTIONS.institutions);
   // A chosen course narrows every lookup, so the pool only holds institutions that offer it.
@@ -180,20 +215,31 @@ async function courseNamesFor(slugs) {
 export async function recommendUniversities({ studentId = null, visitorId, limit = 8, exclude = '', course = '', variant = null }) {
   const size = Math.min(Math.max(Number.parseInt(limit, 10) || 8, 1), MAX_LIMIT);
   const seed = Number.isInteger(variant) && variant >= 0 && variant < 100 ? `${variant}:${Math.floor(Date.now() / DAY_MS)}` : '';
-  const key = `s:${studentId ?? ''}|v:${visitorId ?? ''}|${size}|${exclude}|${course}|${seed}`;
-  return cache.wrap(key, async () => {
+  const shared = `${size}|${exclude}|${course}|${seed}`;
+  // A student who searched before signing in keeps those results: both ids are theirs, on this device.
+  // A viewer without personalisation consent has no visitor id, and only their account (if any) counts.
+  const owners = [studentId && { studentId }, visitorId && { visitorId }].filter(Boolean);
+  // Nobody to personalise for: every such visitor gets the same list, so they share one cached answer.
+  if (!owners.length) return coldCache.wrap(shared, () => rank({ events: [], applied: [], size, exclude, course, seed }));
+  return cache.wrap(`s:${studentId ?? ''}|v:${visitorId ?? ''}|${shared}`, async () => {
     const since = new Date(Date.now() - WINDOW_DAYS * 86_400_000);
-    // A student who searched before signing in keeps those results: both ids are theirs, on this device.
-    // A viewer without personalisation consent has no visitor id, and only their account (if any) counts.
-    const owners = [studentId && { studentId }, visitorId && { visitorId }].filter(Boolean);
     const [events, applied] = await Promise.all([
-      owners.length ? (await eventsCollection()).find({ $or: owners, at: { $gte: since } }).sort({ at: -1 }).limit(MAX_EVENTS_READ).toArray() : [],
+      (await eventsCollection()).find({ $or: owners, at: { $gte: since } }).sort({ at: -1 }).limit(MAX_EVENTS_READ).toArray(),
       appliedSlugs(studentId),
     ]);
+    // No history yet (most first visits): same answer as above, from the shared cache.
+    if (!events.length && !applied.length) return coldCache.wrap(shared, () => rank({ events, applied, size, exclude, course, seed }));
+    return rank({ events, applied, size, exclude, course, seed });
+  });
+}
+
+async function rank({ events, applied, size, exclude, course, seed }) {
+  {
     const signals = buildSignals(events);
     for (const slug of applied) signals.applied.add(slug);
+    const records = institutionRecords({ allowStale: true });
     const [pool, courseNames] = await Promise.all([
-      candidatePool(signals, size, course),
+      records ? candidatePoolFromMemory(records, signals, size, course) : candidatePool(signals, size, course),
       courseNamesFor([...new Set(events.map((event) => event.courseSlug).filter(Boolean))]),
     ]);
     const weight = {
@@ -213,9 +259,11 @@ export async function recommendUniversities({ studentId = null, visitorId, limit
     // A viewer with history keeps pure relevance (they asked for that city or course); a viewer without
     // any gets a spread across states and cities.
     const scored = coldStart && seed ? spreadAcrossPlaces(ranked, size) : ranked.slice(0, size);
+    // Ranked from the in-memory records: the cards need the full documents, but only these few.
+    const full = records ? await fullDocuments(scored.map(({ doc }) => doc.slug)) : null;
     return {
-      items: scored.map(({ doc, score, matched }) => ({
-        ...toSummary(doc),
+      items: scored.filter(({ doc }) => !full || full.has(doc.slug)).map(({ doc, score, matched }) => ({
+        ...toSummary(full ? full.get(doc.slug) : doc),
         reason: reasonFor(doc, events, courseNames),
         score: Math.round(score * 1000) / 1000,
         matched,
@@ -224,5 +272,12 @@ export async function recommendUniversities({ studentId = null, visitorId, limit
       basedOnEvents: events.length,
       limit: size,
     };
-  });
+  }
+}
+
+async function fullDocuments(slugs) {
+  if (!slugs.length) return new Map();
+  const rows = await (await getDb()).collection(COLLECTIONS.institutions)
+    .find({ ...PUBLIC_FILTER, slug: { $in: slugs } }, { projection: SUMMARY_PROJECTION }).toArray();
+  return new Map(rows.map((row) => [row.slug, row]));
 }

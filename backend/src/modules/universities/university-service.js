@@ -7,16 +7,21 @@ import { withFeeEstimates } from './fee-estimates.js';
 import { derivedFields, foldText, nameKeyOf, domainOf, queryKeys, siteKeyOf, slugCandidates } from './normalize.js';
 import { IMPORTABLE_FIELDS, INSTITUTION_CATEGORIES, INSTITUTION_FIELDS, INSTITUTION_TYPES, OWNERSHIP } from './schema.js';
 import { isCredibleAward } from '../../scraper/deep.js';
+import { isRetiredImage, liveImage } from '../../lib/retired-images.js';
+import { institutionRecords, markSearchStale, searchInstitutions } from '../search/search-store.js';
+import { PUBLIC_FILTER } from './public-filter.js';
+import { listCourses } from '../catalog/catalog-service.js';
 
-// Students only see visible, non-rejected records. Unverified (imported/scraped) records are
-// public but carry their source and date so the page can say where the facts came from.
-export const PUBLIC_FILTER = Object.freeze({ active: { $ne: false }, verification: { $ne: 'rejected' } });
+export { PUBLIC_FILTER };
 
-const listCache = createTtlCache({ ttlMs: 60_000, maxEntries: 1000 });
-const aggregateCache = createTtlCache({ ttlMs: 5 * 60_000, maxEntries: 200 });
+// Public, identical for every visitor: answered from memory, refreshed in the background when old
+// (staleMs). Writes through this API clear both at once (invalidateUniversityCaches).
+const listCache = createTtlCache({ ttlMs: 60_000, staleMs: 15 * 60_000, maxEntries: 1000 });
+const aggregateCache = createTtlCache({ ttlMs: 5 * 60_000, staleMs: 30 * 60_000, maxEntries: 200 });
 export function invalidateUniversityCaches() {
   listCache.clear();
   aggregateCache.clear();
+  markSearchStale();
 }
 
 const institutions = async () => (await getDb()).collection(COLLECTIONS.institutions);
@@ -34,6 +39,9 @@ const firstSentence = (about) => {
   return sentence.length > 180 ? `${sentence.slice(0, 177).trimEnd()}…` : sentence;
 };
 
+// Photos from the retired Cloudinary account no longer load; they are left out until replaced.
+const liveGallery = (doc) => (doc.gallery ?? []).filter((row) => row?.url && !isRetiredImage(row.url));
+
 const PACKAGE_KEYS = ['averagePackageLpa', 'highestPackageLpa', 'placedPercent'];
 const previewOf = (doc) => {
   const programmes = doc.programmesOffered ?? [];
@@ -50,10 +58,11 @@ const previewOf = (doc) => {
   const snapshot = doc.placements ?? null;
   const placements = PACKAGE_KEYS.some((key) => typeof snapshot?.[key] === 'number') ? snapshot
     : (doc.placementHistory ?? []).find((row) => PACKAGE_KEYS.some((key) => typeof row[key] === 'number')) ?? snapshot;
+  const gallery = liveGallery(doc);
   return {
     tagline: firstSentence(doc.about),
-    photoUrl: doc.coverUrl || doc.gallery?.[0]?.url || '',
-    photoCount: doc.gallery?.length ?? 0,
+    photoUrl: liveImage(doc.coverUrl) || gallery[0]?.url || '',
+    photoCount: gallery.length,
     // Programme names the student recognises, longest-form first so "B.Tech Computer Science" wins
     // over a bare "B.Tech" when both were extracted.
     topProgrammes: [...new Set(programmes.map((row) => row.name).filter(Boolean))].slice(0, 4),
@@ -74,6 +83,19 @@ const previewOf = (doc) => {
   };
 };
 
+// Exactly the fields toSummary/previewOf read. A full record carries every programme row with its fee
+// notes and source links, the raw course list and the directory snapshot — about 30 KB each, of which
+// a card uses ~3 KB — so list pages, featured, "similar" and recommendations read only these.
+export const SUMMARY_PROJECTION = Object.freeze({
+  slug: 1, name: 1, shortName: 1, type: 1, category: 1, ownership: 1, city: 1, district: 1, state: 1,
+  establishedYear: 1, naacGrade: 1, nirfRank: 1, nirfYear: 1, nirfCategory: 1, approvals: 1, streams: 1, courseSlugs: 1,
+  logoUrl: 1, coverUrl: 1, website: 1, verification: 1, isIllustrative: 1, demoRating: 1, art: 1, updatedAt: 1,
+  'source.kind': 1, 'source.name': 1, 'source.url': 1, 'source.fetchedAt': 1,
+  about: 1, 'gallery.url': 1, placements: 1, placementHistory: 1, facilities: 1, activities: 1, 'awards.title': 1,
+  'campus.hostelAvailable': 1, 'campus.sizeAcres': 1,
+  'programmesOffered.name': 1, 'programmesOffered.annualFeeInr': 1, 'programmesOffered.semesterFeeInr': 1, 'programmesOffered.totalFeeInr': 1,
+});
+
 export const toSummary = (doc) => ({
   id: doc.slug,
   name: doc.name,
@@ -92,8 +114,8 @@ export const toSummary = (doc) => ({
   approvals: doc.approvals ?? [],
   streams: doc.streams ?? [],
   courseSlugs: doc.courseSlugs ?? [],
-  logoUrl: doc.logoUrl || '',
-  coverUrl: doc.coverUrl || '',
+  logoUrl: liveImage(doc.logoUrl),
+  coverUrl: liveImage(doc.coverUrl),
   website: doc.website || '',
   verification: doc.verification || 'unverified',
   isIllustrative: Boolean(doc.isIllustrative),
@@ -118,7 +140,7 @@ const toDetail = (doc) => ({
   // Scraped depth (every field optional and absent when unknown) plus the raw directory snapshot.
   // The profile shows each with its source page; none of it is presented as verified.
   aboutSource: doc.aboutSource || '',
-  gallery: doc.gallery ?? [],
+  gallery: liveGallery(doc),
   programmesOffered: doc.programmesOffered ?? [],
   placements: doc.placements ?? null,
   placementHistory: doc.placementHistory ?? [],
@@ -187,6 +209,64 @@ async function programmeSummaries(slugs) {
   return new Map(rows.map(({ _id, ...summary }) => [_id, summary]));
 }
 
+// The same filters as buildFilter, applied to an in-memory search record (search-store.js).
+function recordFilter(criteria) {
+  const checks = [
+    criteria.state && ((record) => record.state === criteria.state),
+    criteria.city && ((record) => record.city === criteria.city),
+    criteria.type && ((record) => record.type === criteria.type),
+    criteria.category && ((record) => record.category === criteria.category),
+    criteria.ownership && ((record) => record.ownership === criteria.ownership),
+    criteria.stream && ((record) => record.streams.includes(criteria.stream)),
+    criteria.course && ((record) => record.courseSlugs.includes(criteria.course)),
+    criteria.naac && ((record) => record.naacGrade === criteria.naac),
+    criteria.sort === 'nirf' && ((record) => record.nirfRank !== null),
+  ].filter(Boolean);
+  return checks.length ? (record) => checks.every((check) => check(record)) : undefined;
+}
+
+const byName = (a, b) => (a.record.nameKey < b.record.nameKey ? -1 : a.record.nameKey > b.record.nameKey ? 1 : 0);
+// Mongo's ascending order puts missing values first; the in-memory sorts keep that behaviour.
+const ascending = (field) => (a, b) => (a.record[field] ?? -Infinity) - (b.record[field] ?? -Infinity) || byName(a, b);
+const HIT_SORTS = {
+  name: byName,
+  '-name': (a, b) => byName(b, a),
+  established: ascending('establishedYear'),
+  nirf: ascending('nirfRank'),
+};
+
+// A listing answered from the in-memory index: matching, filtering, counting and sorting happen in
+// this process (about a millisecond for 20k records; typo-tolerant when there is a query), and only
+// the page's rows are read from MongoDB. Without it, an unfiltered page cost a count over the whole
+// collection (the public filter's $ne tests cannot use an index). Null when the index is not ready,
+// so the caller falls back to the database query.
+async function listFromIndex(criteria, skip) {
+  let result;
+  if (criteria.q) {
+    result = searchInstitutions(criteria.q, { filter: recordFilter(criteria) });
+  } else {
+    const records = institutionRecords();
+    const keep = recordFilter(criteria);
+    result = records && { hits: (keep ? records.filter(keep) : records).map((record) => ({ record })), corrected: '', mode: 'exact' };
+  }
+  if (!result) return null;
+  const hits = criteria.sort === 'relevance' ? result.hits : result.hits.toSorted(HIT_SORTS[criteria.sort]);
+  const slugs = hits.slice(skip, skip + criteria.limit).map((hit) => hit.record.slug);
+  // The page's documents and their fee rows only need the slugs, so both are read in parallel.
+  const [rows, fees] = slugs.length ? await Promise.all([
+    (async () => (await institutions()).find({ ...PUBLIC_FILTER, slug: { $in: slugs } }, { projection: SUMMARY_PROJECTION }).toArray())(),
+    programmeSummaries(slugs),
+  ]) : [[], new Map()];
+  const bySlug = new Map(rows.map((doc) => [doc.slug, doc]));
+  const shortForms = new Map(hits.slice(skip, skip + criteria.limit).filter((hit) => hit.acronym).map((hit) => [hit.record.slug, hit.acronym.toUpperCase()]));
+  return {
+    docs: slugs.map((slug) => bySlug.get(slug)).filter(Boolean),
+    fees,
+    total: hits.length,
+    search: { corrected: result.corrected, mode: result.mode, shortForms },
+  };
+}
+
 // `place` (from catalog placeFilter) replaces the exact city match, so a destination tile's link
 // lists the same rows its count covers. It derives from criteria.city alone, so the key stays valid.
 export async function listUniversities(query, { place = null } = {}) {
@@ -198,8 +278,13 @@ export async function listUniversities(query, { place = null } = {}) {
     const collection = await institutions();
     let docs;
     let total;
+    let search = null;
+    let fees = null;
     const folded = foldText(criteria.q);
-    if (folded && criteria.sort === 'relevance') {
+    const indexed = !place ? await listFromIndex(criteria, skip) : null;
+    if (indexed) {
+      ({ docs, total, search, fees } = indexed);
+    } else if (folded && criteria.sort === 'relevance') {
       // Names that start with the query rank above names that merely contain all its words.
       const [result] = await collection.aggregate([
         { $match: filter },
@@ -210,7 +295,9 @@ export async function listUniversities(query, { place = null } = {}) {
         ], default: 0 } } } },
         { $sort: { _rank: -1, ...SORTS.relevance } },
         { $facet: { items: [{ $skip: skip }, { $limit: criteria.limit }], total: [{ $count: 'value' }] } },
-      ]).toArray();
+      // Fallback path only (the index is still building). A broad word such as "college" matches
+      // thousands of full documents, more than the 32 MB in-memory sort allows.
+      ], { allowDiskUse: true }).toArray();
       docs = result.items;
       total = result.total[0]?.value ?? 0;
     } else {
@@ -219,9 +306,17 @@ export async function listUniversities(query, { place = null } = {}) {
         collection.countDocuments(filter),
       ]);
     }
-    const fees = await programmeSummaries(docs.map((doc) => doc.slug));
-    const items = docs.map((doc) => ({ ...toSummary(doc), programmes: fees.get(doc.slug) ?? null }));
-    return { items, total, page: criteria.page, limit: criteria.limit, pages: Math.max(1, Math.ceil(total / criteria.limit)), criteria };
+    fees ??= await programmeSummaries(docs.map((doc) => doc.slug));
+    const items = docs.map((doc) => ({
+      ...toSummary(doc),
+      programmes: fees.get(doc.slug) ?? null,
+      ...(search?.shortForms.has(doc.slug) && { matchedShortForm: search.shortForms.get(doc.slug) }),
+    }));
+    return {
+      items, total, page: criteria.page, limit: criteria.limit, pages: Math.max(1, Math.ceil(total / criteria.limit)), criteria,
+      // `corrected`: the query as understood after fixing typos ("petrolium" → "petroleum"), else "".
+      ...(search && criteria.q && { search: { corrected: search.corrected, mode: search.mode } }),
+    };
   });
 }
 
@@ -234,7 +329,7 @@ export async function featuredUniversities(rawLimit, rawCourse = '') {
   const course = /^[a-z0-9-]{1,40}$/.test(String(rawCourse)) ? String(rawCourse) : '';
   return aggregateCache.wrap(`featured:${limit}:${course}`, async () => {
     const filter = course ? { ...PUBLIC_FILTER, courseSlugs: course } : PUBLIC_FILTER;
-    const docs = await (await institutions()).find(filter, { projection: { searchPrefixes: 0 } })
+    const docs = await (await institutions()).find(filter, { projection: SUMMARY_PROJECTION })
       .sort(SORTS.relevance).limit(limit).toArray();
     const fees = await programmeSummaries(docs.map((doc) => doc.slug));
     return { items: docs.map((doc) => ({ ...toSummary(doc), programmes: fees.get(doc.slug) ?? null })), limit };
@@ -243,9 +338,21 @@ export async function featuredUniversities(rawLimit, rawCourse = '') {
 
 export async function suggestUniversities(rawQuery, limit = 8) {
   const q = queryString(rawQuery, 120);
+  const size = Math.min(Math.max(Number(limit) || 8, 1), 15);
+  // Typeahead may use an index that is a moment behind a write: it only offers names to pick from.
+  const indexed = q ? searchInstitutions(q, { allowStale: true }) : null;
+  if (indexed) {
+    return {
+      query: q,
+      corrected: indexed.corrected,
+      items: indexed.hits.slice(0, size).map(({ record, acronym }) => ({
+        id: record.slug, name: record.name, shortName: record.shortName, city: record.city, state: record.state, type: record.type, logoUrl: record.logoUrl,
+        ...(acronym && { matchedShortForm: acronym.toUpperCase() }),
+      })),
+    };
+  }
   const keys = queryKeys(q);
   if (!keys.length) return { query: q, items: [] };
-  const size = Math.min(Math.max(Number(limit) || 8, 1), 15);
   return listCache.wrap(`suggest:${size}:${keys.join(' ')}`, async () => {
     const folded = foldText(q);
     const docs = await (await institutions()).find({ ...PUBLIC_FILTER, searchPrefixes: { $all: keys } }, {
@@ -299,6 +406,34 @@ export async function sitemapPage(rawPage) {
   });
 }
 
+// Similar: same region and a shared stream first, then a shared stream anywhere, then the same
+// region, most popular first. Chosen from the in-memory index (no query) and then read as four
+// documents; three database queries while the index is still building.
+async function similarTo(db, doc) {
+  const region = (item) => (doc.state ? item.state === doc.state : item.city === doc.city);
+  const sharesStream = (item) => (doc.streams ?? []).some((stream) => item.streams.includes(stream));
+  const records = institutionRecords({ allowStale: true });
+  if (records) {
+    const tiers = [doc.streams?.length && ((item) => region(item) && sharesStream(item)), doc.streams?.length && sharesStream, region].filter(Boolean);
+    const slugs = [];
+    for (const keep of tiers) {
+      for (const item of records) {
+        if (slugs.length >= 4) break;
+        if (item.slug !== doc.slug && !slugs.includes(item.slug) && keep(item)) slugs.push(item.slug);
+      }
+    }
+    if (!slugs.length) return [];
+    const rows = await db.collection(COLLECTIONS.institutions).find({ ...PUBLIC_FILTER, slug: { $in: slugs } }, { projection: SUMMARY_PROJECTION }).toArray();
+    const bySlug = new Map(rows.map((row) => [row.slug, row]));
+    return slugs.map((value) => bySlug.get(value)).filter(Boolean);
+  }
+  const regionFilter = doc.state ? { state: doc.state } : { city: doc.city };
+  const streams = doc.streams?.length ? { streams: { $in: doc.streams } } : null;
+  const sets = await Promise.all([streams && { ...regionFilter, ...streams }, streams, regionFilter].filter(Boolean)
+    .map((extra) => db.collection(COLLECTIONS.institutions).find({ ...PUBLIC_FILTER, slug: { $ne: doc.slug }, ...extra }, { projection: { searchPrefixes: 0 } }).sort(SORTS.relevance).limit(4).toArray()));
+  return [...new Map(sets.flat().map((item) => [item.slug, item])).values()].slice(0, 4);
+}
+
 export async function getUniversity(rawSlug) {
   const slug = slugify(queryString(rawSlug, 120));
   if (!slug) throw new HttpError(404, 'University not found');
@@ -306,22 +441,20 @@ export async function getUniversity(rawSlug) {
     const db = await getDb();
     const doc = await db.collection(COLLECTIONS.institutions).findOne({ ...PUBLIC_FILTER, slug });
     if (!doc) throw new HttpError(404, 'University not found');
-    // Similar: same region and a shared stream first, then a shared stream anywhere, then the same region.
-    const region = doc.state ? { state: doc.state } : { city: doc.city };
-    const streams = doc.streams?.length ? { streams: { $in: doc.streams } } : null;
-    const similarQueries = [streams && { ...region, ...streams }, streams, region].filter(Boolean)
-      .map((extra) => db.collection(COLLECTIONS.institutions).find({ ...PUBLIC_FILTER, slug: { $ne: slug }, ...extra }, { projection: { searchPrefixes: 0 } }).sort(SORTS.relevance).limit(4).toArray());
-    const [programmes, ...similarSets] = await Promise.all([
+    // Everything else in one parallel round: programmes, the four similar records, the course
+    // catalogue (cached) and the fee estimates (cached).
+    const [programmes, similar, catalogue, item] = await Promise.all([
       db.collection(COLLECTIONS.programmes).find({ active: { $ne: false }, institutionSlug: slug }).sort({ order: 1, _id: 1 }).toArray(),
-      ...similarQueries,
+      similarTo(db, doc),
+      listCourses(),
+      withFeeEstimates(toDetail(doc)),
     ]);
-    const similar = [...new Map(similarSets.flat().map((item) => [item.slug, item])).values()].slice(0, 4);
-    const courseSlugs = [...new Set([...(doc.courseSlugs ?? []), ...programmes.map((row) => row.courseSlug)])];
-    const courses = await db.collection(COLLECTIONS.courses).find({ active: { $ne: false }, slug: { $in: courseSlugs } }).sort({ order: 1, name: 1 }).toArray();
-    const visibleCourses = new Set(courses.map((course) => course.slug));
+    const courseSlugs = new Set([...(doc.courseSlugs ?? []), ...programmes.map((row) => row.courseSlug)]);
+    const courses = catalogue.filter((course) => courseSlugs.has(course.id)); // catalogue order
+    const visibleCourses = new Set(courses.map((course) => course.id));
     return {
-      item: await withFeeEstimates(toDetail(doc)),
-      courses: courses.map((course) => ({ id: course.slug, name: course.name, fullName: course.fullName ?? '', field: course.field ?? '' })),
+      item,
+      courses: courses.map((course) => ({ id: course.id, name: course.name, fullName: course.fullName ?? '', field: course.field ?? '' })),
       programmes: programmes.filter((row) => visibleCourses.has(row.courseSlug)).map((row) => ({
         id: row.slug, courseId: row.courseSlug, annualTuitionInr: row.annualTuitionInr, medianSalaryLpa: row.medianSalaryLpa ?? null,
         highestSalaryLpa: row.highestSalaryLpa ?? null, tuitionYear: row.tuitionYear, placementYear: row.placementYear,

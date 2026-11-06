@@ -15,7 +15,7 @@ import {
   refundSmsSlot, takeSmsSlot,
 } from './otp.js';
 import {
-  FLOW_COOKIE, FLOW_COOKIE_PATH, FLOW_SECONDS, GoogleError, beginGoogleFlow, completeGoogleFlow, googleEnabled, readGoogleFlow,
+  FLOW_COOKIE, FLOW_COOKIE_PATH, FLOW_SECONDS, GoogleError, beginGoogleFlow, completeGoogleFlow, googleEnabled, readGoogleFlow, siteOriginFor,
 } from './google.js';
 
 const WINDOW_MS = 15 * 60 * 1000;
@@ -246,7 +246,7 @@ studentAuthRouter.get('/google/start', optionalStudent, async (request, response
   if (!googleEnabled()) return response.redirect(302, failureTarget({ returnTo, linking }, 'google-unavailable'));
   if (!googleStartsPerIp.hit(request.ip).allowed) return response.redirect(302, failureTarget({ returnTo, linking }, 'busy'));
   if (linking && !request.student) return response.redirect(302, withParams('/login', { next: returnTo }));
-  const { url, cookie } = await beginGoogleFlow({ returnTo, studentId: linking ? request.student._id.toString() : null });
+  const { url, cookie } = await beginGoogleFlow({ returnTo, studentId: linking ? request.student._id.toString() : null, origin: siteOriginFor(request) });
   response.cookie(FLOW_COOKIE, cookie, { ...flowCookieOptions(), maxAge: FLOW_SECONDS * 1000 });
   response.redirect(302, url);
 });

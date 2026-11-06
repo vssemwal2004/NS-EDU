@@ -35,6 +35,14 @@
 .locked { display: flex; align-items: center; gap: var(--lux-space-2); padding: var(--lux-space-3) var(--lux-space-4); border-radius: var(--lux-radius-md); background: var(--lux-champagne-soft); color: var(--lux-ink); }
 .locked :global(.icon) { width: 17px; height: 17px; color: var(--lux-bronze-ink); flex: none; }
 .all { justify-self: start; }
+.spinner { flex: none; width: 18px; height: 18px; border: 2px solid var(--lux-border); border-top-color: var(--lux-wine); border-radius: 50%; animation: search-spin .7s linear infinite; }
+@keyframes search-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 2s; } }
+.corrected { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; margin: 0; padding: var(--lux-space-2) var(--lux-space-3); border-radius: var(--lux-radius-md); background: var(--lux-champagne-soft); color: var(--lux-ink); font-size: var(--lux-small); }
+.corrected :global(.icon) { width: 15px; height: 15px; color: var(--lux-bronze-ink); flex: none; }
+.correctedFrom { color: var(--lux-text-muted); }
+.badge { display: inline-block; margin-right: 8px; padding: 1px 7px; border-radius: var(--lux-radius-pill); background: var(--lux-wine); color: var(--lux-ivory); font: 700 .6875rem/1.5 var(--lux-font-body); letter-spacing: .04em; vertical-align: 1px; }
+.count { color: var(--lux-text-muted); font-weight: 500; letter-spacing: 0; text-transform: none; }
 
 @media (max-width: 1100px) {
   .panel { position: fixed; top: calc(var(--lux-header-height) + var(--lux-safe-top)); bottom: 0; max-height: none; }

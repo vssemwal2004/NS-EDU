@@ -1,13 +1,15 @@
 import { activeFilter, COLLECTIONS, getDb } from '../../db/collections.js';
+import { liveImage } from '../../lib/retired-images.js';
 import { createTtlCache } from '../../lib/ttl-cache.js';
 import { escapeRegex } from '../../lib/validation.js';
 import { INDIAN_STATES } from '../applications/schema.js';
+import { markSearchStale, searchCatalogIndex, searchInstitutions } from '../search/search-store.js';
 import { queryKeys } from '../universities/normalize.js';
-import { PUBLIC_FILTER } from '../universities/university-service.js';
+import { PUBLIC_FILTER } from '../universities/public-filter.js';
 
 // Catalogue reads are identical for every visitor; admin writes clear this cache immediately.
-const cache = createTtlCache({ ttlMs: 60_000, maxEntries: 200 });
-export const invalidateCatalogCache = () => cache.clear();
+const cache = createTtlCache({ ttlMs: 60_000, staleMs: 30 * 60_000, maxEntries: 200 });
+export const invalidateCatalogCache = () => { cache.clear(); markSearchStale(); };
 
 const BY_ORDER = { order: 1, name: 1, _id: 1 };
 const SEARCH_LIMIT = 20;
@@ -24,7 +26,8 @@ const toExam = (exam) => ({
 });
 const toLocation = (place, institutions = 0) => ({
   name: place.name, landmark: place.landmark ?? '', crop: place.crop ?? null, featured: Boolean(place.featured), institutions,
-  image: place.imageUrl ? { url: place.imageUrl, alt: place.imageAlt || place.name, ...(place.imageCredit && { credit: place.imageCredit }), ...(place.imageSource && { source: place.imageSource }) } : null,
+  // A photo on the retired Cloudinary account no longer loads: the tile shows its designed fallback.
+  image: liveImage(place.imageUrl) ? { url: place.imageUrl, alt: place.imageAlt || place.name, ...(place.imageCredit && { credit: place.imageCredit }), ...(place.imageSource && { source: place.imageSource }) } : null,
 });
 const matching = (fields, q) => ({ $or: fields.map((field) => ({ [field]: { $regex: escapeRegex(q), $options: 'i' } })) });
 
@@ -162,7 +165,7 @@ const toProgrammeRow = ({ programme, institution }) => ({
   state: institution.state ?? null,
   demoRating: institution.demoRating ?? null,
   art: institution.art ?? null,
-  logoUrl: institution.logoUrl || '',
+  logoUrl: liveImage(institution.logoUrl),
   annualTuitionInr: programme.annualTuitionInr,
   medianSalaryLpa: programme.medianSalaryLpa ?? null,
   highestSalaryLpa: programme.highestSalaryLpa ?? null,
@@ -179,8 +182,16 @@ export async function searchCatalog(rawQuery) {
   const query = (typeof rawQuery === 'string' ? rawQuery : '').trim().slice(0, 120);
   if (!query) return { query, courses: [], exams: [], colleges: [] };
   return cache.wrap(`search:${query.toLowerCase()}`, async () => {
+    // In-memory, typo-tolerant matching when the search index is ready (search-store.js); the
+    // regex/prefix queries below remain as the fallback while it builds.
+    const indexed = searchCatalogIndex(query, { limit: SEARCH_LIMIT });
+    const hits = indexed && searchInstitutions(query, { allowStale: true });
     const keys = queryKeys(query);
-    const [courses, exams, institutions] = await Promise.all([
+    const [courses, exams, institutions] = indexed && hits ? [
+      indexed.courses.map((record) => record.doc),
+      indexed.exams.map((record) => record.doc),
+      hits.hits.slice(0, SEARCH_LIMIT).map(({ record }) => record),
+    ] : await Promise.all([
       find(COLLECTIONS.courses, matching(['name', 'fullName', 'field', 'slug'], query), { limit: SEARCH_LIMIT }),
       find(COLLECTIONS.exams, matching(['name', 'field', 'slug'], query), { limit: SEARCH_LIMIT }),
       keys.length ? find(COLLECTIONS.institutions, { ...PUBLIC_FILTER, searchPrefixes: { $all: keys } }, { limit: SEARCH_LIMIT, sort: { popularity: -1, nameKey: 1, _id: 1 } }) : [],
@@ -192,8 +203,11 @@ export async function searchCatalog(rawQuery) {
         if (!list.includes(programme.courseSlug)) list.push(programme.courseSlug);
       }
     }
+    // The query as understood after fixing typos ("enginering" → "engineering"); absent when none.
+    const corrected = (hits?.hits.length ? hits.corrected : indexed?.corrected) || '';
     return {
       query,
+      ...(corrected && { corrected }),
       courses: courses.map(toCourse),
       exams: exams.map(toExam),
       colleges: institutions.map((item) => ({ id: item.slug, name: item.name, city: item.city, state: item.state ?? null, type: item.type || 'university', courses: offered.get(item.slug) })),

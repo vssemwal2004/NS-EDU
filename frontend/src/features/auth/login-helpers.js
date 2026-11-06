@@ -31,8 +31,12 @@ export const quickTools = [
   { href: '/career-guidance', icon: 'compass', title: 'Career guidance', text: 'Questions to find your direction' },
 ];
 
+// The channel this browser last received a code on, or '' when it has none yet.
 export function readChannel() {
-  try { return window.localStorage.getItem(CHANNEL_KEY) === 'phone' ? 'phone' : 'email'; } catch { return 'email'; }
+  try {
+    const stored = window.localStorage.getItem(CHANNEL_KEY);
+    return stored === 'phone' || stored === 'email' ? stored : '';
+  } catch { return ''; }
 }
 export function rememberChannel(channel) {
   try { window.localStorage.setItem(CHANNEL_KEY, channel); } catch { /* storage unavailable */ }
@@ -65,6 +69,23 @@ const domainFixes = {
   'outlok.com': 'outlook.com', 'outllok.com': 'outlook.com', 'outlook.con': 'outlook.com',
   'redifmail.com': 'rediffmail.com', 'rediffmail.con': 'rediffmail.com',
 };
+// Providers most students in India use, in rough order of popularity.
+const POPULAR_DOMAINS = ['gmail.com', 'outlook.com', 'yahoo.com', 'icloud.com', 'hotmail.com', 'rediffmail.com'];
+
+/**
+ * One-tap completions while an email is typed: "priya" or "priya@g" → ["priya@gmail.com", …].
+ * Nothing once the domain is complete, or for input that can't become an address.
+ */
+export function domainCompletions(value, limit = 4) {
+  const text = String(value ?? '').trim().toLowerCase();
+  const parts = text.split('@');
+  if (parts.length > 2 || /\s/.test(text)) return [];
+  const [local, typed = ''] = parts;
+  if (local.length < 2 || !/^[a-z0-9._%+-]+$/.test(local)) return [];
+  if (POPULAR_DOMAINS.includes(typed) || typed.includes('.') && !POPULAR_DOMAINS.some((domain) => domain.startsWith(typed))) return [];
+  return POPULAR_DOMAINS.filter((domain) => domain.startsWith(typed)).slice(0, limit).map((domain) => `${local}@${domain}`);
+}
+
 export function emailSuggestion(value) {
   const [local, domain, extra] = value.trim().toLowerCase().split('@');
   return local && domain && extra === undefined && domainFixes[domain] ? `${local}@${domainFixes[domain]}` : '';

@@ -17,9 +17,12 @@ export function GoogleMark({ className = '' }) {
  * Leaves the page for Google's account chooser; the API brings the student back to `returnTo`
  * (default: this page) signed in, or with ?error=<code>.
  * `srLabel` finishes a short visible label for screen readers ("Connect" + " Google account").
- * @param {{ returnTo?: string, link?: boolean, label?: string, srLabel?: string, size?: 'md'|'sm' }} props
+ * `available` false (the API has no Google client yet) keeps the button on screen but calls
+ * `onUnavailable` instead of leaving the page, so the caller can explain and offer another way in.
+ * @param {{ returnTo?: string, link?: boolean, label?: string, srLabel?: string, size?: 'md'|'sm',
+ *   available?: boolean, onUnavailable?: () => void, describedBy?: string }} props
  */
-export default function GoogleButton({ returnTo, link = false, label = 'Continue with Google', srLabel = '', size = 'md' }) {
+export default function GoogleButton({ returnTo, link = false, label = 'Continue with Google', srLabel = '', size = 'md', available = true, onUnavailable, describedBy }) {
   const [busy, setBusy] = useState(false);
   // Coming back with the browser's Back button restores this page from cache, still "busy".
   useEffect(() => {
@@ -27,8 +30,13 @@ export default function GoogleButton({ returnTo, link = false, label = 'Continue
     window.addEventListener('pageshow', restore);
     return () => window.removeEventListener('pageshow', restore);
   }, []);
-  return <button type="button" className={styles.button} data-size={size} disabled={busy} aria-busy={busy || undefined}
-    onClick={() => { setBusy(true); window.location.assign(googleStartHref(returnTo || currentReturnTo(), { link })); }}>
+  function start() {
+    if (!available) { onUnavailable?.(); return; }
+    setBusy(true);
+    window.location.assign(googleStartHref(returnTo || currentReturnTo(), { link }));
+  }
+  return <button type="button" className={styles.button} data-size={size} data-unavailable={!available || undefined} disabled={busy} aria-busy={busy || undefined}
+    aria-describedby={describedBy} onClick={start}>
     {busy ? <span className={styles.spinner} aria-hidden="true" /> : <GoogleMark />}
     <span>{busy ? 'Opening Google…' : <>{label}{srLabel && <span className="sr-only">{srLabel}</span>}</>}</span>
   </button>;

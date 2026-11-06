@@ -51,12 +51,23 @@ test.describe('access gating (logged out)', () => {
   // Login is always the popup: /login shows the homepage with the dialog open over it.
   const loginDialog = (page) => page.locator('dialog[open]');
 
-  test('login offers email only while no SMS provider is configured', async ({ page }) => {
+  // Email first, then "or" Google / mobile number; a method not switched on says "coming soon".
+  test('login leads with email and offers Google and mobile as alternatives', async ({ page }) => {
     await page.goto('/login');
-    await expect(loginDialog(page)).toBeVisible();
-    await expect(loginDialog(page).getByRole('heading').first()).toContainText(/log in/i);
-    await expect(loginDialog(page).locator('input[type="email"], input[inputmode="email"]').first()).toBeVisible();
-    await expect(loginDialog(page).getByText(/mobile number/i)).toHaveCount(0);
+    const dialog = loginDialog(page);
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole('heading').first()).toContainText(/log in/i);
+    const email = dialog.locator('input[type="email"]').first();
+    await expect(email).toBeVisible();
+    await expect(dialog.getByRole('button', { name: /^continue$/i })).toBeVisible();
+    await expect(dialog.getByRole('button', { name: /continue with google/i })).toBeVisible();
+    // One tap completes a common email domain.
+    await email.fill('priya');
+    await dialog.getByRole('button', { name: /gmail\.com/i }).click();
+    await expect(email).toHaveValue('priya@gmail.com');
+    await dialog.getByRole('button', { name: /continue with mobile number/i }).click();
+    // Without an SMS provider the email field stays and a note explains; with one, the field becomes the mobile number.
+    await expect(dialog.getByText(/mobile number sign-in is coming soon/i).or(dialog.getByLabel('Mobile number'))).toBeVisible();
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/);
   });
 

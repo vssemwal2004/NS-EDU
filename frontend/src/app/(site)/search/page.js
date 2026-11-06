@@ -29,6 +29,8 @@ export default async function SearchPage({ searchParams }) {
   // Signed out, only the first few university matches are free; say how many a login unlocks.
   const locked = directory?.preview?.locked ?? results.collegesLocked ?? 0;
   const preview = locked ? { locked, shown: directory?.preview?.shown ?? results.colleges.length } : null;
+  // The API fixes typos ("grafic era" → "graphic era") and says so; the page says it too.
+  const corrected = directory?.search?.corrected || results.corrected || '';
 
   let body;
   if (!query) body = <Suggestions catalog={catalog} heading="Start typing, or pick a starting point" />;
@@ -38,7 +40,8 @@ export default async function SearchPage({ searchParams }) {
     <Suggestions catalog={catalog} />
   </>;
   else body = <>
-    <p className="sr-only" role="status">{counts.all} {counts.all === 1 ? 'result' : 'results'} for “{query}”</p>
+    <p className="sr-only" role="status">{counts.all} {counts.all === 1 ? 'result' : 'results'} for “{corrected || query}”</p>
+    {corrected && <div className={styles.note} role="note"><Icon name="spark" /><p>Showing results for <strong>{corrected}</strong> — you searched “{query}”.</p></div>}
     <TabBar query={query} tab={tab} counts={counts} />
     <Results query={query} tab={tab} universities={universities} courses={results.courses} exams={exams} />
   </>;

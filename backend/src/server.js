@@ -1,6 +1,8 @@
 import { app } from './app.js';
 import { assertProductionConfig, env } from './config/env.js';
 import { closeDb, getDb } from './db/collections.js';
+import { searchStatus, warmSearch } from './modules/search/search-store.js';
+import { keepPublicDataWarm, warmPublicData } from './warm-up.js';
 
 assertProductionConfig();
 
@@ -17,7 +19,14 @@ server.on('error', (error) => {
 
 // Warm the connection and indexes without blocking start-up; requests retry on failure.
 if (env.mongodbUri) {
-  getDb().catch((error) => console.error('Database not ready at start-up:', error.message));
+  getDb()
+    // Build the in-memory search index now, so the first student's keystroke doesn't wait for it.
+    .then(() => warmSearch())
+    .then(() => { const status = searchStatus(); if (status.ready) console.log(`Search index ready: ${status.counts.institutions} institutions in ${status.buildMs} ms`); })
+    // Then load the shared public data, and keep it fresh in the background from here on.
+    .then(() => warmPublicData())
+    .then(({ ms, failed }) => { console.log(`Public data cached in ${ms} ms${failed ? ` (${failed} part(s) will load on first use)` : ''}`); keepPublicDataWarm(); })
+    .catch((error) => console.error('Database not ready at start-up:', error.message));
 } else {
   console.warn('MONGODB_URI is not set: catalog, auth and admin routes will return 503.');
 }

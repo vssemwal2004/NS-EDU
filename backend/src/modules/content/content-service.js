@@ -5,7 +5,7 @@ import { CONTENT_KEYS, contentSize, isContentKey, validateContent } from './regi
 
 const HISTORY_LIMIT = 5;
 // Content is identical for every visitor; admin writes on this instance clear it immediately.
-const cache = createTtlCache({ ttlMs: 60_000, maxEntries: 50 });
+const cache = createTtlCache({ ttlMs: 60_000, staleMs: 30 * 60_000, maxEntries: 50 });
 export const invalidateContentCache = () => cache.clear();
 
 const contents = () => collection(COLLECTIONS.siteContent);

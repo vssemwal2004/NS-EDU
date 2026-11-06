@@ -1,13 +1,18 @@
-import Brand from '@/components/ui/Brand';
+import Icon from '@/components/ui/Icon';
 import styles from './LoginArt.module.css';
 
 // The login popup's left column: an original line drawing, no copy. Students look things up,
 // one sends an application from her laptop — a paper plane leaves it and the check badge ticks.
-// Decorative only (aria-hidden); the form beside it carries every word a student needs.
-export default function LoginArt() {
-  return <div className={styles.panel} aria-hidden="true">
-    <Brand tone="light" className={styles.logo} />
-    <div className={styles.scene}>
+// Decorative only (aria-hidden); the form beside it carries every word a student needs, and the
+// logo sits at the top of that form so it reads the same on a phone sheet and on desktop.
+// `benefits` ([{ icon, text }]) are listed under the drawing on desktop only; on a phone sheet the
+// form lists them itself (CSS hides one copy with display:none, so it is read out once).
+export default function LoginArt({ benefits = [] }) {
+  return <div className={styles.panel}>
+    {benefits.length > 0 && <ul className={styles.benefits}>
+      {benefits.map((item) => <li key={item.text}><span aria-hidden="true"><Icon name={item.icon} /></span>{item.text}</li>)}
+    </ul>}
+    <div className={styles.scene} aria-hidden="true">
       <svg className={styles.art} viewBox="10 40 500 410" focusable="false">
         <defs>
           <radialGradient id="login-art-halo" cx="50%" cy="50%" r="50%">

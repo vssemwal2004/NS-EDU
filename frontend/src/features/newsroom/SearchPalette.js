@@ -23,7 +23,8 @@ export default function SearchPalette({ query, tab, children }) {
   useEffect(() => {
     const trimmed = value.trim().slice(0, 120);
     if (trimmed === query) return undefined;
-    const timer = window.setTimeout(() => { setPushed(trimmed); startTransition(() => router.replace(searchHref(trimmed, tab), { scroll: false })); }, 380);
+    // The API answers from an in-memory index now, so results can follow typing more closely.
+    const timer = window.setTimeout(() => { setPushed(trimmed); startTransition(() => router.replace(searchHref(trimmed, tab), { scroll: false })); }, 250);
     return () => window.clearTimeout(timer);
   }, [value, query, tab, router]);
 

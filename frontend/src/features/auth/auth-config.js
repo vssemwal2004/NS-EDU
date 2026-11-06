@@ -2,8 +2,10 @@
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api/client';
 
-// GET /api/auth/config, fetched once per page load. Until it answers (or if it fails) only email
-// is offered: the phone channel and "Continue with Google" appear only when the API lists them.
+// GET /api/auth/config, fetched once per page load. The login form always shows Google, mobile and
+// email; this says which of them work today. Until it answers only email is usable (`loaded` false
+// lets the form hold its channel choice instead of flashing one tab and then the other). A failed
+// request settles as "loaded" with that email-only answer and is retried on the next page load.
 export const FALLBACK_AUTH_CONFIG = { channels: ['email'], google: false, otpTtlSeconds: 300, resendSeconds: 30, loaded: false };
 let request = null;
 let resolved = null;
@@ -21,7 +23,7 @@ function loadConfig() {
       };
       return resolved;
     })
-    .catch(() => { request = null; return FALLBACK_AUTH_CONFIG; });
+    .catch(() => { request = null; return { ...FALLBACK_AUTH_CONFIG, loaded: true, failed: true }; });
   return request;
 }
 
