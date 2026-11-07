@@ -10,6 +10,7 @@ import { useToaster } from '../crm/toast';
 import Pagination from '../table/Pagination';
 import { useServerList } from '../table/useServerList';
 import { PageToolbar } from '../ui/Page';
+import { resizedImage } from '@/lib/image-url';
 import { formatBytes, MAX_IMAGE_BYTES, uploadImage } from './upload';
 import styles from './MediaLibrary.module.css';
 
@@ -17,8 +18,8 @@ const USAGES = [{ value: 'logo', label: 'University logo' }, { value: 'cover', l
 const usageLabel = (value) => USAGES.find((item) => item.value === value)?.label ?? 'Other';
 const PAGE_SIZES = [24, 48];
 const nameOf = (item) => item.alt || item.publicId.split('/').pop();
-// Cloudinary thumbnail transformation keeps the grid light.
-const thumb = (url) => url.replace('/upload/', '/upload/c_fill,w_400,h_260,q_auto,f_auto/');
+// A small copy resized by Next keeps the grid light (CSS crops it); see lib/image-url.
+const thumb = (url) => resizedImage(url, 400);
 
 async function copyText(text) {
   try { await window.navigator.clipboard.writeText(text); return true; } catch { return false; }

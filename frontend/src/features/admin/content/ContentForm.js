@@ -4,6 +4,7 @@
 // only be added or renamed in the JSON tab; list items can be added, removed and reordered here.
 import { useState } from 'react';
 import Icon from '@/components/ui/Icon';
+import { resizedImage } from '@/lib/image-url';
 import { blankLike, humanize, itemTitle, kindOf } from './content-format';
 import styles from './Content.module.css';
 
@@ -11,7 +12,7 @@ const idOf = (path) => `cf-${path.join('-').replace(/[^\w-]/g, '_')}`;
 // Links, ids and other single tokens stay one-line inputs; prose gets a textarea.
 const isLong = (text, key) => !/\s/.test(text.trim()) ? false : text.length > 72 || text.includes('\n') || /description|text|body|intro|answer|summary|note/i.test(String(key));
 const isImage = (value) => value && typeof value === 'object' && !Array.isArray(value) && typeof value.src === 'string';
-const imagePreview = (src) => (src.startsWith('https://res.cloudinary.com/') ? src.replace('/image/upload/', '/image/upload/c_fit,w_320,h_200,q_auto,f_auto/') : src);
+const imagePreview = (src) => resizedImage(src, 320);
 
 function errorFor(errors, path) {
   const key = path.join('.');

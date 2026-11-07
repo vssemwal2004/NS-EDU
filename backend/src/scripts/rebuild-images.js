@@ -17,7 +17,7 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import sharp from 'sharp';
 import { COLLECTIONS, closeDb, getDb } from '../db/collections.js';
-import { cloudinaryConfig, cloudinaryFolder, uploadImage } from '../lib/cloudinary.js';
+import { accountUsage, cloudinaryConfig, cloudinaryFolder, uploadImage } from '../lib/cloudinary.js';
 import { isRetiredImage, retiredImagePattern } from '../lib/retired-images.js';
 
 const args = process.argv.slice(2);
@@ -132,6 +132,10 @@ async function status() {
   const contentLinks = [...JSON.stringify(content?.data ?? {}).matchAll(/https:\/\/res\.cloudinary\.com\/[^"]+/g)].filter(([url]) => isRetiredImage(url)).length;
   console.log(`Cloudinary account now: ${cloudinaryConfig().cloudName || '(not configured)'}`);
   console.log('Still on a retired account:', { universitiesWithDeadPhotos: galleries, deadCovers: covers, deadLogos: logos, states, cities, mediaRows: media, siteContentLinks: contentLinks });
+  // Credits (Cloudinary updates them about once a day). Keep well under 100% or the account is disabled.
+  const usage = await accountUsage().catch((error) => ({ error: error.message }));
+  if (usage.error) console.log(`Cloudinary usage: unavailable (${usage.error})`);
+  else console.log(`Cloudinary usage (${usage.plan}, as of ${usage.last_updated}): ${usage.credits?.usage} of ${usage.credits?.limit} credits (${usage.credits?.used_percent}%); storage ${(usage.storage?.usage / 1024 ** 3).toFixed(2)} GB, bandwidth ${(usage.bandwidth?.usage / 1024 ** 3).toFixed(2)} GB, transformations ${usage.transformations?.usage}`);
 }
 
 try {

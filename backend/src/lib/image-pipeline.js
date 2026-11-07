@@ -1,6 +1,8 @@
 // Download → verify → compress → upload. One path for every picture the scraper re-hosts, so a
 // stored image is always one we fetched from the institution's own domain, decoded ourselves and
 // re-encoded small. Nothing here throws into the crawl: a picture that fails is skipped and logged.
+import { mkdir, writeFile } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
 import { cloudinaryConfig, cloudinaryFolder, uploadImage } from './cloudinary.js';
 
 export const IMAGE_LIMITS = Object.freeze({
@@ -50,6 +52,45 @@ export function photoAge({ exif, lastModified, urlYear = null, now = new Date(),
   if (urlYear !== null && urlYear < oldest) return { takenYear: urlYear, tooOld: true, evidence: `dated ${urlYear} by its address` };
   return { takenYear: taken ?? urlYear, tooOld: false, evidence: '' };
 }
+
+/**
+ * IMAGE_BACKUP_DIR=<folder> also keeps every stored image on disk as
+ * <folder>/universities/<slug>/<kind>-<index>.<webp|png> (the same name it has on Cloudinary), so a
+ * disabled or deleted Cloudinary account never loses the pictures again and they can be uploaded to
+ * any other storage later. A write that fails is logged and never stops the crawl.
+ */
+async function keepLocalCopy(prepared, { slug, kind, index }, log) {
+  const dir = process.env.IMAGE_BACKUP_DIR;
+  if (!dir) return;
+  try {
+    const target = join(dir, 'universities', slug, `${kind}-${index}.${prepared.format}`);
+    await mkdir(dirname(target), { recursive: true });
+    await writeFile(target, prepared.data);
+  } catch (error) { log(`local backup failed for ${slug} — ${error.message}`); }
+}
+
+/**
+ * A 64-bit "difference hash" of how a picture looks: shrink to 9×8 grey pixels and record, for each
+ * pixel, whether it is brighter than its right-hand neighbour. The same photo at another size,
+ * quality or format gives (nearly) the same bits; a different photo differs in about half of them.
+ * @returns {Promise<bigint>}
+ */
+export async function imageFingerprint(bytes) {
+  const sharp = await loadSharp();
+  const grey = await sharp(bytes, { failOn: 'none' }).grayscale().resize(9, 8, { fit: 'fill' }).raw().toBuffer();
+  let bits = 0n;
+  for (let row = 0; row < 8; row += 1) for (let column = 0; column < 8; column += 1) bits = (bits << 1n) | (grey[row * 9 + column] > grey[row * 9 + column + 1] ? 1n : 0n);
+  return bits;
+}
+export function printDistance(a, b) {
+  let diff = a ^ b;
+  let count = 0;
+  while (diff) { count += Number(diff & 1n); diff >>= 1n; }
+  return count;
+}
+// Measured: the same picture resized and re-encoded differs in 0–7 bits of 64, different pictures in
+// 22–34. 10 catches re-encodes with a wide margin before two different photos could be confused.
+const DUPLICATE_DISTANCE = 10;
 
 export const IMAGE_TYPES = Object.freeze(['image/jpeg', 'image/jpg', 'image/pjpeg', 'image/png', 'image/webp', 'image/avif', 'image/gif']);
 
@@ -137,7 +178,7 @@ export function createImagePipeline({ download, upload = uploadImage, enabled, l
    * One image, end to end. Returns null when it is not usable — never throws at the caller.
    * @param {{ url: string, slug: string, kind?: 'photo'|'logo', index?: number, caption?: string, sourcePage?: string, domain?: string }} input
    */
-  async function process({ url, slug, kind = 'photo', index = 1, caption = '', sourcePage = '', domain = '', year = null }) {
+  async function process({ url, slug, kind = 'photo', index = 1, caption = '', sourcePage = '', domain = '', year = null, knownPrints = null }) {
     if (!ready) { stats.skipped += 1; note('disabled'); return null; }
     if (!slug) { stats.skipped += 1; note('no-slug'); return null; }
     stats.attempted += 1;
@@ -147,12 +188,20 @@ export function createImagePipeline({ download, upload = uploadImage, enabled, l
       if (contentType && !IMAGE_TYPES.includes(contentType) && !/^(application|binary)\/octet-stream$/.test(contentType)) throw new ImageError(`Not an image (${contentType})`, 'type');
       if (!body?.byteLength) throw new ImageError('Empty response', 'download');
       const prepared = await prepareImage(body, { kind, limits });
+      // The same picture served from two addresses (or already stored from an earlier run) is
+      // recognised by how it looks, and is not uploaded again: an upload costs Cloudinary credits.
+      let fingerprint = null;
+      if (knownPrints) {
+        fingerprint = await imageFingerprint(prepared.data);
+        if (knownPrints.some((known) => printDistance(known, fingerprint) <= DUPLICATE_DISTANCE)) throw new ImageError('Already have this picture', 'duplicate');
+      }
       let takenYear = null;
       if (kind === 'photo' && limits.maxAgeYears) {
         const age = photoAge({ exif: prepared.exif, lastModified, urlYear: year, maxAgeYears: limits.maxAgeYears });
         if (age.tooOld) throw new ImageError(`Older than ${limits.maxAgeYears} years (${age.evidence})`, 'too-old');
         takenYear = age.takenYear;
       }
+      await keepLocalCopy(prepared, { slug, kind, index }, log);
       const result = await upload(prepared.data, {
         folder: `${cloudinaryFolder()}/universities/${slug}`,
         publicId: `${kind}-${index}`,
@@ -161,6 +210,7 @@ export function createImagePipeline({ download, upload = uploadImage, enabled, l
       });
       if (!result?.secure_url) throw new ImageError('Cloudinary returned no URL', 'upload');
       stats.uploaded += 1;
+      if (fingerprint) knownPrints.push(fingerprint);
       stats.originalBytes += body.byteLength;
       stats.compressedBytes += prepared.data.byteLength;
       return {
@@ -176,7 +226,7 @@ export function createImagePipeline({ download, upload = uploadImage, enabled, l
       };
     } catch (error) {
       const code = error?.code ?? 'error';
-      if (['too-small', 'shape', 'type', 'decode', 'not-allowed-type', 'not-a-photo', 'too-old'].includes(code)) stats.skipped += 1;
+      if (['too-small', 'shape', 'type', 'decode', 'not-allowed-type', 'not-a-photo', 'too-old', 'duplicate'].includes(code)) stats.skipped += 1;
       else stats.failed += 1;
       note(code);
       log(`image skipped <${url}> — ${error.message}`);
@@ -184,12 +234,15 @@ export function createImagePipeline({ download, upload = uploadImage, enabled, l
     }
   }
 
-  /** Works through candidates in order and stops once `want` images have been stored. */
-  async function processMany(candidates, { slug, kind = 'photo', want = 8, startIndex = 1, domain = '', shouldContinue = () => true }) {
+  /**
+   * Works through candidates in order and stops once `want` images have been stored, or after
+   * `maxAttempts` candidates (each one is a polite, delayed download from the institution's site).
+   */
+  async function processMany(candidates, { slug, kind = 'photo', want = 8, startIndex = 1, domain = '', shouldContinue = () => true, maxAttempts = Infinity, knownPrints = null }) {
     const stored = [];
-    for (const candidate of candidates) {
+    for (const candidate of candidates.slice(0, Math.max(want, maxAttempts))) {
       if (stored.length >= want || !shouldContinue()) break;
-      const item = await process({ domain, ...candidate, slug, kind, index: startIndex + stored.length });
+      const item = await process({ domain, ...candidate, slug, kind, index: startIndex + stored.length, knownPrints });
       if (item) stored.push(item);
     }
     return stored;

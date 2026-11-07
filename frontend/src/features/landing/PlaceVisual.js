@@ -1,10 +1,11 @@
 'use client';
 import { useState } from 'react';
+import { resizedImage } from '@/lib/image-url';
 import styles from './PlaceVisual.module.css';
 
 const TONES = 6;
-// Cloudinary resizes and re-encodes on delivery, so a tile never downloads the full upload.
-const tileImageUrl = (url) => url.replace('/image/upload/', '/image/upload/c_limit,w_800,q_auto,f_auto/');
+// Resized by Next (not a Cloudinary transformation), so a tile never downloads the full upload.
+const tileImageUrl = (url) => resizedImage(url, 800);
 // Stable per name, so a place keeps its colour between visits and neighbours rarely match.
 const toneOf = (name) => [...name].reduce((hash, char) => (hash * 31 + char.charCodeAt(0)) >>> 0, 7) % TONES;
 

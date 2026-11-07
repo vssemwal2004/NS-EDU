@@ -138,14 +138,17 @@ async function enrichImagesCommand() {
     limit: positiveInt(option('limit'), 'limit') ?? 50,
     want: positiveInt(option('want'), 'want'),
     concurrency: positiveInt(option('concurrency'), 'concurrency'),
+    part: option('part') ?? '',
     // --retired: replace photos, covers and logos stored on a Cloudinary account that no longer serves them.
-    mode: flag('retired') ? 'retired' : flag('all') ? 'all' : 'missing',
+    // --wide: crawl many more pages and top every university up to --want photographs.
+    mode: flag('wide') ? 'wide' : flag('retired') ? 'retired' : flag('all') ? 'all' : 'missing',
     dryRun: flag('dry-run'),
     signal: controller.signal,
     log: (line) => console.log(line),
   });
   console.log(`Selected ${summary.selected} institutions: ${summary.updated} updated, ${summary.empty} with no usable photograph, ${summary.failed} failed.`);
   console.log(`Images: ${describeImages(summary.images)}.`);
+  if (summary.stoppedForBudget) console.log('Stopped early to stay inside the Cloudinary plan. Run the same command again after the credits reset (rolling 30 days).');
   for (const example of summary.examples) console.log(`  ${example.slug}: ${example.images} photographs, first ${example.first}`);
 }
 

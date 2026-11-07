@@ -5,6 +5,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Icon from '@/components/ui/Icon';
+import { resizedImage } from '@/lib/image-url';
 import { useAdminSession } from './AdminSession';
 import ConfirmDialog from './crm/ConfirmDialog';
 import RowMenu from './crm/RowMenu';
@@ -211,7 +212,7 @@ export default function ResourceManager({ resource }) {
         return <StatusDot tone={tone}>{text}</StatusDot>;
       }
       case 'image': return value
-        ? <img className={styles.thumb} src={String(value).replace('/image/upload/', '/image/upload/c_fill,w_88,h_56,q_auto,f_auto/')} alt="" loading="lazy" width="44" height="28" />
+        ? <img className={styles.thumb} src={resizedImage(String(value), 96)} alt="" loading="lazy" width="44" height="28" />
         : <span className={styles.noPhoto}>None</span>;
       case 'link': return value ? <a className={`${styles.link} ${styles.truncate}`} href={value} target="_blank" rel="noopener noreferrer" title={value}>{hostOf(value)}</a> : <span className={styles.muted}>—</span>;
       default: {

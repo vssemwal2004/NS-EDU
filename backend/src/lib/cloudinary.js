@@ -77,6 +77,21 @@ export async function findImage(publicId) {
   return data;
 }
 
+/**
+ * The account's plan usage: credits used and allowed, storage, bandwidth and transformations.
+ * Cloudinary refreshes these figures about once a day. On the Free plan the allowance is 25 credits
+ * over a rolling 30 days, and an account far over it is disabled (that happened to our first one).
+ */
+export async function accountUsage() {
+  const { cloudName, apiKey, apiSecret } = requireConfig();
+  const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/usage`, {
+    headers: { authorization: `Basic ${Buffer.from(`${apiKey}:${apiSecret}`).toString('base64')}` }, signal: AbortSignal.timeout(30_000),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || data.error) throw new Error(sanitize(`Cloudinary usage lookup failed: ${data.error?.message || response.status}`));
+  return data;
+}
+
 /** Uploads a local file (path) or Buffer. Returns Cloudinary's response (secure_url, public_id, width, height, bytes, format). */
 export async function uploadImage(source, { publicId, folder, overwrite = false, tags = [] } = {}) {
   const { apiKey, apiSecret } = requireConfig();
