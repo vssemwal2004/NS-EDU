@@ -145,7 +145,7 @@ export const INSTITUTION_FIELDS = [
   { name: 'logoUrl', label: 'Logo URL', type: 'url', help: 'Upload to Cloudinary from the media screen and paste the URL.' },
   { name: 'coverUrl', label: 'Cover image URL', type: 'url' },
   // --- Deep-scrape detail. All optional; absent means "we have not found it", never "none".
-  { name: 'gallery', label: 'Campus photos', type: 'objectList', maxItems: 12, fields: GALLERY_FIELDS, machine: true,
+  { name: 'gallery', label: 'Campus photos', type: 'objectList', maxItems: 24, fields: GALLERY_FIELDS, machine: true,
     help: 'Photographs from the institution\'s own site, re-hosted on Cloudinary. Each row keeps its credit and source page.' },
   { name: 'programmesOffered', label: 'Programme details', type: 'objectList', maxItems: 500, fields: PROGRAMME_ROW_FIELDS, machine: true,
     help: 'Structured programme rows. The plain name list stays in "Programmes offered".' },

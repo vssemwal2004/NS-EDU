@@ -177,7 +177,7 @@ export function photoYearOf(path, alt = '', now = CURRENT_YEAR) {
  * banner-shaped images early; the real pixels are checked again after download. Pictures the
  * address dates to more than five years ago are left out, and recent ones rank first.
  */
-export function galleryCandidates(pages, { domain, limit = 40, minWidth = 480, minHeight = 320, now = CURRENT_YEAR } = {}) {
+export function galleryCandidates(pages, { domain, limit = 40, minWidth = 480, minHeight = 320, now = CURRENT_YEAR, lenientMarkup = false } = {}) {
   const seen = new Set();
   const found = [];
   for (const page of pages) {
@@ -193,7 +193,9 @@ export function galleryCandidates(pages, { domain, limit = 40, minWidth = 480, m
       // Only trust the markup when it gives both dimensions.
       if (image.width && image.height) {
         const ratio = image.width / image.height;
-        if (image.width < minWidth || image.height < minHeight || ratio < 1.2 || ratio > 2.7) continue;
+        // lenientMarkup: the printed size is often the size it is shown at (a Next.js <Image width=400>), not the
+        // file's. Only obvious icons and badges are dropped here; everything else gets the real-pixel check after download.
+        if (lenientMarkup ? (image.width < 200 && image.height < 200) : (image.width < minWidth || image.height < minHeight || ratio < 1.2 || ratio > 2.7)) continue;
       }
       seen.add(href);
       const year = photoYearOf(path, image.alt, now);

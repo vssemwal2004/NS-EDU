@@ -185,7 +185,7 @@ Which pictures are even considered (`deep.js`, `galleryCandidates`): images serv
 | Field | What it holds | When it is absent |
 | --- | --- | --- |
 | `about`, `aboutSource` | Up to three factual paragraphs (≤ 2400 chars, separated by a blank line) from the institution's own about pages or home page, and the first page's URL. The first paragraph must introduce the institution (name it, or say what it is and when it was established); addresses and sentences that only sell are dropped | No about page, or nothing factual on it |
-| `gallery[]` | Up to 12 `{ url, caption?, credit: 'official website', sourcePage, width?, height?, year? }` — photographs no older than five years, re-hosted on Cloudinary | Nothing on the site passed the photo checks, or Cloudinary is not configured |
+| `gallery[]` | Up to 12 (24 for a profile topped up by `enrich-images --wide --city`) `{ url, caption?, credit: 'official website', sourcePage, width?, height?, year? }` — photographs no older than five years, re-hosted on Cloudinary | Nothing on the site passed the photo checks, or Cloudinary is not configured |
 | `coverUrl` | The newest wide campus/about photograph, unless a cover is already set | — |
 | `programmesOffered[]` | Up to 500 `{ name, courseSlug?, level?, durationYears?, annualFeeInr?, semesterFeeInr?, totalFeeInr?, feeYear?, feeNote?, sourcePage }` rows, from fee/course tables, fee sections and fee PDFs, topped up from the plain name list. `courseSlug` links the row to a catalogue course | — |
 | `coursesOffered[]` | The plain programme-name list, unchanged | — |

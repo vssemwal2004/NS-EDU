@@ -44,6 +44,8 @@ const nextConfig = {
     remotePatterns: [
       // Site images and media-library uploads (see backend/src/scripts/migrate-images.js).
       { protocol: 'https', hostname: 'res.cloudinary.com' },
+      // Campus photographs on Cloudflare R2: the bucket's public host (NEXT_PUBLIC_IMAGE_HOST), nothing wider.
+      ...(process.env.NEXT_PUBLIC_IMAGE_HOST ? [{ protocol: 'https', hostname: process.env.NEXT_PUBLIC_IMAGE_HOST }] : []),
       { protocol: 'https', hostname: 'images.indianexpress.com' },
       { protocol: 'https', hostname: 'www.hindustantimes.com', pathname: '/ht-img/**' },
       { protocol: 'https', hostname: 'etimg.etb2bimg.com' },

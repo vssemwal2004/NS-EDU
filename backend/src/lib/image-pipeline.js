@@ -4,6 +4,7 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { cloudinaryConfig, cloudinaryFolder, uploadImage } from './cloudinary.js';
+import { r2Selected, uploadImage as uploadToR2 } from './r2.js';
 
 export const IMAGE_LIMITS = Object.freeze({
   maxBytes: 8 * 1024 * 1024,
@@ -98,7 +99,14 @@ export const IMAGE_TYPES = Object.freeze(['image/jpeg', 'image/jpg', 'image/pjpe
 // scraper keeps working on a machine where it is not installed.
 let sharpPromise;
 export function loadSharp() {
-  sharpPromise ??= import('sharp').then((module) => module.default).catch((error) => {
+  sharpPromise ??= import('sharp').then((module) => {
+    // Several scraper processes share one machine and each already runs dozens of images at once, so
+    // libvips's default (one worker thread per core, in every process) only makes them fight over the
+    // cores. SHARP_CONCURRENCY=0 restores sharp's default.
+    const threads = process.env.SHARP_CONCURRENCY === undefined ? 2 : Number(process.env.SHARP_CONCURRENCY);
+    if (Number.isInteger(threads) && threads >= 0) module.default.concurrency(threads);
+    return module.default;
+  }).catch((error) => {
     sharpPromise = undefined;
     throw new Error(`sharp is required for the image pipeline but could not be loaded: ${error.message}`);
   });
@@ -169,8 +177,11 @@ export async function prepareImage(bytes, { kind = 'photo', limits = IMAGE_LIMIT
  * @param {{ download: (url: string, options?: object) => Promise<{contentType: string, body: Buffer}>,
  *           upload?: Function, enabled?: boolean, log?: Function, limits?: object }} options
  */
-export function createImagePipeline({ download, upload = uploadImage, enabled, log = () => {}, limits = IMAGE_LIMITS } = {}) {
-  const ready = enabled ?? cloudinaryConfig().configured;
+export function createImagePipeline({ download, upload = r2Selected() ? uploadToR2 : uploadImage, enabled, log = () => {}, limits = IMAGE_LIMITS } = {}) {
+  // Photographs go to Cloudflare R2 when it is configured (R2_IMAGES_PUBLIC_URL and the R2 keys),
+  // otherwise to Cloudinary. IMAGE_STORAGE=cloudinary forces the old behaviour.
+  const toR2 = upload === uploadToR2;
+  const ready = enabled ?? (toR2 || cloudinaryConfig().configured);
   const stats = { attempted: 0, uploaded: 0, skipped: 0, failed: 0, originalBytes: 0, compressedBytes: 0, reasons: {} };
   const note = (code) => { stats.reasons[code] = (stats.reasons[code] ?? 0) + 1; };
 
@@ -203,12 +214,14 @@ export function createImagePipeline({ download, upload = uploadImage, enabled, l
       }
       await keepLocalCopy(prepared, { slug, kind, index }, log);
       const result = await upload(prepared.data, {
-        folder: `${cloudinaryFolder()}/universities/${slug}`,
+        // The R2 bucket is ours alone, so keys start at universities/…, the layout of the disk backup.
+        folder: `${toR2 ? '' : `${cloudinaryFolder()}/`}universities/${slug}`,
         publicId: `${kind}-${index}`,
+        format: prepared.format,
         overwrite: true,
         tags: ['scrape', kind],
       });
-      if (!result?.secure_url) throw new ImageError('Cloudinary returned no URL', 'upload');
+      if (!result?.secure_url) throw new ImageError('The image store returned no URL', 'upload');
       stats.uploaded += 1;
       if (fingerprint) knownPrints.push(fingerprint);
       stats.originalBytes += body.byteLength;

@@ -135,13 +135,21 @@ async function enrichImagesCommand() {
   const summary = await enrichImages({
     slugs, sourceUrl,
     state: option('state') ?? '',
+    // --city "Dehradun" with --wide: the deeper per-city run (more pages, academics pages, up to 12 photographs).
+    city: option('city') ?? '',
     limit: positiveInt(option('limit'), 'limit') ?? 50,
     want: positiveInt(option('want'), 'want'),
     concurrency: positiveInt(option('concurrency'), 'concurrency'),
     part: option('part') ?? '',
+    // --render: open empty JavaScript app shells in Chrome (wide mode). --max-have 0: only institutions with no photographs yet.
+    render: flag('render'),
+    // --lenient-markup: do not reject photographs by the size printed in the page; the real pixels are checked after download.
+    lenientMarkup: flag('lenient-markup'),
+    maxHave: option('max-have') === undefined ? null : Math.max(0, Math.floor(Number(option('max-have')) || 0)),
     // --retired: replace photos, covers and logos stored on a Cloudinary account that no longer serves them.
     // --wide: crawl many more pages and top every university up to --want photographs.
-    mode: flag('wide') ? 'wide' : flag('retired') ? 'retired' : flag('all') ? 'all' : 'missing',
+    // --logos: only the logo, from the home page, for every university without one.
+    mode: flag('wide') ? 'wide' : flag('logos') ? 'logos' : flag('retired') ? 'retired' : flag('all') ? 'all' : 'missing',
     dryRun: flag('dry-run'),
     signal: controller.signal,
     log: (line) => console.log(line),

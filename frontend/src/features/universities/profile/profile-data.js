@@ -73,8 +73,8 @@ export function profileModel({ item, programmes, courses, similar }, catalogCour
     }))
     .filter((photo) => /^https?:\/\//i.test(photo.url));
   const heroImage = text(item.coverUrl) || photos[0]?.url || '';
-  // The cover already fills the header, so the gallery starts with the next picture (schema max 12).
-  const galleryPhotos = photos.filter((photo) => photo.url !== heroImage).slice(0, 12);
+  // The cover already fills the header, so the gallery starts with the next picture (schema max 24).
+  const galleryPhotos = photos.filter((photo) => photo.url !== heroImage).slice(0, 24);
 
   // ---- hero badges: at most three, each a real value -----------------------------------------
   // The "source-reported" caveat is said once under the badges and in full in Accreditation, not
