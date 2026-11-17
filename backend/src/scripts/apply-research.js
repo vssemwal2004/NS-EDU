@@ -1,6 +1,7 @@
 // Writes hand-researched fee / placement / programme data (JSON files) into `institutions`.
 // Usage: npm run research:apply -- <file.json> [more.json] [--dry-run] [--fix-websites]   (calls node directly if npm eats flags)
-// Each file is an array of { slug, officialWebsite?, campusGalleryUrl?, programmes[], placements?, placementHistory[], notFound[] }.
+// Each file is an array of { slug, officialWebsite?, campusGalleryUrl?, programmes[], placements?, placementHistory[], notFound[],
+//   about?, facilities[]?, admissionUrl?, factsSource? }  (the last four fill EMPTY fields only and need an https factsSource).
 // Rules enforced here, because the researcher is a person or an agent, not the crawler:
 //   - every figure needs an https `sourcePage` that is not an aggregator;
 //   - a fee period is stored as given (annual/semester/total), never converted;
@@ -77,6 +78,10 @@ for (const file of files) {
     report.institutions += 1; report.feeRows += feeRows; report.seasons += seasons.length;
     report.rejected.push(...problems.map((text) => `${item.slug}: ${text}`));
     if (item.campusGalleryUrl && goodSource(item.campusGalleryUrl)) report.gallery.push({ slug: item.slug, url: item.campusGalleryUrl, hasGallery: (existing.gallery?.length ?? 0) > 0 });
+    // Further official photo pages (deep pass) and a logo image the researcher saw in the page markup; both are only
+    // collected here, the image crawler / apply-logos.js fetch them under the usual robots and size rules.
+    for (const extra of (item.extraGalleryUrls ?? []).slice(0, 3)) if (goodSource(extra) && extra !== item.campusGalleryUrl) report.gallery.push({ slug: item.slug, url: extra, hasGallery: (existing.gallery?.length ?? 0) > 0 });
+    if (item.logoImageUrl && goodSource(item.logoImageUrl) && !existing.logoUrl) report.logos = [...(report.logos ?? []), { slug: item.slug, url: item.logoImageUrl, page: item.logoPage ?? item.officialWebsite ?? existing.website }];
     // Opt-in: the directory's website is sometimes dead or taken over by a spam site; the researcher checked the real one.
     let website = null;
     if (fixWebsites && item.officialWebsite && goodSource(item.officialWebsite) && hostOf(item.officialWebsite) !== hostOf(existing.website)
@@ -84,8 +89,32 @@ for (const file of files) {
       website = item.officialWebsite.replace(/\/+$/, '');
       report.websites.push(`${item.slug}: ${existing.website} -> ${website}`);
     }
+    // Plain profile facts (about / facilities / admissions page). Each needs an https `factsSource`, and a value
+    // already stored (by the crawler or an admin) is never replaced: this only fills what is empty.
+    const factsSource = item.factsSource && goodSource(item.factsSource);
+    const facts = {};
+    if (factsSource) {
+      const about = String(item.about ?? '').replace(/\s+/g, ' ').trim().slice(0, 1200);
+      if (about.length >= 80 && (existing.about ?? '').length < 80) Object.assign(facts, { about, aboutSource: item.factsSource });
+      const facilities = [...new Set((item.facilities ?? []).map((text) => String(text).trim().slice(0, 60)).filter(Boolean))].slice(0, 20);
+      if (facilities.length && !(existing.facilities?.length)) facts.facilities = facilities;
+      if (item.admissionUrl && goodSource(item.admissionUrl) && !existing.admissionUrl) facts.admissionUrl = item.admissionUrl;
+      // Basic identity facts, again only into empty fields. The email must be an institutional address on the institution's own site.
+      const year = Number(item.establishedYear);
+      if (Number.isInteger(year) && year >= 1800 && year <= new Date().getFullYear() && !existing.establishedYear) facts.establishedYear = year;
+      const address = String(item.address ?? '').replace(/\s+/g, ' ').trim().slice(0, 400);
+      if (address.length >= 15 && !existing.address) facts.address = address;
+      const phone = String(item.phone ?? '').trim().slice(0, 40);
+      if (/^[+\d][\d\s()\-,/+]{6,}$/.test(phone) && !existing.phone) facts.phone = phone;
+      const email = String(item.email ?? '').trim().toLowerCase();
+      const siteHost = hostOf(existing.website ?? item.officialWebsite);
+      if (/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/.test(email) && !existing.email && siteHost && hostOf(`https://${email.split('@')[1]}`).endsWith(siteHost.split('.').slice(-2).join('.'))) facts.email = email;
+      const approvals = [...new Set((item.approvals ?? []).map((text) => String(text).trim().slice(0, 20)).filter(Boolean))].slice(0, 12);
+      if (approvals.length && !(existing.approvals?.length)) facts.approvals = approvals;
+    } else if (item.about || item.facilities?.length || item.admissionUrl || item.establishedYear || item.address) problems.push('about/facilities/admissionUrl/identity facts without an acceptable https factsSource');
     const record = {
       slug: existing.slug, name: existing.name, city: existing.city, state: existing.state,
+      ...facts,
       ...(website ? { website } : {}),
       ...(rows.length ? { programmesOffered: rows } : {}),
       ...(placements ? { placements } : {}), ...(seasons.length ? { placementHistory: seasons } : {}),
@@ -95,7 +124,8 @@ for (const file of files) {
       const host = hostOf(website);
       await database.collection(COLLECTIONS.scrapeSources).updateOne({ institutionSlug: existing.slug }, { $set: { website, domain: host, websiteKey: host } });
     }
-    if (!dryRun && (website || feeRows || placements || seasons.length || rows.length !== (existing.programmesOffered?.length ?? 0))) {
+    if (Object.keys(facts).length) report.facts = (report.facts ?? 0) + 1;
+    if (!dryRun && (website || feeRows || placements || seasons.length || Object.keys(facts).length || rows.length !== (existing.programmesOffered?.length ?? 0))) {
       const written = await upsertUniversities([record], { source: { kind: 'import', name: 'Official website, checked by hand' }, publish: false });
       // The write path drops rows that fail validation without an error, so read back what really landed.
       const stored = await collection.findOne({ slug: existing.slug }, { projection: { programmesOffered: 1 } });

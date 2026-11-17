@@ -524,8 +524,20 @@ function keepStoredFees(existingRows, incomingRows) {
   return merged;
 }
 
+// A crawl keeps about a dozen photographs per site, while a wide or per-city image run may have stored up to 24.
+// A smaller incoming set must not shrink the stored gallery: the new rows come first and the stored rows
+// the crawl did not see are kept after them (never past the schema limit, never a link that no longer serves).
+const GALLERY_MAX = 24;
+function keepStoredGallery(existingRows, incomingRows) {
+  const stored = existingRows.filter((row) => row?.url && !isRetiredImage(row.url));
+  if (stored.length <= incomingRows.length) return incomingRows;
+  const seen = new Set(incomingRows.map((row) => row?.url));
+  return [...incomingRows, ...stored.filter((row) => !seen.has(row.url))].slice(0, GALLERY_MAX);
+}
+
 function accumulate(existing, data) {
   const out = { ...data };
+  if (Array.isArray(data.gallery) && Array.isArray(existing.gallery)) out.gallery = keepStoredGallery(existing.gallery, data.gallery);
   if (Array.isArray(data.programmesOffered) && Array.isArray(existing.programmesOffered)) out.programmesOffered = keepStoredFees(existing.programmesOffered, data.programmesOffered);
   for (const [field, { key, max }] of Object.entries(ACCUMULATING)) {
     if (!Array.isArray(data[field]) || !Array.isArray(existing[field])) continue;
