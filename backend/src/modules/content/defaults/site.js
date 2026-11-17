@@ -41,6 +41,7 @@ export default {
     ] },
     { title: 'Gyaan Vidhya & support', links: [
       { label: 'About Gyaan Vidhya', href: '/about' },
+      { label: 'Student reviews', href: '/reviews' },
       { label: 'Contact & support', href: '/contact' },
       { label: 'Help centre & FAQs', href: '/help' },
       { label: 'Report a correction', href: '/report-correction' },

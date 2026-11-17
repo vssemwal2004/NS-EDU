@@ -1,4 +1,14 @@
 /* Help centre and contact pieces on top of the journal layout (_journal/journal.module.css). */
+
+/* About: the four brand cards under the masthead (N.S. Education Society, Guidentra, The EduQuest, Gyaan Vidhya). */
+.pillars { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--lux-space-3); margin: var(--lux-space-6) 0 0; padding: 0; list-style: none; }
+.pillars li { display: grid; align-content: start; gap: 6px; padding: var(--lux-space-4); border: 1px solid var(--lux-border); border-radius: var(--lux-radius-lg); background: var(--lux-surface-raised); box-shadow: var(--lux-shadow-soft); }
+.pillars strong { color: var(--lux-heading); font: 400 1.15rem/1.2 var(--lux-font-display); }
+.pillars small { color: var(--lux-text-muted); font-size: .8125rem; line-height: 1.45; }
+.pillarIcon { display: grid; place-items: center; width: 40px; height: 40px; margin-bottom: 4px; border-radius: 12px; background: var(--lux-blush-soft, rgb(201 164 106 / 16%)); color: var(--lux-oxblood); }
+.pillarIcon :global(.icon) { width: 20px; height: 20px; }
+@media (max-width: 1023px) { .pillars { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 480px) { .pillars { grid-template-columns: 1fr; } .pillars li { grid-template-columns: auto minmax(0, 1fr); column-gap: var(--lux-space-3); } .pillarIcon { grid-row: span 2; margin: 0; } }
 .search { display: grid; gap: var(--lux-space-3); margin-bottom: var(--lux-space-3); padding: clamp(1.25rem, 1rem + 1vw, 2rem); border: 1px solid var(--lux-border); border-radius: var(--lux-radius-xl); background: var(--lux-surface-tint); }
 .searchLabel { color: var(--lux-heading); font: 400 var(--lux-title)/1.2 var(--lux-font-display); }
 .searchRow { display: flex; gap: var(--lux-space-2); }

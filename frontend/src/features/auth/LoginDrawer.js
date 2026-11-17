@@ -14,6 +14,7 @@ const reasons = {
   directory: { title: 'Log in to explore', lead: 'See every university profile and result — it’s free.' },
   account: { title: 'Your student account', lead: 'See your applications and saved preferences.' },
   limit: { title: 'Log in to keep exploring', lead: 'You’ve used your free views. Log in free to see everything.' },
+  review: { title: 'Log in to write a review', lead: 'Reviews come from verified student accounts only.' },
   // Shown by the login nudge after a few searches or pages. Closable at any time ("Maybe later" or ×).
   nudge: { title: 'Get the full experience', lead: 'Log in free to save your shortlist and talk to a counsellor.', dismissible: true },
 };

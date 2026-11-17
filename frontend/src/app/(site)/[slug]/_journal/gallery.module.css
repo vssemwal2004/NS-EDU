@@ -1,0 +1,49 @@
+/* About-page photo wall and lightbox. */
+.gallery { display: grid; gap: var(--lux-space-5); }
+.filters { display: flex; gap: var(--lux-space-2); overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+.filter { display: inline-flex; flex-shrink: 0; align-items: center; gap: 8px; min-height: 40px; padding: 0 14px; border: 1px solid var(--lux-border); border-radius: var(--lux-radius-pill); background: var(--lux-surface-raised); color: var(--lux-ink); font: inherit; font-size: .875rem; font-weight: 600; cursor: pointer; transition: background var(--lux-dur-1), border-color var(--lux-dur-1); }
+.filter span { min-width: 22px; padding: 1px 6px; border-radius: 99px; background: var(--lux-surface-sunken); color: var(--lux-text-muted); font-size: .75rem; text-align: center; }
+.filter:hover { border-color: var(--lux-champagne); }
+.filter[aria-pressed="true"] { border-color: var(--lux-oxblood); background: var(--lux-oxblood); color: #FFFFFF; }
+.filter[aria-pressed="true"] span { background: rgb(255 255 255 / 18%); color: #FFFFFF; }
+.filter:focus-visible { outline: var(--lux-focus-ring, 2px solid var(--lux-champagne)); outline-offset: 2px; }
+
+/* Masonry columns keep portrait and landscape photos at their real shape. */
+.wall { columns: 3 200px; column-gap: 12px; margin: 0; padding: 0; list-style: none; }
+.wall > li { margin-bottom: 12px; break-inside: avoid; }
+.thumb { position: relative; display: block; width: 100%; padding: 0; overflow: hidden; border: 0; border-radius: var(--lux-radius-md, 14px); background: var(--lux-surface-sunken); cursor: zoom-in; }
+.thumb img { display: block; width: 100%; height: auto; transition: transform .5s var(--lux-ease-out, ease-out); }
+.thumb:hover img, .thumb:focus-visible img { transform: scale(1.04); }
+.thumb:focus-visible { outline: 3px solid var(--lux-champagne); outline-offset: 2px; }
+.caption { position: absolute; inset: auto 0 0; padding: 28px 12px 10px; background: linear-gradient(transparent, rgb(20 6 12 / 82%)); color: #FFFFFF; font-size: .78rem; font-weight: 500; line-height: 1.35; text-align: left; opacity: 0; transform: translateY(6px); transition: opacity var(--lux-dur-2), transform var(--lux-dur-2); }
+.thumb:hover .caption, .thumb:focus-visible .caption { opacity: 1; transform: none; }
+.zoom { position: absolute; top: 10px; right: 10px; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: rgb(255 255 255 / 88%); color: var(--lux-oxblood); opacity: 0; transition: opacity var(--lux-dur-2); }
+.zoom :global(.icon) { width: 16px; height: 16px; }
+.thumb:hover .zoom, .thumb:focus-visible .zoom { opacity: 1; }
+/* Touch screens have no hover: keep captions visible. */
+@media (hover: none) {
+  .caption { opacity: 1; transform: none; }
+}
+
+.lightbox { width: min(1100px, calc(100vw - 16px)); max-height: calc(100dvh - 16px); }
+.figure { display: grid; gap: 10px; margin: 0; }
+.stage { position: relative; display: grid; place-items: center; overflow: hidden; border-radius: 12px; background: #140608; }
+.full { width: auto; max-width: 100%; height: auto; max-height: min(74dvh, 900px); object-fit: contain; }
+.figure figcaption { color: var(--lux-text-muted); font-size: .9rem; line-height: 1.5; }
+.nav { position: absolute; top: 50%; display: grid; place-items: center; width: 44px; height: 44px; border: 0; border-radius: 50%; background: rgb(255 255 255 / 90%); color: var(--lux-oxblood); box-shadow: 0 4px 16px rgb(0 0 0 / 25%); cursor: pointer; transform: translateY(-50%); }
+.nav :global(.icon) { width: 20px; height: 20px; }
+.nav:focus-visible { outline: 3px solid var(--lux-champagne); outline-offset: 2px; }
+.prev { left: 10px; }
+.prev :global(.icon) { transform: rotate(90deg); }
+.next { right: 10px; }
+.next :global(.icon) { transform: rotate(-90deg); }
+
+@media (max-width: 640px) {
+  .wall { columns: 2; column-gap: 8px; }
+  .wall > li { margin-bottom: 8px; }
+  .caption { padding: 22px 8px 8px; font-size: .7rem; }
+  .zoom { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .thumb img, .caption { transition: none; }
+}

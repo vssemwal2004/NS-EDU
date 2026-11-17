@@ -59,6 +59,7 @@ export const adminNavigation = [
   { label: 'Administration', items: [
     { label: 'Team & access', href: '/admin/access', icon: 'key', permissions: ['team.view', 'team.manage', 'roles.manage', 'audit.view'], description: 'Staff, roles, mentors and who can do what' },
     { label: 'Site content', href: '/admin/content', icon: 'edit', permissions: ['content.edit'], description: 'Page copy, homepage, tools and site images' },
+    { label: 'Student reviews', href: '/admin/reviews', icon: 'chat', permissions: ['content.edit'], description: 'Check new reviews, publish or reject them, and feature the best on the homepage' },
     { label: 'Media library', href: '/admin/media', icon: 'archive', permissions: ['media.manage'], description: 'Images stored on Cloudinary' },
     { label: 'Settings', href: '/admin/settings', icon: 'settings', permissions: ['settings.manage'], description: 'Your session and platform status' },
   ] },

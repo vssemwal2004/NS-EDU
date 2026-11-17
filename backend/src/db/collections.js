@@ -33,6 +33,7 @@ export const COLLECTIONS = Object.freeze({
   studentEvents: 'student_events',
   consentEvents: 'consent_events',
   previewViews: 'preview_views',
+  reviews: 'reviews',
 });
 
 let ready;

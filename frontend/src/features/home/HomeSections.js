@@ -12,11 +12,12 @@ import StreamBand from './StreamBand';
 import TopColleges from './TopColleges';
 import ComparePromo from './ComparePromo';
 import ExamsBand from './ExamsBand';
+import StudentReviews from '@/features/reviews/StudentReviews';
 
 // Homepage order (fixed): 1 first screen · A at a glance · 2 destinations · B streams ·
-// 3 colleges · C compare · 4 eligibility · D exams · 5 budget · 6 news.
-// A "View all" row follows sections 3–6.
-export default function HomeSections() {
+// 3 colleges · C compare · 4 eligibility · D exams · 5 budget · E student reviews · 6 news.
+// A "View all" row follows sections 3–6. The reviews band is left out when the API is unreachable.
+export default function HomeSections({ reviews = null }) {
   const { courses, stats } = useCatalog();
   const featureDirectory = useContent('landing')?.featureDirectory ?? [];
   const metas = {
@@ -38,6 +39,7 @@ export default function HomeSections() {
     <ExamsBand />
     <BudgetView />
     {link.budget}
+    {reviews && <StudentReviews summary={reviews.summary} items={reviews.items} />}
     <EducationNews />
     {link.news}
   </main>;

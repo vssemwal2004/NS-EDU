@@ -57,6 +57,8 @@ const nextConfig = {
       { source: '/:path*', headers: securityHeaders },
       // Long-lived caching for the versioned brand assets.
       { source: '/brand/:file*', headers: [{ key: 'Cache-Control', value: 'public, max-age=2592000, stale-while-revalidate=86400' }] },
+      // About-page photographs (frontend/public/company): new photos get new file names, so a month is safe.
+      { source: '/company/:file*', headers: [{ key: 'Cache-Control', value: 'public, max-age=2592000, stale-while-revalidate=86400' }] },
     ];
   },
   async rewrites() {

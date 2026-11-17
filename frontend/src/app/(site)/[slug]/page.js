@@ -3,11 +3,12 @@ import { notFound } from 'next/navigation';
 import Icon from '@/components/ui/Icon';
 import { getContent } from '@/lib/api/content';
 import { Callout, CardGrid, Chapter, ContinueReading, JournalBody, journalStyles, LinkRow, Masthead, Prose, readingMinutes, slugify, Unavailable } from './_journal/Journal';
+import PhotoGallery from './_journal/PhotoGallery';
 import styles from './page.module.css';
 
 // Page copy, card lists and footer groups are admin-edited content (`pages`, `site`).
 const linkIcons = {
-  '/about': 'spark', '/contact': 'pageMail', '/help': 'pageQuestion', '/report-correction': 'edit', '/sources-and-editorial': 'book', '/accessibility': 'guidesAccess',
+  '/about': 'spark', '/reviews': 'chat', '/contact': 'pageMail', '/help': 'pageQuestion', '/report-correction': 'edit', '/sources-and-editorial': 'book', '/accessibility': 'guidesAccess',
   '/legal': 'pageScale', '/terms-and-conditions': 'document', '/privacy-policy': 'lock', '/cookie-policy': 'layers', '/disclaimer': 'coursesInfo',
   '/blog': 'news', '/scholarships': 'cap', '/career-guidance': 'compass', '/admission-checklist': 'guidesChecklist', '/news': 'news',
 };
@@ -44,19 +45,31 @@ export default async function InformationPage({ params }) {
   const isContact = slug === 'contact';
   const temporary = site?.contactIsTemporary !== false;
   const current = `/${slug}`;
+  const gallery = page.gallery?.photos?.length ? page.gallery : null;
+  const galleryId = gallery ? slugify(gallery.title || 'Photos') : null;
+  const pillars = Array.isArray(page.pillars) ? page.pillars.filter((item) => item?.title) : [];
+  const updated = typeof page.updated === 'string' && !Number.isNaN(Date.parse(page.updated))
+    ? new Date(page.updated).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Kolkata' }) : null;
 
   const toc = isHelp ? [{ id: 'topics', label: 'Browse by topic' }, { id: 'faqs', label: 'Frequently asked' }, { id: 'more-help', label: 'Still need help?' }]
     : [...(isContact ? [{ id: 'channels', label: 'Ways to reach us' }] : []), ...sections.map((section) => ({ id: section.id, label: section.title })),
+      ...(gallery ? [{ id: galleryId, label: gallery.title || 'Photos' }] : []),
       ...(slug === 'about' && pages.aboutTools?.length ? [{ id: 'what-you-can-do', label: 'What you can do today' }] : [])];
   const meta = [
     page.draft && { label: 'Policy preview · draft', icon: 'document', tone: 'warn' },
     isContact && temporary && { label: 'Support channels not active yet', icon: 'calendar', tone: 'warn' },
+    updated && { label: `Updated ${updated}`, icon: 'calendar' },
     isHelp ? { label: `${sections.length} answers`, icon: 'pageQuestion' } : { label: `${readingMinutes([page.description, ...sections.map((section) => section.text)])} min read`, icon: 'book' },
+    gallery && { label: `${gallery.photos.length} photos`, icon: 'layers' },
   ].filter(Boolean);
 
   return <main id="main" tabIndex={-1} className={journalStyles.page}>
-    <Masthead crumbs={group.crumbs} eyebrow={page.category} title={page.title} standfirst={page.description} meta={meta} />
-    <JournalBody toc={toc} collection={group} current={current} wide={isHelp || isContact}>
+    <Masthead crumbs={group.crumbs} eyebrow={page.category} title={page.title} standfirst={page.description} meta={meta}>
+      {pillars.length > 0 && <ul className={styles.pillars} aria-label="Who we are">
+        {pillars.map((item) => <li key={item.title}><span className={styles.pillarIcon}><Icon name={item.icon || 'spark'} /></span><strong>{item.title}</strong>{item.text && <small>{item.text}</small>}</li>)}
+      </ul>}
+    </Masthead>
+    <JournalBody toc={toc} collection={group} current={current} wide={isHelp || isContact || Boolean(gallery)}>
       {page.draft && <Callout icon="document" tone="warn" title="Policy preview">Draft content for this preview. Final company and service policies are still being prepared.</Callout>}
 
       {isHelp ? <>
@@ -104,6 +117,10 @@ export default async function InformationPage({ params }) {
           <Prose lead={index === 0 && !isContact}><p>{section.text}</p></Prose>
           <LinkRow links={section.links} />
         </Chapter>)}
+        {gallery && <Chapter id={galleryId} title={gallery.title || 'Photos'}>
+          {gallery.intro && <Prose><p>{gallery.intro}</p></Prose>}
+          <PhotoGallery gallery={gallery} />
+        </Chapter>}
         {slug === 'about' && pages.aboutTools?.length > 0 && <Chapter id="what-you-can-do" title="What you can do today"><CardGrid items={pages.aboutTools} /></Chapter>}
         {(slug === 'report-correction' || slug === 'sources-and-editorial') && <Callout icon="pageBot" title="Run a university or college website?">
           Read <Link href="/bot">how GyaanVidhyaBot collects public facts</Link>, and how to opt out or ask for a correction.

@@ -1,0 +1,31 @@
+.screen { display: grid; gap: 14px; --review-star: #E4A11B; --review-star-empty: #E3DAD3; }
+.filter { display: block; width: 150px; }
+.error { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border: 1px solid var(--crm-bad-line); border-radius: var(--adm-radius); background: var(--crm-bad-soft); color: var(--crm-bad); font-size: var(--crm-text-sm); }
+.empty { display: flex; align-items: center; gap: 10px; padding: 28px 20px; color: var(--adm-muted); }
+.empty svg { width: 22px; height: 22px; color: var(--crm-good-solid); }
+.list { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.list[aria-busy] { opacity: .6; }
+.item { display: grid; gap: 8px; padding: 14px 16px; }
+.item[data-featured] { border-color: #E9CF97; }
+.head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.head strong { color: var(--adm-text); }
+.shownAs { color: var(--adm-faint); font-size: var(--crm-text-xs); }
+.badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 99px; font-size: var(--crm-text-xs); font-weight: 650; }
+.badge svg { width: 13px; height: 13px; }
+.badge[data-tone="good"] { background: var(--crm-good-soft); color: var(--crm-good); }
+.badge[data-tone="gold"] { background: #FFF1CF; color: #7A4D00; }
+.time { margin-left: auto; color: var(--adm-muted); font-size: var(--crm-text-xs); }
+.meta { color: var(--adm-muted); font-size: var(--crm-text-xs); }
+.title { color: var(--adm-text); font-weight: 650; }
+.text { max-width: 90ch; color: var(--adm-text); font-size: var(--crm-text-sm); line-height: 1.6; white-space: pre-line; overflow-wrap: anywhere; }
+.reason { display: flex; align-items: center; gap: 6px; color: var(--crm-bad); font-size: var(--crm-text-xs); font-weight: 600; }
+.reason svg { width: 14px; height: 14px; }
+.moderated { color: var(--adm-faint); font-size: var(--crm-text-xs); }
+.actions { display: flex; flex-wrap: wrap; gap: 6px; padding-top: 4px; }
+.delete { margin-left: auto; color: var(--crm-bad); }
+.rejectForm { display: grid; gap: 8px; max-width: 520px; padding: 10px 12px; border: 1px solid var(--adm-line); border-radius: var(--adm-radius); background: var(--adm-subtle); }
+.moreRow { display: flex; justify-content: center; padding-top: 4px; }
+@media (max-width: 640px) {
+  .time { margin-left: 0; width: 100%; }
+  .delete { margin-left: 0; }
+}

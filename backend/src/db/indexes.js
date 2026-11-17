@@ -124,6 +124,16 @@ const specs = {
   preview_views: [
     [{ at: 1 }, { expireAfterSeconds: 30 * 24 * 60 * 60, name: 'preview_views_ttl' }],
   ],
+  // Student reviews: one per account; public pages page through approved rows (all, by star, featured)
+  // and the moderation queue pages through a status newest-first, all by keyset on these indexes.
+  reviews: [
+    [{ studentId: 1 }, { unique: true }],
+    [{ status: 1, approvedAt: -1, _id: -1 }],
+    [{ status: 1, rating: 1, approvedAt: -1, _id: -1 }],
+    [{ status: 1, featured: 1, approvedAt: -1, _id: -1 }],
+    [{ status: 1, submittedAt: -1, _id: -1 }],
+    [{ status: 1, rating: 1, submittedAt: -1, _id: -1 }],
+  ],
 };
 
 // Superseded indexes, dropped once their replacements exist (missing ones are ignored).

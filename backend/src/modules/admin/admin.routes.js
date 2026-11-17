@@ -18,6 +18,7 @@ import { leadsRouter } from '../applications/leads.routes.js';
 import { adminContentRouter } from '../content/content.routes.js';
 import { adminInsightsRouter } from './insights.routes.js';
 import { drivesRouter } from '../drives/drives.routes.js';
+import { adminReviewsRouter } from '../reviews/reviews.routes.js';
 
 export const adminRouter = Router();
 adminRouter.use(requireAdmin, requireReadyStaff);
@@ -37,6 +38,8 @@ adminRouter.use('/data-ops', requirePermission('data.manage'), dataOpsRouter);
 // Image upload backs the image fields of every editor, so anyone who can edit those areas can use it.
 adminRouter.use('/media', requirePermission('media.manage', 'catalogue.edit', 'locations.edit', 'career.manage', 'content.edit'), mediaRouter);
 adminRouter.use('/content', requirePermission('content.edit'), adminContentRouter);
+// Student reviews are public site content, so the people who edit site content moderate them.
+adminRouter.use('/reviews', requirePermission('content.edit'), adminReviewsRouter);
 adminRouter.use('/insights', requirePermission('analytics.search'), adminInsightsRouter);
 adminRouter.use('/drives', requirePermission('drives.manage'), drivesRouter);
 adminRouter.get('/dashboard', requirePermission('dashboard.view'), async (_request, response) => response.json(await getDashboard()));
