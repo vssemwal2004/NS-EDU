@@ -2,7 +2,10 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
+import Icon from '@/components/ui/Icon';
 import { useAdminSession } from '@/features/admin/AdminSession';
+import { StageChip } from '@/features/admin/crm/ui';
+import styles from './UploadLeads.module.css';
 
 const COLUMNS = ['fullName', 'phone', 'email', 'city', 'state', 'courseName', 'institutionName', 'message', 'source', 'priority'];
 const ALIASES = { name: 'fullName', mobile: 'phone', mobileNumber: 'phone', course: 'courseName', institution: 'institutionName' };
@@ -52,6 +55,7 @@ export default function UploadLeads() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [results, setResults] = useState(null);
+  const [dragging, setDragging] = useState(false);
   const load = useCallback(async () => {
     if (!admin) return;
     try {
@@ -80,39 +84,58 @@ export default function UploadLeads() {
     finally { setBusy(false); }
   }
 
-  return <div style={{ display: 'grid', gap: 20 }}>
-    <nav aria-label="Lead views" style={{ display: 'flex', gap: 16 }}>
-      <Link href="/admin/leads">Assigned leads</Link><strong>Uploaded leads</strong>
-    </nav>
-    <section className="adm-panel" style={{ padding: 20 }}>
-      <h2>Upload leads</h2>
-      <p>Use a CSV with fullName and phone columns. Optional columns: {COLUMNS.slice(2).join(', ')}. Up to 100 leads per upload. Duplicates are reported and skipped.</p>
-      <form onSubmit={upload} style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-        <input type="file" accept=".csv,text/csv" aria-label="Choose leads CSV" onChange={(event) => setFile(event.target.files?.[0] ?? null)} />
-        <button className="adm-btn adm-btn--primary" type="submit" disabled={!file || busy}>{busy ? 'Uploading…' : 'Upload CSV'}</button>
+  const pages = Math.max(1, Math.ceil(total / 25));
+  const template = `data:text/csv;charset=utf-8,${encodeURIComponent(`${COLUMNS.join(',')}\nRiya Sharma,9876543210,riya@example.com,Dehradun,Uttarakhand,B.Tech,,Wants hostel details,School fair,high\n`)}`;
+  const pick = (chosen) => { setFile(chosen ?? null); setResults(null); setError(''); };
+  return <div className={styles.page}>
+    <section className={`adm-panel ${styles.card}`}>
+      <header className={styles.head}>
+        <div><h2>Upload leads</h2><p>A CSV with <code>fullName</code> and <code>phone</code>; up to 100 leads per file. Duplicates are reported and skipped.</p></div>
+        <a className="adm-btn adm-btn--sm" href={template} download="leads-template.csv"><Icon name="download" />Template</a>
+      </header>
+      <form onSubmit={upload} className={styles.uploadForm}>
+        <label className={styles.drop} data-drag={dragging || undefined} data-file={file ? '' : undefined}
+          onDragOver={(event) => { event.preventDefault(); setDragging(true); }} onDragLeave={() => setDragging(false)}
+          onDrop={(event) => { event.preventDefault(); setDragging(false); pick(event.dataTransfer.files?.[0]); }}>
+          <input type="file" accept=".csv,text/csv" className="sr-only" aria-label="Choose leads CSV" onChange={(event) => pick(event.target.files?.[0])} />
+          <span className={styles.dropIcon}><Icon name={file ? 'document' : 'upload'} /></span>
+          <span className={styles.dropText}>
+            <strong>{file ? file.name : 'Drop a CSV here or click to choose'}</strong>
+            <small>{file ? `${Math.max(1, Math.round(file.size / 1024))} KB · ready to upload` : `Optional columns: ${COLUMNS.slice(2).join(', ')}`}</small>
+          </span>
+        </label>
+        <button className="adm-btn adm-btn--primary" type="submit" disabled={!file || busy}><Icon name="upload" />{busy ? 'Uploading…' : 'Upload CSV'}</button>
       </form>
-      {results && <div role="status"><p>{results.created} added · {results.failed} skipped.</p>
-        {results.failed > 0 && <ul>{results.results.filter((row) => !row.ok).map((row) => <li key={row.row}>Row {row.row}: {row.error}</li>)}</ul>}
+      {results && <div className={styles.results} role="status">
+        <span className="crm-tone" data-tone="good"><strong>{results.created}</strong> added</span>
+        <span className="crm-tone" data-tone={results.failed ? 'bad' : 'neutral'}><strong>{results.failed}</strong> skipped</span>
+        {results.failed > 0 && <ul>{results.results.filter((row) => !row.ok).map((row) => <li key={row.row}><b>Row {row.row}</b> {row.error}</li>)}</ul>}
       </div>}
+      {error && <p className={styles.alert} role="alert"><Icon name="alert" />{error}</p>}
     </section>
-    <section className="adm-panel" style={{ padding: 20 }}>
-      <h2>{admin?.isOwner ? 'Employee uploads' : 'Uploaded by me'} <small>({total})</small></h2>
-      {admin?.isOwner && <label>Employee <select className="adm-select" value={employeeId} onChange={(event) => { setEmployeeId(event.target.value); setPage(1); }}>
-        <option value="">My uploads</option>{people.map((person) => <option key={person.id} value={person.id}>{person.name || person.email}</option>)}
-      </select></label>}
-      {error && <p role="alert">{error}</p>}
-      {items.length ? <div style={{ overflowX: 'auto' }}><table style={{ width: '100%', textAlign: 'left' }}>
-        <thead><tr><th>Lead</th><th>Mobile</th><th>Stage</th><th>Assigned to me</th><th>Added</th></tr></thead>
+
+    <section className={`adm-panel ${styles.card}`}>
+      <header className={styles.head}>
+        <div><h2>{admin?.isOwner ? 'Uploaded leads' : 'Uploaded by me'} <span className={styles.count}>{total.toLocaleString('en-IN')}</span></h2><p>Leads that came in through CSV uploads.</p></div>
+        {admin?.isOwner && <label className={styles.who}><span className="sr-only">Uploaded by</span>
+          <select className="adm-select" value={employeeId} onChange={(event) => { setEmployeeId(event.target.value); setPage(1); }}>
+            <option value="">My uploads</option>{people.map((person) => <option key={person.id} value={person.id}>{person.name || person.email}</option>)}
+          </select></label>}
+      </header>
+      {items.length ? <div className={styles.tableWrap}><table className={styles.table}>
+        <thead><tr><th>Lead</th><th>Mobile</th><th>Stage</th><th>Can work on it</th><th>Added</th></tr></thead>
         <tbody>{items.map((item) => <tr key={item.id}>
-          <td>{item.canWork ? <Link href={`/admin/leads/${item.id}`}>{item.applicant.fullName || item.ref}</Link> : item.applicant.fullName || item.ref}<small> · {item.ref}</small></td>
-          <td>{item.applicant.phone}</td><td>{item.status}</td><td>{item.canWork ? 'Yes' : 'No · view only'}</td><td>{new Date(item.createdAt).toLocaleDateString('en-IN')}</td>
+          <td><span className={styles.lead}>{item.canWork ? <Link href={`/admin/leads/${item.id}`}>{item.applicant.fullName || item.ref}</Link> : <span>{item.applicant.fullName || item.ref}</span>}<small>{item.ref}</small></span></td>
+          <td className="crm-tabnum">{item.applicant.phone}</td>
+          <td><StageChip status={item.status} size="sm" /></td>
+          <td>{item.canWork ? <span className={styles.yes}><Icon name="check" />Yes</span> : <span className={styles.no}>View only</span>}</td>
+          <td className="crm-tabnum">{new Date(item.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
         </tr>)}</tbody>
-      </table></div> : <p>No uploaded leads found.</p>}
-      <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
-        <button className="adm-btn" type="button" disabled={page <= 1} onClick={() => setPage(page - 1)}>Previous</button>
-        <span>Page {page}</span>
-        <button className="adm-btn" type="button" disabled={page * 25 >= total} onClick={() => setPage(page + 1)}>Next</button>
-      </div>
+      </table></div> : <div className={styles.empty}><span><Icon name="upload" /></span><strong>No uploaded leads yet</strong><p>Upload a CSV above; the leads you add appear here.</p></div>}
+      {total > 25 && <footer className={styles.pager}>
+        <span>Page {page} of {pages}</span>
+        <span><button className="adm-btn adm-btn--sm" type="button" disabled={page <= 1} onClick={() => setPage(page - 1)}>Previous</button>
+          <button className="adm-btn adm-btn--sm" type="button" disabled={page >= pages} onClick={() => setPage(page + 1)}>Next</button></span>
+      </footer>}
     </section>
-  </div>;
-}
+  </div>;}

@@ -36,7 +36,13 @@ export const leadKeys = (applicant) => ({ nameTokens: nameTokensOf(applicant?.fu
 // Short-lived count cache: list pages and status chips re-use a count for 30 s instead of
 // re-counting millions of rows on every click. Writes that move counts clear it.
 const leadCounts = createTtlCache({ ttlMs: 30_000, maxEntries: 500 });
-export const clearLeadCounts = () => leadCounts.clear();
+const statusTrends = createTtlCache({ ttlMs: 30_000, maxEntries: 200 });
+export const clearLeadCounts = () => { leadCounts.clear(); statusTrends.clear(); };
+
+export const leadStatusTrend = (filter, since, key) => statusTrends.wrap(`${key}|${since.getTime()}`, async () => (await applications()).aggregate([
+  { $match: { ...filter, createdAt: { $gte: since } } },
+  { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt', timezone: 'Asia/Kolkata' } }, count: { $sum: 1 } } },
+]).toArray());
 export async function countLeads(filter, key) {
   return leadCounts.wrap(key, async () => {
     const leads = await applications();
@@ -336,14 +342,22 @@ export function leadFilter(query, staff, { districtFormIds } = {}) {
 }
 
 const FILTER_PARAMS = ['status', 'channel', 'form', 'institution', 'course', 'state', 'city', 'district', 'class', 'stream', 'careerField', 'mode', 'range', 'from', 'to', 'assignee', 'heat', 'priority', 'tag', 'followUp', 'idle', 'q'];
+
+export function leadScopeKey(staff) {
+  const scope = leadScopeOf(staff);
+  if (scope === 'all') return scope;
+  const team = scope === 'team' ? (staff.teamIds ?? []).map(String).sort().join(',') : '';
+  return `${scope}:${staff._id}:${team}`;
+}
+
 // Stable cache key for a filter: sorted parameters plus the viewer's scope (everyone with the same
 // scope shares counts; mentors and counsellors each get their own). "assignee=me" means a different
 // person for each viewer, so it never shares a key, even between people who see every lead.
 export function filterKey(query, staff) {
   const parts = FILTER_PARAMS.map((name) => [name, queryString(query[name], 400)]).filter(([, value]) => value);
   if (['range', 'from', 'to', 'followUp'].some((name) => queryString(query[name]))) parts.push(['day', istToday()]);
-  const personal = leadScopeOf(staff) !== 'all' || queryString(query.assignee, 30) === 'me';
-  return `${personal ? staff._id.toString() : 'all'}|${new URLSearchParams(parts).toString()}`;
+  if (queryString(query.assignee, 30) === 'me') parts.push(['viewer', String(staff._id)]);
+  return `${leadScopeKey(staff)}|${new URLSearchParams(parts).toString()}`;
 }
 
 export const LIST_SORTS = { newest: -1, oldest: 1 };

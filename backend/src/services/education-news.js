@@ -96,38 +96,67 @@ async function readBounded(response) {
 // Bounded publisher fetching; shared cache and in-flight coalescing prevent a
 // request per visitor. Partial/stale responses never masquerade as fresh news.
 export function createEducationNewsService({ fetcher = fetch, clock = Date.now, sources = educationFeeds } = {}) {
-  const cache = new Map();
+  let cache = new Map();
   let snapshot = null;
   let nextAttempt = 0;
   let pending = null;
+
+  function currentFeed(sourceStates, now, checkedAt) {
+    const states = sourceStates.map((source) => {
+      if (source.state === 'unavailable') return source;
+      const age = now - Date.parse(source.updatedAt);
+      if (age >= STALE_MS) return { ...source, state: 'unavailable', updatedAt: null };
+      return source.state === 'fresh' && age >= FRESH_MS ? { ...source, state: 'stale' } : source;
+    });
+    const unique = new Map();
+    const available = states.filter((source) => source.state !== 'unavailable');
+    for (const source of available) {
+      for (const record of cache.get(source.id).articles) {
+        if (now - Date.parse(record.publishedAt) <= MAX_AGE_MS) unique.set(record.url, record);
+      }
+    }
+    const articles = [...unique.values()].sort((a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt)).slice(0, 90);
+    return {
+      status: states.every((source) => source.state === 'fresh') ? 'ready' : available.length ? 'partial' : 'unavailable',
+      articles, sources: states, checkedAt, refreshAfterSeconds: 600,
+      updatedAt: available.length ? new Date(Math.min(...available.map((source) => Date.parse(source.updatedAt)))).toISOString() : null,
+    };
+  }
+
   async function refresh() {
     const now = clock();
+    const updated = new Map(cache);
     const sourceStates = await Promise.all(sources.map(async (source) => {
       try {
         const response = await fetcher(source.url, { signal: AbortSignal.timeout(7000), redirect: 'error', headers: { Accept: 'application/rss+xml, application/xml, text/xml', 'User-Agent': 'Gyaan Vidhya/0.1 (education RSS reader)' } });
         if (!response.ok) throw new Error('Publisher unavailable');
         const articles = parseEducationFeed(await readBounded(response), source, now);
-        cache.set(source.id, { articles, updatedAt: now });
+        updated.set(source.id, { articles, updatedAt: now });
         return { id: source.id, name: source.name, state: 'fresh', updatedAt: new Date(now).toISOString() };
       } catch {
         const previous = cache.get(source.id);
         if (previous && now - previous.updatedAt < STALE_MS) return { id: source.id, name: source.name, state: 'stale', updatedAt: new Date(previous.updatedAt).toISOString() };
-        cache.delete(source.id);
+        updated.delete(source.id);
         return { id: source.id, name: source.name, state: 'unavailable', updatedAt: null };
       }
     }));
-    const unique = new Map();
-    for (const { articles } of cache.values()) for (const record of articles) if (now - Date.parse(record.publishedAt) <= MAX_AGE_MS) unique.set(record.url, record);
-    const articles = [...unique.values()].sort((a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt)).slice(0, 90);
-    const allFresh = sourceStates.every((source) => source.state === 'fresh');
-    const available = sourceStates.filter((source) => source.state !== 'unavailable');
-    snapshot = { status: allFresh ? 'ready' : available.length ? 'partial' : 'unavailable', articles, sources: sourceStates, updatedAt: available.length ? new Date(Math.min(...available.map((source) => Date.parse(source.updatedAt)))).toISOString() : null, checkedAt: new Date(now).toISOString(), refreshAfterSeconds: 600 };
-    nextAttempt = now + (allFresh ? FRESH_MS : 60_000);
+    cache = updated;
+    snapshot = currentFeed(sourceStates, clock(), new Date(now).toISOString());
+    nextAttempt = Math.min(now + (snapshot.status === 'ready' ? FRESH_MS : 60_000), ...snapshot.sources.map((source) => {
+      if (!source.updatedAt) return Infinity;
+      return Date.parse(source.updatedAt) + (source.state === 'fresh' ? FRESH_MS : STALE_MS);
+    }));
     return snapshot;
   }
   return async function getEducationNews() {
-    if (snapshot && clock() < nextAttempt) return snapshot;
+    const now = clock();
+    if (snapshot && now < nextAttempt) return snapshot;
     if (!pending) pending = refresh().finally(() => { pending = null; });
+    // A visitor with a cached feed need not wait for a publisher's network round trip.
+    if (snapshot && snapshot.status !== 'unavailable') {
+      const cached = currentFeed(snapshot.sources, now, snapshot.checkedAt);
+      if (cached.status !== 'unavailable') return cached;
+    }
     return pending;
   };
 }

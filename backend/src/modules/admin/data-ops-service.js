@@ -7,7 +7,7 @@ import { csvRow, parseCsv, rowsToObjects, unguardCell } from '../../scraper/csv.
 import { queueStats } from '../../scraper/queue.js';
 import { queryKeys } from '../universities/normalize.js';
 import { IMPORTABLE_FIELDS, INSTITUTION_FIELDS, INSTITUTION_TYPES, VERIFICATION } from '../universities/schema.js';
-import { invalidateUniversityCaches, upsertUniversities } from '../universities/university-service.js';
+import { cachedInstitutionOverview, invalidateUniversityCaches, upsertUniversities } from '../universities/university-service.js';
 import { clearResourceStats } from './resource-service.js';
 
 export const MAX_IMPORT_ROWS = 5000;
@@ -190,8 +190,12 @@ const COVERAGE = {
   placementSeasons: { 'placementHistory.1': { $exists: true } },
 };
 
-export async function dataOverview() {
-  const [facets] = await (await institutions()).aggregate([{ $facet: {
+async function institutionOverview() {
+  const [facets] = await (await institutions()).aggregate([{ $project: {
+    verification: 1, 'source.kind': 1, active: 1, about: 1, gallery: 1, courseSlugs: 1,
+    'programmesOffered.annualFeeInr': 1, 'programmesOffered.semesterFeeInr': 1, 'programmesOffered.totalFeeInr': 1,
+    'placements.averagePackageLpa': 1, 'placements.highestPackageLpa': 1, 'placements.placedPercent': 1, placementHistory: 1,
+  } }, { $facet: {
     verification: [{ $group: { _id: '$verification', count: { $sum: 1 } } }],
     source: [{ $group: { _id: '$source.kind', count: { $sum: 1 } } }],
     hidden: [{ $match: { active: false } }, { $count: 'value' }],
@@ -208,6 +212,10 @@ export async function dataOverview() {
       hidden: facets.hidden[0]?.value ?? 0, held: facets.held[0]?.value ?? 0, bySource: byKey(facets.source),
     },
     coverage: Object.fromEntries(Object.keys(COVERAGE).map((key) => [key, facets[`has_${key}`][0]?.value ?? 0])),
-    scraper: await queueStats(),
   };
+}
+
+export async function dataOverview() {
+  const [overview, scraper] = await Promise.all([cachedInstitutionOverview(institutionOverview), queueStats()]);
+  return { ...overview, scraper };
 }

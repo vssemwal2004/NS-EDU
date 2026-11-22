@@ -137,8 +137,17 @@ describe('applications and admin leads', { skip }, () => {
   });
 
   test('a valid application gets a reference, normalised contact details and a consent record', async () => {
+    const recommendations = '/api/insights/recommendations';
+    const before = await api(recommendations, { cookie: asha.cookie });
+    assert.equal(before.status, 200);
+    assert.ok(before.body.items.some((item) => item.id === 'test-university'));
+
     const created = await api('/api/applications', { method: 'POST', cookie: asha.cookie, body: { ...validApplication(), status: 'admitted', studentId: ravi.id } });
     assert.equal(created.status, 201, JSON.stringify(created.body));
+    const after = await api(recommendations, { cookie: asha.cookie });
+    assert.equal(after.status, 200);
+    assert.ok(!after.body.items.some((item) => item.id === 'test-university'));
+
     const { item } = created.body;
     assert.match(item.ref, new RegExp(`^GV-${YEAR}-\\d{6}$`));
     assert.equal(item.status, 'new');

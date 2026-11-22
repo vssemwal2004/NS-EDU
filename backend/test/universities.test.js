@@ -1,6 +1,6 @@
 import { after, before, describe, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { randomBytes } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
 import { prefixesOf, queryKeys, derivedFields } from '../src/modules/universities/normalize.js';
 
 const skip = process.env.MONGODB_URI ? false : 'MONGODB_URI is not set';
@@ -156,5 +156,47 @@ describe('universities service', { skip }, () => {
     assert.equal(suggest.items[0].name, 'University of Petroleum and Energy Studies, Dehradun');
     const everything = store.suggestEverything('dehra');
     assert.deepEqual(everything.places.map((place) => [place.kind, place.name, place.institutions]), [['city', 'Dehradun', 2]]);
+  });
+
+  test('profile similarity uses the current region if the search index is behind a write', async () => {
+    const store = await import('../src/modules/search/search-store.js');
+    await service.upsertUniversities([
+      { name: 'Moving University', state: 'Maharashtra' },
+      { name: 'Shore Institute', state: 'Goa' },
+    ], { source: { kind: 'import', name: 'Test list' } });
+    await store.warmSearch();
+    assert.equal(store.institutionRecords().find(({ slug }) => slug === 'moving-university').state, 'Maharashtra');
+    await db.collection('institutions').updateOne({ slug: 'moving-university' }, { $set: { state: 'Goa' } });
+
+    const detail = await service.getUniversity('moving-university');
+    assert.equal(detail.item.state, 'Goa');
+    assert.deepEqual(detail.similar.map(({ id }) => id), ['shore-institute']);
+  });
+
+  test('concurrent preview claims stop at the limit and denied claims keep the expiry', async () => {
+    const { claimFreeView, freeViewLimit } = await import('../src/modules/universities/free-preview.js');
+    const previousLimit = process.env.FREE_UNIVERSITY_VIEWS;
+    process.env.FREE_UNIVERSITY_VIEWS = '2';
+    try {
+      const id = randomUUID();
+      const slugs = ['alpha-university', 'beta-college', 'moving-university'];
+      const results = await Promise.all(slugs.map((slug) => claimFreeView(id, slug)));
+      const limit = freeViewLimit();
+      const viewed = results.filter(({ allowed }) => allowed);
+      assert.equal(viewed.length, limit);
+      const deniedIndex = results.findIndex(({ allowed }) => !allowed);
+      assert.deepEqual(results[deniedIndex], { allowed: false, used: limit, limit });
+
+      const views = db.collection('preview_views');
+      const previousView = new Date(Date.now() - 60_000);
+      await views.updateOne({ _id: id }, { $set: { at: previousView } });
+      assert.equal((await claimFreeView(id, slugs[deniedIndex])).allowed, false);
+      assert.deepEqual((await views.findOne({ _id: id })).at, previousView);
+      const viewedIndex = results.findIndex(({ allowed }) => allowed);
+      assert.deepEqual(await claimFreeView(id, slugs[viewedIndex]), { allowed: true, used: limit, limit });
+    } finally {
+      if (previousLimit === undefined) delete process.env.FREE_UNIVERSITY_VIEWS;
+      else process.env.FREE_UNIVERSITY_VIEWS = previousLimit;
+    }
   });
 });

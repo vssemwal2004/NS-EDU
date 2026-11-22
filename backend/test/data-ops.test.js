@@ -102,6 +102,7 @@ describe('admin data operations API', { skip }, () => {
     assert.equal(college.source.kind, 'import');
     assert.deepEqual(held.body.counts, { held: 2, visible: 0 });
     assert.equal((await call('/review?view=held&q=college')).body.total, 1);
+    assert.equal((await call('/overview')).body.institutions.held, 2);
 
     const ids = held.body.items.map((item) => item.id);
     assert.equal((await call('/universities/bulk', { method: 'POST', body: { ids, action: 'delete' } })).status, 400);
@@ -157,7 +158,7 @@ describe('admin data operations API', { skip }, () => {
     const jobs = await call('/scraper/jobs?status=queued');
     assert.deepEqual(jobs.body.items.map((item) => [item.name, item.status, item.runId]), [['Data Ops Seed One', 'queued', run.body.runId]]);
     const stats = await call('/scraper/stats');
-    assert.deepEqual([stats.body.jobs.queued, stats.body.sources.total, stats.body.sources.paused, stats.body.lastRun.id], [1, 2, 1, run.body.runId]);
+    assert.deepEqual([stats.body.jobs.queued, stats.body.sources.total, stats.body.sources.paused, stats.body.sources.neverCrawled, stats.body.lastRun.id], [1, 2, 1, 2, run.body.runId]);
     assert.equal((await call('/scraper/runs')).body.items[0].counts.queued, 1);
     assert.deepEqual((await call('/scraper/jobs/cancel', { method: 'POST', body: { runId: run.body.runId } })).body, { cancelled: 1 });
     assert.deepEqual((await call('/scraper/jobs/retry', { method: 'POST', body: {} })).body, { retried: 0, skipped: 0 });

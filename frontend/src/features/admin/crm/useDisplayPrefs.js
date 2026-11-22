@@ -5,7 +5,8 @@ import { useCallback, useMemo, useSyncExternalStore } from 'react';
 // and first paint use the defaults so hydration never mismatches, a memory copy keeps it working when
 // storage is blocked, and another tab's change arrives through the 'storage' event.
 const KEY = 'gv-admin-display';
-const DEFAULTS = { text: 'default', density: 'comfortable', nav: 'expanded' };
+// nav: 'collapsed' = icon rail that slides open on hover (over the page); 'expanded' = pinned open (the page makes room).
+const DEFAULTS = { text: 'default', density: 'comfortable', nav: 'collapsed' };
 const TEXT = ['default', 'large', 'xlarge'];
 const DENSITY = ['comfortable', 'compact'];
 const NAV = ['expanded', 'collapsed'];

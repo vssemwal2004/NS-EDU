@@ -1,94 +1,130 @@
-/* Design tokens for the staff CRM. Loaded once by the admin panel layout.
+/* Design tokens for the staff console ("Jewel" — Gyaan Vidhya's own theme). Loaded once by the admin panel layout.
  *
- * Rules these tokens encode:
- *  - Colour is never the only signal: every status chip also carries an icon or a word.
- *  - Green = healthy / won, amber = needs attention soon, red = overdue / hot / at risk,
- *    blue = informational, purple = in progress. Text on a "soft" background always passes WCAG AA.
- *  - Work screens read larger than the public site: 15px body, 14.5px tables, 2rem KPI numbers.
- *    Staff can scale text (default / large / extra large) and density (comfortable / compact);
- *    both are remembered per browser and set on the shell as data attributes.
+ * The look:
+ *  - The frame (sidebar + top bar) is one oxblood surface with a soft wine/bronze glow, like the public site's dark
+ *    sections. Work happens on an ivory sheet that sits inside the frame with a curved top-left corner.
+ *  - One brand colour for actions (wine) and one accent (champagne gold). Page titles and key numbers use the site's
+ *    display serif (DM Serif Display); everything else is Plus Jakarta Sans.
+ *  - Colour carries meaning, and each jewel colour has ONE fixed job everywhere:
+ *      New = sapphire (info) · Contacted = amethyst (purple) · In progress = gold (warn) · Applied = coral (orange)
+ *      Admitted / success = emerald (good) · Hot / overdue / danger = ruby (bad)
+ *    Colour is never the only signal: every chip also carries a word or an icon.
+ *  - Icons are single-colour line icons. No gradients on buttons.
+ *  - Staff can scale text (default / large / extra large) and density (comfortable / compact); both are remembered
+ *    per browser and set on the shell as data attributes.
  */
 :root {
-  --crm-good: #1b6a45;      --crm-good-soft: #e5f3ea;   --crm-good-line: #b4d9c4;   --crm-good-solid: #2e8b5e;
-  --crm-warn: #7a4d00;      --crm-warn-soft: #fff1cf;   --crm-warn-line: #efd083;   --crm-warn-solid: #e0a21a;
-  --crm-bad: #a1213a;       --crm-bad-soft: #fde8eb;    --crm-bad-line: #efb4be;    --crm-bad-solid: #d03a55;
-  --crm-info: #1d5a8c;      --crm-info-soft: #e4effa;   --crm-info-line: #b3cfe9;   --crm-info-solid: #3b7fba;
-  --crm-purple: #58399a;    --crm-purple-soft: #eee9f8; --crm-purple-line: #cbbfe8; --crm-purple-solid: #7a5bc0;
-  --crm-teal: #11675f;      --crm-teal-soft: #e0f3f0;   --crm-teal-line: #aad8d2;   --crm-teal-solid: #2a9a8f;
-  --crm-neutral: #4f4348;   --crm-neutral-soft: #f1ecea; --crm-neutral-line: #ddd2cd; --crm-neutral-solid: #8d7f85;
-  --crm-wine: #72243b;      --crm-wine-soft: #f7e9ed;   --crm-wine-line: #e4bfca;   --crm-wine-solid: #72243b;
-  --crm-orange: #8f4208;    --crm-orange-soft: #ffe9d6; --crm-orange-line: #f2c49b; --crm-orange-solid: #e07a1f;
+  --crm-good: #176B55;      --crm-good-soft: #E1F3EC;   --crm-good-line: #A9D8C6;   --crm-good-solid: #1F8A6E;
+  --crm-warn: #7E5A2E;      --crm-warn-soft: #F8EEDB;   --crm-warn-line: #E6CFA6;   --crm-warn-solid: #C9A46A;
+  --crm-bad: #9B2B4F;       --crm-bad-soft: #FBE8EE;    --crm-bad-line: #EFC2CF;    --crm-bad-solid: #B23A60;
+  --crm-info: #2A55A0;      --crm-info-soft: #E6EEFA;   --crm-info-line: #B9CDEE;   --crm-info-solid: #2F5DA8;
+  --crm-purple: #64409A;    --crm-purple-soft: #F0EAF9; --crm-purple-line: #D3C3EC; --crm-purple-solid: #7148A8;
+  --crm-teal: #0F6B66;      --crm-teal-soft: #DFF2F0;   --crm-teal-line: #A6D7D2;   --crm-teal-solid: #1D8A83;
+  --crm-neutral: #4A3A40;   --crm-neutral-soft: #F4EBE3; --crm-neutral-line: #E2D3C9; --crm-neutral-solid: #9C8A84;
+  --crm-wine: #72243B;      --crm-wine-soft: #F8E8E4;   --crm-wine-line: #E9C9C4;   --crm-wine-solid: #72243B;
+  --crm-orange: #A8462C;    --crm-orange-soft: #FDEBE5; --crm-orange-line: #F3C3B4; --crm-orange-solid: #DD6A4C;
 
   /* Lead temperature */
   --crm-hot: var(--crm-bad);    --crm-hot-soft: var(--crm-bad-soft);    --crm-hot-line: var(--crm-bad-line);    --crm-hot-solid: var(--crm-bad-solid);
   --crm-warm: var(--crm-warn);  --crm-warm-soft: var(--crm-warn-soft);  --crm-warm-line: var(--crm-warn-line);  --crm-warm-solid: var(--crm-warn-solid);
-  --crm-cold: var(--crm-info);  --crm-cold-soft: var(--crm-info-soft);  --crm-cold-line: var(--crm-info-line);  --crm-cold-solid: var(--crm-info-solid);
+  --crm-cold: var(--crm-neutral); --crm-cold-soft: var(--crm-neutral-soft); --crm-cold-line: var(--crm-neutral-line); --crm-cold-solid: var(--crm-neutral-solid);
 
-  /* Console surfaces (shared by the shell and every admin screen). One accent (brand wine); everything
-     else is neutral so the status colours above are the only colour on a work screen. */
-  --adm-bg: #f5f3f2;
+  /* Brand */
+  --adm-wine: #72243B;
+  --adm-wine-deep: #5A1A2E;
+  --adm-oxblood: #3D0F1E;
+  --adm-oxblood-raised: #4F1A2B;
+  --adm-gold: #C9A46A;
+  --adm-gold-ink: #8A6249;
+  --adm-gold-soft: #F8EEDB;
+  --adm-on-dark: #FFF7F2;
+  --adm-on-dark-muted: #E6CFC9;
+  --adm-serif: 'DM Serif Display', Georgia, serif;
+
+  /* Console surfaces (shared by the shell and every admin screen). */
+  --adm-bg: #FBF7F3;
   --adm-surface: #ffffff;
-  --adm-subtle: #faf8f7;
-  --adm-hover: #f4efed;
-  --adm-line: #e7e1de;
-  --adm-line-strong: #d6cdc9;
-  --adm-text: #211a1d;
-  --adm-muted: #6a6066;
-  --adm-faint: #958b90;
-  --adm-accent: #72243b;
-  --adm-accent-hover: #5c1c2f;
-  --adm-accent-soft: #f6eaee;
-  --adm-accent-line: #e5c3cd;
-  --adm-focus: 0 0 0 3px rgb(114 36 59 / 22%);
-  --adm-radius: 8px;
-  --adm-radius-sm: 6px;
-  --adm-shadow: 0 1px 2px rgb(33 26 29 / 5%);
-  --adm-shadow-pop: 0 12px 40px rgb(33 26 29 / 16%);
-  --adm-sidebar: #33111f;
-  --adm-sidebar-text: #f4eaee;
-  --adm-sidebar-muted: #bfa5af;
-  --adm-sidebar-hover: rgb(255 255 255 / 7%);
-  --adm-sidebar-active: rgb(255 255 255 / 13%);
-  --adm-sidebar-w: 220px;
-  --adm-sidebar-rail: 56px;
-  --adm-topbar: 48px;
+  --adm-subtle: #FBF7F3;
+  --adm-hover: #F7EFE9;
+  --adm-line: #EADCD4;
+  --adm-line-strong: #D9C4B8;
+  --adm-line-soft: #F2E9E3;      /* row separators inside cards */
+  --adm-selected: #FDF6F3;       /* selected row / chosen option */
+  --adm-step-next: #F7F1EC;      /* future steps on the stage path */
+  --adm-text: #1F1418;
+  --adm-muted: #66565C;
+  --adm-faint: #8A7B80;
+  --adm-accent: #72243B;
+  --adm-accent-hover: #5A1A2E;
+  --adm-accent-soft: #F8E8E4;
+  --adm-accent-line: #E9C9C4;
+  --adm-focus: 0 0 0 3px rgb(114 36 59 / 20%);
+  --adm-radius: 14px;
+  --adm-radius-sm: 10px;
+  --adm-radius-lg: 18px;
+  --adm-shadow: 0 1px 2px rgb(61 15 30 / 4%), 0 10px 28px -18px rgb(61 15 30 / 20%);
+  --adm-shadow-lift: 0 2px 4px rgb(61 15 30 / 5%), 0 18px 40px -18px rgb(61 15 30 / 30%);
+  --adm-shadow-pop: 0 30px 70px -10px rgb(30 8 16 / 40%), 0 4px 14px rgb(30 8 16 / 12%);
+
+  /* Frame */
+  --adm-frame-bg: radial-gradient(ellipse 55% 45% at 8% 0%, rgb(114 36 59 / 62%), transparent 70%), radial-gradient(ellipse 45% 35% at 0% 100%, rgb(160 116 90 / 18%), transparent 70%), #3D0F1E;
+  --adm-sidebar: #3D0F1E;
+  --adm-sidebar-text: #E6CFC9;
+  --adm-sidebar-muted: rgb(230 207 201 / 55%);
+  --adm-sidebar-hover: rgb(255 255 255 / 6%);
+  --adm-sidebar-active: rgb(255 255 255 / 9%);
+  --adm-sidebar-w: 248px;
+  --adm-sidebar-rail: 72px;
+  --adm-topbar: 68px;
+  --adm-sheet-radius: 22px;
+
+  /* Motion */
+  --adm-ease: cubic-bezier(.22, 1, .36, 1);
+  --adm-nav-speed: .8s;
+  --adm-fast: 140ms;
+  --adm-base: 220ms;
 
   /* Surfaces and lines used by cards on work screens */
   --crm-card: #ffffff;
-  --crm-card-line: #e7e1de;
-  --crm-card-shadow: 0 1px 2px rgb(60 30 40 / 6%), 0 6px 18px rgb(60 30 40 / 5%);
-  --crm-radius: 10px;
-  --crm-radius-sm: 7px;
+  --crm-card-line: #EADCD4;
+  --crm-card-shadow: var(--adm-shadow);
+  --crm-radius: 14px;
+  --crm-radius-sm: 10px;
 
-  /* Type scale (multiplied by --crm-scale). Dense by default: a work console shows many rows at once;
-     people who need bigger text use the Text size setting. */
   --crm-scale: 1;
-
-  /* Density: table row height, panel padding, gaps. Control heights follow --adm-control. */
-  --crm-row: 2.5rem;
-  --crm-pad: .75rem;
-  --crm-gap: .75rem;
-  --adm-control: 32px;
+  --crm-row: 2.75rem;
+  --crm-pad: .875rem;
+  --crm-gap: .875rem;
+  --adm-control: 36px;
 }
 
 /* var() inside a custom property is resolved where it is declared, so the scale is declared on :root AND
    on the element that carries data-crm-text; otherwise the text-size switch would never reach the screens. */
 :root, [data-crm-text] {
   --crm-text-xs: calc(.75rem * var(--crm-scale));
-  --crm-text-sm: calc(.8125rem * var(--crm-scale));
-  --crm-text-md: calc(.875rem * var(--crm-scale));
-  --crm-text-lg: calc(1rem * var(--crm-scale));
-  --crm-text-xl: calc(1.25rem * var(--crm-scale));
-  --crm-kpi: calc(1.5rem * var(--crm-scale));
+  --crm-text-sm: calc(.84375rem * var(--crm-scale));
+  --crm-text-md: calc(.9375rem * var(--crm-scale));
+  --crm-text-lg: calc(1.0625rem * var(--crm-scale));
+  --crm-text-xl: calc(1.375rem * var(--crm-scale));
+  --crm-kpi: calc(2.25rem * var(--crm-scale));
 }
 [data-crm-text="large"] { --crm-scale: 1.12; }
 [data-crm-text="xlarge"] { --crm-scale: 1.25; }
-[data-density="compact"] { --crm-row: 2.125rem; --crm-pad: .5rem; --crm-gap: .5rem; --adm-control: 28px; }
+[data-density="compact"] { --crm-row: 2.25rem; --crm-pad: .5rem; --crm-gap: .5rem; --adm-control: 30px; }
+
+@keyframes adm-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes adm-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes adm-pop { from { opacity: 0; transform: translateY(10px) scale(.97); } to { opacity: 1; transform: none; } }
+@keyframes adm-slide-left { from { transform: translateX(100%); } to { transform: none; } }
+
+/* Every native <dialog> opened from the console shares one tinted, blurred backdrop. */
+[data-crm-text] dialog::backdrop { background: rgb(31 8 18 / 52%); backdrop-filter: blur(4px); animation: adm-fade var(--adm-base) ease both; }
 
 /* Shared building blocks (plain classes so every admin screen can use them without importing a module). */
 .crm-card { background: var(--crm-card); border: 1px solid var(--crm-card-line); border-radius: var(--crm-radius); box-shadow: var(--crm-card-shadow); }
-.crm-muted { color: var(--color-muted, #68636e); }
+.crm-muted { color: var(--adm-muted); }
 .crm-tabnum { font-variant-numeric: tabular-nums; }
+.adm-serif { font-family: var(--adm-serif); font-weight: 400; }
 
 /* Tone helpers: <span class="crm-tone" data-tone="good|warn|bad|info|purple|teal|neutral|wine|orange"> */
 .crm-tone { --tone: var(--crm-neutral); --tone-soft: var(--crm-neutral-soft); --tone-line: var(--crm-neutral-line); --tone-solid: var(--crm-neutral-solid); }
@@ -102,23 +138,26 @@
 .crm-tone[data-tone="orange"] { --tone: var(--crm-orange); --tone-soft: var(--crm-orange-soft); --tone-line: var(--crm-orange-line); --tone-solid: var(--crm-orange-solid); }
 
 /* Console controls (plain classes; use these instead of per-screen button/input styles).
-   <button class="adm-btn adm-btn--primary">  variants: --primary --secondary (default) --ghost --danger; sizes: --sm --icon */
-.adm-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: var(--adm-control); padding: 0 12px; border: 1px solid var(--adm-line-strong); border-radius: var(--adm-radius-sm); background: var(--adm-surface); color: var(--adm-text); font: inherit; font-size: var(--crm-text-sm); font-weight: 600; line-height: 1; text-decoration: none; white-space: nowrap; cursor: pointer; transition: background 120ms ease, border-color 120ms ease; }
-.adm-btn:hover { background: var(--adm-hover); }
+   <button class="adm-btn adm-btn--primary">  variants: --primary --secondary (default) --ghost --danger --gold; sizes: --sm --icon */
+.adm-btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; height: var(--adm-control); padding: 0 14px; border: 1px solid var(--adm-line-strong); border-radius: var(--adm-radius-sm); background: var(--adm-surface); color: var(--adm-text); font: inherit; font-size: var(--crm-text-sm); font-weight: 600; line-height: 1; text-decoration: none; white-space: nowrap; cursor: pointer; transition: background var(--adm-fast) ease, border-color var(--adm-fast) ease, transform var(--adm-fast) ease; }
+.adm-btn:hover { border-color: #CDB9AE; background: var(--adm-hover); }
+.adm-btn:active:not(:disabled) { transform: scale(.98); }
 .adm-btn:focus-visible { outline: none; box-shadow: var(--adm-focus); }
 .adm-btn:disabled, .adm-btn[aria-disabled="true"] { opacity: .5; cursor: not-allowed; }
-.adm-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
-.adm-btn--primary { border-color: var(--adm-accent); background: var(--adm-accent); color: #fff; }
-.adm-btn--primary:hover { border-color: var(--adm-accent-hover); background: var(--adm-accent-hover); }
+.adm-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+.adm-btn--primary { border-color: var(--adm-wine); background: var(--adm-wine); color: var(--adm-on-dark); }
+.adm-btn--primary:hover { border-color: var(--adm-wine-deep); background: var(--adm-wine-deep); }
+.adm-btn--gold { border-color: var(--adm-gold); background: var(--adm-gold); color: var(--adm-oxblood); font-weight: 700; }
+.adm-btn--gold:hover { border-color: #B8925A; background: #B8925A; }
 .adm-btn--ghost { border-color: transparent; background: transparent; }
 .adm-btn--danger { border-color: var(--crm-bad-line); background: var(--adm-surface); color: var(--crm-bad); }
-.adm-btn--danger:hover { background: var(--crm-bad-soft); }
-.adm-btn--sm { height: 26px; padding: 0 8px; font-size: var(--crm-text-xs); }
+.adm-btn--danger:hover { border-color: var(--crm-bad-line); background: var(--crm-bad-soft); }
+.adm-btn--sm { height: 30px; padding: 0 11px; border-radius: 8px; font-size: var(--crm-text-xs); }
 .adm-btn--icon { width: var(--adm-control); padding: 0; }
-.adm-btn--sm.adm-btn--icon { width: 26px; }
-.adm-input, .adm-select, .adm-textarea { width: 100%; min-height: var(--adm-control); padding: 0 10px; border: 1px solid var(--adm-line-strong); border-radius: var(--adm-radius-sm); background: var(--adm-surface); color: var(--adm-text); font: inherit; font-size: var(--crm-text-sm); }
-.adm-textarea { min-height: 72px; padding: 8px 10px; resize: vertical; }
-.adm-input:focus, .adm-select:focus, .adm-textarea:focus { outline: none; border-color: var(--adm-accent); box-shadow: var(--adm-focus); }
+.adm-btn--sm.adm-btn--icon { width: 30px; }
+.adm-input, .adm-select, .adm-textarea { width: 100%; min-height: var(--adm-control); padding: 0 12px; border: 1px solid var(--adm-line-strong); border-radius: var(--adm-radius-sm); background: var(--adm-surface); color: var(--adm-text); font: inherit; font-size: var(--crm-text-sm); transition: border-color var(--adm-fast) ease, box-shadow var(--adm-fast) ease; }
+.adm-textarea { min-height: 80px; padding: 10px 12px; resize: vertical; }
+.adm-input:focus, .adm-select:focus, .adm-textarea:focus { outline: none; border-color: var(--adm-wine); box-shadow: var(--adm-focus); }
 .adm-input[aria-invalid="true"], .adm-select[aria-invalid="true"], .adm-textarea[aria-invalid="true"] { border-color: var(--crm-bad-solid); }
 .adm-label { display: block; color: var(--adm-text); font-size: var(--crm-text-xs); font-weight: 650; }
 /* Block, not grid: label text and a required "*" stay on one line; controls/hints start on the next line. */
@@ -128,3 +167,8 @@
 .adm-hint { color: var(--adm-muted); font-size: var(--crm-text-xs); font-weight: 400; }
 .adm-error { color: var(--crm-bad); font-size: var(--crm-text-xs); font-weight: 600; }
 .adm-panel { border: 1px solid var(--adm-line); border-radius: var(--adm-radius); background: var(--adm-surface); box-shadow: var(--adm-shadow); }
+.adm-eyebrow { margin: 0; color: var(--adm-gold-ink); font-size: .6875rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
+
+@media (prefers-reduced-motion: reduce) {
+  [data-crm-text] *, [data-crm-text] *::before, [data-crm-text] *::after, [data-crm-text] dialog::backdrop { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; }
+}

@@ -22,7 +22,11 @@ export function accessLog(request, response, next) {
     if (path.startsWith('/api/health') && response.statusCode < 400) return;
     const entry = { at: new Date().toISOString(), id: request.id, method: request.method, path, status: response.statusCode, ms: Math.round(ms) };
     if (env.isProduction) console.log(JSON.stringify(entry));
-    else if (ms > 300 || response.statusCode >= 500) console.log(`${entry.method} ${entry.path} ${entry.status} ${entry.ms}ms${ms > 300 ? ' (slow)' : ''}`);
+    else if (ms > 300 || response.statusCode >= 500) {
+      const authMs = response.locals.adminAuthMs;
+      const timing = authMs === undefined ? '' : ` [auth ${Math.round(authMs)}ms, rest ${Math.round(ms - authMs)}ms]`;
+      console.log(`${entry.method} ${entry.path} ${entry.status} ${entry.ms}ms${ms > 300 ? ' (slow)' : ''}${timing}`);
+    }
   });
   next();
 }

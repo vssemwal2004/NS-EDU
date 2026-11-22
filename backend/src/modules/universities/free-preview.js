@@ -43,30 +43,26 @@ export function previewIdOf(request, response) {
  * Counts one profile against the visitor's free views. Re-opening a profile already counted is free,
  * so refreshing a page never costs a view. Returns { allowed, used, limit }.
  */
-export async function claimFreeView(id, slug, attempt = 0) {
+export async function claimFreeView(id, slug) {
   const limit = freeViewLimit();
   if (!limit) return { allowed: false, used: 0, limit };
   const views = (await getDb()).collection(COLLECTIONS.previewViews);
-  try {
-    // One atomic round trip: the row matches when this profile is already counted, or while the slot
-    // of the last allowed view is still empty — so two tabs cannot slip past the limit together.
-    const row = await views.findOneAndUpdate(
-      { _id: id, $or: [{ slugs: slug }, { [`slugs.${limit - 1}`]: { $exists: false } }] },
-      { $addToSet: { slugs: slug }, $set: { at: new Date() } },
-      { upsert: true, returnDocument: 'after', projection: { slugs: 1 } },
-    );
-    return { allowed: true, used: row?.slugs?.length ?? 1, limit };
-  } catch (error) {
-    if (error.code !== 11000) throw error;
-    // The row exists but matched neither branch: every free view is used, on other profiles. (The
-    // first view of a brand-new visitor from two tabs at once can also collide here; one retry
-    // tells the two cases apart.)
-    if (attempt === 0) {
-      const row = await views.findOne({ _id: id }, { projection: { slugs: 1 } });
-      if (row && (row.slugs ?? []).length < limit) return claimFreeView(id, slug, 1);
-    }
-    return { allowed: false, used: limit, limit };
-  }
+  const slugs = { $ifNull: ['$slugs', []] };
+  const profile = { $literal: slug };
+  const hasSpace = { $lt: [{ $size: slugs }, limit] };
+  const alreadyViewed = { $in: [profile, slugs] };
+  // Apply the limit inside the atomic update so a full preview needs only one round trip too.
+  const update = () => views.findOneAndUpdate({ _id: id }, [{ $set: {
+    slugs: { $cond: [hasSpace, { $setUnion: [slugs, [profile]] }, slugs] },
+    at: { $cond: [{ $or: [alreadyViewed, hasSpace] }, '$$NOW', '$at'] },
+  } }], { upsert: true, returnDocument: 'after', projection: { slugs: 1 } });
+  const row = await update().catch((error) => {
+    // Another first view may have inserted the row between matching and upserting.
+    if (error.code === 11000) return update();
+    throw error;
+  });
+  const allowed = row.slugs.includes(slug);
+  return { allowed, used: allowed ? row.slugs.length : limit, limit };
 }
 
 /** What a signed-out visitor sees of a search: the first `limit` results, plus how many are held back. */

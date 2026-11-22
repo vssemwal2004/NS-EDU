@@ -3,8 +3,8 @@ import { HttpError } from '../../lib/http-error.js';
 import { queryString } from '../../lib/query.js';
 import { createRateLimiter } from '../../lib/rate-limit.js';
 import { optionalStudent, requireStudentOrAdmin } from '../../middleware/auth.js';
-import { recordEvents, withVisitor } from './events.js';
-import { recommendUniversities } from './recommend.js';
+import { recordEvents, VISITOR_COOKIE, withVisitor } from './events.js';
+import { invalidateRecommendationEvents, recommendUniversities } from './recommend.js';
 
 // One batch carries up to 20 events and the client sends at most one batch every 5 seconds,
 // so these budgets are generous for a real viewer and tight for a script.
@@ -20,10 +20,16 @@ export const insightsRouter = Router();
 insightsRouter.use((_request, response, next) => {
   response.set('Cache-Control', 'no-store');
   next();
-}, optionalStudent, withVisitor);
+}, withVisitor);
 
-insightsRouter.post('/events', limit(captureLimiter, 'Too many events. Please slow down.'), async (request, response) => {
-  const result = await recordEvents(request.body, { studentId: request.student?._id ?? null, visitorId: request.visitorId });
+const optionalEventStudent = (request, response, next) => request.visitorId
+  ? optionalStudent(request, response, next)
+  : next();
+
+insightsRouter.post('/events', limit(captureLimiter, 'Too many events. Please slow down.'), optionalEventStudent, async (request, response) => {
+  const viewer = { studentId: request.student?._id ?? null, visitorId: request.visitorId };
+  const result = await recordEvents(request.body, viewer);
+  if (result.accepted) invalidateRecommendationEvents(viewer);
   response.status(202).json(result);
 });
 
@@ -33,14 +39,16 @@ insightsRouter.post('/events', limit(captureLimiter, 'Too many events. Please sl
 // course, ranked by NIRF and NAAC. `personalised` tells the page which of the two it received.
 const COURSE = /^[a-z0-9-]{1,40}$/;
 const SLUG = /^[a-z0-9][a-z0-9-]{0,99}$/;
+// An id issued with this response has no history to query yet.
+const existingVisitorId = (request) => request.visitorId === request.cookies?.[VISITOR_COOKIE] ? request.visitorId : null;
 // The browser's per-session number that rotates the default list (see recommend.js). Anything else is ignored.
 const variantOf = (value) => { const number = Number.parseInt(value, 10); return Number.isInteger(number) && number >= 0 && number < 100 ? number : null; };
-insightsRouter.get('/home', limit(recommendLimiter, 'Too many requests. Please try again shortly.'), async (request, response) => {
+insightsRouter.get('/home', limit(recommendLimiter, 'Too many requests. Please try again shortly.'), optionalStudent, async (request, response) => {
   const course = queryString(request.query.course, 40).toLowerCase();
   const exclude = queryString(request.query.exclude, 100).toLowerCase();
   const result = await recommendUniversities({
     studentId: request.student?._id ?? null,
-    visitorId: request.visitorId,
+    visitorId: existingVisitorId(request),
     limit: Math.min(Number.parseInt(request.query.limit, 10) || 6, 12),
     course: COURSE.test(course) ? course : '',
     exclude: SLUG.test(exclude) ? exclude : '',
@@ -55,7 +63,7 @@ insightsRouter.get('/recommendations', requireStudentOrAdmin, limit(recommendLim
   const course = queryString(request.query.course, 40).toLowerCase();
   response.json(await recommendUniversities({
     studentId: request.student?._id ?? null,
-    visitorId: request.visitorId,
+    visitorId: existingVisitorId(request),
     limit: request.query.limit,
     exclude: queryString(request.query.exclude, 100).toLowerCase(),
     course: COURSE.test(course) ? course : '',

@@ -113,12 +113,12 @@ export async function rebuildFeeEstimates({ log = () => {} } = {}) {
 }
 
 const estimateCache = createTtlCache({ ttlMs: 10 * 60_000, staleMs: 60 * 60_000, maxEntries: 4 });
-const loadIndex = () => estimateCache.wrap('index', async () => indexGroups(await (await getDb()).collection(COLLECTIONS.feeEstimates).find({}, { projection: { _id: 0, computedAt: 0 } }).toArray()));
+export const warmFeeEstimates = () => estimateCache.wrap('index', async () => indexGroups(await (await getDb()).collection(COLLECTIONS.feeEstimates).find({}, { projection: { _id: 0, computedAt: 0 } }).toArray()));
 
 /** Adds `estimate` to every programme row that has a catalogue course but no published fee. */
 export async function withFeeEstimates(item) {
-  if (!item?.programmesOffered?.length) return item;
-  const index = await loadIndex();
+  if (!item?.programmesOffered?.some((row) => row?.courseSlug && !priceOf(row))) return item;
+  const index = await warmFeeEstimates();
   if (!index.size) return item;
   return { ...item, programmesOffered: item.programmesOffered.map((row) => { const estimate = pickEstimate(item, row, index); return estimate ? { ...row, estimate } : row; }) };
 }

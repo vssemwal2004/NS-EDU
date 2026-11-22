@@ -5,7 +5,7 @@ import { encodeCursor, pagination, queryString } from '../../lib/query.js';
 import { createTtlCache } from '../../lib/ttl-cache.js';
 import { assertValid } from '../../lib/validation.js';
 import { requirePermission } from '../../middleware/auth.js';
-import { assignableIds } from '../access/access-service.js';
+import { assignableIds, staffDirectory } from '../access/access-service.js';
 import { crmUpdate } from '../crm/crm-model.js';
 import { leadScopeOf } from './scope.js';
 import { employeeAssignmentIds } from '../admin/employee-assignments.js';
@@ -15,7 +15,7 @@ import { leadInsights } from './lead-insights.js';
 import { CLASS_LEVELS, INDIAN_STATES, SCHOOL_STREAMS, STATUSES } from './schema.js';
 import {
   accessFilter, applicationNotes, applications, CHANNEL_LABELS, CHANNELS, clearLeadCounts, countLeads, cursorClause, DATE_RANGES, DAY,
-  filterKey, IST_OFFSET, istDayStart, istToday, LIST_SORTS, resolveLeadFilter,
+  filterKey, IST_OFFSET, istDayStart, istToday, leadStatusTrend, LIST_SORTS, resolveLeadFilter,
   serializeLeadDetail, serializeLeadSummary, serializeNote, staffEmails, statusLabel, visibleLead,
 } from './service.js';
 
@@ -35,7 +35,7 @@ const PAGE_SIZES = [25, 50, 100];
 const SUMMARY_FIELDS = ['applicant', 'preference', 'ref', 'channel', 'mode', 'status', 'school', 'academics.classLevel', 'academics.schoolStream', 'careerField', 'assignedEmployeeIds', 'assignmentSource', 'crm', 'updatedAt'];
 
 async function employeeEmails() {
-  const employees = await (await collection(COLLECTIONS.admins)).find({ role: 'employee' }, { projection: { email: 1 } }).toArray();
+  const employees = (await staffDirectory()).filter((doc) => doc.role === 'employee');
   return new Map(employees.map((doc) => [doc._id.toString(), doc.email]));
 }
 async function formFor(query) {
@@ -47,13 +47,16 @@ const columnKeys = (value) => queryString(value, 4000).split(',').map((key) => k
 leadsRouter.get('/', async (request, response) => {
   const { page, limit, skip } = pagination(request.query, { defaultLimit: 25, maxLimit: 100, allowedLimits: PAGE_SIZES });
   const order = LIST_SORTS[queryString(request.query.sort, 10)] ?? LIST_SORTS.newest;
-  const filter = await resolveLeadFilter(request.query, request.admin);
   const cursor = queryString(request.query.cursor, 80);
   const direction = queryString(request.query.dir, 10) === 'before' ? 'before' : 'after';
   if (!cursor && skip > MAX_SKIP) throw new HttpError(400, `Pages past ${MAX_SKIP.toLocaleString('en-IN')} rows open with Next/Previous only. Narrow the filters or the date range to jump.`, { fields: { page: 'Narrow the filters to jump this far' } });
   const keys = columnKeys(request.query.columns);
-  const columns = keys.length ? resolveColumns(keys, { staff: request.admin, form: await formFor(request.query) }) : [];
-  const leads = await applications();
+  const [filter, form, leads] = await Promise.all([
+    resolveLeadFilter(request.query, request.admin),
+    keys.some((key) => key.startsWith('answer:')) ? formFor(request.query) : null,
+    applications(),
+  ]);
+  const columns = keys.length ? resolveColumns(keys, { staff: request.admin, form }) : [];
   const query = cursor ? { $and: [filter, cursorClause(cursor, direction, order)] } : filter;
   // Reading backwards from a cursor flips the sort; the page is reversed again below.
   const sortOrder = cursor && direction === 'before' ? -order : order;
@@ -104,13 +107,10 @@ leadsRouter.get('/stats', async (request, response) => {
   const formId = formParam ? toObjectId(formParam) : null;
   if (formParam && !formId) throw new HttpError(400, 'Invalid school drive filter', { fields: { form: 'Choose a valid school drive' } });
   const match = { ...accessFilter(request.admin), ...(formId && { formId }) };
-  const scope = `${leadScopeOf(request.admin) === 'all' ? 'all' : request.admin._id.toString()}${formId ? `|form=${formId}` : ''}`;
+  const params = formId ? { form: String(formId) } : {};
   const [byStatus, byDay] = await Promise.all([
-    Promise.all(STATUSES.map((status) => countLeads({ ...match, status }, `${scope}|status=${status}`))),
-    (await applications()).aggregate([
-      { $match: { ...match, createdAt: { $gte: since } } },
-      { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt', timezone: 'Asia/Kolkata' } }, count: { $sum: 1 } } },
-    ]).toArray(),
+    Promise.all(STATUSES.map((status) => countLeads({ ...match, status }, filterKey({ status, ...params }, request.admin)))),
+    leadStatusTrend(match, since, filterKey(params, request.admin)),
   ]);
   const perDay = new Map(byDay.map((row) => [row._id, row.count]));
   response.json({

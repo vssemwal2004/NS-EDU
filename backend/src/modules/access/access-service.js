@@ -12,7 +12,12 @@ const roles = () => collection(COLLECTIONS.roles);
 const admins = () => collection(COLLECTIONS.admins);
 const MAX_TEAM_DEPTH = 4;
 const roleCache = createTtlCache({ ttlMs: 15_000, maxEntries: 2 });
+const staffDirectoryCache = createTtlCache({ ttlMs: 15_000, maxEntries: 1 });
 export const clearRoleCache = () => roleCache.clear();
+
+// Display data only. Session checks and reporting lines are read directly from MongoDB.
+export const staffDirectory = () => staffDirectoryCache.wrap('staff', async () => (await admins())
+  .find({}, { projection: { email: 1, name: 1, role: 1, status: 1 } }).sort({ name: 1, email: 1 }).toArray());
 
 /** Every role keyed by slug. System roles are created on first use and never overwritten once edited. */
 export const roleMap = () => roleCache.wrap('roles', async () => {
@@ -33,14 +38,12 @@ export const roleIdOf = (admin) => admin.role === 'admin' ? OWNER_ROLE : DEFAULT
 /** The people who report to `adminId`, directly or through other mentors (a few levels deep). */
 export async function teamMemberIds(adminId, { includeSelf = false } = {}) {
   const coll = await admins();
-  const seen = new Set();
-  let frontier = [adminId];
-  for (let depth = 0; depth < MAX_TEAM_DEPTH && frontier.length; depth += 1) {
-    const reports = await coll.find({ managerId: { $in: frontier } }, { projection: { _id: 1 } }).toArray();
-    frontier = reports.map((doc) => doc._id).filter((id) => !seen.has(id.toString()));
-    frontier.forEach((id) => seen.add(id.toString()));
-  }
-  const ids = [...seen].map(toObjectId);
+  const [team] = await coll.aggregate([
+    { $match: { _id: adminId } },
+    { $graphLookup: { from: COLLECTIONS.admins, startWith: '$_id', connectFromField: '_id', connectToField: 'managerId', as: 'reports', maxDepth: MAX_TEAM_DEPTH - 1 } },
+    { $project: { _id: 0, ids: '$reports._id' } },
+  ]).toArray();
+  const ids = team?.ids ?? [];
   return includeSelf ? [adminId, ...ids] : ids;
 }
 
@@ -60,8 +63,9 @@ export async function attachAccess(admin) {
   admin.permissions = [...permissions];
   admin.leadScope = ladder(permissions, 'leads');
   admin.analyticsScope = ladder(permissions, 'analytics');
-  const needsTeam = admin.leadScope === 'team' || admin.analyticsScope === 'team' || permissions.has('tasks.manage_team') || permissions.has('leads.assign');
-  admin.teamIds = needsTeam && !owner ? await teamMemberIds(admin._id) : [];
+  const needsTeam = admin.leadScope === 'team' || admin.analyticsScope === 'team'
+    || (admin.leadScope !== 'all' && (permissions.has('tasks.manage_team') || permissions.has('leads.assign')));
+  admin.teamIds = !owner && needsTeam ? await teamMemberIds(admin._id) : [];
   return admin;
 }
 
@@ -246,6 +250,7 @@ export async function removeStaff(actor, id) {
   const blockers = [reports && `${plural(reports, 'person reports', 'people report')} to them`, assigned.length && `${assigned.join(', ')} still assigned to them`, uploads && `${plural(uploads, 'lead', 'leads')} uploaded by them`].filter(Boolean);
   if (blockers.length) throw new HttpError(409, `Cannot remove yet: ${blockers.join('; ')}. Resolve these records or suspend the account instead.`);
   await coll.deleteOne({ _id });
+  staffDirectoryCache.clear();
   await audit(actor, 'staff.delete', { type: 'staff', id: _id, label: doc.email }, { roleId: roleIdOf(doc) });
 }
 
@@ -289,6 +294,7 @@ export async function createStaff(actor, body) {
     if (error.code === 11000) throw new HttpError(409, 'An account with this email already exists', { fields: { email: 'This email is already in use.' } });
     throw error;
   }
+  staffDirectoryCache.clear();
   await audit(actor, 'staff.create', { type: 'staff', id: doc._id, label: email }, { roleId: DEFAULT_STAFF_ROLE });
   return (await serializeStaff([doc]))[0];
 }
@@ -332,6 +338,7 @@ export async function updateStaff(actor, id, body) {
   }
   if (!Object.keys(set).length) return (await serializeStaff([doc]))[0];
   const updated = await coll.findOneAndUpdate({ _id }, { $set: { ...set, updatedAt: new Date() } }, { returnDocument: 'after', projection: { passwordHash: 0 } });
+  staffDirectoryCache.clear();
   if (Object.keys(changes).length) await audit(actor, 'staff.update', { type: 'staff', id: _id, label: doc.email }, changes);
   return (await serializeStaff([updated]))[0];
 }

@@ -4,13 +4,13 @@
 /* Table: scroll stays inside the panel (position: relative keeps .sr-only text inside it too). */
 .scroll { position: relative; max-height: max(420px, calc(100dvh - 230px)); overflow: auto; overscroll-behavior-x: contain; }
 .table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: var(--crm-text-sm); }
-.table th { position: sticky; top: 0; z-index: 1; height: 34px; padding: 0 10px; border-bottom: 1px solid var(--adm-line); background: var(--adm-subtle); color: var(--adm-muted); font-size: var(--crm-text-xs); font-weight: 650; text-align: left; white-space: nowrap; }
-.table td { max-width: 320px; height: var(--crm-row); padding: 5px 10px; border-bottom: 1px solid var(--adm-line); color: var(--adm-text); vertical-align: middle; overflow: hidden; text-overflow: ellipsis; }
+.table th { position: sticky; top: 0; z-index: 1; height: 40px; padding: 0 12px; border-bottom: 1px solid var(--adm-line); background: var(--adm-subtle); color: var(--adm-muted); font-size: var(--crm-text-xs); font-weight: 600; text-align: left; white-space: nowrap; }
+.table td { max-width: 320px; height: var(--crm-row); padding: 6px 12px; border-bottom: 1px solid var(--adm-line-soft); color: var(--adm-text); vertical-align: middle; overflow: hidden; text-overflow: ellipsis; }
 .table td strong { display: block; overflow: hidden; color: var(--adm-text); font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
 .table td small { display: block; overflow: hidden; color: var(--adm-muted); font-size: var(--crm-text-xs); text-overflow: ellipsis; white-space: nowrap; }
 .table tbody tr { transition: background 100ms ease, opacity 100ms ease; }
 .table tbody tr:hover, .table tbody tr[data-selected="true"] { background: var(--adm-hover); }
-.table tbody tr[data-selected="true"] { background: var(--adm-accent-soft); }
+.table tbody tr[data-selected="true"] { background: var(--adm-selected); box-shadow: inset 3px 0 0 var(--adm-wine); }
 .table tbody tr:last-child td { border-bottom: 0; }
 .scroll[data-busy="true"] tbody tr { opacity: .55; }
 .checkCell { width: 36px; padding-right: 0 !important; }
@@ -25,16 +25,16 @@
 @media (prefers-reduced-motion: reduce) { .skeletonRow td span { animation: none; } }
 
 /* Pagination */
-.pagination { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; padding: 6px 10px; border-top: 1px solid var(--adm-line); color: var(--adm-muted); font-size: var(--crm-text-xs); }
+.pagination { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; padding: 10px 14px; border-top: 1px solid var(--adm-line); color: var(--adm-muted); font-size: var(--crm-text-xs); }
 .pageMeta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; font-variant-numeric: tabular-nums; }
 .pageSize { display: inline-flex; align-items: center; gap: 6px; }
 .pageSize select { height: 28px; padding: 0 6px; border: 1px solid var(--adm-line-strong); border-radius: 6px; background: var(--adm-surface); color: var(--adm-text); font: inherit; }
 .pageControls { display: flex; flex-wrap: wrap; align-items: center; gap: 3px; }
 .pageList { display: flex; align-items: center; gap: 3px; margin: 0; padding: 0; list-style: none; }
-.pageButton, .pageNumber { display: inline-grid; place-items: center; min-width: 28px; height: 28px; padding: 0 7px; border: 1px solid var(--adm-line); border-radius: 6px; background: var(--adm-surface); color: var(--adm-text); font-size: var(--crm-text-xs); font-weight: 650; font-variant-numeric: tabular-nums; cursor: pointer; }
+.pageButton, .pageNumber { display: inline-grid; place-items: center; min-width: 30px; height: 30px; padding: 0 8px; border: 1px solid var(--adm-line); border-radius: 8px; background: var(--adm-surface); color: var(--adm-text); font-size: var(--crm-text-xs); font-weight: 650; font-variant-numeric: tabular-nums; cursor: pointer; }
 .pageButton:hover:not(:disabled), .pageNumber:hover:not(:disabled) { border-color: var(--adm-line-strong); background: var(--adm-hover); }
 .pageButton:disabled, .pageNumber:disabled { opacity: .4; cursor: not-allowed; }
-.pageNumber[aria-current="page"] { border-color: var(--adm-accent); background: var(--adm-accent); color: #fff; opacity: 1; }
+.pageNumber[aria-current="page"] { border-color: var(--adm-wine); background: var(--adm-wine); color: var(--adm-on-dark); opacity: 1; }
 .pageButton :global(.icon) { width: 14px; height: 14px; }
 .flip { transform: rotate(180deg); }
 .flipY { transform: rotate(180deg); }
@@ -61,12 +61,12 @@
 .presetChips { display: flex; flex-wrap: wrap; gap: 6px; }
 .presetChips button { height: 28px; padding: 0 10px; border: 1px solid var(--adm-line-strong); border-radius: 6px; background: var(--adm-surface); color: var(--adm-text); font-size: var(--crm-text-xs); font-weight: 600; cursor: pointer; }
 .presetChips button:hover { background: var(--adm-hover); }
-.presetChips button[aria-pressed="true"] { border-color: var(--adm-accent); background: var(--adm-accent); color: #fff; }
+.presetChips button[aria-pressed="true"] { border-color: var(--adm-wine); background: var(--adm-wine); color: var(--adm-on-dark); }
 .dateRow { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 6px; }
 .dateRow label { display: grid; gap: 4px; color: var(--adm-muted); font-size: var(--crm-text-xs); font-weight: 600; }
 .actions { flex-wrap: wrap; }
 .columnGroup { display: grid; gap: 2px; margin-top: 6px; }
-.columnGroup h3 { margin: 0; color: var(--adm-muted); font-family: inherit; font-size: var(--crm-text-xs); font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.columnGroup h3 { margin: 0; color: var(--adm-gold-ink); font-family: inherit; font-size: .6875rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
 .orderList { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; counter-reset: order; }
 .orderList li { display: flex; align-items: center; gap: 4px; min-height: 36px; padding: 2px 4px 2px 10px; border: 1px solid var(--adm-line); border-radius: 6px; background: var(--adm-subtle); counter-increment: order; }
 .orderList li::before { content: counter(order); min-width: 18px; color: var(--adm-muted); font-size: var(--crm-text-xs); font-variant-numeric: tabular-nums; }
@@ -94,10 +94,11 @@
 
 /* Active filter chips */
 .activeChips { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-.activeChip { display: inline-flex; align-items: center; gap: 2px; max-width: 100%; height: 26px; padding-left: 9px; border: 1px solid var(--adm-accent-line); border-radius: 999px; background: var(--adm-accent-soft); color: var(--adm-accent); font-size: var(--crm-text-xs); font-weight: 600; }
+.activeChip { display: inline-flex; align-items: center; gap: 2px; max-width: 100%; height: 30px; padding-left: 12px; border: 1px solid var(--adm-line); border-radius: 8px; background: var(--adm-surface); color: var(--adm-text); font-size: var(--crm-text-xs); font-weight: 600; }
 .activeChip > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .activeChip button { display: inline-grid; flex: none; place-items: center; width: 24px; height: 24px; border: 0; border-radius: 50%; background: transparent; color: inherit; cursor: pointer; }
-.activeChip button:hover { background: rgb(114 36 59 / 10%); }
+.activeChip button { color: var(--adm-faint); }
+.activeChip button:hover { background: var(--adm-hover); color: var(--adm-wine); }
 .activeChip :global(.icon) { width: 12px; height: 12px; }
 
 /* Phones and narrow panels: rows become labelled cards. */
@@ -108,7 +109,7 @@
   .table tr { position: relative; display: grid; gap: 4px; padding: 10px 12px; border-bottom: 1px solid var(--adm-line); }
   .table tbody tr:last-child { border-bottom: 0; }
   .table td { max-width: none; height: auto; padding: 0; border: 0; }
-  .table td[data-label]::before { content: attr(data-label); display: block; color: var(--adm-muted); font-size: .6875rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+  .table td[data-label]::before { content: attr(data-label); display: block; color: var(--adm-gold-ink); font-size: .65625rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
   .table td.checkCell { position: absolute; top: 10px; right: 12px; width: auto; }
   .table tr:has(> .checkCell) { padding-right: 40px; }
   .skeletonRow td span { width: 100% !important; }

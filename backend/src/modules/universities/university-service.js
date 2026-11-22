@@ -15,12 +15,16 @@ import { listCourses } from '../catalog/catalog-service.js';
 export { PUBLIC_FILTER };
 
 // Public, identical for every visitor: answered from memory, refreshed in the background when old
-// (staleMs). Writes through this API clear both at once (invalidateUniversityCaches).
+// (staleMs). Writes through this API also clear the admin coverage summary.
 const listCache = createTtlCache({ ttlMs: 60_000, staleMs: 15 * 60_000, maxEntries: 1000 });
 const aggregateCache = createTtlCache({ ttlMs: 5 * 60_000, staleMs: 30 * 60_000, maxEntries: 200 });
+const institutionOverviewCache = createTtlCache({ ttlMs: 30_000, maxEntries: 1 });
+export const cachedInstitutionOverview = (load) => institutionOverviewCache.wrap('overview', load);
+
 export function invalidateUniversityCaches() {
   listCache.clear();
   aggregateCache.clear();
+  institutionOverviewCache.clear();
   markSearchStale();
 }
 
@@ -409,44 +413,72 @@ export async function sitemapPage(rawPage) {
 // Similar: same region and a shared stream first, then a shared stream anywhere, then the same
 // region, most popular first. Chosen from the in-memory index (no query) and then read as four
 // documents; three database queries while the index is still building.
-async function similarTo(db, doc) {
+function similarSlugs(doc, records) {
   const region = (item) => (doc.state ? item.state === doc.state : item.city === doc.city);
   const sharesStream = (item) => (doc.streams ?? []).some((stream) => item.streams.includes(stream));
-  const records = institutionRecords({ allowStale: true });
-  if (records) {
-    const tiers = [doc.streams?.length && ((item) => region(item) && sharesStream(item)), doc.streams?.length && sharesStream, region].filter(Boolean);
-    const slugs = [];
-    for (const keep of tiers) {
-      for (const item of records) {
-        if (slugs.length >= 4) break;
-        if (item.slug !== doc.slug && !slugs.includes(item.slug) && keep(item)) slugs.push(item.slug);
-      }
+  const tiers = [doc.streams?.length && ((item) => region(item) && sharesStream(item)), doc.streams?.length && sharesStream, region].filter(Boolean);
+  const slugs = [];
+  for (const keep of tiers) {
+    for (const item of records) {
+      if (slugs.length >= 4) break;
+      if (item.slug !== doc.slug && !slugs.includes(item.slug) && keep(item)) slugs.push(item.slug);
     }
-    if (!slugs.length) return [];
-    const rows = await db.collection(COLLECTIONS.institutions).find({ ...PUBLIC_FILTER, slug: { $in: slugs } }, { projection: SUMMARY_PROJECTION }).toArray();
-    const bySlug = new Map(rows.map((row) => [row.slug, row]));
-    return slugs.map((value) => bySlug.get(value)).filter(Boolean);
   }
+  return slugs;
+}
+
+async function loadSimilar(db, slugs) {
+  if (!slugs.length) return [];
+  const rows = await db.collection(COLLECTIONS.institutions).find({ ...PUBLIC_FILTER, slug: { $in: slugs } }, { projection: SUMMARY_PROJECTION }).toArray();
+  const bySlug = new Map(rows.map((row) => [row.slug, row]));
+  return slugs.map((value) => bySlug.get(value)).filter(Boolean);
+}
+
+async function similarTo(db, doc, records) {
+  if (records) return loadSimilar(db, similarSlugs(doc, records));
+
   const regionFilter = doc.state ? { state: doc.state } : { city: doc.city };
   const streams = doc.streams?.length ? { streams: { $in: doc.streams } } : null;
   const sets = await Promise.all([streams && { ...regionFilter, ...streams }, streams, regionFilter].filter(Boolean)
-    .map((extra) => db.collection(COLLECTIONS.institutions).find({ ...PUBLIC_FILTER, slug: { $ne: doc.slug }, ...extra }, { projection: { searchPrefixes: 0 } }).sort(SORTS.relevance).limit(4).toArray()));
+    .map((extra) => db.collection(COLLECTIONS.institutions).find({ ...PUBLIC_FILTER, slug: { $ne: doc.slug }, ...extra }, { projection: SUMMARY_PROJECTION }).sort(SORTS.relevance).limit(4).toArray()));
   return [...new Map(sets.flat().map((item) => [item.slug, item])).values()].slice(0, 4);
 }
+
+const PROFILE_PROGRAMME_PROJECTION = {
+  slug: 1, courseSlug: 1, annualTuitionInr: 1, medianSalaryLpa: 1, highestSalaryLpa: 1, tuitionYear: 1, placementYear: 1,
+};
+
+const matchesSimilarity = (doc, indexed) => {
+  const sameRegion = doc.state ? doc.state === indexed.state : !indexed.state && doc.city === indexed.city;
+  const streams = doc.streams ?? [];
+  return sameRegion && streams.length === indexed.streams.length && streams.every((stream, index) => stream === indexed.streams[index]);
+};
 
 export async function getUniversity(rawSlug) {
   const slug = slugify(queryString(rawSlug, 120));
   if (!slug) throw new HttpError(404, 'University not found');
   return listCache.wrap(`detail:${slug}`, async () => {
     const db = await getDb();
-    const doc = await db.collection(COLLECTIONS.institutions).findOne({ ...PUBLIC_FILTER, slug });
-    if (!doc) throw new HttpError(404, 'University not found');
-    // Everything else in one parallel round: programmes, the four similar records, the course
-    // catalogue (cached) and the fee estimates (cached).
-    const [programmes, similar, catalogue, item] = await Promise.all([
-      db.collection(COLLECTIONS.programmes).find({ active: { $ne: false }, institutionSlug: slug }).sort({ order: 1, _id: 1 }).toArray(),
-      similarTo(db, doc),
+    const records = institutionRecords({ allowStale: true });
+    const indexed = records?.find((record) => record.slug === slug);
+    // The index supplies the related slugs while the current profile and its programmes are read.
+    const profile = db.collection(COLLECTIONS.institutions).findOne({ ...PUBLIC_FILTER, slug }, { projection: { searchPrefixes: 0 } });
+    const supportingReads = Promise.allSettled([
+      db.collection(COLLECTIONS.programmes).find({ active: { $ne: false }, institutionSlug: slug }, { projection: PROFILE_PROGRAMME_PROJECTION }).sort({ order: 1, _id: 1 }).toArray(),
       listCourses(),
+      indexed ? loadSimilar(db, similarSlugs(indexed, records)) : null,
+    ]);
+    const doc = await profile;
+    if (!doc) throw new HttpError(404, 'University not found');
+    const [programmeRead, catalogueRead, similarRead] = await supportingReads;
+    if (programmeRead.status === 'rejected') throw programmeRead.reason;
+    if (catalogueRead.status === 'rejected') throw catalogueRead.reason;
+    const useIndexedSimilar = indexed && matchesSimilarity(doc, indexed);
+    if (useIndexedSimilar && similarRead.status === 'rejected') throw similarRead.reason;
+    const { value: programmes } = programmeRead;
+    const { value: catalogue } = catalogueRead;
+    const [similar, item] = await Promise.all([
+      useIndexedSimilar ? similarRead.value : similarTo(db, doc, records),
       withFeeEstimates(toDetail(doc)),
     ]);
     const courseSlugs = new Set([...(doc.courseSlugs ?? []), ...programmes.map((row) => row.courseSlug)]);

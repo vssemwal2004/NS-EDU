@@ -14,6 +14,7 @@ import toolsIcons from './icons/tools';
 import guidesLuxIcons from './icons/guidesLux';
 import newsroomIcons from './icons/newsroom';
 import pagesIcons from './icons/pages';
+import adminIcons from './icons/admin';
 
 const basePaths = {
   mail: 'M3 5h18v14H3ZM3 5l9 7 9-7',
@@ -113,7 +114,7 @@ const basePaths = {
 // Area icon files extend (never override) the base set.
 const paths = {
   ...landingIcons, ...headerIcons, ...loginIcons, ...collegesIcons, ...compareIcons, ...coursesIcons, ...guidesIcons,
-  ...homeIcons, ...universitiesIcons, ...coursesExamsIcons, ...toolsIcons, ...guidesLuxIcons, ...newsroomIcons, ...pagesIcons,
+  ...homeIcons, ...universitiesIcons, ...coursesExamsIcons, ...toolsIcons, ...guidesLuxIcons, ...newsroomIcons, ...pagesIcons, ...adminIcons,
   ...basePaths,
 };
 

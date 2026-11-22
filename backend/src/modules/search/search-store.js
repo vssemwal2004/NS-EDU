@@ -157,6 +157,9 @@ export function markSearchStale() {
   if (state.indexes) refreshSearch();
 }
 
+// Consumers that cache MongoDB fallbacks need to see writes even while the index is rebuilding.
+export const searchRevision = () => state.generation;
+
 function checkForOutsideWrites() {
   if (state.checking || state.building || Date.now() - state.checkedAt < CHECK_EVERY_MS) return;
   state.checkedAt = Date.now();

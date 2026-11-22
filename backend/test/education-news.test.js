@@ -82,6 +82,41 @@ test('a failing source cannot remove fresh records from another publisher', asyn
   assert.equal(result.sources[1].state, 'unavailable');
 });
 
+test('cached articles are served with stale status while one publisher refresh is pending', { timeout: 3000 }, async () => {
+  let time = now;
+  let calls = 0;
+  const { promise: refresh, resolve } = Promise.withResolvers();
+  const loader = createEducationNewsService({ sources: [source], clock: () => time, fetcher: async () => {
+    calls++;
+    if (calls > 1) await refresh;
+    return new Response(rss(item()));
+  } });
+  const initial = await loader();
+  time += 600_000;
+  try {
+    const [first, second] = await Promise.all([loader(), loader()]);
+    assert.equal(calls, 2);
+    assert.equal(first.status, 'partial');
+    assert.equal(first.sources[0].state, 'stale');
+    assert.deepEqual(first.articles, initial.articles);
+    assert.deepEqual(first, second);
+  } finally {
+    resolve();
+  }
+});
+
+test('an expired snapshot waits on a recovering publisher', async () => {
+  let time = now;
+  const loader = createEducationNewsService({ sources: [source], clock: () => time,
+    fetcher: async () => new Response(rss(item({ date: time - 3600_000 }))),
+  });
+  const initial = await loader();
+  time += 25 * 3600_000;
+  const recovered = await loader();
+  assert.equal(recovered.status, 'ready');
+  assert.notEqual(recovered.updatedAt, initial.updatedAt);
+});
+
 test('RSS network bodies are bounded before parsing', async () => {
   const loader = createEducationNewsService({ sources: [source], clock: () => now, fetcher: async () => new Response('x'.repeat(2_000_001)) });
   assert.equal((await loader()).status, 'unavailable');

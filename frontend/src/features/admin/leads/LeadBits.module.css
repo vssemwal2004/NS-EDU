@@ -9,5 +9,5 @@
 .person { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; min-width: 0; vertical-align: middle; }
 .personName { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .person small { flex: none; color: var(--adm-muted); font-size: var(--crm-text-xs); }
-.stage { display: inline-flex; align-items: center; gap: 7px; max-width: 100%; color: var(--adm-text); white-space: nowrap; }
+.stage { display: inline-flex; align-items: center; gap: 7px; max-width: 100%; min-height: 24px; padding: 1px 10px 1px 8px; border-radius: 999px; background: var(--tone-soft); color: var(--tone); font-size: var(--crm-text-xs); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .stage i { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--tone-solid); }

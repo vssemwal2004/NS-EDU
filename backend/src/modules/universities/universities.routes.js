@@ -23,11 +23,16 @@ const limitSuggest = (request, _response, next) => {
 };
 
 // A session (student or console staff) when there is one; signed-out visitors carry on with the preview rules.
-async function viewerOrPreview(request, response, next) {
+async function resolveViewer(request, response) {
   request.viewer = await loadViewer(request);
   request.student = request.viewer?.student ?? null;
   request.admin = request.viewer?.admin ?? null;
   privateCache(request, response);
+  return request.viewer;
+}
+
+async function viewerOrPreview(request, response, next) {
+  await resolveViewer(request, response);
   next();
 }
 
@@ -44,10 +49,9 @@ universitiesRouter.get('/featured', async (request, response) => {
   response.json(await featuredUniversities(request.query.limit, request.query.course));
 });
 
-universitiesRouter.use(viewerOrPreview);
 // Destination tiles link with a city and no state (the city facet always sends a state), and their
 // counts fold aliases and districts, so those links get the tile's own row set.
-universitiesRouter.get('/', async (request, response) => {
+universitiesRouter.get('/', viewerOrPreview, async (request, response) => {
   const { city, state } = request.query;
   const place = typeof city === 'string' && !state ? await placeFilter(city.trim().slice(0, 80)) : null;
   const result = await listUniversities(request.query, { place });
@@ -55,13 +59,17 @@ universitiesRouter.get('/', async (request, response) => {
   response.json(request.viewer ? result : previewOfList(result));
 });
 // Names and counts only, so searching and filtering work before login; the details they lead to are what the preview limits.
-universitiesRouter.get('/suggest', limitSuggest, async (request, response) => response.json(await suggestUniversities(request.query.q, request.query.limit)));
-universitiesRouter.get('/facets', async (request, response) => response.json(await universityFacets(request.query)));
-universitiesRouter.get('/sitemap', requireViewer, async (request, response) => response.json(await sitemapPage(request.query.page)));
+universitiesRouter.get('/suggest', viewerOrPreview, limitSuggest, async (request, response) => response.json(await suggestUniversities(request.query.q, request.query.limit)));
+universitiesRouter.get('/facets', viewerOrPreview, async (request, response) => response.json(await universityFacets(request.query)));
+universitiesRouter.get('/sitemap', viewerOrPreview, requireViewer, async (request, response) => response.json(await sitemapPage(request.query.page)));
 universitiesRouter.get('/:slug', async (request, response) => {
-  // Looked up first, so a mistyped address answers 404 instead of spending one of the free views.
-  const detail = await getUniversity(request.params.slug);
-  if (request.viewer) { response.json(detail); return; }
+  // The data is shared across viewers. Check access before returning it or claiming a free view.
+  const [{ detail, error }, viewer] = await Promise.all([getUniversity(request.params.slug).then(
+    (detail) => ({ detail }),
+    (error) => ({ error }),
+  ), resolveViewer(request, response)]);
+  if (error) throw error;
+  if (viewer) { response.json(detail); return; }
   const claim = await claimFreeView(previewIdOf(request, response), detail.item.id);
   const preview = { used: claim.used, limit: claim.limit, remaining: Math.max(0, claim.limit - claim.used) };
   if (!claim.allowed) {

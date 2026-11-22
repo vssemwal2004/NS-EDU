@@ -12,7 +12,7 @@
 /* Table card: `overflow: clip` keeps the rounded corners without breaking the sticky header. */
 .card { overflow: clip; border: 1px solid var(--adm-line); border-radius: var(--adm-radius); background: var(--adm-surface); box-shadow: var(--adm-shadow); }
 .card + .card { margin-top: 12px; }
-.cardHead { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; padding: 8px 12px; border-bottom: 1px solid var(--adm-line); }
+.cardHead { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; padding: 14px 18px 12px; border-bottom: 1px solid var(--adm-line); }
 .cardHead h2 { margin: 0; color: var(--adm-text); font-family: inherit; font-size: var(--crm-text-md); font-weight: 700; }
 .cardHead p { margin: 2px 0 0; color: var(--adm-muted); font-size: var(--crm-text-xs); }
 
@@ -63,21 +63,23 @@
 
 /* University editor: a wide sheet with a section index and a sticky save footer */
 .sheet { width: min(1040px, 100%); max-width: none; height: 100dvh; max-height: none; margin: 0 0 0 auto; padding: 0; border: 0; background: transparent; }
-.sheet::backdrop { background: rgb(33 26 29 / 38%); }
 .sheet[open] { animation: sheet-in 260ms ease-out both; }
 @keyframes sheet-in { from { transform: translateX(32px); opacity: 0; } to { transform: none; opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .sheet[open] { animation: none; } }
-.sheetPanel { display: grid; grid-template-rows: auto minmax(0, 1fr); height: 100%; background: var(--adm-bg); box-shadow: var(--adm-shadow-pop); }
-.sheetHead { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--adm-line); background: var(--adm-surface); }
-.sheetHead h2 { margin: 0; color: var(--adm-text); font-family: inherit; font-size: var(--crm-text-md); font-weight: 700; }
-.sheetHead p { margin: 2px 0 0; color: var(--adm-muted); font-size: var(--crm-text-xs); }
+.sheetPanel { display: grid; grid-template-rows: auto minmax(0, 1fr); height: 100%; overflow: hidden; border-radius: var(--adm-radius-lg) 0 0 var(--adm-radius-lg); background: var(--adm-bg); box-shadow: -30px 0 70px rgb(20 4 10 / 35%); }
+/* Same header as the shared drawer: serif title over a gold hairline. */
+.sheetHead { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 22px 22px 18px; background: linear-gradient(180deg, #FBF4EF, var(--adm-surface)); }
+.sheetHead::after { content: ''; position: absolute; left: 22px; right: 22px; bottom: 0; height: 1px; background: linear-gradient(90deg, var(--adm-gold), rgb(201 164 106 / 0%)); }
+.sheetHead h2 { margin: 0; color: var(--adm-wine); font-family: var(--adm-serif); font-size: calc(1.5rem * var(--crm-scale)); font-weight: 400; line-height: 1.15; }
+.sheetHead p { margin: 4px 0 0; color: var(--adm-muted); font-size: var(--crm-text-xs); }
 .sheetHeadText { min-width: 0; }
 .sheetHeadText h2 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sheetBody { display: grid; grid-template-columns: 170px minmax(0, 1fr); min-height: 0; }
-.sectionNav { display: grid; align-content: start; gap: 2px; padding: 10px 8px; overflow-y: auto; border-right: 1px solid var(--adm-line); background: var(--adm-surface); }
+.sectionNav { display: grid; align-content: start; gap: 2px; padding: 12px 8px; overflow-y: auto; border-right: 1px solid var(--adm-line); background: var(--adm-subtle); }
 .sectionNav a { display: flex; align-items: center; gap: 8px; min-height: 30px; padding: 0 8px; border-radius: var(--adm-radius-sm); color: var(--adm-muted); font-size: var(--crm-text-xs); font-weight: 650; text-decoration: none; }
 .sectionNav a:hover { background: var(--adm-hover); color: var(--adm-text); }
-.sectionNav a[aria-current="true"] { background: var(--adm-accent-soft); color: var(--adm-accent); }
+.sectionNav a[aria-current="true"] { background: var(--adm-accent-soft); color: var(--adm-accent); box-shadow: inset 3px 0 0 var(--adm-wine); }
+.sectionNav a:focus-visible { outline: none; box-shadow: var(--adm-focus); }
 .sectionNav a[data-error] { color: var(--crm-bad); }
 .sectionNav svg { width: 14px; height: 14px; }
 .sheetForm { display: grid; grid-template-rows: minmax(0, 1fr) auto; min-height: 0; }
@@ -87,7 +89,7 @@
 .section { padding: 16px 0 18px; scroll-margin-top: 0; }
 .section + .section { border-top: 1px solid var(--adm-line); }
 .section > header { display: flex; align-items: center; gap: 6px; margin-bottom: 12px; }
-.section > header h3 { margin: 0; color: var(--adm-muted); font-family: inherit; font-size: var(--crm-text-xs); font-weight: 650; letter-spacing: .06em; text-transform: uppercase; }
+.section > header h3 { margin: 0; color: var(--adm-gold-ink); font-family: inherit; font-size: .6875rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
 .sectionBody { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 16px; }
 .field { position: relative; display: grid; align-content: start; gap: 6px; min-width: 0; }
 .field[data-wide="true"] { grid-column: 1 / -1; }
@@ -95,17 +97,17 @@
 .fieldLabel em { margin-left: 2px; color: var(--crm-bad); font-style: normal; }
 /* ⓘ next to a label: the field's help text as a tooltip instead of a grey line under every input. */
 .hint { display: inline-grid; flex: none; place-items: center; width: 14px; height: 14px; margin-left: 4px; border: 1px solid var(--adm-line-strong); border-radius: 50%; color: var(--adm-muted); font-size: 9px; font-style: normal; font-weight: 700; line-height: 1; cursor: help; }
-.hint:hover, .hint:focus-visible { border-color: var(--adm-accent); color: var(--adm-accent); outline: none; }
+.hint:hover, .hint:focus-visible { border-color: var(--adm-gold-ink); color: var(--adm-gold-ink); outline: none; }
 .readoutHead { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
 .readoutValue { margin: 0; color: var(--adm-text); font-size: var(--crm-text-sm); }
-.footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 6px 10px; padding: 8px 16px; border-top: 1px solid var(--adm-line); background: var(--adm-surface); }
+.footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 6px 10px; padding: 14px 22px; border-top: 1px solid var(--adm-line); background: var(--adm-subtle); }
 .footerNote { margin-right: auto; color: var(--adm-muted); font-size: var(--crm-text-xs); }
 .footerNote[data-tone="bad"] { color: var(--crm-bad); font-weight: 650; }
 .readout { grid-column: 1 / -1; display: grid; gap: 6px; }
 .readout p { margin: 0; color: var(--adm-muted); font-size: var(--crm-text-xs); }
 .readout .readoutValue { color: var(--adm-text); font-size: var(--crm-text-sm); }
 .miniTable { width: 100%; border-collapse: collapse; font-size: var(--crm-text-xs); }
-.miniTable th { padding: 6px 8px; border-bottom: 1px solid var(--adm-line); color: var(--adm-muted); font-weight: 500; text-align: left; white-space: nowrap; }
+.miniTable th { padding: 6px 8px; border-bottom: 1px solid var(--adm-line); color: var(--adm-muted); font-weight: 600; text-align: left; white-space: nowrap; }
 .miniTable td { padding: 6px 8px; border-bottom: 1px solid var(--adm-line); }
 .miniTable tr:last-child td { border-bottom: 0; }
 .miniTable th:first-child, .miniTable td:first-child { padding-left: 0; }
@@ -118,6 +120,7 @@
 }
 @media (max-width: 640px) {
   .sheetHead, .sheetScroll, .footer { padding-inline: 12px; }
+  .sheetHead::after { left: 12px; right: 12px; }
   .sectionBody { grid-template-columns: minmax(0, 1fr); }
   .facts > div { grid-template-columns: 110px minmax(0, 1fr); }
   .search { max-width: none; flex-basis: 100%; }
@@ -132,7 +135,7 @@
 .queueGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 16px; margin: 0; }
 .queueGrid div { display: grid; gap: 2px; min-width: 0; }
 .queueGrid dt { color: var(--adm-muted); font-size: var(--crm-text-xs); font-weight: 500; }
-.queueGrid dd { margin: 0; color: var(--adm-text); font-size: var(--crm-text-md); font-weight: 650; font-variant-numeric: tabular-nums; }
+.queueGrid dd { margin: 0; color: var(--adm-text); font-family: var(--adm-serif); font-size: calc(1.5rem * var(--crm-scale)); font-weight: 400; line-height: 1.1; font-variant-numeric: tabular-nums; }
 .queueGrid dd[data-tone="bad"] { color: var(--crm-bad); }
 .panelFacts { margin-top: 12px; padding-top: 4px; border-top: 1px solid var(--adm-line); }
 /* Values line up with the queue grid's second column (3 columns, 16px gaps; the facts row has a 12px gap). */
@@ -151,18 +154,18 @@
 .errorText { color: var(--crm-bad); font-size: var(--crm-text-xs); }
 
 /* Import stepper */
-.stepper { display: flex; gap: 0; margin: 0 0 12px; padding: 0; overflow-x: auto; list-style: none; border: 1px solid var(--adm-line); border-radius: var(--adm-radius); background: var(--adm-surface); }
-.stepper li { display: flex; flex: 1 0 170px; align-items: center; gap: 8px; padding: 8px 12px; color: var(--adm-muted); font-weight: 650; }
+.stepper { display: flex; gap: 0; margin: 0 0 12px; padding: 0; overflow-x: auto; list-style: none; border: 1px solid var(--adm-line); border-radius: var(--adm-radius); background: var(--adm-surface); box-shadow: var(--adm-shadow); }
+.stepper li { display: flex; flex: 1 0 170px; align-items: center; gap: 10px; padding: 12px 16px; color: var(--adm-muted); font-weight: 650; }
 .stepper li + li { border-left: 1px solid var(--adm-line); }
 .stepper li[aria-current="step"] { color: var(--adm-text); box-shadow: inset 0 -2px 0 var(--adm-accent); }
-.stepNumber { display: inline-grid; flex-shrink: 0; place-items: center; width: 22px; height: 22px; border: 1px solid var(--adm-line-strong); border-radius: 50%; font-size: var(--crm-text-xs); font-variant-numeric: tabular-nums; }
+.stepNumber { display: inline-grid; flex-shrink: 0; place-items: center; width: 26px; height: 26px; border: 1px solid var(--adm-line-strong); border-radius: 50%; font-size: var(--crm-text-xs); font-variant-numeric: tabular-nums; }
 .stepper li[data-done] .stepNumber { border-color: var(--crm-good-line); background: var(--crm-good-soft); color: var(--crm-good); }
-.stepper li[aria-current="step"] .stepNumber { border-color: var(--adm-accent); background: var(--adm-accent); color: #fff; }
+.stepper li[aria-current="step"] .stepNumber { border-color: var(--adm-wine); background: var(--adm-wine); color: var(--adm-on-dark); }
 .stepper small { display: block; color: var(--adm-muted); font-size: var(--crm-text-xs); font-weight: 400; }
-.drop { position: relative; display: grid; justify-items: center; gap: 4px; padding: 16px 12px; border: 1px dashed var(--adm-line-strong); border-radius: var(--adm-radius); background: var(--adm-subtle); text-align: center; cursor: pointer; }
+.drop { position: relative; display: grid; justify-items: center; gap: 4px; padding: 20px 14px; border: 1.5px dashed var(--adm-line-strong); border-radius: var(--adm-radius); background: var(--adm-subtle); text-align: center; cursor: pointer; }
 .drop:hover, .drop:focus-within { border-color: var(--adm-accent); background: var(--adm-accent-soft); }
 .drop input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
-.drop svg { width: 18px; height: 18px; color: var(--adm-muted); }
+.drop svg { width: 20px; height: 20px; color: var(--adm-gold-ink); }
 .drop span { color: var(--adm-muted); font-size: var(--crm-text-xs); }
 .formGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 14px; }
 @media (max-width: 640px) { .formGrid { grid-template-columns: minmax(0, 1fr); } }
@@ -178,12 +181,13 @@
 .alert { display: flex; align-items: flex-start; gap: 8px; margin: 0 0 10px; padding: 8px 12px; border: 1px solid var(--crm-bad-line); border-radius: var(--adm-radius-sm); background: var(--crm-bad-soft); color: var(--crm-bad); }
 .alert svg { flex: none; width: 16px; height: 16px; margin-top: 2px; }
 .info { display: flex; align-items: flex-start; gap: 8px; margin: 0 0 10px; padding: 8px 12px; border: 1px solid var(--adm-line); border-radius: var(--adm-radius-sm); background: var(--adm-surface); color: var(--adm-muted); font-size: var(--crm-text-xs); }
-.info svg { flex: none; width: 16px; height: 16px; margin-top: 1px; }
+.info svg { flex: none; width: 16px; height: 16px; margin-top: 1px; color: var(--adm-gold-ink); }
 .info strong { color: var(--adm-text); }
 
 /* A RowMenu trigger shown as a primary button ("Queue crawl ▾"); doubled class beats RowMenu's icon-button size. */
-.menuButton.menuButton { display: inline-flex; width: auto; height: var(--adm-control); gap: 6px; padding: 0 12px; border: 1px solid var(--adm-accent); border-radius: var(--adm-radius-sm); background: var(--adm-accent); color: #fff; font-size: var(--crm-text-sm); font-weight: 600; }
-.menuButton.menuButton:hover, .menuButton.menuButton[aria-expanded="true"] { border-color: var(--adm-accent-hover); background: var(--adm-accent-hover); color: #fff; }
+.menuButton.menuButton { display: inline-flex; width: auto; height: var(--adm-control); gap: 6px; padding: 0 14px; border: 1px solid var(--adm-wine); border-radius: var(--adm-radius-sm); background: var(--adm-wine); color: var(--adm-on-dark); font-size: var(--crm-text-sm); font-weight: 600; }
+.menuButton.menuButton:hover, .menuButton.menuButton[aria-expanded="true"] { border-color: var(--adm-wine-deep); background: var(--adm-wine-deep); color: var(--adm-on-dark); }
+.menuButton.menuButton:focus-visible { outline: none; box-shadow: var(--adm-focus); }
 .menuButton.menuButton svg { width: 15px; height: 15px; }
 
 .kvGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; margin: 0; border: 1px solid var(--adm-line); border-radius: var(--adm-radius-sm); }

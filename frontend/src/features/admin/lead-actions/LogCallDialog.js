@@ -84,7 +84,7 @@ function Form({ lead, task, onClose, onLogged }) {
 }
 
 export default function LogCallDialog({ open, lead, task = null, onClose, onLogged }) {
-  return <DialogShell open={open} onClose={onClose} title="Log a call">
+  return <DialogShell open={open} onClose={onClose} icon="phone" title="Log a call">
     {open && lead && <Form lead={lead} task={task} onClose={onClose} onLogged={onLogged} />}
   </DialogShell>;
 }

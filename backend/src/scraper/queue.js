@@ -316,11 +316,6 @@ export async function listJobs(query = {}) {
   return { items: docs.map(serializeJob), total, page, limit };
 }
 
-async function countsByStatus(collection, match = {}) {
-  const rows = await collection.aggregate([{ $match: match }, { $group: { _id: '$status', count: { $sum: 1 } } }]).toArray();
-  return Object.fromEntries(rows.map((row) => [row._id, row.count]));
-}
-
 export async function listRuns(limit = 10) {
   const database = await db();
   const runs = await database.collection(COLLECTIONS.scrapeRuns).find({}).sort({ createdAt: -1 }).limit(Math.min(Math.max(Number(limit) || 10, 1), 50)).toArray();
@@ -343,14 +338,19 @@ export async function queueStats() {
   const jobs = database.collection(COLLECTIONS.scrapeJobs);
   const sources = database.collection(COLLECTIONS.scrapeSources);
   const now = new Date();
-  const [jobCounts, sourceCounts, neverCrawled, dueNow, workers, [lastRun]] = await Promise.all([
-    countsByStatus(jobs),
-    countsByStatus(sources),
-    sources.countDocuments({ lastJobAt: null }),
+  const [jobRows, sourceRows, dueNow, workers, [lastRun]] = await Promise.all([
+    jobs.aggregate([{ $group: { _id: '$status', count: { $sum: 1 } } }]).toArray(),
+    sources.aggregate([{ $group: {
+      _id: '$status', count: { $sum: 1 },
+      neverCrawled: { $sum: { $cond: [{ $eq: [{ $ifNull: ['$lastJobAt', null] }, null] }, 1, 0] } },
+    } }]).toArray(),
     jobs.countDocuments({ status: 'queued', nextRunAt: { $lte: now } }),
     jobs.aggregate([{ $match: { status: 'running' } }, { $group: { _id: '$lockedBy', jobs: { $sum: 1 }, lockedUntil: { $max: '$lockedUntil' } } }]).toArray(),
     listRuns(1),
   ]);
+  const jobCounts = Object.fromEntries(jobRows.map((row) => [row._id, row.count]));
+  const sourceCounts = Object.fromEntries(sourceRows.map((row) => [row._id, row.count]));
+  const neverCrawled = sourceRows.reduce((sum, row) => sum + row.neverCrawled, 0);
   return {
     jobs: Object.fromEntries(JOB_STATUSES.map((status) => [status, jobCounts[status] ?? 0])),
     dueNow,

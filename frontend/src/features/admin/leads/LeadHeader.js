@@ -5,12 +5,13 @@ import Link from 'next/link';
 import Icon from '@/components/ui/Icon';
 import ConfirmDialog from '@/features/admin/crm/ConfirmDialog';
 import RowMenu from '@/features/admin/crm/RowMenu';
-import { Chip, HeatChip } from '@/features/admin/crm/ui';
+import { Chip, HeatChip, StageChip } from '@/features/admin/crm/ui';
+import { initialsOf } from '@/features/admin/crm/format';
 import { CHANNELS, can, HEAT_ORDER, HEATS, OPEN_STAGES, PRIORITIES, PRIORITY_ORDER, STAGES } from '@/features/admin/crm/meta';
 import { useToaster } from '@/features/admin/crm/toast';
 import { Panel } from '@/features/admin/ui/Page';
 import { channelOf, courseText, formatDateTime, isQuick, whatsAppLink } from './lead-format';
-import { FollowUpText, formatWhen, PriorityText, StageDot } from './lead-bits';
+import { FollowUpText, formatWhen, PriorityText } from './lead-bits';
 import styles from './LeadPanel.module.css';
 
 const PIPELINE = ['new', 'contacted', 'in-progress', 'applied-to-university', 'admitted'];
@@ -23,7 +24,7 @@ function Stepper({ status, canChange, busy, onPick }) {
     <ol className={styles.steps}>
       {PIPELINE.map((key, index) => {
         const state = key === status ? 'current' : at > index ? 'past' : 'next';
-        return <li key={key} data-state={state} data-closed={closed || undefined}>
+        return <li key={key} className="crm-tone" data-tone={STAGES[key].tone} data-state={state} data-closed={closed || undefined}>
           <button type="button" disabled={!canChange || busy || key === status} aria-current={key === status ? 'step' : undefined}
             title={canChange ? (key === status ? 'Current stage' : `Move to ${STAGES[key].label}`) : 'You can view the stage but not change it'} onClick={() => onPick(key)}>
             {state === 'past' && <Icon name="check" />}<span>{STAGES[key].label}</span>
@@ -85,13 +86,17 @@ export default function LeadHeader({ item, backHref, onBack, admin, busy, onStag
     { key: 'delete', label: 'Delete lead…', icon: 'trash', tone: 'danger', hidden: !can(admin, 'leads.delete'), onSelect: onDelete },
   ];
 
-  return <header className={`adm-panel ${styles.head}`}>
-    <Link className={styles.backLink} href={backHref} onClick={onBack}><Icon name="arrow" />All leads</Link>
+  return <header className={styles.head}>
+    <div className={styles.band}>
+      <Link className={styles.backLink} href={backHref} onClick={onBack}><Icon name="arrow" />All leads</Link>
+    </div>
+    <div className={`adm-panel ${styles.idCard}`}>
     <div className={styles.headTop}>
+      <span className={`crm-tone ${styles.bigAvatar}`} data-tone={stage.tone} aria-hidden="true">{initialsOf(applicant.fullName || item.ref || '?')}</span>
       <div className={styles.who}>
         <div className={styles.nameRow}>
           <h2 className={styles.name}>{applicant.fullName || 'Name not provided'}</h2>
-          <StageDot label={stage.label} tone={stage.tone} />
+          <StageChip status={item.status} size="sm" />
           <HeatChip heat={crm.heat} source={crm.heatSource} score={crm.score} size="sm" />
           <PriorityText priority={crm.priority} dash={false} />
         </div>
@@ -115,6 +120,7 @@ export default function LeadHeader({ item, backHref, onBack, admin, busy, onStag
       </div>
     </div>
     <Stepper status={item.status} canChange={canStage} busy={busy === 'stage'} onPick={pick} />
+    </div>
 
     <ConfirmDialog open={Boolean(closing)} tone="danger" icon="lock" title={`Mark this lead as ${closing ? STAGES[closing].label.toLowerCase() : ''}?`}
       confirmLabel={closing ? `Mark ${STAGES[closing].label.toLowerCase()}` : 'Confirm'} busy={busy === 'stage'} error={closeError}

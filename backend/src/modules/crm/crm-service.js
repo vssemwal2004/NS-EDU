@@ -3,7 +3,7 @@
 import { collection, COLLECTIONS, toObjectId } from '../../db/collections.js';
 import { HttpError } from '../../lib/http-error.js';
 import { pagination, queryString } from '../../lib/query.js';
-import { assignableIds, audit, can } from '../access/access-service.js';
+import { assignableIds, audit, can, staffDirectory } from '../access/access-service.js';
 import { employeeAssignmentIds } from '../admin/employee-assignments.js';
 import { STATUSES, INDIAN_STATES } from '../applications/schema.js';
 import {
@@ -131,35 +131,99 @@ async function taskScope(staff, scope) {
   }
   if (scope === 'team') {
     if (!can(staff, 'tasks.manage_team') && staff.leadScope === 'own') throw new HttpError(403, 'Your role cannot see your team’s follow-ups');
-    return { assigneeId: { $in: staff.leadScope === 'all' || staff.isOwner ? await allStaffIds() : [staff._id, ...(staff.teamIds ?? [])] } };
+    return { assigneeId: { $in: staff.leadScope === 'all' || staff.isOwner ? (await staffDirectory()).map((doc) => doc._id) : [staff._id, ...(staff.teamIds ?? [])] } };
   }
   return { assigneeId: staff._id };
 }
-const allStaffIds = async () => (await (await collection(COLLECTIONS.admins)).find({}, { projection: { _id: 1 } }).toArray()).map((doc) => doc._id);
 
-export async function listTasks(staff, query = {}) {
-  const scopeFilter = await taskScope(staff, queryString(query.scope, 6) || 'mine');
-  const { page, limit, skip } = pagination(query, { defaultLimit: 25, maxLimit: 100, allowedLimits: [25, 50, 100] });
-  const today = istDayStart(istToday());
+function taskWindow(now) {
+  const today = istDayStart(istToday(now));
   const tomorrow = new Date(today.getTime() + DAY);
-  const now = new Date();
   // The sections partition the open follow-ups: overdue (before now), today (from now to the end of the IST day),
   // upcoming (tomorrow on). A task due earlier today is overdue, never counted twice.
   const states = {
     open: { doneAt: null }, overdue: { doneAt: null, dueAt: { $lt: now } }, today: { doneAt: null, dueAt: { $gte: now, $lt: tomorrow } },
     upcoming: { doneAt: null, dueAt: { $gte: tomorrow } }, done: { doneAt: { $ne: null } },
   };
+  return { now, today, tomorrow, states };
+}
+
+async function taskCounts(coll, scope, { now, today, tomorrow }) {
+  const sections = await coll.aggregate([
+    { $match: { ...scope, doneAt: null } },
+    { $group: { _id: { $switch: { branches: [
+      { case: { $ne: [{ $type: '$dueAt' }, 'date'] }, then: 'undated' },
+      { case: { $lt: ['$dueAt', today] }, then: 'past' },
+      { case: { $lt: ['$dueAt', now] }, then: 'earlierToday' },
+      { case: { $lt: ['$dueAt', tomorrow] }, then: 'today' },
+    ], default: 'upcoming' } }, count: { $sum: 1 } } },
+  ]).toArray();
+  const totals = Object.fromEntries(sections.map((section) => [section._id, section.count]));
+  const counts = {
+    overdue: (totals.past ?? 0) + (totals.earlierToday ?? 0),
+    today: totals.today ?? 0,
+    upcoming: totals.upcoming ?? 0,
+  };
+  return {
+    counts,
+    open: sections.reduce((sum, section) => sum + section.count, 0),
+    allToday: (totals.earlierToday ?? 0) + counts.today,
+  };
+}
+
+const TASK_FIELDS = { leadId: 1, leadRef: 1, leadName: 1, leadPhone: 1, assigneeId: 1, assigneeEmail: 1, title: 1, kind: 1, dueAt: 1, doneAt: 1, createdAt: 1 };
+
+async function taskPage(coll, scope, state, window, limit, skip = 0) {
+  const rows = await coll.find({ ...scope, ...window.states[state] }, { projection: TASK_FIELDS })
+    .sort(state === 'done' ? { doneAt: -1 } : { dueAt: 1 }).skip(skip).limit(limit).toArray();
+  return rows.map((task) => serializeTask(task, window.now));
+}
+
+export async function listTasks(staff, query = {}) {
+  const scopeFilter = await taskScope(staff, queryString(query.scope, 6) || 'mine');
+  const { page, limit, skip } = pagination(query, { defaultLimit: 25, maxLimit: 100, allowedLimits: [25, 50, 100] });
+  const window = taskWindow(new Date());
   const state = queryString(query.state, 10) || 'open';
-  if (!states[state]) throw new HttpError(400, 'Unknown task filter', { fields: { state: 'Choose open, overdue, today, upcoming or done' } });
+  if (!Object.hasOwn(window.states, state)) throw new HttpError(400, 'Unknown task filter', { fields: { state: 'Choose open, overdue, today, upcoming or done' } });
   const coll = await tasks();
-  const [items, total, overdue, dueToday, upcoming] = await Promise.all([
-    coll.find({ ...scopeFilter, ...states[state] }).sort(state === 'done' ? { doneAt: -1 } : { dueAt: 1 }).skip(skip).limit(limit).toArray(),
-    coll.countDocuments({ ...scopeFilter, ...states[state] }),
-    coll.countDocuments({ ...scopeFilter, ...states.overdue }),
-    coll.countDocuments({ ...scopeFilter, ...states.today }),
-    coll.countDocuments({ ...scopeFilter, ...states.upcoming }),
+  const [items, { counts, open }, doneTotal] = await Promise.all([
+    taskPage(coll, scopeFilter, state, window, limit, skip),
+    taskCounts(coll, scopeFilter, window),
+    state === 'done' ? coll.countDocuments({ ...scopeFilter, ...window.states.done }) : 0,
   ]);
-  return { items: items.map((task) => serializeTask(task, now)), total, page, limit, counts: { overdue, today: dueToday, upcoming } };
+  const total = state === 'done' ? doneTotal : state === 'open' ? open : counts[state];
+  return { items, total, page, limit, counts };
+}
+
+const MY_DAY_LIMITS = { overdue: 100, today: 100, upcoming: 50, done: 50 };
+
+export async function listTaskSections(staff, query = {}) {
+  const scope = await taskScope(staff, queryString(query.scope, 6) || 'mine');
+  const coll = await tasks();
+  const window = taskWindow(new Date());
+  const [{ counts }, ...sections] = await Promise.all([
+    taskCounts(coll, scope, window),
+    ...Object.entries(MY_DAY_LIMITS).map(async ([state, limit]) => [state, { items: await taskPage(coll, scope, state, window, limit) }]),
+  ]);
+  return { sections: Object.fromEntries(sections), counts };
+}
+
+export async function taskSectionCounts(staff, query = {}) {
+  const scope = await taskScope(staff, queryString(query.scope, 6) || 'mine');
+  const { counts } = await taskCounts(await tasks(), scope, taskWindow(new Date()));
+  return { counts };
+}
+
+export async function myTaskSnapshot(staff, limit) {
+  const coll = await tasks();
+  const scope = { assigneeId: staff._id };
+  const window = taskWindow(new Date());
+  const [{ counts, allToday }, items] = await Promise.all([
+    taskCounts(coll, scope, window),
+    coll.find({ ...scope, ...window.states.open }, { projection: { title: 1, kind: 1, dueAt: 1, leadId: 1, leadName: 1 } })
+      .sort({ dueAt: 1 }).limit(limit).toArray(),
+  ]);
+  return { ...counts, today: allToday, items };
 }
 
 export async function updateTask(staff, id, body) {

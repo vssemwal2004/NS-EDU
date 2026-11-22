@@ -33,4 +33,4 @@
 }
 
 /* Headings inside panels: sans, text colour (the site-wide h3 style is serif wine). */
-.view :is(h3, h4), .form :is(h3, h4) { font-family: inherit; letter-spacing: .04em; }
+.view :is(h3, h4), .form :is(h3, h4) { font-family: inherit; letter-spacing: .14em; }

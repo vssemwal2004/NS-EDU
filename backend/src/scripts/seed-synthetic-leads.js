@@ -229,11 +229,8 @@ async function benchmark(db) {
     const queries = insightQueries(insightRange({ range: '30d' }), staff);
     for (const [name, { pipeline, options }] of Object.entries(queries.groups)) {
       const explained = await leads.aggregate(pipeline, options).explain('queryPlanner');
-      console.log(`  ${`insights ${name} (${who})`.padEnd(44)} ${indexesIn(explained.queryPlanner?.winningPlan ?? explained.stages?.[0]?.$cursor?.queryPlanner?.winningPlan ?? {})}`);
-    }
-    for (const name of ['status:new', 'state:Delhi', 'channel:school-drive'].filter((key) => queries.counts[key])) {
-      const plan = (await leads.aggregate([{ $match: queries.counts[name] }, { $group: { _id: 1, n: { $sum: 1 } } }]).explain('queryPlanner')).queryPlanner?.winningPlan ?? {};
-      console.log(`  ${`insights count ${name} (${who})`.padEnd(44)} ${indexesIn(plan)}${JSON.stringify(plan).includes('FETCH') ? '' : ' (index only)'}`);
+      const plan = explained.queryPlanner?.winningPlan ?? explained.stages?.[0]?.$cursor?.queryPlanner?.winningPlan ?? {};
+      console.log(`  ${`insights ${name} (${who})`.padEnd(44)} ${indexesIn(plan)}${JSON.stringify(plan).includes('FETCH') ? '' : ' (index only)'}`);
     }
   }
   for (const [label, query] of [['list state + range', { state: 'Uttar Pradesh', range: '30d' }], ['list name search', { q: nameQuery }], ['list page 1999', {}]]) {

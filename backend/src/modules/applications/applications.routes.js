@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { HttpError } from '../../lib/http-error.js';
 import { createRateLimiter } from '../../lib/rate-limit.js';
 import { requireStudent } from '../../middleware/auth.js';
+import { invalidateAppliedInstitutions } from '../insights/recommend.js';
 import { CLOSED_STATUSES, CONSENT_TEXT, parseApplication, parseQuickApplication } from './schema.js';
 import { applications, clearLeadCounts, DAY, findCourse, findInstitution, leadKeys, nextRef, serializeForStudent } from './service.js';
 
@@ -86,6 +87,7 @@ applicationsRouter.post('/', requireStudent, async (request, response) => {
     updatedAt: now,
   };
   await collection.insertOne(doc);
+  invalidateAppliedInstitutions(studentId);
   clearLeadCounts();
   response.status(201).json({ item: serializeForStudent(doc, { full: true }) });
 });

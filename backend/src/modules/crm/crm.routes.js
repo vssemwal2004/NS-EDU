@@ -1,17 +1,18 @@
 import { Router } from 'express';
-import { collection, COLLECTIONS } from '../../db/collections.js';
 import { HttpError } from '../../lib/http-error.js';
 import { pagination, queryString } from '../../lib/query.js';
 import { requireOwnerAdmin, requirePermission } from '../../middleware/auth.js';
-import { assignableIds, can } from '../access/access-service.js';
+import { assignableIds, can, staffDirectory } from '../access/access-service.js';
 import { CLOSED_STATUSES, STATUS_LABELS, STATUSES } from '../applications/schema.js';
 import {
   applications, countLeads, filterKey, resolveLeadFilter, serializeLeadDetail, serializeLeadSummary, staffEmails, statusLabel, visibleLead,
 } from '../applications/service.js';
-import { crmDashboard } from './crm-analytics.js';
+import { activityFeed } from './crm-activity.js';
+import { crmDashboard, crmHotWaiting } from './crm-analytics.js';
 import { ACTIVITY_KINDS, CALL_OUTCOMES, HEAT_LABELS, HEATS, PRIORITIES, PRIORITY_LABELS, TASK_KINDS } from './crm-model.js';
 import {
-  bulkAct, createLead, createTask, deleteLead, deleteTask, editLead, listTasks, listTrash, logActivity, purgeLead, restoreLead, setCrm, timeline, updateTask,
+  bulkAct, createLead, createTask, deleteLead, deleteTask, editLead, listTasks, listTaskSections, listTrash, logActivity, purgeLead, restoreLead, setCrm,
+  taskSectionCounts, timeline, updateTask,
 } from './crm-service.js';
 
 // Mounted at /api/admin/crm. Visibility of leads always follows the viewer's lead scope; each action has its own permission.
@@ -22,18 +23,25 @@ const BOARD_PAGE = 20;
 const MAX_BOARD_SKIP = 2000;
 
 crmRouter.get('/meta', async (request, response) => {
+  const canAssign = can(request.admin, 'leads.assign') || can(request.admin, 'tasks.manage_team');
   const allowed = assignableIds(request.admin);
-  const staff = await (await collection(COLLECTIONS.admins)).find({ role: { $in: ['admin', 'employee'] }, status: { $ne: 'suspended' }, ...(allowed ? { _id: { $in: allowed } } : {}) }, { projection: { email: 1, name: 1, roleId: 1, role: 1 } }).sort({ name: 1, email: 1 }).toArray();
+  const allowedIds = allowed && new Set(allowed.map(String));
+  const staff = canAssign ? await staffDirectory() : [];
   response.json({
     statuses: STATUSES.map((status) => ({ value: status, label: STATUS_LABELS[status], closed: CLOSED_STATUSES.includes(status) })),
     heats: HEATS.map((value) => ({ value, label: HEAT_LABELS[value] })), priorities: PRIORITIES.map((value) => ({ value, label: PRIORITY_LABELS[value] })),
     activityKinds: ACTIVITY_KINDS, callOutcomes: CALL_OUTCOMES, taskKinds: TASK_KINDS,
     // Who this person may hand work to (the whole team for owners; mentors: themselves and their reports).
-    assignees: can(request.admin, 'leads.assign') || can(request.admin, 'tasks.manage_team') ? staff.map((doc) => ({ id: doc._id.toString(), email: doc.email, name: doc.name ?? '' })) : [],
+    assignees: staff.filter((doc) => (doc.role === 'admin' || doc.role === 'employee') && doc.status !== 'suspended' && (!allowedIds || allowedIds.has(String(doc._id))))
+      .map((doc) => ({ id: doc._id.toString(), email: doc.email, name: doc.name ?? '' })),
   });
 });
 
 crmRouter.get('/dashboard', async (request, response) => response.json(await crmDashboard(request.admin, request.query)));
+
+// Activity log: calls, messages, notes and stage changes, newest first (scoped like the leads list).
+crmRouter.get('/activity', requirePermission('leads.view_own', 'leads.view_team', 'leads.view_all'), async (request, response) => response.json(await activityFeed(request.admin, request.query)));
+crmRouter.get('/dashboard/hot-waiting', async (request, response) => response.json(await crmHotWaiting(request.admin)));
 
 // Pipeline board: one column per status with its best leads first, and the real count behind each column.
 crmRouter.get('/board', requirePermission('leads.view_own', 'leads.view_team', 'leads.view_all'), async (request, response) => {
@@ -65,6 +73,8 @@ crmRouter.get('/board/:status', requirePermission('leads.view_own', 'leads.view_
 
 // Follow-ups ("My day").
 crmRouter.get('/tasks', async (request, response) => response.json(await listTasks(request.admin, request.query)));
+crmRouter.get('/tasks/counts', async (request, response) => response.json(await taskSectionCounts(request.admin, request.query)));
+crmRouter.get('/tasks/sections', async (request, response) => response.json(await listTaskSections(request.admin, request.query)));
 crmRouter.patch('/tasks/:id', requirePermission('leads.notes'), async (request, response) => response.json({ item: await updateTask(request.admin, request.params.id, request.body) }));
 crmRouter.delete('/tasks/:id', requirePermission('leads.notes'), async (request, response) => {
   await deleteTask(request.admin, request.params.id);

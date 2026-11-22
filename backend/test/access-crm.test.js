@@ -360,6 +360,41 @@ describe('roles, teams and the CRM', { skip }, () => {
     for (const action of ['lead.create', 'lead.delete', 'lead.restore', 'lead.purge', 'lead.bulk_heat']) assert.ok(audit.body.items.some((row) => row.action === action), `${action} is logged`);
   });
 
+  test('batched tasks, home activity and hot action cards respect the employee scope', async () => {
+    const employee = await makeStaff('crm-snapshot');
+    await signIn('crm-snapshot');
+    const [mine, outside] = await Promise.all([
+      lead('My hot lead', '9876543791', { assignees: [employee.id] }),
+      lead('Outside hot lead', '9876543792', { assignees: [who.outsider.id] }),
+    ]);
+    const myLead = new ObjectId(mine);
+    const otherLead = new ObjectId(outside);
+    const earlier = new Date(Date.now() - 60_000);
+    const [task] = await Promise.all([
+      db.collection('lead_tasks').insertOne({ leadId: myLead, title: 'Overdue call', kind: 'call', dueAt: earlier, doneAt: null, assigneeId: employee.id }),
+      db.collection('application_notes').insertMany([myLead, otherLead].map((applicationId) => ({ applicationId, authorId: employee.id, kind: 'note', createdAt: earlier }))),
+      db.collection('applications').updateMany({ _id: { $in: [myLead, otherLead] } }, { $set: { 'crm.heat': 'hot' } }),
+    ]);
+    const [batch, counts, list, home, cards, dashboard, denied] = await Promise.all([
+      '/crm/tasks/sections', '/crm/tasks/counts', '/crm/tasks?state=overdue&limit=100', '/home',
+      '/crm/dashboard/hot-waiting', '/crm/dashboard?range=7d', '/crm/tasks/sections?scope=all',
+    ].map((path) => api(`/api/admin${path}`, { as: 'crm-snapshot' })));
+    for (const result of [batch, counts, list, home, cards, dashboard]) assert.equal(result.status, 200, JSON.stringify(result.body));
+    assert.equal(denied.status, 403);
+    assert.deepEqual(counts.body, { counts: batch.body.counts });
+    assert.deepEqual(batch.body.counts, list.body.counts);
+    assert.deepEqual(batch.body.sections.overdue.items, list.body.items);
+    assert.ok(batch.body.sections.overdue.items.some((row) => row.id === String(task.insertedId)));
+    assert.ok(!batch.body.sections.today.items.some((row) => row.id === String(task.insertedId)));
+    assert.ok(home.body.activity.some((row) => row.leadId === mine && row.leadName === 'My hot lead'));
+    assert.ok(!home.body.activity.some((row) => row.leadId === outside));
+    assert.ok(home.body.tasks.items.some((row) => row.id === String(task.insertedId)));
+    assert.deepEqual(cards.body.items, dashboard.body.actions.hotWaiting);
+    assert.ok(cards.body.items.some((card) => card.id === mine));
+    assert.ok(!cards.body.items.some((card) => card.id === outside));
+    assert.equal((await api('/api/admin/crm/dashboard/hot-waiting', { as: 'nobody' })).status, 401);
+  });
+
   test('the CRM dashboard is scoped: owners see everyone, mentors their team, counsellors only themselves', async () => {
     const owner = await api('/api/admin/crm/dashboard?range=30d');
     assert.equal(owner.status, 200, JSON.stringify(owner.body));

@@ -127,9 +127,8 @@ export async function listDrives(query) {
   if (!sort) throw new HttpError(400, 'Unknown sort', { fields: { sort: `Use ${Object.keys(LIST_SORTS).join(', ')}` } });
   const forms = await leadForms();
   const filter = { ...base, ...statusFilter, ...folder };
-  const [docs, total, statusRows, tree] = await Promise.all([
+  const [docs, statusRows, tree] = await Promise.all([
     forms.find(filter, { projection: LIST_PROJECTION }).sort(sort).skip(skip).limit(limit).toArray(),
-    forms.countDocuments(filter),
     forms.aggregate([{ $match: { ...base, ...folder } }, { $group: { _id: '$status', count: { $sum: 1 } } }]).toArray(),
     forms.aggregate([
       { $match: { ...base, ...statusFilter } },
@@ -145,6 +144,8 @@ export async function listDrives(query) {
     groups.set(row._id.state, group);
   }
   const counts = Object.fromEntries(DRIVE_STATUSES.map((name) => [name, statusRows.find((row) => row._id === name)?.count ?? 0]));
+  const total = status === 'all' ? statusRows.reduce((sum, row) => sum + row.count, 0)
+    : status === 'current' ? counts.active + counts.closed : counts[status];
   return { items: docs.map(summary), total, page, limit, sort: sortKey, counts, groups: [...groups.values()] };
 }
 

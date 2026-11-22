@@ -1,14 +1,14 @@
 .chart { display: grid; min-width: 0; font-size: var(--crm-text-sm); }
-.section { display: grid; gap: 8px; min-width: 0; padding: 12px 14px; }
+.section { display: grid; gap: 10px; min-width: 0; padding: 16px 18px; }
 .section + .section { border-top: 1px solid var(--adm-line); }
-.section h3 { display: flex; align-items: baseline; gap: 6px; margin: 0; font-family: inherit; font-size: var(--crm-text-md); font-weight: 700; }
+.section h3 { display: flex; align-items: baseline; gap: 8px; margin: 0; font-family: inherit; font-size: var(--crm-text-md); font-weight: 700; }
 .section h3 small { color: var(--adm-muted); font-size: var(--crm-text-xs); font-weight: 600; }
-.empty { padding: 16px; color: var(--adm-muted); text-align: center; }
+.empty { padding: 28px 18px; color: var(--adm-muted); text-align: center; }
 .scroller { overflow-x: auto; padding-bottom: 2px; }
-.teamRow { display: flex; flex-wrap: wrap; gap: 10px; }
-.team { min-width: 0; max-width: 100%; padding: 10px; border: 1px solid var(--adm-line); border-radius: var(--adm-radius-sm); background: var(--adm-subtle); }
+.teamRow { display: flex; flex-wrap: wrap; gap: 12px; }
+.team { min-width: 0; max-width: 100%; padding: 12px; border: 1px solid var(--adm-line); border-radius: var(--adm-radius); background: var(--adm-bg); }
 
-.card { display: flex; align-items: center; gap: 8px; width: 200px; height: 44px; padding: 0 10px; border: 1px solid var(--adm-line); border-radius: var(--adm-radius-sm); background: var(--adm-surface); color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.card { display: flex; align-items: center; gap: 8px; width: 200px; height: 48px; padding: 0 10px; border: 1px solid var(--adm-line); border-radius: var(--adm-radius-sm); background: var(--adm-surface); color: inherit; font: inherit; text-align: left; box-shadow: 0 1px 2px rgb(61 15 30 / 4%); cursor: pointer; transition: background var(--adm-fast) ease, border-color var(--adm-fast) ease; }
 .card:hover { border-color: var(--adm-line-strong); background: var(--adm-hover); }
 .card:focus-visible { outline: none; box-shadow: var(--adm-focus); }
 .card[data-suspended] { opacity: .6; }
@@ -16,7 +16,7 @@
 .cardText strong, .cardText small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cardText strong { font-weight: 650; }
 .cardText small { color: var(--adm-muted); font-size: var(--crm-text-xs); }
-.count { flex-shrink: 0; min-width: 20px; padding: 0 5px; border-radius: 999px; background: var(--adm-hover); color: var(--adm-muted); font-size: var(--crm-text-xs); font-weight: 650; font-variant-numeric: tabular-nums; text-align: center; }
+.count { flex-shrink: 0; min-width: 22px; padding: 1px 6px; border-radius: 999px; background: var(--crm-neutral-soft); color: var(--adm-muted); font-size: var(--crm-text-xs); font-weight: 650; font-variant-numeric: tabular-nums; text-align: center; }
 
 /* The connected tree: each <li> draws the line above itself and to its siblings. */
 .tree, .tree ul { display: flex; justify-content: center; margin: 0; padding: 0; list-style: none; }

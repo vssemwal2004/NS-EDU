@@ -12,7 +12,7 @@
 .menuButton.menuButton svg { width: 14px; height: 14px; color: var(--adm-muted); }
 .menuButton span { max-width: 160px; overflow: hidden; text-overflow: ellipsis; }
 .sort select { width: auto; min-width: 124px; height: var(--adm-control); }
-.count { display: inline-grid; min-width: 18px; height: 18px; padding: 0 5px; place-items: center; border-radius: 999px; background: var(--adm-accent); color: #fff; font-size: .6875rem; font-weight: 700; }
+.count { display: inline-grid; min-width: 19px; height: 19px; padding: 0 5px; place-items: center; border-radius: 999px; background: var(--adm-wine); color: var(--adm-on-dark); font-size: .6875rem; font-weight: 700; }
 /* Columns / Download: icon-only on ordinary screens (name kept for screen readers and the tooltip). */
 .btnText { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 @media (min-width: 1600px) { .btnText { position: static; width: auto; height: auto; overflow: visible; clip-path: none; } }
@@ -32,18 +32,19 @@
   /* Many columns switched on: scroll inside the panel instead of squeezing every column. */
   .tableCard table:has(thead th:nth-child(11)) { min-width: 1240px; }
   .tableCard table:has(thead th:nth-child(14)) { min-width: 1640px; }
-  .tableCard table th { height: 32px; padding: 0 10px; line-height: 1.2; border-bottom: 1px solid var(--adm-line); background: var(--adm-subtle); color: var(--adm-muted); font-size: var(--crm-text-xs); font-weight: 650; letter-spacing: 0; overflow: hidden; text-overflow: ellipsis; }
+  .tableCard table th { height: 42px; padding: 0 12px; line-height: 1.2; border-bottom: 1px solid var(--adm-line); background: var(--adm-subtle); color: var(--adm-muted); font-size: var(--crm-text-xs); font-weight: 600; letter-spacing: 0; overflow: hidden; text-overflow: ellipsis; }
   .tableCard table th:has(> input[type="checkbox"]), .tableCard table td:has(> input[type="checkbox"]) { width: 36px; padding-inline: 10px 4px; }
-  .tableCard table td { height: var(--crm-row); max-width: none; padding: 3px 10px; border-bottom: 1px solid var(--adm-line); vertical-align: middle; overflow: hidden; overflow-wrap: normal; white-space: nowrap; text-overflow: ellipsis; }
+  .tableCard table td { height: calc(var(--crm-row) + 8px); max-width: none; padding: 4px 12px; border-bottom: 1px solid var(--adm-line-soft); vertical-align: middle; overflow: hidden; overflow-wrap: normal; white-space: nowrap; text-overflow: ellipsis; }
   .tableCard table td input[type="checkbox"], .tableCard table th input[type="checkbox"] { width: 15px; height: 15px; margin: 0; vertical-align: middle; }
   .tableCard table tbody tr { cursor: pointer; }
-  .tableCard table tbody tr:hover, .tableCard table tbody tr[data-selected="true"] { background: var(--adm-hover); }
+  .tableCard table tbody tr:hover { background: var(--adm-hover); }
+  .tableCard table tbody tr[data-selected="true"] { background: var(--adm-selected); }
 }
 
 .leadCell { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 6px; min-width: 0; }
 .leadMain { display: grid; min-width: 0; line-height: 1.3; }
 .leadName { overflow: hidden; color: var(--adm-text); font-weight: 650; text-decoration: none; text-overflow: ellipsis; white-space: nowrap; }
-.leadName:hover { color: var(--adm-accent); text-decoration: underline; text-underline-offset: 3px; }
+.leadName:hover { color: var(--adm-wine); text-decoration: underline; text-underline-offset: 3px; }
 .leadName:focus-visible { border-radius: 4px; outline: none; box-shadow: var(--adm-focus); }
 .leadSub { overflow: hidden; color: var(--adm-muted); font-size: var(--crm-text-xs); font-variant-numeric: tabular-nums; text-overflow: ellipsis; white-space: nowrap; }
 .leadSub a { color: inherit; text-decoration: none; }
@@ -53,7 +54,8 @@
 .tableCard tr:hover .quick, .tableCard tr:focus-within .quick { pointer-events: auto; }
 .tableCard tr:hover .quick, .tableCard tr:focus-within .quick { opacity: 1; }
 .quick a { display: inline-grid; width: 26px; height: 26px; place-items: center; border-radius: 6px; color: var(--adm-muted); }
-.quick a:hover { background: var(--adm-surface); color: var(--adm-accent); box-shadow: inset 0 0 0 1px var(--adm-line); }
+.quick a { color: var(--adm-gold-ink); }
+.quick a:hover { background: var(--adm-surface); color: var(--adm-wine); box-shadow: inset 0 0 0 1px var(--adm-line); }
 .quick svg { width: 14px; height: 14px; }
 @media (hover: none) { .quick { position: static; padding: 0; background: none; opacity: 1; pointer-events: auto; transform: none; } .quick a { width: 36px; height: 36px; } }
 

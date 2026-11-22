@@ -1,5 +1,5 @@
 'use client';
-// "Hot leads waiting for a first call": from the CRM dashboard (people with analytics access) or the leads list.
+// "Hot leads waiting for a first call": from the scoped CRM queue or the leads list.
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Icon from '@/components/ui/Icon';
@@ -24,7 +24,7 @@ export default function HotWaiting({ analytics }) {
     const controller = new AbortController();
     const { signal } = controller;
     const load = analytics
-      ? request('/crm/dashboard?range=7d', { signal }).then((data) => ({ items: (data.actions?.hotWaiting ?? []).map((card) => ({ id: card.id, ref: card.ref, name: card.name, phone: card.phone, createdAt: card.createdAt, priority: card.priority, assignee: card.assignee })), total: data.actions?.hotWaiting?.length ?? 0 }))
+      ? request('/crm/dashboard/hot-waiting', { signal }).then(({ items }) => ({ items, total: items.length }))
       : request('/leads?heat=hot&status=new&limit=25', { signal }).then((data) => ({ items: data.items.map(fromLead), total: data.total }));
     load.then((result) => { if (!signal.aborted) setState({ key, error: '', ...result }); })
       .catch((failure) => { if (!signal.aborted && failure.name !== 'AbortError') setState({ key, items: null, total: 0, error: failure.message || 'Could not load the hot leads.' }); });

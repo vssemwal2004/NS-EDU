@@ -1,6 +1,6 @@
 import { COLLECTIONS, getDb } from '../../db/collections.js';
 import { createTtlCache } from '../../lib/ttl-cache.js';
-import { institutionRecords, searchInstitutions } from '../search/search-store.js';
+import { institutionRecords, searchInstitutions, searchRevision } from '../search/search-store.js';
 import { foldText, queryKeys } from '../universities/normalize.js';
 import { PUBLIC_FILTER, SUMMARY_PROJECTION, toSummary } from '../universities/university-service.js';
 import { eventsCollection } from './events.js';
@@ -14,12 +14,42 @@ const PER_QUERY_LIMIT = 24;
 const MAX_LIMIT = 24;
 
 const cache = createTtlCache({ ttlMs: 60_000, maxEntries: 2000 });
+const eventOwnerCache = createTtlCache({ ttlMs: 60_000, maxEntries: 4000 });
+const eventHistoryCache = createTtlCache({ ttlMs: 60_000, maxEntries: 2000 });
+const appliedCache = createTtlCache({ ttlMs: 60_000, maxEntries: 2000 });
 // Lists for viewers with no history are the same for everyone (per course, size and daily seed).
 const coldCache = createTtlCache({ ttlMs: 5 * 60_000, staleMs: 30 * 60_000, maxEntries: 500 });
-export const invalidateRecommendationCache = () => { cache.clear(); coldCache.clear(); };
+const cardCache = createTtlCache({ ttlMs: 5 * 60_000, maxEntries: 2000 });
+const courseCache = createTtlCache({ ttlMs: 60_000, maxEntries: 2 });
+
+let snapshotVersion = 0;
+let directoryVersion = 0;
+let directoryRevision = 0;
+let directoryRecords = null;
+
+export const invalidateRecommendationCache = () => {
+  directoryVersion += 1;
+  cache.clear();
+  eventOwnerCache.clear();
+  eventHistoryCache.clear();
+  appliedCache.clear();
+  coldCache.clear();
+  cardCache.clear();
+  courseCache.clear();
+};
+
+export function invalidateRecommendationEvents({ studentId, visitorId }) {
+  if (studentId) eventOwnerCache.delete(`s:${studentId}`);
+  if (visitorId) eventOwnerCache.delete(`v:${visitorId}`);
+}
+
+export function invalidateAppliedInstitutions(studentId) {
+  if (studentId) appliedCache.delete(studentId.toString());
+}
 
 const SORT = { popularity: -1, nameKey: 1, _id: 1 };
-const PROJECTION = { searchPrefixes: 0 };
+const PROJECTION = { ...SUMMARY_PROJECTION, nameKey: 1, popularity: 1 };
+const EVENT_PROJECTION = { _id: 0, at: 1, type: 1, query: 1, institutionSlug: 1, city: 1, state: 1, stream: 1, courseSlug: 1 };
 const NAAC_POINTS = { 'A++': 1, 'A+': 0.8, A: 0.6, 'B++': 0.4, 'B+': 0.3, B: 0.2, C: 0.1 };
 const VERBS = { search: 'searched', filter: 'filtered for', view: 'viewed', compare: 'compared', 'apply-open': 'started an application for' };
 
@@ -145,7 +175,7 @@ async function candidatePool(signals, limit, course = '') {
   return [...pool.values()];
 }
 
-function scoreOf(doc, signals, weight) {
+function scoreOf(doc, signals, weight, tokens) {
   const streams = doc.streams ?? [];
   const courseSlugs = doc.courseSlugs ?? [];
   const matched = [];
@@ -158,12 +188,13 @@ function scoreOf(doc, signals, weight) {
   if (stream > 0) { score += 3 * stream; matched.push('stream'); }
   const course = Math.max(0, ...courseSlugs.map((value) => weight.course(value)));
   if (course > 0) { score += 3.5 * course; matched.push('course'); }
-  const haystack = foldText([doc.name, doc.shortName, doc.city, doc.state].filter(Boolean).join(' '));
-  const tokens = top(signals.tokens, 8);
-  const hits = tokens.filter(([token]) => haystack.includes(token));
-  if (hits.length) {
-    score += 2 * (hits.reduce((sum, [, value]) => sum + value, 0) / tokens.reduce((sum, [, value]) => sum + value, 0));
-    matched.push('name');
+  if (tokens.length) {
+    const haystack = foldText([doc.name, doc.shortName, doc.city, doc.state].filter(Boolean).join(' '));
+    const hits = tokens.filter(([token]) => haystack.includes(token));
+    if (hits.length) {
+      score += 2 * (hits.reduce((sum, [, value]) => sum + value, 0) / tokens.reduce((sum, [, value]) => sum + value, 0));
+      matched.push('name');
+    }
   }
   if (typeof doc.nirfRank === 'number') score += 1.2 * (1 - Math.min(doc.nirfRank, 200) / 200);
   score += 0.8 * (NAAC_POINTS[doc.naacGrade] ?? 0);
@@ -176,7 +207,7 @@ function scoreOf(doc, signals, weight) {
 
 /** The reason line: the newest event of this viewer that this institution actually matches. */
 export function reasonFor(doc, events, courseNames = new Map()) {
-  const haystack = foldText([doc.name, doc.shortName, doc.city, doc.state].filter(Boolean).join(' '));
+  const haystack = events.length ? foldText([doc.name, doc.shortName, doc.city, doc.state].filter(Boolean).join(' ')) : '';
   for (const event of events) {
     if (event.institutionSlug && event.institutionSlug === doc.slug) continue;
     const place = event.city && event.city === doc.city ? event.city : event.state && event.state === doc.state ? event.state : '';
@@ -192,18 +223,43 @@ export function reasonFor(doc, events, courseNames = new Map()) {
   return doc.popularity > 0 ? 'Popular with students on Gyaan Vidhya' : 'From the Gyaan Vidhya directory';
 }
 
-async function appliedSlugs(studentId) {
-  if (!studentId) return [];
-  const rows = await (await getDb()).collection(COLLECTIONS.applications)
-    .find({ studentId }, { projection: { 'preference.institutionSlug': 1 } }).sort({ createdAt: -1 }).limit(100).toArray();
-  return rows.map((row) => row.preference?.institutionSlug).filter(Boolean);
+const EMPTY_HISTORY = { items: [], version: 0 };
+
+function appliedSlugs(studentId) {
+  if (!studentId) return EMPTY_HISTORY;
+  return appliedCache.wrap(studentId.toString(), async () => {
+    const rows = await (await getDb()).collection(COLLECTIONS.applications)
+      .find({ studentId }, { projection: { _id: 0, 'preference.institutionSlug': 1 } }).sort({ createdAt: -1 }).limit(100).toArray();
+    return { items: rows.map((row) => row.preference?.institutionSlug).filter(Boolean), version: ++snapshotVersion };
+  });
 }
 
-async function courseNamesFor(slugs) {
-  if (!slugs.length) return new Map();
-  const rows = await (await getDb()).collection(COLLECTIONS.courses)
-    .find({ slug: { $in: slugs } }, { projection: { slug: 1, name: 1 } }).toArray();
-  return new Map(rows.map((row) => [row.slug, row.name]));
+function courseNamesFor(events, version) {
+  if (!events.some((event) => event.courseSlug)) return new Map();
+  return courseCache.wrap(version, async () => {
+    const rows = await (await getDb()).collection(COLLECTIONS.courses)
+      .find({}, { projection: { _id: 0, slug: 1, name: 1 } }).toArray();
+    return new Map(rows.map((row) => [row.slug, row.name]));
+  });
+}
+
+async function recentEvents(owners) {
+  const since = new Date(Date.now() - WINDOW_DAYS * DAY_MS);
+  const owner = owners.length === 1 ? owners[0] : { $or: owners };
+  return (await eventsCollection()).find({ ...owner, at: { $gte: since } }, { projection: EVENT_PROJECTION })
+    .sort({ at: -1 }).limit(MAX_EVENTS_READ).toArray();
+}
+
+// Rotate an owner's version on write so every paired history with that owner gets a fresh key.
+// A cache miss also issues a new version, including when an older version was evicted.
+const eventOwnerVersion = (key) => eventOwnerCache.get(key) ?? eventOwnerCache.set(key, ++snapshotVersion);
+
+function viewerEvents({ studentId, visitorId }) {
+  // A student who searched before signing in keeps both histories on this device.
+  const owners = [studentId && { studentId }, visitorId && { visitorId }].filter(Boolean);
+  if (!owners.length) return EMPTY_HISTORY;
+  const key = `${studentId ? eventOwnerVersion(`s:${studentId}`) : 0}|${visitorId ? eventOwnerVersion(`v:${visitorId}`) : 0}`;
+  return eventHistoryCache.wrap(key, async () => ({ items: await recentEvents(owners), version: ++snapshotVersion }));
 }
 
 /**
@@ -215,69 +271,82 @@ async function courseNamesFor(slugs) {
 export async function recommendUniversities({ studentId = null, visitorId, limit = 8, exclude = '', course = '', variant = null }) {
   const size = Math.min(Math.max(Number.parseInt(limit, 10) || 8, 1), MAX_LIMIT);
   const seed = Number.isInteger(variant) && variant >= 0 && variant < 100 ? `${variant}:${Math.floor(Date.now() / DAY_MS)}` : '';
-  const shared = `${size}|${exclude}|${course}|${seed}`;
-  // A student who searched before signing in keeps those results: both ids are theirs, on this device.
-  // A viewer without personalisation consent has no visitor id, and only their account (if any) counts.
-  const owners = [studentId && { studentId }, visitorId && { visitorId }].filter(Boolean);
-  // Nobody to personalise for: every such visitor gets the same list, so they share one cached answer.
-  if (!owners.length) return coldCache.wrap(shared, () => rank({ events: [], applied: [], size, exclude, course, seed }));
-  return cache.wrap(`s:${studentId ?? ''}|v:${visitorId ?? ''}|${shared}`, async () => {
-    const since = new Date(Date.now() - WINDOW_DAYS * 86_400_000);
-    const [events, applied] = await Promise.all([
-      (await eventsCollection()).find({ $or: owners, at: { $gte: since } }).sort({ at: -1 }).limit(MAX_EVENTS_READ).toArray(),
-      appliedSlugs(studentId),
-    ]);
-    // No history yet (most first visits): same answer as above, from the shared cache.
-    if (!events.length && !applied.length) return coldCache.wrap(shared, () => rank({ events, applied, size, exclude, course, seed }));
-    return rank({ events, applied, size, exclude, course, seed });
-  });
-}
-
-async function rank({ events, applied, size, exclude, course, seed }) {
-  {
-    const signals = buildSignals(events);
-    for (const slug of applied) signals.applied.add(slug);
-    const records = institutionRecords({ allowStale: true });
-    const [pool, courseNames] = await Promise.all([
-      records ? candidatePoolFromMemory(records, signals, size, course) : candidatePool(signals, size, course),
-      courseNamesFor([...new Set(events.map((event) => event.courseSlug).filter(Boolean))]),
-    ]);
-    const weight = {
-      city: normalise(signals.cities), state: normalise(signals.states),
-      stream: normalise(signals.streams), course: normalise(signals.courses),
-    };
-    const coldStart = events.length === 0;
-    const ranked = pool
-      .filter((doc) => doc.slug !== exclude && !signals.applied.has(doc.slug))
-      .map((doc) => {
-        const base = scoreOf(doc, signals, weight);
-        return coldStart && seed ? { doc, ...base, score: base.score + COLD_START_JITTER * seedHash(`${seed}:${doc.slug}`) } : { doc, ...base };
-      })
-      .sort((a, b) => b.score - a.score
-        || (a.doc.nirfRank ?? 1e9) - (b.doc.nirfRank ?? 1e9)
-        || (a.doc.nameKey < b.doc.nameKey ? -1 : a.doc.nameKey > b.doc.nameKey ? 1 : 0));
-    // A viewer with history keeps pure relevance (they asked for that city or course); a viewer without
-    // any gets a spread across states and cities.
-    const scored = coldStart && seed ? spreadAcrossPlaces(ranked, size) : ranked.slice(0, size);
-    // Ranked from the in-memory records: the cards need the full documents, but only these few.
-    const full = records ? await fullDocuments(scored.map(({ doc }) => doc.slug)) : null;
-    return {
-      items: scored.filter(({ doc }) => !full || full.has(doc.slug)).map(({ doc, score, matched }) => ({
-        ...toSummary(full ? full.get(doc.slug) : doc),
-        reason: reasonFor(doc, events, courseNames),
-        score: Math.round(score * 1000) / 1000,
-        matched,
-      })),
-      personalised: events.length > 0,
-      basedOnEvents: events.length,
-      limit: size,
-    };
+  // Course tabs and exclusions change the ranking, but they read the same history.
+  const [viewerHistory, appliedHistory] = await Promise.all([viewerEvents({ studentId, visitorId }), appliedSlugs(studentId)]);
+  const events = viewerHistory.items;
+  const applied = appliedHistory.items;
+  const records = institutionRecords();
+  const revision = searchRevision();
+  if (records !== directoryRecords || revision !== directoryRevision) {
+    directoryRecords = records;
+    directoryRevision = revision;
+    directoryVersion += 1;
   }
+  const version = directoryVersion;
+  // An updated directory gets new ranking and card lookups. During a rebuild the queries use MongoDB.
+  const shared = JSON.stringify([version, size, exclude, course, events.length ? '' : seed]);
+  const load = () => rank({ events, applied, size, exclude, course, seed, records, version });
+  if (!events.length && !applied.length) return coldCache.wrap(shared, load);
+  return cache.wrap(`${viewerHistory.version}|${appliedHistory.version}|${shared}`, load);
 }
 
-async function fullDocuments(slugs) {
-  if (!slugs.length) return new Map();
-  const rows = await (await getDb()).collection(COLLECTIONS.institutions)
-    .find({ ...PUBLIC_FILTER, slug: { $in: slugs } }, { projection: SUMMARY_PROJECTION }).toArray();
-  return new Map(rows.map((row) => [row.slug, row]));
+async function rank({ events, applied, size, exclude, course, seed, records, version }) {
+  const signals = buildSignals(events);
+  for (const slug of applied) signals.applied.add(slug);
+  const pool = records ? candidatePoolFromMemory(records, signals, size, course) : await candidatePool(signals, size, course);
+  const weight = {
+    city: normalise(signals.cities), state: normalise(signals.states),
+    stream: normalise(signals.streams), course: normalise(signals.courses),
+  };
+  const tokens = top(signals.tokens, 8);
+  const coldStart = events.length === 0;
+  const ranked = pool
+    .filter((doc) => doc.slug !== exclude && !signals.applied.has(doc.slug))
+    .map((doc) => {
+      const base = scoreOf(doc, signals, weight, tokens);
+      return coldStart && seed ? { doc, ...base, score: base.score + COLD_START_JITTER * seedHash(`${seed}:${doc.slug}`) } : { doc, ...base };
+    })
+    .sort((a, b) => b.score - a.score
+      || (a.doc.nirfRank ?? 1e9) - (b.doc.nirfRank ?? 1e9)
+      || (a.doc.nameKey < b.doc.nameKey ? -1 : a.doc.nameKey > b.doc.nameKey ? 1 : 0));
+  // A viewer with history keeps pure relevance (they asked for that city or course); a viewer without
+  // any gets a spread across states and cities.
+  const scored = coldStart && seed ? spreadAcrossPlaces(ranked, size) : ranked.slice(0, size);
+  const [cards, courseNames] = await Promise.all([
+    records ? institutionCards(scored.map(({ doc }) => doc.slug), version) : null,
+    courseNamesFor(events, version),
+  ]);
+  return {
+    items: scored.filter(({ doc }) => !cards || cards.has(doc.slug)).map(({ doc, score, matched }) => ({
+      ...(cards ? cards.get(doc.slug) : toSummary(doc)),
+      reason: reasonFor(doc, events, courseNames),
+      score: Math.round(score * 1000) / 1000,
+      matched,
+    })),
+    personalised: events.length > 0,
+    basedOnEvents: events.length,
+    limit: size,
+  };
+}
+
+// The same college can appear across profile pages, course tabs and session variants. Hydrate only
+// uncached cards, in one lookup that still applies the public visibility filter.
+async function institutionCards(slugs, version) {
+  const cards = new Map();
+  const missing = [];
+  for (const slug of slugs) {
+    const card = cardCache.get(`${version}|${slug}`);
+    if (card) cards.set(slug, card);
+    else missing.push(slug);
+  }
+  if (missing.length) {
+    const rows = await (await getDb()).collection(COLLECTIONS.institutions)
+      .find({ ...PUBLIC_FILTER, slug: { $in: missing } }, { projection: SUMMARY_PROJECTION }).toArray();
+    for (const row of rows) {
+      const card = toSummary(row);
+      cards.set(row.slug, card);
+      if (version === directoryVersion) cardCache.set(`${version}|${row.slug}`, card);
+    }
+  }
+  return cards;
 }

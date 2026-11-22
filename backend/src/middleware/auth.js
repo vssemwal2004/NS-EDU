@@ -24,10 +24,18 @@ async function loadStudent(request) {
   return student?.status === 'blocked' ? null : student;
 }
 
-export async function requireAdmin(request, _response, next) {
-  const admin = await loadAdmin(request);
+export async function requireAdmin(request, response, next) {
+  const started = performance.now();
+  const admin = await loadAdmin(request).finally(() => {
+    response.locals.adminAuthMs = performance.now() - started;
+  });
   if (!admin) throw new HttpError(401, 'Admin session required');
   request.admin = admin;
+  next();
+}
+
+export async function optionalAdmin(request, _response, next) {
+  request.admin = await loadAdmin(request);
   next();
 }
 

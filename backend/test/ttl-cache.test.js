@@ -57,3 +57,32 @@ test('a failed background refresh keeps the stale value; clear() drops everythin
   await settle(); await settle();
   assert.equal(await cache.wrap('k', async () => 'new'), 'new');
 });
+
+test('a cold load invalidated by clear or delete cannot replace a newer value', async () => {
+  for (const invalidate of [(cache) => cache.clear(), (cache) => cache.delete('k')]) {
+    const cache = createTtlCache({ ttlMs: 1000 });
+    let release;
+    const first = cache.wrap('k', () => new Promise((resolve) => { release = resolve; }));
+    await settle();
+    invalidate(cache);
+    assert.equal(await cache.wrap('k', () => 'new'), 'new');
+    release('old');
+    assert.equal(await first, 'old');
+    assert.equal(cache.get('k'), 'new');
+  }
+});
+
+test('a cold load remains shared beyond the TTL, and a rejection leaves newer values in place', async () => {
+  let now = 0;
+  let reject;
+  const cache = createTtlCache({ ttlMs: 100, clock: () => now });
+  const first = cache.wrap('k', () => new Promise((_resolve, rejectLoad) => { reject = rejectLoad; }));
+  await settle();
+  now = 200;
+  const second = cache.wrap('k', () => assert.fail('a pending load already exists'));
+  cache.set('k', 'new');
+  const checks = Promise.all([assert.rejects(first, /failed/), assert.rejects(second, /failed/)]);
+  reject(new Error('failed'));
+  await checks;
+  assert.equal(cache.get('k'), 'new');
+});

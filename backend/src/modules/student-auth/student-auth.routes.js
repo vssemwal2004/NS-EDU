@@ -142,9 +142,9 @@ async function findOrCreateStudent(channel, identifier, now) {
   return { student: result.value, isNew: !result.lastErrorObject?.updatedExisting };
 }
 
-const recordLogin = async (student, method, now, set = {}) => (await collection(COLLECTIONS.students)).findOneAndUpdate(
+const recordLogin = async (student, method, now) => (await collection(COLLECTIONS.students)).findOneAndUpdate(
   { _id: student._id },
-  { $set: { lastLoginAt: now, lastLoginMethod: method, ...set }, $inc: { loginCount: 1 }, $addToSet: { authMethods: method } },
+  { $set: { lastLoginAt: now, lastLoginMethod: method }, $inc: { loginCount: 1 }, $addToSet: { authMethods: method } },
   { returnDocument: 'after' },
 );
 
@@ -251,23 +251,58 @@ studentAuthRouter.get('/google/start', optionalStudent, async (request, response
   response.redirect(302, url);
 });
 
+function recordGoogleLogin(students, filter, identity, now, link = false) {
+  return students.findOneAndUpdate(
+    { ...filter, status: { $ne: 'blocked' } },
+    [{ $set: {
+      lastLoginAt: now,
+      lastLoginMethod: 'google',
+      loginCount: { $add: [{ $ifNull: ['$loginCount', 0] }, 1] },
+      authMethods: { $let: {
+        vars: { methods: { $ifNull: ['$authMethods', []] } },
+        in: { $cond: [{ $in: ['google', '$$methods'] }, '$$methods', { $concatArrays: ['$$methods', ['google']] }] },
+      } },
+      ...(identity.picture && { picture: { $literal: identity.picture } }),
+      ...(identity.name && { name: { $cond: [
+        { $or: [{ $not: ['$name'] }, { $eq: ['$name', ''] }] },
+        { $literal: identity.name },
+        '$name',
+      ] } }),
+      ...(link && { googleSub: { $literal: identity.sub } }),
+    } }],
+    { returnDocument: 'after', projection: { name: 1 } },
+  );
+}
+
 async function signInWithGoogle(identity, now, attempt = 0) {
   const students = await collection(COLLECTIONS.students);
-  const known = await students.findOne(studentBy('googleSub', identity.sub));
+  const google = studentBy('googleSub', identity.sub);
+  // The usual sign-in reads and updates the known account in one indexed command.
+  const known = await recordGoogleLogin(students, google, identity, now);
   if (known) return known;
   // Google has verified this address, so an account created by email code is the same person.
-  const byEmail = await students.findOne(studentBy('email', identity.email));
+  const matches = await students.find(
+    { $or: [google, studentBy('email', identity.email)] },
+    { projection: { email: 1, googleSub: 1, status: 1 } },
+  ).limit(2).toArray();
+  const byGoogle = matches.find((student) => student.googleSub === identity.sub);
+  const byEmail = matches.find((student) => student.email === identity.email);
+  if (byGoogle) {
+    if (byGoogle.status === 'blocked') throw new GoogleError('blocked');
+    if (attempt === 0) return signInWithGoogle(identity, now, 1);
+    throw new GoogleError('google-in-use', 'concurrent Google sign-in did not settle');
+  }
   if (byEmail?.googleSub) throw new GoogleError('google-in-use', 'email belongs to an account linked to a different Google account');
+  if (byEmail?.status === 'blocked') throw new GoogleError('blocked');
   try {
     if (byEmail) {
-      const linked = await students.findOneAndUpdate(
-        { _id: byEmail._id, googleSub: { $exists: false } },
-        { $set: { googleSub: identity.sub } },
-        { returnDocument: 'after' },
-      );
+      const linked = await recordGoogleLogin(students, { _id: byEmail._id, googleSub: { $exists: false } }, identity, now, true);
       if (linked) return linked;
     } else {
-      const student = { email: identity.email, name: identity.name, picture: identity.picture || null, googleSub: identity.sub, status: 'active', createdAt: now, loginCount: 0 };
+      const student = {
+        email: identity.email, name: identity.name, picture: identity.picture || null, googleSub: identity.sub,
+        status: 'active', createdAt: now, loginCount: 1, lastLoginAt: now, lastLoginMethod: 'google', authMethods: ['google'],
+      };
       const { insertedId } = await students.insertOne(student);
       return { ...student, _id: insertedId };
     }
@@ -324,22 +359,22 @@ studentAuthRouter.get('/google/callback', optionalStudent, async (request, respo
       await linkGoogle(request.student._id, identity);
       return response.redirect(302, withParams(flow.returnTo, { linked: 'google' }));
     }
-    const now = new Date();
-    const student = await signInWithGoogle(identity, now);
-    if (student.status === 'blocked') return fail('blocked');
-    const signedIn = await recordLogin(student, 'google', now, {
-      ...(identity.picture && { picture: identity.picture }),
-      ...(!student.name && identity.name && { name: identity.name }),
-    });
+    const student = await signInWithGoogle(identity, new Date());
     setSessionCookie(response, student);
     const returnTo = flow.returnTo || '/account';
     // Google profiles can lack a name; the site then asks once, as after a code sign-in.
-    response.redirect(302, (signedIn ?? student).name ? returnTo : withParams(returnTo, { welcome: 'name' }));
+    response.redirect(302, student.name ? returnTo : withParams(returnTo, { welcome: 'name' }));
   } catch (failure) {
     if (!(failure instanceof GoogleError)) throw failure;
     if (failure.code === 'google-unavailable') console.error(`[Google] sign-in failed (request ${request.id}): ${failure.message}`);
     fail(failure.code);
   }
+});
+
+// Public pages check for an optional session during hydration.
+studentAuthRouter.get('/session', optionalStudent, (request, response) => {
+  if (!request.student && request.cookies?.[STUDENT_COOKIE]) clearStudentCookie(response);
+  response.json({ student: request.student ? serializeStudent(request.student) : null });
 });
 
 studentAuthRouter.get('/me', requireStudent, (request, response) => response.json({ student: serializeStudent(request.student) }));

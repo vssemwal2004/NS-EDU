@@ -1,158 +1,244 @@
 'use client';
-// The console home (/admin/dashboard): a greeting, today's numbers for this person, what needs attention,
-// their follow-ups, recent activity and shortcuts. Analytics live under Analytics; this is the start of the day.
+// The console home (/admin/dashboard): an oxblood greeting with today's follow-up numbers, jewel-coloured stat cards,
+// the lead distribution card,
+// the pipeline by stage (bar + donut), new leads over the last 7 days, what needs attention, the person's follow-ups,
+// recent activity and quick actions. Colours follow the Jewel palette (see crm/crm-tokens.css): each stage keeps
+// its colour everywhere. Analytics live under Analytics; this is the start of the day.
 import Link from 'next/link';
 import Icon from '@/components/ui/Icon';
 import { useAdminSession } from './AdminSession';
-import { displayName, relativeTime } from './crm/format';
-import { ACTIVITY, can, OPEN_STAGES, OUTCOMES } from './crm/meta';
+import { displayName, initialsOf, relativeTime } from './crm/format';
+import { ACTIVITY, can, OPEN_STAGES, OUTCOMES, STAGES } from './crm/meta';
 import { FollowUpBadge } from './crm/ui';
-import { cx, Empty, ErrorBanner, n, PanelLink, PanelSkeletons, useTick } from './analytics/shared';
-import styles from './analytics/Analytics.module.css';
+import { cx, ErrorBanner, n, useTick } from './analytics/shared';
 import { useServerList } from './table/useServerList';
-import { PageToolbar, Panel, StatStrip } from './ui/Page';
 import DistributionCard from './DistributionCard';
+import styles from './Dashboard.module.css';
 
 const today = new Intl.DateTimeFormat('en-IN', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Asia/Kolkata' });
+const weekday = new Intl.DateTimeFormat('en-IN', { weekday: 'short', timeZone: 'UTC' });
 const istHour = () => Number(new Intl.DateTimeFormat('en-GB', { hour: 'numeric', hourCycle: 'h23', timeZone: 'Asia/Kolkata' }).format(new Date()));
 const greeting = () => { const hour = istHour(); return hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'; };
 const OPEN = OPEN_STAGES.join(',');
 const dateTime = new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
 const when = (value) => (value ? dateTime.format(new Date(value)) : '—');
+const plural = (count, word) => `${n(count)} ${word}${count === 1 ? '' : 's'}`;
 
-// Two calm groups of plain links: things to create, and places to go.
-const SHORTCUTS = [
-  { group: 'Create', items: [
-    { label: 'Add a lead', href: '/admin/leads?add=1', icon: 'plus', permission: 'leads.create' },
-    { label: 'New school drive', href: '/admin/drives?add=1', icon: 'building', permission: 'drives.manage' },
-    { label: 'Add a university', href: '/admin/institutions?new=1', icon: 'building', permission: 'catalogue.edit' },
-    { label: 'Add employee', href: '/admin/access?tab=team&add=1', icon: 'userPlus', permission: 'team.manage' },
-  ] },
-  { group: 'Go to', items: [
-    { label: 'My day', href: '/admin/my-day', icon: 'calendar', permission: 'leads.notes' },
-    { label: 'Pipeline board', href: '/admin/leads/board', icon: 'board', permission: ['leads.view_own', 'leads.view_team', 'leads.view_all'] },
-    { label: 'CRM performance', href: '/admin/crm', icon: 'chart', permission: ['analytics.view_own', 'analytics.view_team', 'analytics.view_all'] },
-    { label: 'Lead volume', href: '/admin/leads/dashboard', icon: 'bars', permission: ['analytics.view_own', 'analytics.view_team', 'analytics.view_all'] },
-    { label: 'Review queue', href: '/admin/data/review', icon: 'checkCircle', permission: 'data.manage' },
-    { label: 'Search insights', href: '/admin/insights', icon: 'trend', permission: 'analytics.search' },
-  ] },
+const QUICK = [
+  { label: 'Add a lead', href: '/admin/leads?add=1', icon: 'plus', permission: 'leads.create', tone: 'bad' },
+  { label: 'School drive', href: '/admin/drives?add=1', icon: 'building', permission: 'drives.manage', tone: 'info' },
+  { label: 'Add students', href: '/admin/reference-students/new', icon: 'userPlus', permission: 'students.create', tone: 'purple' },
+  { label: 'Add a university', href: '/admin/institutions?new=1', icon: 'book', permission: 'catalogue.edit', tone: 'warn' },
+  { label: 'Review queue', href: '/admin/data/review', icon: 'checkCircle', permission: 'data.manage', tone: 'good' },
+  { label: 'Pipeline board', href: '/admin/leads/board', icon: 'board', permission: ['leads.view_own', 'leads.view_team', 'leads.view_all'], tone: 'orange' },
 ];
 
+/** The stat cards. Each card's tone is a jewel colour with one job (see crm-tokens.css). */
 function statItems(data) {
   const { leads, tasks, catalogue, students } = data;
   const own = leads?.scope === 'own';
   const items = [];
-  if (tasks && own) {
-    items.push(
-      { key: 'mine-overdue', label: 'My overdue follow-ups', value: tasks.overdue, icon: tasks.overdue ? 'alert' : 'check', tone: tasks.overdue ? 'bad' : 'good', href: '/admin/my-day' },
-      { key: 'mine-today', label: 'My follow-ups today', value: tasks.today, icon: 'calendar', tone: 'warn', href: '/admin/my-day' },
-      { key: 'mine-upcoming', label: 'Coming up', value: tasks.upcoming, icon: 'clock', tone: 'neutral', href: '/admin/my-day' },
-    );
-  }
   if (leads) {
-    items.push(
-      { key: 'new', label: own ? 'My leads created today' : 'New leads today', value: leads.newToday, icon: 'inbox', tone: 'neutral', href: '/admin/leads?range=today' },
-      { key: 'hot', label: 'Hot, waiting for a call', value: leads.hotWaiting, icon: 'flame', tone: leads.hotWaiting ? 'bad' : 'neutral', href: '/admin/leads?heat=hot&status=new' },
-    );
-    if (!own) items.splice(1, 0, { key: 'open', label: 'Open leads', value: leads.open, icon: 'layers', tone: 'neutral', href: `/admin/leads?status=${OPEN}` });
-    if (!own) items.push({ key: 'overdue', label: 'Overdue follow-ups', value: leads.overdue, icon: leads.overdue ? 'alert' : 'check', tone: leads.overdue ? 'bad' : 'good', href: '/admin/leads?followUp=overdue' });
-    else items.push({ key: 'open', label: 'My open leads', value: leads.open, icon: 'layers', tone: 'neutral', href: `/admin/leads?status=${OPEN}` });
+    items.push({ key: 'new', label: own ? 'My leads created today' : 'New leads today', value: leads.newToday, icon: 'inbox', tone: 'info', href: '/admin/leads?range=today' });
+    items.push({ key: 'open', label: own ? 'My open leads' : 'Open leads', value: leads.open, icon: 'layers', tone: 'purple', href: `/admin/leads?status=${OPEN}` });
+    items.push({ key: 'hot', label: 'Hot, waiting for a call', value: leads.hotWaiting, icon: 'flame', tone: 'bad', href: '/admin/leads?heat=hot&status=new' });
+    const admitted = leads.byStage?.find((stage) => stage.status === 'admitted');
+    if (admitted) items.push({ key: 'admitted', label: 'Admitted', value: admitted.count, icon: 'cap', tone: 'good', href: '/admin/leads?status=admitted' });
+  } else if (tasks) {
+    items.push({ key: 'mine-today', label: 'My follow-ups today', value: tasks.today, icon: 'calendar', tone: 'warn', href: '/admin/my-day' });
   }
-  if (catalogue) items.push({ key: 'held', label: 'Waiting to publish', value: catalogue.held, icon: 'checkCircle', tone: catalogue.held ? 'warn' : 'good', href: '/admin/data/review' });
-  if (catalogue && !leads) items.push({ key: 'unverified', label: 'Live, not yet verified', value: catalogue.visible, icon: 'eye', tone: 'neutral', href: '/admin/data/review?view=visible' });
-  if (students) items.push({ key: 'students', label: 'New students this week', value: students.new7d, icon: 'people', tone: 'neutral', href: '/admin/students' });
-  return items.slice(0, 6);
+  if (catalogue) items.push({ key: 'held', label: 'Waiting to publish', value: catalogue.held, icon: 'checkCircle', tone: 'warn', href: '/admin/data/review' });
+  if (catalogue && !leads) items.push({ key: 'unverified', label: 'Live, not yet verified', value: catalogue.visible, icon: 'eye', tone: 'info', href: '/admin/data/review?view=visible' });
+  if (students) items.push({ key: 'students', label: 'New students this week', value: students.new7d, icon: 'people', tone: 'good', href: '/admin/students' });
+  return items.slice(0, 4);
+}
+
+function Hero({ name, data, admin }) {
+  const tasks = data?.tasks;
+  const leads = data?.leads;
+  const overdue = tasks?.overdue ?? leads?.overdue ?? 0;
+  const dueToday = tasks?.today ?? leads?.dueToday ?? 0;
+  const hot = leads?.hotWaiting ?? 0;
+  const parts = [overdue && `${plural(overdue, 'follow-up')} ${overdue === 1 ? 'is' : 'are'} overdue`, hot && `${plural(hot, 'hot lead')} ${hot === 1 ? 'is' : 'are'} waiting for a first call`].filter(Boolean);
+  const line = !data ? 'Loading your day…' : parts.length ? `${parts.join(' and ')}. Start with those.` : dueToday ? `${plural(dueToday, 'follow-up')} due today. Nothing overdue.` : 'Nothing is overdue. A good day to reach new leads.';
+  return <section className={styles.hero}>
+    <svg className={styles.arches} viewBox="0 0 420 230" aria-hidden="true">
+      <g opacity=".55"><path d="M10 230V120Q10 60 70 40Q130 60 130 120V230" /><path d="M150 230V100Q150 34 210 12Q270 34 270 100V230" /><path d="M290 230V120Q290 60 350 40Q410 60 410 120V230" /></g>
+      <g opacity=".3"><path d="M30 230V128Q30 78 70 62Q110 78 110 128V230" /><path d="M172 230V108Q172 54 210 36Q248 54 248 108V230" /><path d="M310 230V128Q310 78 350 62Q390 78 390 128V230" /></g>
+    </svg>
+    <div className={styles.heroCopy}>
+      <p className="adm-eyebrow">{today.format(new Date())}</p>
+      <h1>{greeting()}, {name}.</h1>
+      <p>{line}</p>
+      <div className={styles.heroActions}>
+        {can(admin, 'leads.notes') && <Link className="adm-btn adm-btn--gold" href="/admin/my-day">Start my day<Icon name="arrow" /></Link>}
+        {can(admin, 'leads.create') && <Link className={styles.ghost} href="/admin/leads?add=1"><Icon name="plus" />Add a lead</Link>}
+      </div>
+    </div>
+    {(tasks || leads) && <dl className={styles.heroStats}>
+      <div><dt><i data-tone="bad" />Overdue</dt><dd>{n(overdue)}</dd></div>
+      <div><dt><i data-tone="warn" />Due today</dt><dd>{n(dueToday)}</dd></div>
+      {leads && <div><dt><i />Hot, not called</dt><dd>{n(hot)}</dd></div>}
+    </dl>}
+  </section>;
+}
+
+function StatCards({ items, loading }) {
+  return <ul className={styles.stats} aria-label="Today">
+    {items.map((item) => <li key={item.key}>
+      <Link href={item.href} className={cx('crm-tone', styles.stat)} data-tone={item.tone}>
+        <Icon name={item.icon} className={styles.glyph} />
+        <span className={styles.statBadge}><Icon name={item.icon} /></span>
+        <span className={styles.statLabel}>{item.label}</span>
+        <strong className={cx(styles.statValue, 'crm-tabnum')}>{loading ? '…' : n(item.value)}</strong>
+      </Link>
+    </li>)}
+  </ul>;
+}
+
+function Card({ title, meta, action, className, children }) {
+  return <section className={cx(styles.card, className)}>
+    <header className={styles.cardHead}><h2>{title}</h2>{meta && <span className={styles.meta}>{meta}</span>}{action}</header>
+    {children}
+  </section>;
+}
+
+function Pipeline({ stages }) {
+  const total = stages.reduce((sum, stage) => sum + stage.count, 0);
+  return <Card title="Pipeline" meta={`${n(total)} leads`} className={styles.w5}>
+    <div className={styles.stack} role="img" aria-label={stages.map((stage) => `${STAGES[stage.status]?.label}: ${stage.count}`).join(', ')}>
+      {stages.map((stage) => stage.count > 0 && <i key={stage.status} className="crm-tone" data-tone={STAGES[stage.status]?.tone} style={{ flexGrow: stage.count }} />)}
+    </div>
+    <ul className={styles.legend}>
+      {stages.map((stage) => <li key={stage.status}>
+        <Link href={`/admin/leads?status=${stage.status}`} className={cx('crm-tone', styles.legendChip)} data-tone={STAGES[stage.status]?.tone}>{STAGES[stage.status]?.label}</Link>
+        <strong className="crm-tabnum">{n(stage.count)}</strong>
+        <small className="crm-tabnum">{total ? Math.round((stage.count / total) * 100) : 0}%</small>
+      </li>)}
+    </ul>
+  </Card>;
+}
+
+const RING = 2 * Math.PI * 54;
+function Donut({ stages }) {
+  const total = stages.reduce((sum, stage) => sum + stage.count, 0);
+  let offset = 0;
+  return <Card title="By stage" meta="Share of leads" className={styles.w3}>
+    <div className={styles.donutWrap}>
+      <svg viewBox="0 0 140 140" className={styles.donut} role="img" aria-label={`${n(total)} leads by stage`}>
+        <circle cx="70" cy="70" r="54" className={styles.donutTrack} />
+        <g transform="rotate(-90 70 70)">
+          {total > 0 && stages.map((stage) => {
+            const length = (stage.count / total) * RING;
+            const arc = <circle key={stage.status} cx="70" cy="70" r="54" className="crm-tone" data-tone={STAGES[stage.status]?.tone}
+              style={{ stroke: 'var(--tone-solid)', strokeDasharray: `${Math.max(0, length - 2)} ${RING}`, strokeDashoffset: -offset }} />;
+            offset += length;
+            return arc;
+          })}
+        </g>
+        <text x="70" y="72" className={styles.donutValue}>{n(total)}</text>
+        <text x="70" y="90" className={styles.donutLabel}>leads</text>
+      </svg>
+    </div>
+  </Card>;
+}
+
+function Week({ days }) {
+  const max = Math.max(1, ...days.map((day) => day.count));
+  const total = days.reduce((sum, day) => sum + day.count, 0);
+  return <Card title="New leads, last 7 days" meta={`${n(total)} in total`} className={styles.w4}>
+    <div className={styles.bars} role="img" aria-label={days.map((day) => `${day.day}: ${day.count}`).join(', ')}>
+      {days.map((day, index) => <div key={day.day} className={styles.bar}>
+        <small className="crm-tabnum">{n(day.count)}</small>
+        <span data-today={index === days.length - 1 || undefined} style={{ height: `${Math.max(4, Math.round((day.count / max) * 100))}%` }} />
+        <em>{index === days.length - 1 ? 'Today' : weekday.format(new Date(`${day.day}T12:00:00Z`))}</em>
+      </div>)}
+    </div>
+  </Card>;
 }
 
 function Attention({ data }) {
   const rows = [];
-  if (data.tasks?.overdue) rows.push({ key: 'tasks', href: '/admin/my-day', title: `${n(data.tasks.overdue)} of your follow-ups are overdue`, tone: 'bad', word: 'Overdue' });
+  if (data.tasks?.overdue) rows.push({ key: 'tasks', href: '/admin/my-day', title: `${plural(data.tasks.overdue, 'follow-up')} of yours ${data.tasks.overdue === 1 ? 'is' : 'are'} overdue`, meta: 'Open My day to clear them', tone: 'bad', word: 'Overdue', initials: '!' });
   for (const item of data.attention ?? []) {
-    const who = item.assignee ? displayName(item.assignee) : 'Not assigned';
+    const who = item.assignee ? displayName(item.assignee) : 'not assigned';
     rows.push(item.kind === 'overdue'
-      ? { key: `o${item.id}`, href: `/admin/leads/${item.id}`, title: item.name || 'Unnamed lead', meta: `Due ${when(item.at)} · ${who}`, tone: 'bad', word: 'Overdue' }
-      : { key: `h${item.id}`, href: `/admin/leads/${item.id}`, title: item.name || 'Unnamed lead', meta: `Arrived ${when(item.at)} · ${who}`, tone: 'bad', word: 'Hot, not called' });
+      ? { key: `o${item.id}`, href: `/admin/leads/${item.id}`, title: item.name || 'Unnamed lead', meta: `Due ${when(item.at)} · ${who}`, tone: 'bad', word: 'Overdue', initials: initialsOf(item.name) }
+      : { key: `h${item.id}`, href: `/admin/leads/${item.id}`, title: item.name || 'Unnamed lead', meta: `Arrived ${when(item.at)} · ${who}`, tone: 'warn', word: 'Hot, not called', initials: initialsOf(item.name) });
   }
-  if (data.catalogue?.held) rows.push({ key: 'held', href: '/admin/data/review', title: `${n(data.catalogue.held)} directory records waiting to publish`, tone: 'info', word: 'Review' });
-  const links = [data.leads?.overdue > 0 && { href: '/admin/leads?followUp=overdue', label: `All ${n(data.leads.overdue)} overdue` }, data.leads?.hotWaiting > 0 && { href: '/admin/leads?heat=hot&status=new', label: `All ${n(data.leads.hotWaiting)} hot` }].filter(Boolean);
-  return <Panel title="Needs attention" description="Oldest overdue follow-ups, the newest hot leads nobody has called, and directory records waiting for review."
-    actions={links.length > 0 && links.map((link) => <PanelLink key={link.href} href={link.href}>{link.label}</PanelLink>)}>
-    {!rows.length ? <Empty title="Nothing needs attention" />
-      : <ul className={styles.list}>{rows.map((row) => <li key={row.key}>
-        <Link className={styles.item} href={row.href} data-single={row.meta ? undefined : ''}>
-          <strong>{row.title}</strong>
-          {row.meta && <small>{row.meta}</small>}
-          <span className={cx('crm-tone', styles.status)} data-tone={row.tone}>{row.word}</span>
+  if (data.catalogue?.held) rows.push({ key: 'held', href: '/admin/data/review', title: `${n(data.catalogue.held)} directory records waiting to publish`, meta: 'Imported or crawled, not yet reviewed', tone: 'info', word: 'Review', initials: n(data.catalogue.held) });
+  return <Card title="Needs attention" action={data.leads?.overdue > 0 && <Link className={styles.cardLink} href="/admin/leads?followUp=overdue">All {n(data.leads.overdue)} overdue</Link>}>
+    {!rows.length ? <p className={styles.empty}><Icon name="checkCircle" />Nothing needs attention right now.</p>
+      : <ul className={styles.rows}>{rows.map((row) => <li key={row.key}>
+        <Link href={row.href} className={styles.row}>
+          <span className={cx('crm-tone', styles.avatar)} data-tone={row.tone}>{row.initials}</span>
+          <span className={styles.who}><strong>{row.title}</strong><small>{row.meta}</small></span>
+          <span className={cx('crm-tone', styles.chip)} data-tone={row.tone}>{row.word}</span>
         </Link>
       </li>)}</ul>}
-  </Panel>;
+  </Card>;
 }
 
 function FollowUps({ tasks }) {
-  return <Panel title="My follow-ups" meta={`${n(tasks.overdue)} overdue · ${n(tasks.today)} today · ${n(tasks.upcoming)} later`} actions={<PanelLink href="/admin/my-day" label="open all follow-ups">My day</PanelLink>}>
-    {!tasks.items.length ? <Empty title="No open follow-ups" />
-      : <ul className={styles.list}>{tasks.items.map((task) => <li key={task.id}>
-        <Link className={styles.item} href={task.leadId ? `/admin/leads/${task.leadId}` : '/admin/my-day'}>
-          <strong>{task.leadName || task.title}</strong>
-          <small>{task.title}</small>
+  return <Card title="My follow-ups" meta={`${n(tasks.overdue)} overdue · ${n(tasks.today)} today`} action={<Link className={styles.cardLink} href="/admin/my-day">My day</Link>}>
+    {!tasks.items.length ? <p className={styles.empty}><Icon name="checkCircle" />No open follow-ups.</p>
+      : <ul className={styles.rows}>{tasks.items.map((task) => <li key={task.id}>
+        <Link className={styles.row} href={task.leadId ? `/admin/leads/${task.leadId}` : '/admin/my-day'}>
+          <span className={styles.who}><strong>{task.leadName || task.title}</strong><small>{task.title}</small></span>
           <FollowUpBadge at={task.dueAt} compact />
         </Link>
       </li>)}</ul>}
-  </Panel>;
+  </Card>;
 }
 
 function Activity({ items, scope }) {
-  return <Panel title="Recent activity" description={scope === 'all' ? 'Latest calls, messages and notes by anyone.' : scope === 'team' ? 'Latest calls, messages and notes by your team.' : 'Your latest calls, messages and notes.'}>
-    {!items.length ? <Empty title="No activity yet" />
-      : <ul className={styles.list}>{items.map((item) => <li key={item.id}>
-        <Link className={styles.item} href={`/admin/leads/${item.leadId}`}>
-          <strong>{item.leadName || 'Unnamed lead'}</strong>
-          <small>{[`${ACTIVITY[item.kind]?.label ?? 'Note'}${item.outcome ? ` · ${OUTCOMES[item.outcome]?.label ?? item.outcome}` : ''}`, displayName(item.by) || 'Staff'].join(' · ')}</small>
-          <span className={styles.itemTime}>{relativeTime(item.at)}</span>
+  return <Card title="Recent activity" meta={scope === 'all' ? 'Everyone' : scope === 'team' ? 'Your team' : 'You'}>
+    {!items.length ? <p className={styles.empty}><Icon name="note" />No activity yet.</p>
+      : <ul className={styles.rows}>{items.slice(0, 6).map((item) => <li key={item.id}>
+        <Link className={styles.row} href={`/admin/leads/${item.leadId}`}>
+          <span className={styles.activityIcon}><Icon name={ACTIVITY[item.kind]?.icon ?? 'note'} /></span>
+          <span className={styles.who}><strong>{item.leadName || 'Unnamed lead'}</strong><small>{[`${ACTIVITY[item.kind]?.label ?? 'Note'}${item.outcome ? ` · ${OUTCOMES[item.outcome]?.label ?? item.outcome}` : ''}`, displayName(item.by) || 'Staff'].join(' · ')}</small></span>
+          <span className={styles.time}>{relativeTime(item.at)}</span>
         </Link>
       </li>)}</ul>}
-  </Panel>;
+  </Card>;
 }
 
-function Shortcuts({ admin }) {
-  const allowed = (item) => [].concat(item.permission).some((key) => can(admin, key));
-  const groups = SHORTCUTS.map((group) => ({ ...group, items: group.items.filter(allowed) })).filter((group) => group.items.length);
-  if (!groups.length) return null;
-  return <Panel className={styles.wide} title="Shortcuts">
-    <nav className={styles.shortcutGroups} aria-label="Shortcuts">
-      {groups.map((group) => <div key={group.group} className={styles.shortcutGroup}>
-        <h3>{group.group}</h3>
-        <ul className={styles.shortcuts}>{group.items.map((item) => <li key={item.href}>
-          <Link className={styles.shortcut} href={item.href}><Icon name={item.icon} /><span>{item.label}</span></Link>
-        </li>)}</ul>
-      </div>)}
-    </nav>
-  </Panel>;
+function QuickActions({ admin }) {
+  const items = QUICK.filter((item) => [].concat(item.permission).some((key) => can(admin, key)));
+  if (!items.length) return null;
+  return <Card title="Quick actions">
+    <ul className={styles.quick}>{items.map((item) => <li key={item.href}>
+      <Link className={cx('crm-tone', styles.quickTile)} data-tone={item.tone} href={item.href}><span><Icon name={item.icon} /></span>{item.label}</Link>
+    </li>)}</ul>
+  </Card>;
 }
 
 export default function Dashboard() {
   const { admin, request } = useAdminSession();
   useTick(60_000);
   const { data, error, loading, busy, refreshing, reload } = useServerList(request, '/home', {}, { scope: admin?.id ?? '' });
-  const name = admin?.name || displayName(admin?.email ?? '') || 'there';
-  const summary = <><strong>{greeting()}, {name.split(' ')[0]}.</strong> {today.format(new Date())}</>;
+  const name = (admin?.name || displayName(admin?.email ?? '') || 'there').split(' ')[0];
+  const items = data ? statItems(data) : [1, 2, 3, 4].map((key) => ({ key, label: '…', value: 0, icon: 'clock', tone: 'neutral', href: '#' }));
   return <div className={styles.page}>
-    <PageToolbar summary={summary}>
-      {data?.generatedAt && <span className={styles.updated}><Icon name="clock" />{busy || refreshing ? 'Updating…' : `Updated ${relativeTime(data.generatedAt)}`}</span>}
-      <button type="button" className={cx('adm-btn', (busy || refreshing) && styles.spin)} onClick={reload} disabled={busy || refreshing}><Icon name="refresh" />Refresh</button>
-      {can(admin, 'leads.create') && <Link className="adm-btn adm-btn--primary" href="/admin/leads?add=1"><Icon name="plus" />Add lead</Link>}
-    </PageToolbar>
+    <Hero name={name} data={data} admin={admin} />
     {error && !data ? <ErrorBanner title="Your dashboard could not load." message={error} onRetry={reload} />
-      : loading || !data ? <><StatStrip loading items={[1, 2, 3, 4, 5].map((key) => ({ key, label: '…', value: 0 }))} /><PanelSkeletons spans={['', '', '', 'wide']} /></>
-        : <>
-          {statItems(data).length > 0 && <StatStrip label="Today" items={statItems(data)} />}
-          <div className={styles.grid}>
-            <DistributionCard />
-            {(data.attention || data.catalogue) && <Attention data={data} />}
-            {data.tasks && <FollowUps tasks={data.tasks} />}
-            {data.activity && <Activity items={data.activity} scope={data.leads?.scope} />}
-            <Shortcuts admin={admin} />
-          </div>
-        </>}
+      : <>
+        {items.length > 0 && <StatCards items={items} loading={loading || !data} />}
+        {data?.leads?.byStage && <div className={styles.grid}>
+          <Pipeline stages={data.leads.byStage} />
+          <Donut stages={data.leads.byStage} />
+          {data.leads.week && <Week days={data.leads.week} />}
+        </div>}
+        {data && <div className={styles.grid}>
+          {(data.attention || data.catalogue) && <Attention data={data} />}
+          {data.tasks && <FollowUps tasks={data.tasks} />}
+          {data.activity && <Activity items={data.activity} scope={data.leads?.scope} />}
+          <QuickActions admin={admin} />
+          <div className={styles.full}><DistributionCard /></div>
+        </div>}
+        {data?.generatedAt && <p className={styles.updated}><Icon name="clock" />{busy || refreshing ? 'Updating…' : `Updated ${relativeTime(data.generatedAt)}`}
+          <button type="button" className="adm-btn adm-btn--ghost adm-btn--sm" onClick={reload} disabled={busy || refreshing}><Icon name="refresh" />Refresh</button></p>}
+      </>}
   </div>;
 }

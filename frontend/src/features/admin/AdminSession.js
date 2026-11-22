@@ -1,21 +1,21 @@
 'use client';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api/client';
 
 const AdminSessionContext = createContext(null);
 
 export function AdminSessionProvider({ children }) {
   const router = useRouter();
-  const pathname = usePathname();
   const [admin, setAdmin] = useState(null);
   const [status, setStatus] = useState('loading');
 
   const toLogin = useCallback(async (reason) => {
+    const pathname = window.location.pathname;
     // Clear a stale or expired cookie so the route guard does not bounce back here.
     await api('/admin/auth/logout', { method: 'POST' }).catch(() => {});
     router.replace(reason === 'expired' ? `/admin?next=${encodeURIComponent(pathname)}` : '/admin');
-  }, [pathname, router]);
+  }, [router]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -38,8 +38,14 @@ export function AdminSessionProvider({ children }) {
     admin, status,
     refreshAdmin: async () => { const data = await api('/admin/auth/me'); setAdmin(data.admin); return data.admin; },
     logout: () => toLogin('logout'),
-    // Admin API calls: a 401 means the 8-hour session ended mid-visit.
+    // Refresh reads when the admin session changes. Navigating between pages keeps this callback stable.
     request: async (path, options) => {
+      const signal = options?.signal;
+      if (signal) {
+        // Let a replaced effect cancel its request before invoking fetch.
+        await Promise.resolve();
+        signal.throwIfAborted();
+      }
       try { return await api(`/admin${path}`, options); } catch (error) {
         if (error.status === 401) toLogin('expired');
         throw error;

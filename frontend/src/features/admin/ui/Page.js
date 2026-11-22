@@ -22,17 +22,18 @@ export function PageToolbar({ summary, start, children, sticky = false }) {
   </div>;
 }
 
-/** One compact row of numbers (replaces rows of big KPI cards). Items with onClick/href act as filters.
- *  Label first, then the number; colour only when the number needs attention (bad/warn tone and not zero). */
+/** A row of stat cards. Items with onClick/href act as filters. A card takes its tone's jewel colour when the
+ *  number is not zero and the tone is not neutral (e.g. overdue = ruby, due today = gold, done = emerald). */
 export function StatStrip({ items, label = 'Summary', loading = false }) {
   return <ul className={styles.stats} aria-label={label}>
     {items.filter(Boolean).map((item) => {
-      const attention = (item.tone === 'bad' || item.tone === 'warn') && Number(item.value) > 0;
+      const known = item.value !== undefined && item.value !== null && item.value !== '' && !Number.isNaN(item.value);
+      const toned = item.tone && item.tone !== 'neutral' && (loading || Number(item.value) > 0);
       const body = <>
-        <span className={styles.statLabel}>{item.icon && <Icon name={item.icon} />}<span>{item.label}</span></span>
-        <strong className={`${styles.statValue} crm-tabnum`} data-tone={attention ? item.tone : undefined}>{loading ? <span className={styles.skeleton} /> : fmt(item.value)}</strong>
+        <span className={styles.statLabel}><span title={item.label}>{item.label}</span>{item.icon && <span className={styles.statIcon}><Icon name={item.icon} /></span>}</span>
+        <strong className={`${styles.statValue} crm-tabnum`}>{loading ? <span className={styles.skeleton} /> : known ? fmt(item.value) : '—'}</strong>
       </>;
-      return <li key={item.key} className={styles.stat} data-active={item.active || undefined}>
+      return <li key={item.key} className={`crm-tone ${styles.stat}`} data-tone={toned ? item.tone : undefined} data-toned={toned || undefined} data-active={item.active || undefined}>
         {item.href ? <Link href={item.href} className={styles.statButton}>{body}</Link>
           : item.onClick ? <button type="button" className={styles.statButton} aria-pressed={Boolean(item.active)} onClick={item.onClick}>{body}</button>
             : <div className={styles.statButton}>{body}</div>}

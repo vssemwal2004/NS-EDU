@@ -59,7 +59,7 @@ function Form({ mode, lead, task, onClose, onSaved }) {
 }
 
 export default function FollowUpDialog({ open, mode = 'create', lead, task, onClose, onSaved }) {
-  return <DialogShell open={open} onClose={onClose} title={mode === 'create' ? 'Schedule a follow-up' : 'Reschedule follow-up'}>
+  return <DialogShell open={open} onClose={onClose} icon="calendar" title={mode === 'create' ? 'Schedule a follow-up' : 'Reschedule follow-up'}>
     {open && <Form mode={mode} lead={lead} task={task} onClose={onClose} onSaved={onSaved} />}
   </DialogShell>;
 }

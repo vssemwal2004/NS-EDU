@@ -4,7 +4,8 @@ import { HttpError } from '../../lib/http-error.js';
 import { pagination, queryString } from '../../lib/query.js';
 import { assertValid, escapeRegex } from '../../lib/validation.js';
 import { requirePermission } from '../../middleware/auth.js';
-import { bulkAssignStudents, employeeAssignmentIds, staffNames } from './employee-assignments.js';
+import { staffDirectory } from '../access/access-service.js';
+import { bulkAssignStudents, employeeAssignmentIds } from './employee-assignments.js';
 
 export const referenceStudentsRouter = Router();
 
@@ -63,7 +64,6 @@ function newStudent(data, staff, source) {
   };
 }
 
-// The list shows who each student is assigned to; one $in lookup per page (never per row).
 const LIST_PROJECTION = { name: 1, email: 1, phone: 1, assignedEmployeeIds: 1, createdById: 1, createdByEmail: 1, source: 1, createdAt: 1, updatedAt: 1 };
 const withAssignees = (item, names) => ({ ...item, assignees: item.assignedEmployeeIds.map((id) => ({ id, name: names.get(id) ?? 'Removed staff' })) });
 
@@ -84,14 +84,14 @@ referenceStudentsRouter.get('/', async (request, response) => {
     students.find(filter, { projection: LIST_PROJECTION }).sort({ createdAt: -1, _id: -1 }).skip(skip).limit(limit).toArray(),
     students.countDocuments(filter),
   ]);
-  const items = docs.map(serialize);
-  const names = await staffNames(items.flatMap((item) => item.assignedEmployeeIds));
-  response.json({ items: items.map((item) => withAssignees(item, names)), total, page, limit });
+  const staff = docs.some((doc) => doc.assignedEmployeeIds?.length) ? await staffDirectory() : [];
+  const names = new Map(staff.map((person) => [String(person._id), person.name || person.email]));
+  response.json({ items: docs.map((doc) => withAssignees(serialize(doc), names)), total, page, limit });
 });
 
 // Staff who can be given students (the assign drawers). Same rule as employeeAssignmentIds: employee accounts.
 referenceStudentsRouter.get('/assignees', requirePermission('students.manage'), async (_request, response) => {
-  const docs = await (await collection(COLLECTIONS.admins)).find({ role: 'employee', status: { $ne: 'suspended' } }, { projection: { name: 1, email: 1 } }).sort({ name: 1, email: 1 }).limit(500).toArray();
+  const docs = (await staffDirectory()).filter((doc) => doc.role === 'employee' && doc.status !== 'suspended').slice(0, 500);
   response.json({ items: docs.map((doc) => ({ id: doc._id.toString(), name: doc.name || '', email: doc.email })) });
 });
 

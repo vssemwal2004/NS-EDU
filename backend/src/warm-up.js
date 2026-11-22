@@ -2,6 +2,7 @@ import { listColleges, listCourses, listExams, listLocations, listScholarships, 
 import { getContentEntries } from './modules/content/content-service.js';
 import { CONTENT_KEYS } from './modules/content/registry.js';
 import { featuredUniversities, listUniversities, universityFacets } from './modules/universities/university-service.js';
+import { warmFeeEstimates } from './modules/universities/fee-estimates.js';
 import { getEducationNews } from './services/education-news.js';
 
 /**
@@ -17,7 +18,7 @@ export async function warmPublicData() {
   const results = await Promise.allSettled([
     listCourses(), listExams(), listColleges(), listLocations(), listScholarships(), platformStats(),
     getContentEntries(Object.keys(CONTENT_KEYS)),
-    featuredUniversities(8), universityFacets({}), listUniversities({}),
+    featuredUniversities(8), universityFacets({}), listUniversities({}), warmFeeEstimates(),
     // Publisher feeds: fetched here so the news page never waits on them (the service has its own cache).
     getEducationNews(),
   ]);

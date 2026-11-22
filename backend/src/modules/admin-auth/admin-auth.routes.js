@@ -6,7 +6,7 @@ import { signSession } from '../../lib/jwt.js';
 import { burnPasswordCheck, hashPassword, verifyPassword } from '../../lib/password.js';
 import { createRateLimiter } from '../../lib/rate-limit.js';
 import { assertValid } from '../../lib/validation.js';
-import { requireAdmin } from '../../middleware/auth.js';
+import { optionalAdmin, requireAdmin } from '../../middleware/auth.js';
 import { attachAccess } from '../access/access-service.js';
 import { assertEmployeePassword } from './password-policy.js';
 
@@ -54,10 +54,18 @@ adminAuthRouter.post('/login', async (request, response) => {
   if (admin.status === 'suspended') throw new HttpError(403, 'This account is suspended. Ask an owner to restore access.');
   byEmail.delete(email);
   const lastLoginAt = new Date();
-  await admins.updateOne({ _id: admin._id }, { $set: { lastLoginAt } });
+  const [signedIn] = await Promise.all([
+    attachAccess({ ...admin, passwordHash: undefined, lastLoginAt }),
+    admins.updateOne({ _id: admin._id }, { $set: { lastLoginAt } }),
+  ]);
   response.cookie(ADMIN_COOKIE, signSession(admin._id.toString(), 'admin', ADMIN_SESSION_SECONDS), adminCookieOptions());
-  response.json({ admin: serializeAdmin(await attachAccess({ ...admin, passwordHash: undefined, lastLoginAt })) });
+  response.json({ admin: serializeAdmin(signedIn) });
 });
+
+// The login screen can ask whether a session is present before displaying its form.
+adminAuthRouter.get('/session', optionalAdmin, (request, response) => response.json({
+  admin: request.admin ? serializeAdmin(request.admin) : null,
+}));
 
 adminAuthRouter.get('/me', requireAdmin, (request, response) => response.json({ admin: serializeAdmin(request.admin) }));
 

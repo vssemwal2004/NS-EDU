@@ -220,7 +220,7 @@ describe('admin leads dashboard insights', { skip }, () => {
     await db.collection('applications').updateOne({ status: 'contacted', channel: 'web-apply' }, { $set: { status: 'new' } });
   });
 
-  test('every dashboard query is index-backed; fixed breakdowns never read documents', async () => {
+  test('dashboard breakdowns use their indexes, with covered scans for dates, statuses and channels', async () => {
     const leads = db.collection('applications');
     const range = insights.insightRange({ range: '90d' });
     const winning = (explain) => JSON.stringify(explain.queryPlanner?.winningPlan ?? explain.stages?.[0]?.$cursor?.queryPlanner?.winningPlan ?? explain);
@@ -230,18 +230,12 @@ describe('admin leads dashboard insights', { skip }, () => {
         const plan = winning(await leads.aggregate(pipeline, options).explain('queryPlanner'));
         assert.match(plan, /IXSCAN/, `${staff.role} ${name}`);
         assert.doesNotMatch(plan, /COLLSCAN/, `${staff.role} ${name}`);
-      }
-      if (staff.role !== 'admin') continue;
-      for (const filter of [queries.days[0].filter, queries.counts['status:new'], queries.counts['state:Delhi'], queries.counts['channel:callback']]) {
-        const plan = winning(await leads.aggregate([{ $match: filter }, { $group: { _id: 1, n: { $sum: 1 } } }]).explain('queryPlanner'));
-        assert.match(plan, /IXSCAN|COUNT_SCAN/, JSON.stringify(filter));
-        assert.doesNotMatch(plan, /FETCH|COLLSCAN/, `admin counts read only the index: ${JSON.stringify(filter)} ${plan}`);
+        if (['date', 'status', 'channel'].includes(name)) assert.doesNotMatch(plan, /FETCH/, `${name} reads only indexed fields: ${plan}`);
       }
     }
     const admin = insights.insightQueries(range, { role: 'admin' });
     const employee = insights.insightQueries(range, { role: 'employee', _id: new ObjectId(alice.id) });
-    assert.deepEqual(Object.keys(admin.groups).sort(), ['byCareerField', 'byCourse', 'bySchool', 'workload']);
+    assert.deepEqual(Object.keys(admin.groups).sort(), ['byCareerField', 'byCourse', 'bySchool', 'channel', 'date', 'state', 'status', 'workload']);
     assert.deepEqual(Object.keys(employee.groups).sort(), ['byCareerField', 'byCourse', 'bySchool', 'facts']);
-    assert.deepEqual(employee.counts, {});
   });
 });

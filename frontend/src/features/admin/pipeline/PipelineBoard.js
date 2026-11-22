@@ -262,7 +262,7 @@ export default function PipelineBoard() {
         const stage = STAGES[status];
         const closed = CLOSED.has(status);
         const share = grand ? Math.round((col.total / grand) * 100) : 0;
-        return <section key={status} ref={(node) => { columnRefs.current[status] = node; }} className={styles.column} data-active={status === current} data-drop={over === status && drag?.from !== status}
+        return <section key={status} ref={(node) => { columnRefs.current[status] = node; }} className={`crm-tone ${styles.column}`} data-tone={stage.tone} data-closed={closed || undefined} data-active={status === current} data-drop={over === status && drag?.from !== status}
           aria-labelledby={`col-${status}`} onDragOver={(event) => onColumnOver(event, status)} onDrop={(event) => onColumnDrop(event, status)}
           onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setOver((value) => (value === status ? '' : value)); }}>
           <header className={styles.columnHead}>

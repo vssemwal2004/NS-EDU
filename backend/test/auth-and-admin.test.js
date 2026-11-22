@@ -72,6 +72,22 @@ describe('auth, catalog and admin API', { skip }, () => {
     assert.equal((await api('/api/admin/courses', { cookie: 'nsedu_admin=not-a-jwt' })).status, 401);
   });
 
+  test('optional session endpoints report signed-out state without changing strict identity checks', async () => {
+    const [student, invalidStudent, admin] = await Promise.all([
+      api('/api/auth/session'),
+      api('/api/auth/session', { cookie: 'nsedu_student=not-a-jwt' }),
+      api('/api/admin/auth/session', { cookie: 'nsedu_admin=not-a-jwt' }),
+    ]);
+    assert.deepEqual([student.status, student.body], [200, { student: null }]);
+    assert.deepEqual([invalidStudent.status, invalidStudent.body], [200, { student: null }]);
+    assert.match(invalidStudent.setCookies[0], /^nsedu_student=;/);
+    assert.deepEqual([admin.status, admin.body], [200, { admin: null }]);
+    assert.equal(student.headers.get('cache-control'), 'no-store');
+    assert.equal(admin.headers.get('cache-control'), 'no-store');
+    assert.equal((await api('/api/auth/me')).status, 401);
+    assert.equal((await api('/api/admin/auth/me')).status, 401);
+  });
+
   test('admin login sets a strict httpOnly cookie and rejects bad credentials', async () => {
     const wrong = await api('/api/admin/auth/login', { method: 'POST', body: { ...ADMIN, password: 'nope' } });
     assert.equal(wrong.status, 401);
@@ -94,6 +110,8 @@ describe('auth, catalog and admin API', { skip }, () => {
 
     const me = await api('/api/admin/auth/me', { cookie: adminCookie });
     assert.deepEqual([me.status, me.body.admin.email], [200, ADMIN.email]);
+    const session = await api('/api/admin/auth/session', { cookie: adminCookie });
+    assert.deepEqual([session.status, session.body], [200, me.body]);
     const bearer = await api('/api/admin/auth/me', { headers: { authorization: `Bearer ${tokenOf(adminCookie)}` } });
     assert.equal(bearer.status, 200);
     const logout = await api('/api/admin/auth/logout', { method: 'POST', cookie: adminCookie });
@@ -278,6 +296,8 @@ describe('auth, catalog and admin API', { skip }, () => {
 
     const me = await api('/api/auth/me', { cookie });
     assert.deepEqual([me.status, me.body.student.email], [200, 'new.student@example.com']);
+    const session = await api('/api/auth/session', { cookie });
+    assert.deepEqual([session.status, session.body], [200, me.body]);
     const renamed = await api('/api/auth/me', { method: 'PATCH', cookie, body: { name: '  Asha  Rao ', role: 'admin' } });
     assert.deepEqual([renamed.status, renamed.body.student.name], [200, 'Asha Rao']);
     assert.equal((await api('/api/auth/me', { method: 'PATCH', cookie, body: { name: '' } })).status, 400);

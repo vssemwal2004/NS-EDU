@@ -4,8 +4,9 @@ import { collection, COLLECTIONS, toObjectId } from '../../db/collections.js';
 import { HttpError } from '../../lib/http-error.js';
 import { queryString } from '../../lib/query.js';
 import { createTtlCache } from '../../lib/ttl-cache.js';
+import { staffDirectory } from '../access/access-service.js';
 import { CLOSED_STATUSES, STATUSES } from '../applications/schema.js';
-import { applicationNotes, applications, CHANNEL_LABELS, CHANNELS, DAY, IST_OFFSET, istDayStart, istToday, staffEmails } from '../applications/service.js';
+import { applicationNotes, applications, CHANNEL_LABELS, CHANNELS, DAY, IST_OFFSET, istDayStart, istToday } from '../applications/service.js';
 
 const cache = createTtlCache({ ttlMs: 60_000, maxEntries: 200 });
 const OPEN = STATUSES.filter((status) => !CLOSED_STATUSES.includes(status) && status !== 'admitted');
@@ -50,10 +51,32 @@ function scopeIds(staff, employee) {
   return ids;
 }
 
+const leadScopeFilter = (ids) => ids ? { assignedEmployeeIds: { $in: ids } } : {};
+
+function hotWaitingLeads(leads, scope) {
+  const projection = { ref: 1, 'applicant.fullName': 1, 'applicant.phone': 1, status: 1, 'crm.heat': 1, 'crm.priority': 1, 'crm.nextFollowUpAt': 1, createdAt: 1, assignedEmployeeIds: 1 };
+  return leads.find({ ...scope, status: 'new', 'crm.heat': 'hot' }, { projection }).sort({ createdAt: -1 }).limit(8).toArray();
+}
+
+const staffNames = (directory) => new Map(directory.map((doc) => [String(doc._id), doc.email]));
+const leadCard = (lead, names) => ({
+  id: lead._id.toString(), ref: lead.ref, name: lead.applicant?.fullName ?? '', phone: lead.applicant?.phone ?? '',
+  status: lead.status, heat: lead.crm?.heat ?? '', priority: lead.crm?.priority ?? 'normal',
+  nextFollowUpAt: lead.crm?.nextFollowUpAt ?? null, createdAt: lead.createdAt ?? null, assignee: names.get(String(lead.assignedEmployeeIds?.[0])) ?? '',
+});
+
+// My Day only needs the action cards. Apply the same analytics scope without running the charts.
+export async function crmHotWaiting(staff) {
+  const scope = leadScopeFilter(scopeIds(staff, ''));
+  const [leads, directory] = await Promise.all([applications().then((coll) => hotWaitingLeads(coll, scope)), staffDirectory()]);
+  const names = staffNames(directory);
+  return { items: leads.map((lead) => leadCard(lead, names)) };
+}
+
 export async function crmDashboard(staff, query = {}) {
   const range = period(query);
   const ids = scopeIds(staff, queryString(query.employee, 30));
-  const key = `${staff._id}|${range.key}|${range.start.getTime()}|${range.end.getTime()}|${ids ? ids.map(String).join(',') : 'all'}`;
+  const key = `${staff.analyticsScope}|${range.key}|${range.start.getTime()}|${range.end.getTime()}|${ids ? ids.map(String).sort().join(',') : 'all'}`;
   return cache.wrap(key, () => build(staff, range, ids));
 }
 
@@ -62,7 +85,7 @@ async function build(staff, range, ids) {
   const notes = await applicationNotes();
   const tasks = await collection(COLLECTIONS.leadTasks);
   const now = new Date();
-  const scope = ids ? { assignedEmployeeIds: { $in: ids } } : {};
+  const scope = leadScopeFilter(ids);
   const inRange = { ...scope, createdAt: { $gte: range.start, $lt: range.end } };
   const span = range.end - range.start;
   const before = { ...scope, createdAt: { $gte: new Date(range.start - span), $lt: range.start } };
@@ -70,10 +93,12 @@ async function build(staff, range, ids) {
   const authors = ids ? { authorId: { $in: ids } } : {};
   const openClause = { status: { $in: OPEN } };
   const followUpClause = { status: { $nin: CLOSED_STATUSES } };
+  const hasResponse = { $eq: [{ $type: '$crm.firstContactedAt' }, 'date'] };
+  const responseHours = { $cond: [hasResponse, { $divide: [{ $subtract: ['$crm.firstContactedAt', '$createdAt'] }, 3_600_000] }, null] };
 
-  const [created, createdBefore, byStatus, heatRows, overdue, dueToday, untouched, cohort, response, daily, activitiesDaily, firstContactsDaily, channels,
-    people, taskRows, activityRows, aging, heatmap, states, schools, overdueList, hotWaiting] = await Promise.all([
-    leads.countDocuments(inRange),
+  const createdDay = { $dateToString: { format: '%Y-%m-%d', date: '$createdAt', timezone: 'Asia/Kolkata' } };
+  const [createdBefore, byStatus, heatRows, overdue, dueToday, untouched, [summary], activitiesDaily, firstContactsDaily,
+    people, taskRows, activityRows, aging, heatmap, states, schools, overdueList, hotWaiting, directory] = await Promise.all([
     leads.countDocuments(before),
     leads.aggregate([{ $match: scope }, { $group: { _id: '$status', count: { $sum: 1 } } }]).toArray(),
     leads.aggregate([{ $match: { ...scope, ...openClause } }, { $group: { _id: { $ifNull: ['$crm.heat', 'unscored'] }, count: { $sum: 1 } } }]).toArray(),
@@ -81,23 +106,31 @@ async function build(staff, range, ids) {
     leads.countDocuments({ ...scope, ...followUpClause, 'crm.nextFollowUpAt': { $lt: now } }),
     leads.countDocuments({ ...scope, ...followUpClause, 'crm.nextFollowUpAt': { $gte: now, $lt: new Date(todayStart.getTime() + DAY) } }), // still to come today; past = overdue
     leads.countDocuments({ ...scope, status: 'new', createdAt: { $lt: new Date(now - 3 * DAY) } }),
-    leads.aggregate([{ $match: inRange }, { $group: {
-      _id: null, total: { $sum: 1 }, contacted: { $sum: { $cond: [{ $or: [{ $ne: ['$status', 'new'] }, { $ne: [{ $ifNull: ['$crm.firstContactedAt', null] }, null] }] }, 1, 0] } },
-      admitted: { $sum: { $cond: [{ $eq: ['$status', 'admitted'] }, 1, 0] } }, applied: { $sum: { $cond: [{ $in: ['$status', ['applied-to-university', 'admitted']] }, 1, 0] } },
-      inProgress: { $sum: { $cond: [{ $in: ['$status', ['in-progress', 'applied-to-university', 'admitted']] }, 1, 0] } },
-      lost: { $sum: { $cond: [{ $in: ['$status', CLOSED_STATUSES] }, 1, 0] } },
-    } }]).toArray(),
-    leads.aggregate([{ $match: { ...inRange, 'crm.firstContactedAt': { $type: 'date' } } }, { $project: { hours: { $divide: [{ $subtract: ['$crm.firstContactedAt', '$createdAt'] }, 3_600_000] } } },
-      { $group: { _id: null, avg: { $avg: '$hours' }, within24: { $sum: { $cond: [{ $lte: ['$hours', 24] }, 1, 0] } }, n: { $sum: 1 } } }]).toArray(),
-    leads.aggregate([{ $match: inRange }, { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt', timezone: 'Asia/Kolkata' } }, count: { $sum: 1 } } }]).toArray(),
-    notes.aggregate([{ $match: { ...authors, createdAt: { $gte: range.start, $lt: range.end } } }, { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt', timezone: 'Asia/Kolkata' } }, count: { $sum: 1 } } }]).toArray(),
+    // These three summaries all read the same date range; feed them one narrow projection.
+    leads.aggregate([
+      { $match: inRange },
+      { $project: { _id: 0, createdAt: 1, status: 1, channel: 1, 'crm.firstContactedAt': 1, 'crm.heat': 1, responseHours } },
+      { $facet: {
+        cohort: [{ $group: {
+          _id: null, total: { $sum: 1 }, contacted: { $sum: { $cond: [{ $or: [{ $ne: ['$status', 'new'] }, { $ne: [{ $ifNull: ['$crm.firstContactedAt', null] }, null] }] }, 1, 0] } },
+          admitted: { $sum: { $cond: [{ $eq: ['$status', 'admitted'] }, 1, 0] } }, applied: { $sum: { $cond: [{ $in: ['$status', ['applied-to-university', 'admitted']] }, 1, 0] } },
+          inProgress: { $sum: { $cond: [{ $in: ['$status', ['in-progress', 'applied-to-university', 'admitted']] }, 1, 0] } },
+          lost: { $sum: { $cond: [{ $in: ['$status', CLOSED_STATUSES] }, 1, 0] } },
+          avgResponseHours: { $avg: '$responseHours' },
+          responded: { $sum: { $cond: [hasResponse, 1, 0] } },
+          within24: { $sum: { $cond: [{ $and: [hasResponse, { $lte: ['$responseHours', 24] }] }, 1, 0] } },
+        } }],
+        daily: [{ $group: { _id: createdDay, count: { $sum: 1 } } }],
+        channels: [{ $group: { _id: { $ifNull: ['$channel', 'web-apply'] }, leads: { $sum: 1 },
+          contacted: { $sum: { $cond: [{ $ne: ['$status', 'new'] }, 1, 0] } }, admitted: { $sum: { $cond: [{ $eq: ['$status', 'admitted'] }, 1, 0] } }, hot: { $sum: { $cond: [{ $eq: ['$crm.heat', 'hot'] }, 1, 0] } } } }],
+      } },
+    ]).toArray(),
+    notes.aggregate([{ $match: { ...authors, createdAt: { $gte: range.start, $lt: range.end } } }, { $group: { _id: createdDay, count: { $sum: 1 } } }]).toArray(),
     leads.aggregate([{ $match: { ...scope, 'crm.firstContactedAt': { $gte: range.start, $lt: range.end } } }, { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$crm.firstContactedAt', timezone: 'Asia/Kolkata' } }, count: { $sum: 1 } } }]).toArray(),
-    leads.aggregate([{ $match: inRange }, { $group: { _id: { $ifNull: ['$channel', 'web-apply'] }, leads: { $sum: 1 },
-      contacted: { $sum: { $cond: [{ $ne: ['$status', 'new'] }, 1, 0] } }, admitted: { $sum: { $cond: [{ $eq: ['$status', 'admitted'] }, 1, 0] } }, hot: { $sum: { $cond: [{ $eq: ['$crm.heat', 'hot'] }, 1, 0] } } } }]).toArray(),
     leads.aggregate([{ $match: inRange }, { $unwind: '$assignedEmployeeIds' }, ...(ids ? [{ $match: { assignedEmployeeIds: { $in: ids } } }] : []),
       { $group: { _id: '$assignedEmployeeIds', leads: { $sum: 1 }, open: { $sum: { $cond: [{ $in: ['$status', OPEN] }, 1, 0] } }, contacted: { $sum: { $cond: [{ $ne: ['$status', 'new'] }, 1, 0] } },
         admitted: { $sum: { $cond: [{ $eq: ['$status', 'admitted'] }, 1, 0] } }, hot: { $sum: { $cond: [{ $eq: ['$crm.heat', 'hot'] }, 1, 0] } },
-        responseHours: { $avg: { $cond: [{ $ne: [{ $type: '$crm.firstContactedAt' }, 'date'] }, null, { $divide: [{ $subtract: ['$crm.firstContactedAt', '$createdAt'] }, 3_600_000] }] } } } }]).toArray(),
+        responseHours: { $avg: responseHours } } }]).toArray(),
     tasks.aggregate([{ $match: ids ? { assigneeId: { $in: ids } } : {} }, { $group: { _id: '$assigneeId',
       done: { $sum: { $cond: [{ $and: [{ $ne: ['$doneAt', null] }, { $gte: ['$doneAt', range.start] }, { $lt: ['$doneAt', range.end] }] }, 1, 0] } },
       overdue: { $sum: { $cond: [{ $and: [{ $eq: ['$doneAt', null] }, { $lt: ['$dueAt', now] }] }, 1, 0] } },
@@ -110,18 +143,19 @@ async function build(staff, range, ids) {
     leads.aggregate([{ $match: { ...inRange, 'applicant.state': { $nin: ['', null] } } }, { $group: { _id: '$applicant.state', count: { $sum: 1 }, admitted: { $sum: { $cond: [{ $eq: ['$status', 'admitted'] }, 1, 0] } } } }, { $sort: { count: -1 } }, { $limit: 8 }]).toArray(),
     leads.aggregate([{ $match: { ...inRange, 'school.name': { $nin: ['', null] } } }, { $group: { _id: '$school.name', count: { $sum: 1 } } }, { $sort: { count: -1 } }, { $limit: 8 }]).toArray(),
     leads.find({ ...scope, ...openClause, 'crm.nextFollowUpAt': { $lt: now } }, { projection: { ref: 1, applicant: 1, status: 1, crm: 1, assignedEmployeeIds: 1 } }).sort({ 'crm.nextFollowUpAt': 1 }).limit(8).toArray(),
-    leads.find({ ...scope, status: 'new', 'crm.heat': 'hot' }, { projection: { ref: 1, applicant: 1, status: 1, crm: 1, createdAt: 1, assignedEmployeeIds: 1 } }).sort({ createdAt: -1 }).limit(8).toArray(),
+    hotWaitingLeads(leads, scope),
+    staffDirectory(),
   ]);
 
   const statusCount = Object.fromEntries(byStatus.map((row) => [row._id, row.count]));
   const totalLeads = byStatus.reduce((sum, row) => sum + row.count, 0);
-  const coh = cohort[0] ?? { total: 0, contacted: 0, admitted: 0, applied: 0, inProgress: 0, lost: 0 };
+  const { cohort, daily, channels } = summary;
+  const coh = cohort[0] ?? { total: 0, contacted: 0, admitted: 0, applied: 0, inProgress: 0, lost: 0, avgResponseHours: null, responded: 0, within24: 0 };
   const heat = Object.fromEntries(heatRows.map((row) => [row._id, row.count]));
-  const resp = response[0] ?? { avg: null, within24: 0, n: 0 };
   const dayList = Array.from({ length: range.days }, (_, index) => istDate(new Date(range.start.getTime() + index * DAY)));
   const series = (rows) => { const map = new Map(rows.map((row) => [row._id, row.count])); return dayList.map((day) => map.get(day) ?? 0); };
 
-  const nameOf = await staffEmails([...people.map((row) => row._id), ...taskRows.map((row) => row._id), ...activityRows.map((row) => row._id), ...overdueList.flatMap((lead) => lead.assignedEmployeeIds ?? []), ...hotWaiting.flatMap((lead) => lead.assignedEmployeeIds ?? [])]);
+  const nameOf = staffNames(directory);
   const byPerson = new Map();
   const row = (id) => { const k = String(id); if (!byPerson.has(k)) byPerson.set(k, { id: k, email: nameOf.get(k) ?? 'Former staff', leads: 0, open: 0, contacted: 0, admitted: 0, hot: 0, responseHours: null, activities: 0, calls: 0, tasksDone: 0, tasksOverdue: 0, tasksOpen: 0 }); return byPerson.get(k); };
   for (const p of people) Object.assign(row(p._id), { leads: p.leads, open: p.open, contacted: p.contacted, admitted: p.admitted, hot: p.hot, responseHours: p.responseHours === null ? null : Math.round(p.responseHours * 10) / 10 });
@@ -133,17 +167,16 @@ async function build(staff, range, ids) {
   const agingLabels = { 0: 'Today', 1: '1–3 days', 3: '3–7 days', 7: '1–2 weeks', 14: '2–4 weeks', 30: 'Over a month' };
   const heatGrid = Array.from({ length: 7 }, () => Array(24).fill(0));
   for (const cell of heatmap) heatGrid[cell._id.day - 1][cell._id.hour] = cell.count;
-  const leadCard = (lead) => ({ id: lead._id.toString(), ref: lead.ref, name: lead.applicant?.fullName ?? '', phone: lead.applicant?.phone ?? '', status: lead.status, heat: lead.crm?.heat ?? '', priority: lead.crm?.priority ?? 'normal', nextFollowUpAt: lead.crm?.nextFollowUpAt ?? null, createdAt: lead.createdAt ?? null, assignee: nameOf.get(String(lead.assignedEmployeeIds?.[0])) ?? '' });
 
   return {
     scope: staff.analyticsScope, range: { key: range.key, from: istDate(range.start), to: istDate(new Date(range.end - DAY)), days: range.days },
     kpis: {
-      leads: { value: created, previous: createdBefore, delta: delta(created, createdBefore) },
+      leads: { value: coh.total, previous: createdBefore, delta: delta(coh.total, createdBefore) },
       totalLeads, open: OPEN.reduce((sum, status) => sum + (statusCount[status] ?? 0), 0),
       hot: heat.hot ?? 0, warm: heat.warm ?? 0, cold: heat.cold ?? 0,
       overdueFollowUps: overdue, dueToday, untouched,
       contactRate: pct(coh.contacted, coh.total), admitRate: pct(coh.admitted, coh.total), admitted: coh.admitted,
-      avgResponseHours: resp.avg === null ? null : Math.round(resp.avg * 10) / 10, within24Rate: pct(resp.within24, resp.n),
+      avgResponseHours: coh.avgResponseHours === null ? null : Math.round(coh.avgResponseHours * 10) / 10, within24Rate: pct(coh.within24, coh.responded),
     },
     heat: ['hot', 'warm', 'cold', 'unscored'].map((name) => ({ key: name, count: heat[name] ?? 0 })),
     funnel: [
@@ -159,7 +192,7 @@ async function build(staff, range, ids) {
     heatmap: { days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], hours: 24, grid: heatGrid },
     states: states.map((state) => ({ name: state._id, leads: state.count, admitted: state.admitted })),
     schools: schools.map((school) => ({ name: school._id, leads: school.count })),
-    actions: { overdue: overdueList.map(leadCard), hotWaiting: hotWaiting.map(leadCard) },
+    actions: { overdue: overdueList.map((lead) => leadCard(lead, nameOf)), hotWaiting: hotWaiting.map((lead) => leadCard(lead, nameOf)) },
     generatedAt: now,
   };
 }

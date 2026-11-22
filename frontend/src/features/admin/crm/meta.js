@@ -1,11 +1,13 @@
 // One place for how CRM concepts look: label, colour tone (see crm-tokens.css) and icon.
+// Stage tones follow the Jewel palette: new=info (sapphire), contacted=purple (amethyst), in progress=warn (gold),
+// applied=orange (coral), admitted=good (emerald). Hot/overdue=bad (ruby).
 // Every chip pairs its colour with an icon or word so nothing relies on colour alone.
 
 export const STAGES = {
   new: { label: 'New', tone: 'info', icon: 'inbox' },
   contacted: { label: 'Contacted', tone: 'purple', icon: 'phone' },
   'in-progress': { label: 'In progress', tone: 'warn', icon: 'trend' },
-  'applied-to-university': { label: 'Applied', tone: 'teal', icon: 'document' },
+  'applied-to-university': { label: 'Applied', tone: 'orange', icon: 'document' },
   admitted: { label: 'Admitted', tone: 'good', icon: 'check' },
   'not-interested': { label: 'Not interested', tone: 'neutral', icon: 'close' },
   closed: { label: 'Closed', tone: 'neutral', icon: 'lock' },
@@ -16,7 +18,7 @@ export const OPEN_STAGES = ['new', 'contacted', 'in-progress', 'applied-to-unive
 export const HEATS = {
   hot: { label: 'Hot', tone: 'bad', icon: 'flame', hint: 'Very likely to convert. Call today.' },
   warm: { label: 'Warm', tone: 'warn', icon: 'thermo', hint: 'Interested. Keep the follow-ups on time.' },
-  cold: { label: 'Cold', tone: 'info', icon: 'snow', hint: 'Low engagement. Try a different channel.' },
+  cold: { label: 'Cold', tone: 'neutral', icon: 'snow', hint: 'Low engagement. Try a different channel.' },
 };
 export const HEAT_ORDER = ['hot', 'warm', 'cold'];
 

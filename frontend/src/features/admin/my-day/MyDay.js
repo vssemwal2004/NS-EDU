@@ -2,7 +2,7 @@
 /**
  * My day: the counsellor's daily work queue. A summary strip (Overdue, Due today, Upcoming, Done today),
  * compact follow-up rows with Call / WhatsApp / Log call / Reschedule / Mark done, and the hot leads still waiting
- * for a first call. Data: GET /crm/tasks?state=…, GET /crm/dashboard (actions.hotWaiting) or GET /leads?heat=hot&status=new.
+ * for a first call. Data: GET /crm/tasks/sections and the scoped hot-leads queue.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
@@ -22,7 +22,6 @@ import styles from './MyDay.module.css';
 
 const cx = (...parts) => parts.filter(Boolean).join(' ');
 const SCOPES = [['mine', 'Mine', 'user'], ['team', 'My team', 'people'], ['all', 'Everyone', 'building']];
-const STATE_LIMITS = { overdue: 100, today: 100, upcoming: 50, done: 50 };
 const sameDay = (a, b) => a.toDateString() === b.toDateString();
 
 /** Which section a task belongs to right now. */
@@ -78,12 +77,14 @@ export default function MyDay() {
   useEffect(() => {
     const controller = new AbortController();
     const { signal } = controller;
-    Promise.all(Object.entries(STATE_LIMITS).map(([state, limit]) => request(`/crm/tasks?${toQuery({ scope, state, limit })}`, { signal })))
-      .then((results) => {
+    request(`/crm/tasks/sections?${toQuery({ scope })}`, { signal })
+      .then(({ sections, counts }) => {
         if (signal.aborted) return;
         const byId = new Map();
-        results.forEach((result) => result.items.forEach((task) => byId.set(task.id, task)));
-        setData({ key, tasks: [...byId.values()], counts: results[0].counts, error: '' });
+        for (const section of Object.values(sections)) {
+          for (const task of section.items) byId.set(task.id, task);
+        }
+        setData({ key, tasks: [...byId.values()], counts, error: '' });
       })
       .catch((failure) => {
         if (signal.aborted || failure.name === 'AbortError') return;
@@ -207,7 +208,7 @@ export default function MyDay() {
         {!loading && Object.entries(SECTIONS).filter(([name]) => !(caughtUp && (name === 'overdue' || name === 'today'))).map(([name, info]) => {
           const items = sections[name];
           const limit = name === 'upcoming' && !more ? 10 : items.length;
-          return <section key={name} ref={(node) => { sectionRefs.current[name] = node; }} className={cx('adm-panel', styles.section)} data-focus={focus === name} aria-labelledby={`sec-${name}`}>
+          return <section key={name} ref={(node) => { sectionRefs.current[name] = node; }} className={cx('adm-panel', 'crm-tone', styles.section)} data-tone={info.tone} data-focus={focus === name} aria-labelledby={`sec-${name}`}>
             <h2 className={styles.sectionHead} id={`sec-${name}`}>
               <button type="button" className={styles.sectionToggle} aria-expanded={open[name]} aria-controls={`list-${name}`} onClick={() => setOpen((cur) => ({ ...cur, [name]: !cur[name] }))}>
                 <i className="crm-tone" data-tone={info.tone} aria-hidden="true" />

@@ -10,9 +10,9 @@ const STUDENTS = ['students.view_assigned', 'students.manage', 'students.create'
 export const adminNavigation = [
   { label: 'Workspace', items: [
     // Open to all staff: /api/admin/home gates each section by permission.
-    { label: 'Dashboard', href: '/admin/dashboard', icon: 'dashboard', description: "Today's numbers, what needs attention and your follow-ups" },
+    { label: 'Dashboard', href: '/admin/dashboard', icon: 'dashboard', hero: true, description: "Today's numbers, what needs attention and your follow-ups" },
     { label: 'My day', href: '/admin/my-day', icon: 'calendar', permissions: ['leads.notes'], badge: 'followUps', description: 'Follow-ups due, overdue and the hot leads waiting for a call' },
-    { label: 'My profile', href: '/admin/profile', icon: 'user', description: 'Update your contact details and password' },
+    { label: 'My profile', href: '/admin/profile', icon: 'user', hero: true, description: 'Update your contact details and password' },
   ] },
   { label: 'Leads & CRM', items: [
     { label: 'Leads', href: '/admin/leads', icon: 'eligibility', permissions: LEADS_VIEW, description: 'Every lead you can see, with filters, temperature and follow-ups', tabs: [
@@ -61,6 +61,7 @@ export const adminNavigation = [
   ] },
   { label: 'Administration', items: [
     { label: 'Employees', href: '/admin/access', icon: 'people', permissions: ['team.view', 'team.manage', 'audit.view'], description: 'Create employee accounts and review their activity' },
+    { label: 'Activity log', href: '/admin/activity', icon: 'history', permissions: [...LEADS_VIEW, 'audit.view'], description: 'Calls, messages, notes and stage changes by your team, plus access changes' },
     { label: 'Site content', href: '/admin/content', icon: 'edit', permissions: ['content.edit'], description: 'Page copy, homepage, tools and site images' },
     { label: 'Student reviews', href: '/admin/reviews', icon: 'chat', permissions: ['content.edit'], description: 'Check new reviews, publish or reject them, and feature the best on the homepage' },
     { label: 'Media library', href: '/admin/media', icon: 'archive', permissions: ['media.manage'], description: 'Images stored on Cloudinary' },

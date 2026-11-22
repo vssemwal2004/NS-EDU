@@ -2,15 +2,19 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { isGatedPath } from '@/features/auth/gated-routes';
-import { api, ApiError, SESSION_EXPIRED_EVENT } from '@/lib/api/client';
+import { api, SESSION_EXPIRED_EVENT } from '@/lib/api/client';
 
 const StudentAuthContext = createContext(null);
 
 // Resolves to the signed-in student, or null.
 function loadSession(signal, setStudent, setStatus) {
-  return api('/auth/me', { signal })
-    .then((data) => { setStudent(data.student); setStatus('signed-in'); return data.student; })
-    .catch((error) => { if (error.name !== 'AbortError') setStatus(error instanceof ApiError && error.status === 401 ? 'signed-out' : 'unavailable'); return null; });
+  return api('/auth/session', { signal })
+    .then(({ student }) => {
+      setStudent(student);
+      setStatus(student ? 'signed-in' : 'signed-out');
+      return student;
+    })
+    .catch((error) => { if (error.name !== 'AbortError') setStatus('unavailable'); return null; });
 }
 
 // A Google sign-in for an account with no name comes back with ?welcome=name. One-shot: dropped

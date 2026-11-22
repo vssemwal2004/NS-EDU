@@ -1,6 +1,7 @@
 import { after, before, beforeEach, describe, mock, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { randomBytes } from 'node:crypto';
+import { Collection } from 'mongodb';
 
 // env.js reads process.env at import time, so configure before importing the app.
 const skip = process.env.MONGODB_URI ? false : 'MONGODB_URI is not set';
@@ -14,7 +15,7 @@ process.env.NODE_ENV = 'test';
 const ADMIN = { email: 'admin@nsedu.test', password: 'correct-horse-battery' };
 
 describe('search tracking and recommendations', { skip }, () => {
-  let server; let base; let db; let closeDb; let resetRateLimits; let normalize; let recommend; let events;
+  let server; let base; let db; let closeDb; let resetRateLimits; let normalize; let recommend; let events; let searchStore;
   let adminCookie; let studentCookie;
 
   // Activity is only captured for visitors who accepted personalisation cookies, so requests carry
@@ -46,13 +47,14 @@ describe('search tracking and recommendations', { skip }, () => {
 
   before(async () => {
     mock.method(console, 'log', () => {});
-    const [{ app }, collections, rateLimit, { hashPassword }, normalizeModule, recommendModule, eventsModule] = await Promise.all([
+    const [{ app }, collections, rateLimit, { hashPassword }, normalizeModule, recommendModule, eventsModule, searchModule] = await Promise.all([
       import('../src/app.js'), import('../src/db/collections.js'), import('../src/lib/rate-limit.js'), import('../src/lib/password.js'),
       import('../src/modules/universities/normalize.js'), import('../src/modules/insights/recommend.js'), import('../src/modules/insights/events.js'),
+      import('../src/modules/search/search-store.js'),
     ]);
     ({ closeDb } = collections);
     ({ resetRateLimits } = rateLimit);
-    normalize = normalizeModule; recommend = recommendModule; events = eventsModule;
+    normalize = normalizeModule; recommend = recommendModule; events = eventsModule; searchStore = searchModule;
     db = await collections.getDb();
     await db.collection('admins').insertOne({ email: ADMIN.email, name: 'Test Admin', role: 'admin', passwordHash: await hashPassword(ADMIN.password), createdAt: new Date(), lastLoginAt: null });
     await db.collection('institutions').insertMany([
@@ -174,6 +176,32 @@ describe('search tracking and recommendations', { skip }, () => {
     recommend.invalidateRecommendationCache();
     const again = await api('/api/insights/recommendations?limit=4', { cookie: `${studentCookie}; gv_visitor=${visitorId}` });
     assert.deepEqual(again.body.items.map((item) => item.id), ids);
+  });
+
+  test('acknowledged events refresh both visitor and student recommendations', async () => {
+    const visitorId = '99999999-9999-4999-8999-999999999999';
+    const otherDevice = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+    const visitor = { cookie: `gv_visitor=${visitorId}` };
+    const student = { cookie: `${studentCookie}; gv_visitor=${otherDevice}` };
+    assert.equal((await api('/api/insights/home', visitor)).body.basedOnEvents, 0);
+    assert.equal((await api('/api/insights/recommendations', student)).body.basedOnEvents, 0);
+
+    try {
+      const capture = await api('/api/insights/events', {
+        method: 'POST', cookie: `${studentCookie}; ${visitor.cookie}`,
+        body: { events: [{ type: 'search', city: 'Pune', courseSlug: 'btech' }] },
+      });
+      assert.equal(capture.status, 202);
+      assert.equal(capture.body.accepted, 1);
+      const [visitorResult, studentResult] = await Promise.all([
+        api('/api/insights/home?course=btech', visitor),
+        api('/api/insights/recommendations?course=btech', student),
+      ]);
+      assert.equal(visitorResult.body.basedOnEvents, 1);
+      assert.equal(studentResult.body.basedOnEvents, 1);
+    } finally {
+      await db.collection('student_events').deleteMany({ visitorId });
+    }
   });
 
   test('a repeatedly viewed institution is pushed down and a brand-new visitor still gets a sensible list', async () => {
@@ -313,6 +341,8 @@ describe('search tracking and recommendations', { skip }, () => {
       slug: `rotation-college-${index}`, name: `Rotation College ${index}`, city: `Town ${index}`, state: states[index % states.length], streams: ['Science'], naacGrade: 'A', popularity: 5,
     }));
     await db.collection('institutions').insertMany(extra);
+    searchStore.markSearchStale();
+    await searchStore.warmSearch();
     recommend.invalidateRecommendationCache();
     try {
       const listFor = async (variant, extraQuery = '', options) => (await api(`/api/insights/home?limit=6&variant=${variant}${extraQuery}`, options)).body.items.map((item) => item.id);
@@ -341,7 +371,46 @@ describe('search tracking and recommendations', { skip }, () => {
     } finally {
       await db.collection('institutions').deleteMany({ slug: /^rotation-college-/ });
       await db.collection('student_events').deleteMany({ visitorId: '88888888-8888-4888-8888-888888888888' });
+      searchStore.markSearchStale();
+      await searchStore.warmSearch();
       recommend.invalidateRecommendationCache();
+    }
+  });
+
+  test('a directory update drops cached recommendations even while the index rebuilds', async (t) => {
+    const path = '/api/insights/home?course=mba';
+    const slug = 'pune-college-of-management';
+    await searchStore.warmSearch();
+    const before = await api(path, { consent: null });
+    assert.deepEqual(before.body.items.map((item) => item.id), [slug]);
+
+    const { promise: rebuildGate, resolve: resumeRebuild } = Promise.withResolvers();
+    const find = Collection.prototype.find;
+    t.mock.method(Collection.prototype, 'find', function (query, options) {
+      const cursor = find.call(this, query, options);
+      if (this.collectionName === 'institutions' && options?.projection?.aliases) {
+        const toArray = cursor.toArray.bind(cursor);
+        cursor.toArray = async () => { await rebuildGate; return toArray(); };
+      }
+      return cursor;
+    });
+
+    try {
+      searchStore.markSearchStale();
+      const fallback = await api(path, { consent: null });
+      assert.deepEqual(fallback.body.items.map((item) => item.id), [slug]);
+      assert.equal(searchStore.searchStatus().ready, false);
+
+      await db.collection('institutions').updateOne({ slug }, { $set: { active: false } });
+      searchStore.markSearchStale();
+      const after = await api(path, { consent: null });
+      assert.equal(after.status, 200);
+      assert.deepEqual(after.body.items, []);
+    } finally {
+      resumeRebuild();
+      await db.collection('institutions').updateOne({ slug }, { $set: { active: true } });
+      searchStore.markSearchStale();
+      await searchStore.warmSearch();
     }
   });
 

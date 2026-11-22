@@ -9,13 +9,14 @@
 .notice svg { flex-shrink: 0; width: 14px; height: 14px; }
 
 .panel { min-width: 0; overflow: hidden; }
-.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 10px; margin: 0; padding: 10px; list-style: none; transition: opacity 120ms ease; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 14px; margin: 0; padding: 16px; list-style: none; transition: opacity 120ms ease; }
 .grid[data-busy] { opacity: .55; }
-.card { display: flex; flex-direction: column; min-width: 0; overflow: hidden; border: 1px solid var(--adm-line); border-radius: var(--adm-radius-sm); background: var(--adm-surface); }
-.thumb { display: block; aspect-ratio: 4 / 3; overflow: hidden; border-bottom: 1px solid var(--adm-line); background: repeating-conic-gradient(#f3efee 0% 25%, #fff 0% 50%) 50% / 16px 16px; }
+.card { display: flex; flex-direction: column; min-width: 0; overflow: hidden; border: 1px solid var(--adm-line); border-radius: var(--adm-radius); background: var(--adm-surface); box-shadow: var(--adm-shadow); transition: transform var(--adm-fast) ease, box-shadow var(--adm-fast) ease; }
+.card:hover { transform: translateY(-2px); box-shadow: var(--adm-shadow-lift); }
+.thumb { display: block; aspect-ratio: 4 / 3; overflow: hidden; border-bottom: 1px solid var(--adm-line); background: repeating-conic-gradient(var(--adm-hover) 0% 25%, var(--adm-surface) 0% 50%) 50% / 16px 16px; }
 .thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .thumb:focus-visible { outline: none; box-shadow: inset var(--adm-focus); }
-.cardBody { display: grid; gap: 1px; padding: 4px 4px 8px 8px; line-height: 1.35; }
+.cardBody { display: grid; gap: 2px; padding: 6px 6px 10px 12px; line-height: 1.35; }
 .cardHead { display: flex; align-items: center; justify-content: space-between; gap: 4px; min-width: 0; }
 .name { overflow: hidden; font-size: var(--crm-text-sm); font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
 .empty { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 10px; padding: 32px 16px; color: var(--adm-muted); font-size: var(--crm-text-sm); text-align: center; }
@@ -34,27 +35,28 @@
 .state { display: grid; justify-items: center; gap: 6px; padding: 18px 16px; color: var(--adm-muted); font-size: var(--crm-text-sm); text-align: center; }
 .state strong { color: var(--adm-text); font-size: var(--crm-text-sm); }
 .state p { max-width: 60ch; margin: 0 0 4px; }
-.stateIcon { display: grid; width: 24px; height: 24px; place-items: center; border-radius: 50%; background: var(--adm-hover); color: var(--adm-muted); }
-.stateIcon svg { width: 14px; height: 14px; }
+.stateIcon { display: grid; width: 32px; height: 32px; place-items: center; border-radius: 50%; background: var(--adm-gold-soft); color: var(--adm-gold-ink); }
+.stateIcon svg { width: 16px; height: 16px; }
 .stateIcon[data-tone="bad"] { background: var(--crm-bad-soft); color: var(--crm-bad); }
 
 /* Upload drawer */
 .form { display: grid; gap: 12px; font-size: var(--crm-text-sm); }
 .fieldBlock { display: grid; gap: 6px; }
-.drop { position: relative; display: grid; min-height: 140px; place-items: center; overflow: hidden; border: 1.5px dashed var(--adm-line-strong); border-radius: var(--adm-radius); background: var(--adm-subtle); cursor: pointer; }
-.drop:hover { border-color: var(--adm-accent); }
-.drop:focus-within { border-color: var(--adm-accent); box-shadow: var(--adm-focus); }
+.drop { position: relative; display: grid; min-height: 140px; place-items: center; overflow: hidden; border: 1.5px dashed var(--adm-line-strong); border-radius: var(--adm-radius); background: var(--adm-subtle); cursor: pointer; transition: border-color var(--adm-fast) ease, background var(--adm-fast) ease; }
+.drop:hover { border-color: var(--adm-wine); background: var(--adm-accent-soft); }
+.drop:focus-within { border-color: var(--adm-wine); box-shadow: var(--adm-focus); }
 .drop[data-invalid] { border-color: var(--crm-bad-solid); }
-.drop[data-filled] { border-style: solid; background: repeating-conic-gradient(#f3efee 0% 25%, #fff 0% 50%) 50% / 16px 16px; }
+.drop[data-filled] { border-style: solid; background: repeating-conic-gradient(var(--adm-hover) 0% 25%, var(--adm-surface) 0% 50%) 50% / 16px 16px; }
 .drop input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
 .drop img { display: block; max-width: 100%; max-height: 220px; object-fit: contain; }
 .dropEmpty { display: grid; justify-items: center; gap: 4px; color: var(--adm-muted); pointer-events: none; }
-.dropEmpty svg { width: 16px; height: 16px; color: var(--adm-muted); }
+.dropEmpty svg { width: 22px; height: 22px; color: var(--adm-gold-ink); }
 .dropEmpty strong { color: var(--adm-text); }
 .fileName { overflow: hidden; margin: 0; color: var(--adm-muted); font-size: var(--crm-text-xs); text-overflow: ellipsis; white-space: nowrap; }
 .formError { display: flex; align-items: flex-start; gap: 8px; margin: 0; padding: 8px 10px; border: 1px solid var(--crm-bad-line); border-radius: var(--adm-radius-sm); background: var(--crm-bad-soft); color: var(--crm-bad); font-weight: 600; }
 .formError svg { flex-shrink: 0; width: 16px; height: 16px; margin-top: 2px; }
-.formFooter { position: sticky; bottom: -16px; display: flex; justify-content: flex-end; gap: 8px; margin: 0 -16px -16px; padding: 10px 16px; border-top: 1px solid var(--adm-line); background: var(--adm-surface); }
+/* Matches the shared drawer's sticky action bar (ResourceManager .formActions). */
+.formFooter { position: sticky; bottom: -18px; display: flex; justify-content: flex-end; gap: 10px; margin: 0 -22px -18px; padding: 14px 22px; border-top: 1px solid var(--adm-line); background: var(--adm-subtle); }
 
 @media (max-width: 640px) {
   .search { max-width: none; flex-basis: 100%; }
