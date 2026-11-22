@@ -12,10 +12,13 @@ export const adminNavigation = [
     // Open to all staff: /api/admin/home gates each section by permission.
     { label: 'Dashboard', href: '/admin/dashboard', icon: 'dashboard', description: "Today's numbers, what needs attention and your follow-ups" },
     { label: 'My day', href: '/admin/my-day', icon: 'calendar', permissions: ['leads.notes'], badge: 'followUps', description: 'Follow-ups due, overdue and the hot leads waiting for a call' },
+    { label: 'My profile', href: '/admin/profile', icon: 'user', description: 'Update your contact details and password' },
   ] },
   { label: 'Leads & CRM', items: [
     { label: 'Leads', href: '/admin/leads', icon: 'eligibility', permissions: LEADS_VIEW, description: 'Every lead you can see, with filters, temperature and follow-ups', tabs: [
       { label: 'All leads', href: '/admin/leads', icon: 'eligibility', permissions: LEADS_VIEW, description: 'Every lead you can see, with filters, temperature and follow-ups' },
+      { label: 'Pending leads', href: '/admin/leads/pending', icon: 'inbox', permissions: LEADS_VIEW, description: 'New leads still waiting for work, including earlier days' },
+      { label: 'Uploaded leads', href: '/admin/leads/uploads', icon: 'upload', permissions: ['leads.create'], description: 'Leads you added, CSV uploads and row results' },
       { label: 'Pipeline', href: '/admin/leads/board', icon: 'board', permissions: LEADS_VIEW, description: 'Leads by stage, best first; drag a card to move it' },
       { label: 'Bin', href: '/admin/leads/trash', icon: 'trash', permissions: ['leads.delete'], description: 'Deleted leads that can still be restored' },
     ] },
@@ -57,7 +60,7 @@ export const adminNavigation = [
     ] },
   ] },
   { label: 'Administration', items: [
-    { label: 'Team & access', href: '/admin/access', icon: 'key', permissions: ['team.view', 'team.manage', 'roles.manage', 'audit.view'], description: 'Staff, roles, mentors and who can do what' },
+    { label: 'Employees', href: '/admin/access', icon: 'people', permissions: ['team.view', 'team.manage', 'audit.view'], description: 'Create employee accounts and review their activity' },
     { label: 'Site content', href: '/admin/content', icon: 'edit', permissions: ['content.edit'], description: 'Page copy, homepage, tools and site images' },
     { label: 'Student reviews', href: '/admin/reviews', icon: 'chat', permissions: ['content.edit'], description: 'Check new reviews, publish or reject them, and feature the best on the homepage' },
     { label: 'Media library', href: '/admin/media', icon: 'archive', permissions: ['media.manage'], description: 'Images stored on Cloudinary' },

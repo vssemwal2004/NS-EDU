@@ -6,7 +6,7 @@ import { hashPassword } from '../../lib/password.js';
 import { createTtlCache } from '../../lib/ttl-cache.js';
 import { slugify } from '../../lib/validation.js';
 import { assertEmployeePassword } from '../admin-auth/password-policy.js';
-import { DEFAULT_STAFF_ROLE, OWNER_ROLE, PERMISSION_KEYS, ROLE_COLORS, SYSTEM_ROLES, expand, isPermission } from './permissions.js';
+import { DEFAULT_STAFF_ROLE, EMPLOYEE_PERMISSIONS, OWNER_ROLE, PERMISSION_KEYS, ROLE_COLORS, SYSTEM_ROLES, expand, isPermission } from './permissions.js';
 
 const roles = () => collection(COLLECTIONS.roles);
 const admins = () => collection(COLLECTIONS.admins);
@@ -28,7 +28,7 @@ export const roleMap = () => roleCache.wrap('roles', async () => {
   return new Map(found.map((role) => [role.slug, role]));
 });
 
-export const roleIdOf = (admin) => admin.roleId || (admin.role === 'admin' ? OWNER_ROLE : DEFAULT_STAFF_ROLE);
+export const roleIdOf = (admin) => admin.role === 'admin' ? OWNER_ROLE : DEFAULT_STAFF_ROLE;
 
 /** The people who report to `adminId`, directly or through other mentors (a few levels deep). */
 export async function teamMemberIds(adminId, { includeSelf = false } = {}) {
@@ -51,14 +51,11 @@ const ladder = (permissions, prefix) => (permissions.has(`${prefix}.view_all`) ?
  * `analyticsScope` ('all' | 'team' | 'own' | 'none') and, for team scopes, `teamIds`.
  */
 export async function attachAccess(admin) {
-  const map = await roleMap();
-  const slug = roleIdOf(admin);
-  const role = map.get(slug) ?? map.get(DEFAULT_STAFF_ROLE);
-  const owner = role.slug === OWNER_ROLE || role.permissions.includes('*');
-  const permissions = owner ? new Set(PERMISSION_KEYS) : expand(role.permissions);
-  admin.roleId = role.slug;
-  admin.roleName = role.name;
-  admin.roleColor = role.color ?? 'slate';
+  const owner = admin.role === 'admin';
+  const permissions = owner ? new Set(PERMISSION_KEYS) : expand(EMPLOYEE_PERMISSIONS);
+  admin.roleId = owner ? OWNER_ROLE : DEFAULT_STAFF_ROLE;
+  admin.roleName = owner ? 'Admin' : 'Employee';
+  admin.roleColor = owner ? 'wine' : 'green';
   admin.isOwner = owner;
   admin.permissions = [...permissions];
   admin.leadScope = ladder(permissions, 'leads');
@@ -194,7 +191,6 @@ const PHONE = /^\+?[0-9]{10,15}$/;
 const STATUSES = ['active', 'suspended'];
 
 export async function serializeStaff(docs) {
-  const map = await roleMap();
   const byId = new Map(docs.map((doc) => [doc._id.toString(), doc]));
   const managerIds = [...new Set(docs.map((doc) => doc.managerId?.toString()).filter((id) => id && !byId.has(id)))];
   const extra = managerIds.length ? await (await admins()).find({ _id: { $in: managerIds.map(toObjectId) } }, { projection: { email: 1, name: 1 } }).toArray() : [];
@@ -202,11 +198,10 @@ export async function serializeStaff(docs) {
   const reports = new Map();
   for (const doc of docs) if (doc.managerId) reports.set(doc.managerId.toString(), (reports.get(doc.managerId.toString()) ?? 0) + 1);
   return docs.map((doc) => {
-    const role = map.get(roleIdOf(doc)) ?? map.get(DEFAULT_STAFF_ROLE);
     const manager = doc.managerId ? byId.get(doc.managerId.toString()) : null;
     return {
       id: doc._id.toString(), email: doc.email, name: doc.name ?? '', title: doc.title ?? '', phone: doc.phone ?? '',
-      roleId: role.slug, roleName: role.name, roleColor: role.color ?? 'slate',
+      roleId: doc.role === 'admin' ? OWNER_ROLE : DEFAULT_STAFF_ROLE, roleName: doc.role === 'admin' ? 'Admin' : 'Employee', roleColor: doc.role === 'admin' ? 'wine' : 'green',
       managerId: doc.managerId ? doc.managerId.toString() : null, managerName: manager ? (manager.name || manager.email) : '',
       directReports: reports.get(doc._id.toString()) ?? 0,
       status: doc.status === 'suspended' ? 'suspended' : 'active', mustChangePassword: Boolean(doc.mustChangePassword),
@@ -239,16 +234,17 @@ export async function removeStaff(actor, id) {
   const owner = roleIdOf(doc) === OWNER_ROLE;
   if (owner && !actor.isOwner) throw new HttpError(403, 'Only an owner can remove an owner');
   if (owner && doc.status !== 'suspended' && await coll.countDocuments(isActiveOwner) <= 1) throw new HttpError(409, 'This is the last active owner. Make someone else an owner first.');
-  const [reports, leads, students, tasks] = await Promise.all([
+  const [reports, leads, uploads, students, tasks] = await Promise.all([
     coll.countDocuments({ managerId: _id }),
     (await collection(COLLECTIONS.applications)).countDocuments({ assignedEmployeeIds: _id }, { limit: 10_000 }),
+    (await collection(COLLECTIONS.applications)).countDocuments({ createdByAdminId: _id }, { limit: 10_000 }),
     (await collection(COLLECTIONS.referenceStudents)).countDocuments({ assignedEmployeeIds: _id }, { limit: 10_000 }),
     (await collection(COLLECTIONS.leadTasks)).countDocuments({ assigneeId: _id, doneAt: null }, { limit: 10_000 }),
   ]);
   const plural = (count, one, many) => `${count.toLocaleString('en-IN')} ${count === 1 ? one : many}`;
   const assigned = [leads && plural(leads, 'lead', 'leads'), students && plural(students, 'reference student', 'reference students'), tasks && plural(tasks, 'open follow-up', 'open follow-ups')].filter(Boolean);
-  const blockers = [reports && `${plural(reports, 'person reports', 'people report')} to them`, assigned.length && `${assigned.join(', ')} still assigned to them`].filter(Boolean);
-  if (blockers.length) throw new HttpError(409, `Cannot remove yet: ${blockers.join('; ')}. Reassign these first, or suspend the account instead.`);
+  const blockers = [reports && `${plural(reports, 'person reports', 'people report')} to them`, assigned.length && `${assigned.join(', ')} still assigned to them`, uploads && `${plural(uploads, 'lead', 'leads')} uploaded by them`].filter(Boolean);
+  if (blockers.length) throw new HttpError(409, `Cannot remove yet: ${blockers.join('; ')}. Resolve these records or suspend the account instead.`);
   await coll.deleteOne({ _id });
   await audit(actor, 'staff.delete', { type: 'staff', id: _id, label: doc.email }, { roleId: roleIdOf(doc) });
 }
@@ -283,11 +279,9 @@ export async function createStaff(actor, body) {
   const phone = typeof body?.phone === 'string' ? body.phone.trim() : '';
   if (!PHONE.test(phone)) throw new HttpError(400, 'Enter a valid mobile number', { fields: { phone: 'Use 10 to 15 digits, optionally starting with +.' } });
   assertEmployeePassword(body?.password);
-  const role = await assertAssignableRole(actor, body?.roleId || DEFAULT_STAFF_ROLE);
-  const managerId = await assertManager(body?.managerId);
   const doc = {
     email, phone, name: String(body?.name ?? '').trim().slice(0, 80), title: String(body?.title ?? '').trim().slice(0, 80),
-    role: role.slug === OWNER_ROLE ? 'admin' : 'employee', roleId: role.slug, managerId, status: 'active',
+    role: 'employee', roleId: DEFAULT_STAFF_ROLE, managerId: null, status: 'active',
     passwordHash: await hashPassword(body.password), mustChangePassword: true, createdAt: new Date(), lastLoginAt: null,
   };
   try { await (await admins()).insertOne(doc); }
@@ -295,7 +289,7 @@ export async function createStaff(actor, body) {
     if (error.code === 11000) throw new HttpError(409, 'An account with this email already exists', { fields: { email: 'This email is already in use.' } });
     throw error;
   }
-  await audit(actor, 'staff.create', { type: 'staff', id: doc._id, label: email }, { roleId: role.slug });
+  await audit(actor, 'staff.create', { type: 'staff', id: doc._id, label: email }, { roleId: DEFAULT_STAFF_ROLE });
   return (await serializeStaff([doc]))[0];
 }
 
@@ -304,6 +298,7 @@ export async function updateStaff(actor, id, body) {
   const coll = await admins();
   const doc = _id && await coll.findOne({ _id }, { projection: { passwordHash: 0 } });
   if (!doc) throw new HttpError(404, 'Staff member not found');
+  if (body?.roleId !== undefined || body?.managerId !== undefined) throw new HttpError(400, 'Employee access is fixed; role and mentor cannot be changed');
   const isSelf = _id.equals(actor._id);
   const set = {};
   const changes = {};

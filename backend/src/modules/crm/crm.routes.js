@@ -76,6 +76,22 @@ crmRouter.post('/leads', requirePermission('leads.create'), async (request, resp
   const lead = await createLead(request.admin, request.body);
   response.status(201).json({ item: await full(lead, request.admin) });
 });
+crmRouter.post('/leads/import', requirePermission('leads.create'), async (request, response) => {
+  const rows = request.body?.rows;
+  if (!Array.isArray(rows) || !rows.length || rows.length > 100) throw new HttpError(400, 'Upload 1 to 100 leads at a time');
+  const results = [];
+  for (const [index, row] of rows.entries()) {
+    try {
+      if (!row || typeof row !== 'object' || Array.isArray(row)) throw new HttpError(400, 'Invalid row');
+      const lead = await createLead(request.admin, { ...row, force: false, source: row.source || 'CSV upload' });
+      results.push({ row: index + 2, ok: true, id: lead._id.toString(), ref: lead.ref });
+    } catch (error) {
+      if (!(error instanceof HttpError)) throw error;
+      results.push({ row: index + 2, ok: false, error: error.message });
+    }
+  }
+  response.json({ created: results.filter((row) => row.ok).length, failed: results.filter((row) => !row.ok).length, results });
+});
 crmRouter.post('/leads/bulk', requirePermission('leads.bulk'), async (request, response) => response.json(await bulkAct(request.admin, request.body)));
 
 crmRouter.get('/leads/:id/timeline', async (request, response) => {

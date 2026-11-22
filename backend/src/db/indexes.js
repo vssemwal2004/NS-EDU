@@ -58,6 +58,8 @@ const specs = {
     [{ 'preference.courseSlug': 1, createdAt: -1, _id: -1 }],
     [{ 'applicant.state': 1, createdAt: -1, _id: -1 }],
     [{ assignedEmployeeIds: 1, createdAt: -1, _id: -1 }],
+    [{ autoDistributionDay: 1, autoAssigneeId: 1 }],
+    [{ createdByAdminId: 1, createdAt: -1, _id: -1 }],
     [{ 'applicant.phone': 1, createdAt: -1 }],
     [{ 'applicant.email': 1 }],
     [{ nameTokens: 1, createdAt: -1 }],
@@ -79,6 +81,8 @@ const specs = {
     [{ 'careerField.slug': 1, createdAt: -1, _id: -1 }, { partialFilterExpression: { channel: 'callback' } }],
   ],
   application_notes: [[{ applicationId: 1, createdAt: -1 }], [{ createdAt: -1 }], [{ authorId: 1, createdAt: -1 }]],
+  lead_attendance: [[{ day: 1, employeeId: 1 }, { unique: true }], [{ day: 1, eligible: 1, checkedOutAt: 1 }]],
+  lead_distribution_days: [[{ cutoffAt: 1, finalizedAt: 1 }]],
   // School drive registration forms: the public QR link resolves by the immutable short code.
   lead_forms: [[{ shortCode: 1 }, { unique: true }], [{ status: 1, 'school.state': 1, 'school.districtKey': 1 }], [{ createdAt: -1 }]],
   career_fields: [[{ slug: 1 }, { unique: true }], [{ order: 1 }]],

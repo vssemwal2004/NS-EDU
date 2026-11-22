@@ -94,10 +94,10 @@ function Form({ request, admin, states, assignees, canAssign, onClose, onCreated
       <Icon name="alert" />
       <div>
         <strong>A lead with this number already exists: {state.duplicate.ref}</strong>
-        <p>Open the existing lead to avoid a double entry, or add this one anyway.</p>
+        <p>{admin.isOwner ? 'Open the existing lead to avoid a double entry, or add this one anyway.' : 'Open the existing lead instead of adding a duplicate.'}</p>
         <div className={styles.duplicateActions}>
           <Link className="adm-btn adm-btn--sm" href={`/admin/leads/${state.duplicate.id}`}>Open the existing lead</Link>
-          <button type="button" className="adm-btn adm-btn--sm" disabled={state.busy} onClick={() => submit(null, true)}>{state.busy ? 'Adding…' : 'Add anyway'}</button>
+          {admin.isOwner && <button type="button" className="adm-btn adm-btn--sm" disabled={state.busy} onClick={() => submit(null, true)}>{state.busy ? 'Adding…' : 'Add anyway'}</button>}
         </div>
       </div>
     </div>}

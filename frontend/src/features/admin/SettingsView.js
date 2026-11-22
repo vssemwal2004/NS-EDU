@@ -28,10 +28,26 @@ const CHECKLIST = [
   { key: 'limits', label: 'Rate limits', text: 'Kept in memory; they reset when the API restarts' },
 ];
 export default function SettingsView() {
-  const { admin, logout } = useAdminSession();
+  const { admin, logout, request } = useAdminSession();
   const [health, setHealth] = useState({ state: 'checking', at: null });
   const [stats, setStats] = useState({ state: 'loading', data: null });
   const [attempt, setAttempt] = useState(0);
+  const [distribution, setDistribution] = useState({ checkInCutoff: '12:00', workEndTime: '18:00', loading: true, busy: false, message: '', error: '' });
+
+  useEffect(() => {
+    if (!admin?.isOwner) return;
+    request('/lead-distribution/settings').then((value) => setDistribution((current) => ({ ...current, ...value, loading: false })))
+      .catch((error) => setDistribution((current) => ({ ...current, loading: false, error: error.message })));
+  }, [admin?.isOwner, request]);
+
+  async function saveDistribution(event) {
+    event.preventDefault();
+    setDistribution((current) => ({ ...current, busy: true, error: '', message: '' }));
+    try {
+      const value = await request('/lead-distribution/settings', { method: 'PUT', body: { checkInCutoff: distribution.checkInCutoff, workEndTime: distribution.workEndTime } });
+      setDistribution((current) => ({ ...current, ...value, busy: false, message: 'Saved. This applies to the next daily batch; today’s cutoff is fixed.' }));
+    } catch (error) { setDistribution((current) => ({ ...current, busy: false, error: error.message })); }
+  }
 
   useEffect(() => {
     const controller = new AbortController();
@@ -60,7 +76,6 @@ export default function SettingsView() {
         <dl className={styles.sheet}>
           <dt>Name</dt><dd><Avatar name={admin?.name} email={admin?.email} size={20} /><span>{admin?.name || '—'}</span></dd>
           <dt>Email</dt><dd>{admin?.email || '—'}</dd>
-          <dt>Role</dt><dd>{admin?.roleName || <span className={styles.muted}>—</span>}</dd>
           <dt>Job title</dt><dd>{admin?.title || <span className={styles.muted}>—</span>}</dd>
           <dt>Last sign-in</dt><dd className="crm-tabnum">{admin?.lastLoginAt ? dateTimeOf(admin.lastLoginAt) : <span className={styles.muted}>—</span>}</dd>
           <dt>Permissions</dt><dd className="crm-tabnum">{admin?.isOwner ? 'All (owner)' : `${admin?.permissions?.length ?? 0} granted`}</dd>
@@ -82,6 +97,17 @@ export default function SettingsView() {
         </dl>}
       </Panel>
     </div>
+
+    {admin?.isOwner && <Panel title="Daily lead distribution" description="Employees check in to receive yesterday’s unassigned leads. At the cutoff, remaining leads go to employees still checked in.">
+      <form onSubmit={saveDistribution} style={{ display: 'grid', gap: 16, maxWidth: 360 }}>
+        <label>Check-in cutoff (IST)<input className="adm-input" type="time" value={distribution.checkInCutoff} disabled={distribution.loading} onChange={(event) => setDistribution((current) => ({ ...current, checkInCutoff: event.target.value }))} /></label>
+        <label>Expected work end (IST)<input className="adm-input" type="time" value={distribution.workEndTime} disabled={distribution.loading} onChange={(event) => setDistribution((current) => ({ ...current, workEndTime: event.target.value }))} /></label>
+        <p className={styles.note}>Employees may check in late to work older pending leads, but receive no automatic leads that day. Checkout keeps unfinished leads assigned.</p>
+        {distribution.error && <p role="alert" className="adm-error">{distribution.error}</p>}
+        {distribution.message && <p role="status">{distribution.message}</p>}
+        <button type="submit" className="adm-btn adm-btn--primary" disabled={distribution.loading || distribution.busy}>{distribution.busy ? 'Saving…' : 'Save times'}</button>
+      </form>
+    </Panel>}
 
     <Panel title="Before going live" description="How this deployment is set up today. Change these before real students sign in.">
       <dl className={styles.sheet}>

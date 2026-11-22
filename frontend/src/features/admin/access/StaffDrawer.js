@@ -1,48 +1,26 @@
 'use client';
 // The staff drawer: "Add staff", or one person's details (view for everyone, edit for staff managers).
 // Account actions (reset password, suspend, remove) open the shared dialogs owned by the Members tab.
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import Icon from '@/components/ui/Icon';
 import AdminDrawer from '@/features/admin/AdminDrawer';
 import { Avatar } from '@/features/admin/crm/ui';
-import { dateTimeOf, displayName } from '@/features/admin/crm/format';
-import { assignableRole, effectiveKeys, generatePassword, passwordProblem, reachWords, shortDateTime, staffBlocks } from './access-model';
+import { dateTimeOf } from '@/features/admin/crm/format';
+import { generatePassword, passwordProblem, shortDateTime, staffBlocks } from './access-model';
 import { Field, StatusDot } from './AccessParts';
 import { PasswordBox, nameOf } from './StaffDialogs';
 import access from './Access.module.css';
 import styles from './StaffDrawer.module.css';
 
-function RoleSelect({ id, value, onChange, roles, admin, catalogue, disabled, error }) {
-  return <select id={id} className="adm-select" value={value} disabled={disabled} aria-invalid={Boolean(error)} onChange={(event) => onChange(event.target.value)}>
-    {roles.map((role) => {
-      const why = role.slug === value ? '' : assignableRole(admin, role, catalogue);
-      return <option key={role.slug} value={role.slug} disabled={Boolean(why)} title={role.description || undefined}>{role.name}{why ? ` (${why.replace(/\.$/, '').toLowerCase()})` : ''}</option>;
-    })}
-  </select>;
-}
-// A data line, not a paragraph: what the chosen role can see. The description is the option's tooltip.
-const roleHint = (role, catalogue) => (role ? `Sees ${reachWords(effectiveKeys(role.permissions, catalogue)).replace(/^./, (c) => c.toLowerCase())}` : '');
-
-/** People who can mentor `person`: active staff, never themselves or anyone below them. */
-function mentorOptions(staff, person) {
-  const below = new Set(person ? [person.id] : []);
-  let grew = Boolean(person);
-  while (grew) { grew = false; for (const other of staff) if (other.managerId && below.has(other.managerId) && !below.has(other.id)) { below.add(other.id); grew = true; } }
-  return staff.filter((other) => !below.has(other.id) && (other.status === 'active' || other.id === person?.managerId)).sort((a, b) => nameOf(a).localeCompare(nameOf(b)));
-}
-
 // ---- Add --------------------------------------------------------------------------------------------------------------
 
-function AddForm({ admin, roles, staff, catalogue, request, notify, onDone, onClose }) {
-  const defaultRole = roles.find((role) => role.slug === 'executive' && !assignableRole(admin, role, catalogue)) ?? roles.find((role) => !assignableRole(admin, role, catalogue));
-  const [form, setForm] = useState(() => ({ email: '', phone: '', name: '', title: '', roleId: defaultRole?.slug ?? '', managerId: '', password: generatePassword() }));
+function AddForm({ request, notify, onDone, onClose }) {
+  const [form, setForm] = useState(() => ({ email: '', phone: '', name: '', title: '', password: generatePassword() }));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [fields, setFields] = useState({});
   const [created, setCreated] = useState(null);
   const set = (patch) => setForm((current) => ({ ...current, ...patch }));
-  const role = roles.find((candidate) => candidate.slug === form.roleId);
-  const mentors = useMemo(() => mentorOptions(staff, null), [staff]);
 
   async function submit(event) {
     event.preventDefault();
@@ -50,8 +28,7 @@ function AddForm({ admin, roles, staff, catalogue, request, notify, onDone, onCl
     if (problem) { setFields({ password: problem }); setError('Fix the highlighted field.'); return; }
     setBusy(true); setError(''); setFields({});
     try {
-      const body = { email: form.email.trim(), phone: form.phone.trim(), password: form.password, roleId: form.roleId, name: form.name.trim(), title: form.title.trim() };
-      if (form.managerId) body.managerId = form.managerId;
+      const body = { email: form.email.trim(), phone: form.phone.trim(), password: form.password, name: form.name.trim(), title: form.title.trim() };
       const { item } = await request('/access/staff', { method: 'POST', body });
       setCreated({ ...item, password: form.password });
       await onDone(`${nameOf(item)} was added as ${item.roleName}.`);
@@ -81,18 +58,8 @@ function AddForm({ admin, roles, staff, catalogue, request, notify, onDone, onCl
       </div>
     </section>
     <section className={styles.group} aria-labelledby="add-access">
-      <h3 id="add-access" className={access.sectionLabel}>Access</h3>
-      <div className={styles.two}>
-        <Field label="Role" htmlFor="staff-role" required error={fields.roleId} hint={roleHint(role, catalogue)}>
-          <RoleSelect id="staff-role" value={form.roleId} roles={roles} admin={admin} catalogue={catalogue} error={fields.roleId} onChange={(roleId) => set({ roleId })} />
-        </Field>
-        <Field label="Mentor" htmlFor="staff-mentor" error={fields.managerId}>
-          <select id="staff-mentor" className="adm-select" value={form.managerId} title="The team lead who sees and supports this person’s leads" onChange={(event) => set({ managerId: event.target.value })}>
-            <option value="">No mentor</option>
-            {mentors.map((person) => <option key={person.id} value={person.id}>{nameOf(person)} · {person.roleName}</option>)}
-          </select>
-        </Field>
-      </div>
+      <h3 id="add-access" className={access.sectionLabel}>Employee access</h3>
+      <p className={access.note}>Employees can work leads assigned to them and see leads they added.</p>
     </section>
     <section className={styles.group} aria-labelledby="add-signin">
       <h3 id="add-signin" className={access.sectionLabel}>Sign-in</h3>
@@ -102,31 +69,26 @@ function AddForm({ admin, roles, staff, catalogue, request, notify, onDone, onCl
     </section>
     <div className={styles.footer}>
       <button type="button" className="adm-btn" onClick={onClose} disabled={busy}>Cancel</button>
-      <button type="submit" className="adm-btn adm-btn--primary" disabled={busy || !form.email.trim() || !form.phone.trim() || !form.roleId}>{busy ? 'Adding…' : 'Add staff member'}</button>
+      <button type="submit" className="adm-btn adm-btn--primary" disabled={busy || !form.email.trim() || !form.phone.trim()}>{busy ? 'Adding…' : 'Add employee'}</button>
     </div>
   </form>;
 }
 
 // ---- View / edit ------------------------------------------------------------------------------------------------------
 
-function PersonView({ admin, person, roles, staff, catalogue, request, onDone, onClose, canManage, onAction }) {
+function PersonView({ admin, person, staff, request, onDone, onClose, canManage, onAction }) {
   const blocks = staffBlocks(admin, person, staff);
-  const [form, setForm] = useState({ name: person.name, title: person.title, phone: person.phone, roleId: person.roleId, managerId: person.managerId ?? '' });
+  const [form, setForm] = useState({ name: person.name, title: person.title, phone: person.phone });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [fields, setFields] = useState({});
   const set = (patch) => setForm((current) => ({ ...current, ...patch }));
-  const role = roles.find((candidate) => candidate.slug === form.roleId);
-  const mentors = useMemo(() => mentorOptions(staff, person), [staff, person]);
-  const reports = staff.filter((other) => other.managerId === person.id);
   const suspended = person.status === 'suspended';
 
   const changes = {};
   if (form.name.trim() !== person.name) changes.name = form.name.trim();
   if (form.title.trim() !== person.title) changes.title = form.title.trim();
   if (form.phone.trim() !== person.phone) changes.phone = form.phone.trim();
-  if (form.roleId !== person.roleId) changes.roleId = form.roleId;
-  if ((form.managerId || null) !== person.managerId) changes.managerId = form.managerId || null;
   const dirty = Object.keys(changes).length > 0;
 
   async function save(event) {
@@ -141,11 +103,8 @@ function PersonView({ admin, person, roles, staff, catalogue, request, onDone, o
 
   const when = (value) => (value ? <span title={dateTimeOf(value)}>{shortDateTime(value)}</span> : <span className={access.muted}>Never</span>);
   const facts = <dl className={access.sheet}>
-    {!canManage && <><dt>Role</dt><dd>{person.roleName || <span className={access.muted}>—</span>}</dd></>}
-    {!canManage && <><dt>Mentor</dt><dd>{person.managerName ? displayName(person.managerName) : <span className={access.muted}>—</span>}</dd></>}
     {!canManage && <><dt>Mobile</dt><dd>{person.phone || <span className={access.muted}>—</span>}</dd></>}
     <dt>Status</dt><dd><StatusDot status={person.status} />{person.mustChangePassword && <span className={styles.pending} title="They have not replaced the temporary password yet"><Icon name="key" />Temporary password</span>}</dd>
-    <dt>Reports</dt><dd>{reports.length ? <span className={access.truncate} title={reports.map(nameOf).join(', ')}>{reports.map(nameOf).join(', ')}</span> : <span className={access.muted}>—</span>}</dd>
     <dt>Last sign-in</dt><dd>{when(person.lastLoginAt)}</dd>
     {person.createdAt && <><dt>Added</dt><dd>{when(person.createdAt)}</dd></>}
   </dl>;
@@ -180,20 +139,6 @@ function PersonView({ admin, person, roles, staff, catalogue, request, onDone, o
         <Field label="Mobile number" htmlFor="edit-phone" error={fields.phone}><input id="edit-phone" className="adm-input" type="tel" inputMode="tel" value={form.phone} aria-invalid={Boolean(fields.phone)} onChange={(event) => set({ phone: event.target.value })} /></Field>
       </div>
     </section>
-    <section className={styles.group} aria-labelledby="person-access">
-      <h3 id="person-access" className={access.sectionLabel}>Access</h3>
-      <div className={styles.two}>
-        <Field label="Role" htmlFor="edit-role" error={fields.roleId} hint={blocks.role || roleHint(role, catalogue)}>
-          <RoleSelect id="edit-role" value={form.roleId} roles={roles} admin={admin} catalogue={catalogue} disabled={Boolean(blocks.role)} error={fields.roleId} onChange={(roleId) => set({ roleId })} />
-        </Field>
-        <Field label="Mentor" htmlFor="edit-mentor" error={fields.managerId}>
-          <select id="edit-mentor" className="adm-select" value={form.managerId} title="Mentors see, assign and follow up their team’s leads" onChange={(event) => set({ managerId: event.target.value })}>
-            <option value="">No mentor</option>
-            {mentors.map((other) => <option key={other.id} value={other.id}>{nameOf(other)} · {other.roleName}{other.status === 'suspended' ? ' (suspended)' : ''}</option>)}
-          </select>
-        </Field>
-      </div>
-    </section>
     <section className={styles.group} aria-labelledby="person-account">
       <h3 id="person-account" className={access.sectionLabel}>Account</h3>
       <dl className={access.sheet}>
@@ -214,16 +159,16 @@ function PersonView({ admin, person, roles, staff, catalogue, request, onDone, o
   </form>;
 }
 
-export default function StaffDrawer({ target, admin, roles, staff, catalogue, request, notify, canManage, onChanged, onClose, onAction }) {
+export default function StaffDrawer({ target, admin, staff, request, notify, canManage, onChanged, onClose, onAction }) {
   const person = target?.mode === 'view' ? staff.find((candidate) => candidate.id === target.id) : null;
   const add = target?.mode === 'add';
-  const title = add ? 'Add staff' : person ? (canManage ? 'Edit staff member' : 'Staff member') : '';
+  const title = add ? 'Add employee' : person ? (canManage ? 'Edit employee' : 'Employee') : '';
   const subtitle = '';
   // After a save the list refreshes first, then the drawer closes (add stays open to show the password).
   const done = async (message, close = true) => { await onChanged(); notify(message); if (close) onClose(); };
   return <AdminDrawer open={add || Boolean(person)} onClose={onClose} title={title} subtitle={subtitle}>
-    {add && <AddForm admin={admin} roles={roles} staff={staff} catalogue={catalogue} request={request} notify={notify} onDone={(message) => done(message, false)} onClose={onClose} />}
-    {person && <PersonView key={`${person.id}-${person.status}-${person.roleId}-${person.managerId}-${person.name}-${person.title}-${person.phone}`} admin={admin} person={person} roles={roles} staff={staff}
-      catalogue={catalogue} request={request} canManage={canManage} onDone={done} onClose={onClose} onAction={onAction} />}
+    {add && <AddForm request={request} notify={notify} onDone={(message) => done(message, false)} onClose={onClose} />}
+    {person && <PersonView key={`${person.id}-${person.status}-${person.name}-${person.title}-${person.phone}`} admin={admin} person={person} staff={staff}
+      request={request} canManage={canManage} onDone={done} onClose={onClose} onAction={onAction} />}
   </AdminDrawer>;
 }

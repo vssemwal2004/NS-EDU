@@ -20,7 +20,7 @@ const loginFields = [
 
 // `role` stays 'admin' | 'employee' for older screens; the fields below are the real access model.
 export const serializeAdmin = (admin) => ({
-  id: admin._id.toString(), email: admin.email, name: admin.name ?? '', title: admin.title ?? '', role: admin.role,
+  id: admin._id.toString(), email: admin.email, name: admin.name ?? '', title: admin.title ?? '', phone: admin.phone ?? '', role: admin.role,
   roleId: admin.roleId, roleName: admin.roleName, roleColor: admin.roleColor, isOwner: Boolean(admin.isOwner),
   permissions: admin.permissions ?? [], leadScope: admin.leadScope ?? 'none', analyticsScope: admin.analyticsScope ?? 'none',
   managerId: admin.managerId ? String(admin.managerId) : null,

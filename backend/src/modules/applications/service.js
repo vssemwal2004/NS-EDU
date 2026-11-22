@@ -118,6 +118,7 @@ export const serializeLeadSummary = (doc) => ({
   schoolStream: doc.academics?.schoolStream ?? '',
   careerField: doc.careerField ?? null,
   assignedEmployeeIds: (doc.assignedEmployeeIds ?? []).map(String),
+  assignmentSource: doc.assignmentSource ?? ((doc.assignedEmployeeIds ?? []).length ? 'manual' : ''),
   crm: crmSummary(doc),
   createdAt: doc.createdAt,
   updatedAt: doc.updatedAt,

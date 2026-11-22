@@ -250,7 +250,7 @@ export function AssignmentPanel({ item, admin, assignees, request, onSaved }) {
         <button type="button" className="adm-btn adm-btn--sm" onClick={() => { setEditing(false); setSelected(item.assignedEmployeeIds ?? []); }}>Cancel</button>
         <button type="button" className="adm-btn adm-btn--sm adm-btn--primary" disabled={busy || !changed} onClick={save}>{busy ? 'Saving…' : 'Save'}</button>
       </div>
-    </div> : current.length ? <ul className={styles.people}>{current.map((person) => <li key={person.id} title={person.email}><Person name={displayName(person.email)} email={person.email} /></li>)}</ul>
+    </div> : current.length ? <><p className="adm-hint">{item.assignmentSource === 'automatic' ? 'Assigned automatically' : 'Assigned manually'}</p><ul className={styles.people}>{current.map((person) => <li key={person.id} title={person.email}><Person name={displayName(person.email)} email={person.email} /></li>)}</ul></>
       : <p className={styles.panelEmpty}>Unassigned</p>}
   </Panel>;
 }

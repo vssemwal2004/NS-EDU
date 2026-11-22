@@ -11,6 +11,7 @@ import { cx, Empty, ErrorBanner, n, PanelLink, PanelSkeletons, useTick } from '.
 import styles from './analytics/Analytics.module.css';
 import { useServerList } from './table/useServerList';
 import { PageToolbar, Panel, StatStrip } from './ui/Page';
+import DistributionCard from './DistributionCard';
 
 const today = new Intl.DateTimeFormat('en-IN', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Asia/Kolkata' });
 const istHour = () => Number(new Intl.DateTimeFormat('en-GB', { hour: 'numeric', hourCycle: 'h23', timeZone: 'Asia/Kolkata' }).format(new Date()));
@@ -25,7 +26,7 @@ const SHORTCUTS = [
     { label: 'Add a lead', href: '/admin/leads?add=1', icon: 'plus', permission: 'leads.create' },
     { label: 'New school drive', href: '/admin/drives?add=1', icon: 'building', permission: 'drives.manage' },
     { label: 'Add a university', href: '/admin/institutions?new=1', icon: 'building', permission: 'catalogue.edit' },
-    { label: 'Add staff', href: '/admin/access?tab=team&add=1', icon: 'userPlus', permission: 'team.manage' },
+    { label: 'Add employee', href: '/admin/access?tab=team&add=1', icon: 'userPlus', permission: 'team.manage' },
   ] },
   { group: 'Go to', items: [
     { label: 'My day', href: '/admin/my-day', icon: 'calendar', permission: 'leads.notes' },
@@ -50,7 +51,7 @@ function statItems(data) {
   }
   if (leads) {
     items.push(
-      { key: 'new', label: own ? 'New leads for me today' : 'New leads today', value: leads.newToday, icon: 'inbox', tone: 'neutral', href: '/admin/leads?range=today' },
+      { key: 'new', label: own ? 'My leads created today' : 'New leads today', value: leads.newToday, icon: 'inbox', tone: 'neutral', href: '/admin/leads?range=today' },
       { key: 'hot', label: 'Hot, waiting for a call', value: leads.hotWaiting, icon: 'flame', tone: leads.hotWaiting ? 'bad' : 'neutral', href: '/admin/leads?heat=hot&status=new' },
     );
     if (!own) items.splice(1, 0, { key: 'open', label: 'Open leads', value: leads.open, icon: 'layers', tone: 'neutral', href: `/admin/leads?status=${OPEN}` });
@@ -146,6 +147,7 @@ export default function Dashboard() {
         : <>
           {statItems(data).length > 0 && <StatStrip label="Today" items={statItems(data)} />}
           <div className={styles.grid}>
+            <DistributionCard />
             {(data.attention || data.catalogue) && <Attention data={data} />}
             {data.tasks && <FollowUps tasks={data.tasks} />}
             {data.activity && <Activity items={data.activity} scope={data.leads?.scope} />}

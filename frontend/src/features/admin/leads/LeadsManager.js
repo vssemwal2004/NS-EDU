@@ -432,6 +432,7 @@ export default function LeadsManager({ initial = NO_FILTERS, fixedFilters = NO_F
       <button type="button" className="adm-btn" aria-haspopup="dialog" aria-label="Columns" title="Columns" disabled={!columnsInfo.data} onClick={() => setPanel('columns')}><Icon name="layers" /><span className={styles.btnText}>Columns</span></button>
       {canExport && <button type="button" className="adm-btn" aria-haspopup="dialog" aria-label="Download" title="Download" disabled={!columnsInfo.data} onClick={() => setPanel('export')}><Icon name="download" /><span className={styles.btnText}>Download</span></button>}
       {canCreate && !scoped && <button type="button" className="adm-btn adm-btn--primary" aria-haspopup="dialog" onClick={() => setPanel('add')}><Icon name="plus" />Add lead</button>}
+      {canCreate && !scoped && <Link className="adm-btn" href="/admin/leads/uploads"><Icon name="upload" />Uploaded leads / CSV</Link>}
     </PageToolbar>
 
     {!scoped && <StatStrip label="Quick views" items={statItems} loading={!viewCounts.data && !viewCounts.error} />}

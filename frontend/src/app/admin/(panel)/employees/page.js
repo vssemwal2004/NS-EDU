@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 
-// "Add employee" became part of Team & access, where staff also get a role and a mentor.
+// Employee creation lives in the Employees screen.
 export default function EmployeesPage() {
   redirect('/admin/access');
 }

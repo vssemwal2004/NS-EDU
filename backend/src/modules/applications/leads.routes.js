@@ -32,7 +32,7 @@ async function detail(doc, staff) {
 // "next" stays fast at any depth while a jump to an arbitrary deep page asks for narrower filters.
 export const MAX_SKIP = 50_000;
 const PAGE_SIZES = [25, 50, 100];
-const SUMMARY_FIELDS = ['applicant', 'preference', 'ref', 'channel', 'mode', 'status', 'school', 'academics.classLevel', 'academics.schoolStream', 'careerField', 'assignedEmployeeIds', 'crm', 'updatedAt'];
+const SUMMARY_FIELDS = ['applicant', 'preference', 'ref', 'channel', 'mode', 'status', 'school', 'academics.classLevel', 'academics.schoolStream', 'careerField', 'assignedEmployeeIds', 'assignmentSource', 'crm', 'updatedAt'];
 
 async function employeeEmails() {
   const employees = await (await collection(COLLECTIONS.admins)).find({ role: 'employee' }, { projection: { email: 1 } }).toArray();
@@ -77,6 +77,21 @@ leadsRouter.get('/', async (request, response) => {
     cursors: rows.length ? { first: encodeCursor(rows[0]), last: encodeCursor(rows.at(-1)) } : null,
     maxSkip: MAX_SKIP,
   });
+});
+
+// Provenance is separate from assignment. An employee can review leads they entered after
+// reassignment, but this endpoint does not grant access to the lead's working detail or actions.
+leadsRouter.get('/uploads', requirePermission('leads.create'), async (request, response) => {
+  const { page, limit, skip } = pagination(request.query, { defaultLimit: 25, maxLimit: 100, allowedLimits: PAGE_SIZES });
+  const employeeId = request.admin.isOwner && request.query.employeeId ? toObjectId(queryString(request.query.employeeId, 30)) : request.admin._id;
+  if (!employeeId) throw new HttpError(400, 'Choose a valid employee');
+  const filter = { createdByAdminId: employeeId };
+  const leads = await applications();
+  const [docs, total] = await Promise.all([
+    leads.find(filter, { projection: { ...Object.fromEntries(SUMMARY_FIELDS.map((field) => [field, 1])), createdAt: 1, createdByAdminId: 1 } }).sort({ createdAt: -1, _id: -1 }).skip(skip).limit(limit).toArray(),
+    leads.countDocuments(filter),
+  ]);
+  response.json({ items: docs.map((doc) => ({ ...serializeLeadSummary(doc), canWork: request.admin.isOwner || (doc.assignedEmployeeIds ?? []).some((id) => id.equals(request.admin._id)) })), total, page, limit });
 });
 
 // Status chip counts: one indexed count per status (cached), instead of grouping every lead.
@@ -250,7 +265,7 @@ leadsRouter.post('/assignments/bulk', requirePermission('leads.assign'), async (
   const leads = await applications();
   const inScope = { _id: { $in: ids }, ...accessFilter(request.admin) };
   if (await leads.countDocuments(inScope) !== ids.length) throw new HttpError(404, 'One or more leads were not found');
-  const result = await leads.updateMany(inScope, { $addToSet: { assignedEmployeeIds: { $each: employeeIds } }, $set: { updatedAt: new Date() } });
+  const result = await leads.updateMany(inScope, { $addToSet: { assignedEmployeeIds: { $each: employeeIds } }, $set: { assignmentSource: 'manual', updatedAt: new Date() }, $unset: { autoDistributionDay: '', autoAssigneeId: '', autoAssignedAt: '' } });
   clearLeadCounts();
   response.json({ count: result.matchedCount });
 });
@@ -279,7 +294,7 @@ leadsRouter.patch('/:id/assignments', requirePermission('leads.assign'), async (
   assertAssignable(request.admin, employeeIds);
   const _id = toObjectId(request.params.id);
   const lead = _id && await (await applications()).findOneAndUpdate(
-    { _id, ...accessFilter(request.admin) }, { $set: { assignedEmployeeIds: employeeIds, updatedAt: new Date() } }, { returnDocument: 'after' },
+    { _id, ...accessFilter(request.admin) }, { $set: { assignedEmployeeIds: employeeIds, assignmentSource: 'manual', updatedAt: new Date() }, $unset: { autoDistributionDay: '', autoAssigneeId: '', autoAssignedAt: '' } }, { returnDocument: 'after' },
   );
   if (!lead) throw new HttpError(404, 'Lead not found');
   clearLeadCounts();

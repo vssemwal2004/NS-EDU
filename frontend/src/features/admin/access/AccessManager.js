@@ -12,21 +12,15 @@ import { useToaster } from '@/features/admin/crm/toast';
 import { ViewTabs } from '@/features/admin/ui/Page';
 import ActivityTab from './ActivityTab';
 import { ConfirmDialog, ErrorPanel, TableSkeleton } from './AccessParts';
-import CompareTab from './CompareTab';
-import RolesTab from './RolesTab';
 import TeamTab from './TeamTab';
 import YouTab from './YouTab';
 import styles from './Access.module.css';
 
 const PEOPLE = ['team.view', 'team.manage'];
-const ROLES = ['team.view', 'team.manage', 'roles.manage'];
-const CATALOGUE = [...ROLES, 'audit.view'];
 const TABS = [
   { key: 'team', label: 'Members', icon: 'people', allowed: (admin) => canAny(admin, PEOPLE), View: TeamTab },
-  { key: 'roles', label: 'Roles', icon: 'key', allowed: (admin) => canAny(admin, ROLES), View: RolesTab },
-  { key: 'compare', label: 'Compare roles', icon: 'compare', allowed: (admin) => canAny(admin, ROLES), View: CompareTab },
   { key: 'activity', label: 'Activity', icon: 'history', allowed: (admin) => canAny(admin, ['audit.view']), View: ActivityTab },
-  { key: 'you', label: 'You', icon: 'user', allowed: () => true, View: YouTab },
+  { key: 'you', label: 'You', icon: 'user', allowed: (admin) => !admin?.isOwner && !canAny(admin, PEOPLE), View: YouTab },
 ];
 const ALIASES = { overview: 'you', members: 'team' };
 const EMPTY = { catalogue: null, roles: [], staff: [] };
@@ -40,32 +34,27 @@ export default function AccessManager() {
   const tabs = useMemo(() => TABS.filter((tab) => tab.allowed(admin)), [admin]);
   const asked = params.get('tab');
   const wanted = ALIASES[asked] ?? asked;
-  const fallback = tabs.find((tab) => tab.key === 'team') ?? tabs.find((tab) => tab.key === 'you');
+  const fallback = tabs.find((tab) => tab.key === 'team') ?? tabs[0];
   const active = tabs.find((tab) => tab.key === wanted) ?? fallback;
   const [data, setData] = useState({ ...EMPTY, status: 'loading', error: null });
   const [dirty, setDirty] = useState(false);
   const [leaving, setLeaving] = useState(null);
 
-  const needsCatalogue = canAny(admin, CATALOGUE);
-  const needsRoles = canAny(admin, ROLES);
+  const needsCatalogue = Boolean(admin);
   const needsStaff = canAny(admin, PEOPLE);
   const load = useCallback(async (signal) => {
     if (!needsCatalogue) { setData({ ...EMPTY, status: 'ready', error: null }); return; }
     try {
-      const [catalogue, roles, staff] = await Promise.all([
+      const [catalogue, staff] = await Promise.all([
         request('/access/catalogue', { signal }),
-        needsRoles ? request('/access/roles', { signal }) : null,
         needsStaff ? request('/access/staff', { signal }) : null,
       ]);
-      // Owner first, then built-in roles, then custom ones, each by name.
-      const rank = (role) => (role.slug === 'owner' ? 0 : role.system ? 1 : 2);
-      const sorted = [...(roles?.items ?? [])].sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name));
-      setData({ catalogue, roles: sorted, staff: staff?.items ?? [], status: 'ready', error: null });
+      setData({ catalogue, roles: [], staff: staff?.items ?? [], status: 'ready', error: null });
     } catch (error) {
       if (error.name === 'AbortError') return;
       setData((previous) => ({ ...previous, status: 'error', error }));
     }
-  }, [needsCatalogue, needsRoles, needsStaff, request]);
+  }, [needsCatalogue, needsStaff, request]);
 
   useEffect(() => {
     const controller = new AbortController();

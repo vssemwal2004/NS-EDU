@@ -36,6 +36,7 @@ export function AdminSessionProvider({ children }) {
 
   const value = useMemo(() => ({
     admin, status,
+    refreshAdmin: async () => { const data = await api('/admin/auth/me'); setAdmin(data.admin); return data.admin; },
     logout: () => toLogin('logout'),
     // Admin API calls: a 401 means the 8-hour session ended mid-visit.
     request: async (path, options) => {

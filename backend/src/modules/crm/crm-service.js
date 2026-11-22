@@ -265,9 +265,15 @@ function applicantFrom(body, existing = {}) {
 export async function createLead(staff, body) {
   const applicant = applicantFrom(body ?? {});
   const leads = await applications();
-  if (!body?.force) {
-    const duplicate = await leads.findOne({ 'applicant.phone': applicant.phone }, { projection: { ref: 1, 'applicant.fullName': 1, status: 1 } });
-    if (duplicate) throw new HttpError(409, `A lead with this number already exists (${duplicate.ref}, ${duplicate.applicant?.fullName ?? ''})`, { duplicateId: duplicate._id.toString(), duplicateRef: duplicate.ref });
+  if (!body?.force || !staff.isOwner) {
+    const duplicate = await leads.findOne({ 'applicant.phone': applicant.phone }, { projection: { ref: 1, 'applicant.fullName': 1, status: 1, assignedEmployeeIds: 1 } });
+    if (duplicate) {
+      const visible = staff.isOwner || (duplicate.assignedEmployeeIds ?? []).some((id) => id.equals(staff._id));
+      throw new HttpError(409, visible
+        ? `A lead with this number already exists (${duplicate.ref}, ${duplicate.applicant?.fullName ?? ''})`
+        : 'A lead with this number already exists. Ask an admin to review it.',
+      visible ? { duplicateId: duplicate._id.toString(), duplicateRef: duplicate.ref } : {});
+    }
   }
   let assigned = [staff._id];
   if (body?.assigneeIds !== undefined) {
@@ -285,7 +291,7 @@ export async function createLead(staff, body) {
     ref: await nextRef(now), channel: 'manual', mode: null, status: 'new', applicant, preference, academics: null,
     source: { kind: 'staff', note: text(body?.source, 'source', { max: 80 }) || 'Added by staff', byAdminId: staff._id },
     contactVerified: { email: false, phone: false }, consent: { contactConsent: false, privacyAccepted: false, at: null, version: '', text: {} },
-    assignedEmployeeIds: assigned, statusHistory: [{ status: 'new', at: now, byAdminId: staff._id }], createdAt: now, updatedAt: now,
+    assignedEmployeeIds: assigned, assignmentSource: 'manual', statusHistory: [{ status: 'new', at: now, byAdminId: staff._id }], createdAt: now, updatedAt: now,
     createdByAdminId: staff._id, ...leadKeys(applicant),
   };
   // A new lead has no follow-up yet: store an explicit null (not a missing field), the same shape
@@ -380,7 +386,7 @@ export async function bulkAct(staff, body) {
     const allowed = assignableIds(staff);
     if (!employeeIds.length) throw new HttpError(400, 'Choose at least one employee');
     if (allowed && employeeIds.some((id) => !allowed.some((member) => member.equals(id)))) throw new HttpError(403, 'You can only assign leads to yourself and your team');
-    changed = (await leads.updateMany({ _id: { $in: objectIds } }, { $addToSet: { assignedEmployeeIds: { $each: employeeIds } }, $set: { updatedAt: now } })).modifiedCount;
+    changed = (await leads.updateMany({ _id: { $in: objectIds } }, { $addToSet: { assignedEmployeeIds: { $each: employeeIds } }, $set: { assignmentSource: 'manual', updatedAt: now }, $unset: { autoDistributionDay: '', autoAssigneeId: '', autoAssignedAt: '' } })).modifiedCount;
   } else if (action === 'delete') {
     for (const doc of docs) { await deleteLead(staff, doc); changed += 1; }
   } else if (action === 'status') {

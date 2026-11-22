@@ -19,6 +19,7 @@ import { adminContentRouter } from '../content/content.routes.js';
 import { adminInsightsRouter } from './insights.routes.js';
 import { drivesRouter } from '../drives/drives.routes.js';
 import { adminReviewsRouter } from '../reviews/reviews.routes.js';
+import { distributionRouter } from '../lead-distribution/routes.js';
 
 export const adminRouter = Router();
 adminRouter.use(requireAdmin, requireReadyStaff);
@@ -33,6 +34,7 @@ adminRouter.use('/reference-students', referenceStudentsRouter);
 adminRouter.use('/account-students', accountStudentsRouter);
 adminRouter.use('/leads', leadsRouter);
 adminRouter.use('/crm', crmRouter);
+adminRouter.use('/lead-distribution', distributionRouter);
 
 adminRouter.use('/data-ops', requirePermission('data.manage'), dataOpsRouter);
 // Image upload backs the image fields of every editor, so anyone who can edit those areas can use it.

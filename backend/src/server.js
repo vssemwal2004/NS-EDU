@@ -3,6 +3,7 @@ import { assertProductionConfig, env } from './config/env.js';
 import { closeDb, getDb } from './db/collections.js';
 import { searchStatus, warmSearch } from './modules/search/search-store.js';
 import { keepPublicDataWarm, warmPublicData } from './warm-up.js';
+import { startDistributionWorker } from './modules/lead-distribution/service.js';
 
 assertProductionConfig();
 
@@ -19,6 +20,7 @@ server.on('error', (error) => {
 
 // Warm the connection and indexes without blocking start-up; requests retry on failure.
 if (env.mongodbUri) {
+  startDistributionWorker();
   getDb()
     // Build the in-memory search index now, so the first student's keystroke doesn't wait for it.
     .then(() => warmSearch())

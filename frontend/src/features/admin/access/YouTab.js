@@ -12,23 +12,16 @@ import styles from './You.module.css';
 const nameOf = (person) => person.name || displayName(person.email);
 
 export default function YouTab({ admin, data }) {
-  const { catalogue, roles, staff } = data;
+  const { catalogue } = data;
   const keys = useMemo(() => adminKeys(admin, catalogue), [admin, catalogue]);
-  const role = roles.find((item) => item.slug === admin.roleId);
-  const mentor = admin.managerId ? staff.find((person) => person.id === admin.managerId) : null;
-  const team = staff.filter((person) => person.managerId === admin.id);
   const groups = useMemo(() => groupPermissions(catalogue), [catalogue]);
   const total = catalogue?.permissions?.length ?? 0;
   const allowed = (catalogue?.permissions ?? []).filter((permission) => keys.has(permission.key)).length;
-  const none = <span className={access.muted}>—</span>;
 
   return <div className={styles.you}>
-    <Panel title="Your access" description={role?.description || undefined}>
+    <Panel title="Your access">
       <dl className={access.sheet}>
-        <dt>Role</dt><dd><strong>{admin.roleName || role?.name || 'No role'}</strong></dd>
         <dt>Signed in as</dt><dd title={admin.email}>{nameOf(admin)}<span className={styles.muted}>{admin.email}</span></dd>
-        <dt>Mentor</dt><dd>{mentor ? nameOf(mentor) : admin.managerId ? 'Assigned' : none}</dd>
-        <dt>Your team</dt><dd title={team.map(nameOf).join(', ') || undefined}>{team.length ? `${team.length} ${team.length === 1 ? 'person' : 'people'}` : none}</dd>
         <dt>Leads you see</dt><dd>{LEAD_SCOPE_WORDS[admin.leadScope] ?? LEAD_SCOPE_WORDS.none}</dd>
         <dt>Analytics</dt><dd>{ANALYTICS_SCOPE_WORDS[admin.analyticsScope] ?? ANALYTICS_SCOPE_WORDS.none}</dd>
         <dt>You manage</dt><dd>{managesWords(keys)}</dd>
@@ -49,7 +42,7 @@ export default function YouTab({ admin, data }) {
             })}
           </dl>
         </section>)}
-      </div> : <p className={styles.none}>Your role has no permissions yet.</p>}
+      </div> : <p className={styles.none}>Access details are unavailable.</p>}
     </Panel>
   </div>;
 }

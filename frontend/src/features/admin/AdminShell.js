@@ -12,7 +12,6 @@ import { AdminSessionProvider, useAdminSession } from './AdminSession';
 import CommandPalette from './CommandPalette';
 import RowMenu from './crm/RowMenu';
 import { ToastProvider } from './crm/toast';
-import { RoleBadge } from './crm/ui';
 import { useDisplayPrefs } from './crm/useDisplayPrefs';
 import styles from './AdminShell.module.css';
 
@@ -46,7 +45,7 @@ function Sidebar({ admin, collapsed, open, onToggle, onNavigate, followUps }) {
   return <aside className={styles.sidebar} data-open={open} data-collapsed={collapsed} aria-label="Admin navigation">
     <div className={styles.brand}>
       <span className={styles.brandMark}><Brand variant="mark" tone="light" /></span>
-      <span className={styles.brandText}><strong>Gyaan Vidhya</strong><small>Admin console</small></span>
+      <span className={styles.brandText}><strong>Gyaan Vidhya</strong><small>Workspace</small></span>
     </div>
     <nav className={styles.nav}>
       {groups.map((group) => <div key={group.label} className={styles.group}>
@@ -86,13 +85,13 @@ function AccountMenu({ admin, prefs, update, logout }) {
   return <div className={styles.account} ref={box}>
     <button type="button" className={styles.accountButton} aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen((value) => !value)} title="Account and display">
       <span className={styles.avatar}>{initials(admin)}</span>
-      <span className={styles.accountName}><strong>{admin.name || admin.email}</strong><small>{admin.roleName}</small></span>
+      <span className={styles.accountName}><strong>{admin.name || admin.email}</strong></span>
       <Icon name="chevron" />
     </button>
     {open && <div className={styles.accountPanel} role="dialog" aria-label="Account and display">
       <div className={styles.accountHead}>
         <span className={`${styles.avatar} ${styles.avatarLarge}`}>{initials(admin)}</span>
-        <span><strong>{admin.name || 'Admin'}</strong><small>{admin.email}</small><RoleBadge name={admin.roleName} color={admin.roleColor} size="sm" /></span>
+        <span><strong>{admin.name || (admin.isOwner ? 'Admin' : 'Employee')}</strong><small>{admin.email}</small></span>
       </div>
       <fieldset className={styles.setting}>
         <legend>Text size</legend>
@@ -107,7 +106,7 @@ function AccountMenu({ admin, prefs, update, logout }) {
         </div>
       </fieldset>
       <div className={styles.accountLinks}>
-        {holds(admin, 'team.view') && <Link href="/admin/access?tab=you" onClick={() => setOpen(false)}><Icon name="shield" />What I can do</Link>}
+        <Link href="/admin/profile" onClick={() => setOpen(false)}><Icon name="user" />My profile</Link>
         <Link href="/admin/change-password" onClick={() => setOpen(false)}><Icon name="lock" />Change password</Link>
         {showSite && <a href="/" target="_blank" rel="noopener noreferrer"><Icon name="external" />View the public site</a>}
         <button type="button" onClick={logout}><Icon name="logout" />Log out</button>
@@ -122,7 +121,7 @@ function Topbar({ admin, page, exact, prefs, update, onMenu, onSearch, followUps
     { key: 'drive', label: 'School drive', icon: 'building', href: '/admin/drives?add=1', hidden: !holds(admin, 'drives.manage') },
     { key: 'student', label: 'Reference student', icon: 'userPlus', href: '/admin/reference-students/new', hidden: !holds(admin, 'students.create') },
     { key: 'university', label: 'University', icon: 'building', href: '/admin/institutions?new=1', hidden: !holds(admin, 'catalogue.edit') },
-    { key: 'staff', label: 'Staff member', icon: 'people', href: '/admin/access?tab=team&add=1', hidden: !holds(admin, 'team.manage') },
+    { key: 'staff', label: 'Employee', icon: 'people', href: '/admin/access?tab=team&add=1', hidden: !holds(admin, 'team.manage') },
   ];
   const due = followUps ? followUps.overdue + followUps.today : 0;
   return <header className={styles.topbar}>
@@ -189,7 +188,7 @@ function Workspace({ children }) {
   if (status === 'loading') return <div className={styles.splash} role="status"><span className={styles.splashMark}><Icon name="cap" /></span><p>Opening the admin console…</p></div>;
   if (status === 'unavailable') return <div className={styles.splash} role="alert"><span className={styles.splashMark}><Icon name="shield" /></span><p>The Gyaan Vidhya API is not reachable. Start the backend and reload this page.</p><button type="button" className="button button--primary" onClick={() => window.location.reload()}>Reload</button></div>;
   if (!admin) return null;
-  if (blocked) return <div className={styles.splash} role="status"><p>Opening the page your role is for…</p></div>;
+  if (blocked) return <div className={styles.splash} role="status"><p>Opening your workspace…</p></div>;
   const collapsed = prefs.nav === 'collapsed';
   return <div className={styles.shell} data-crm-text={prefs.text} data-density={prefs.density} data-nav={prefs.nav}>
     <a className={styles.skip} href="#main">Skip to content</a>

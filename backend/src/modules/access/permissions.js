@@ -110,3 +110,8 @@ export const SYSTEM_ROLES = [
 export const ROLE_COLORS = ['wine', 'blue', 'green', 'amber', 'red', 'purple', 'teal', 'slate'];
 export const DEFAULT_STAFF_ROLE = 'executive';
 export const OWNER_ROLE = 'owner';
+// Employee access is fixed; the role editor no longer controls employee accounts.
+export const EMPLOYEE_PERMISSIONS = [
+  'leads.view_own', 'leads.create', 'leads.edit', 'leads.change_status', 'leads.notes',
+  'crm.heat', 'leads.bulk', 'analytics.view_own', 'students.view_assigned', 'students.create',
+];
