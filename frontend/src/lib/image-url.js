@@ -14,7 +14,7 @@ export const isCloudinary = (url) => typeof url === 'string' && url.startsWith('
 export const isStoredImage = isStudentCdnImage;
 
 /** Images next/image can fetch and resize: Cloudinary uploads and our R2 bucket. */
-export const isOptimisable = (url) => isCloudinary(url) || isStoredImage(url);
+export const isOptimisable = (url) => isCloudinary(url) || isStoredImage(url) || (typeof url === 'string' && url.startsWith('/images/places/'));
 
 /** A resized copy of one of our images at least `width` px wide; any other URL is returned as is. */
 export function resizedImage(source, width) {
