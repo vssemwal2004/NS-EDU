@@ -117,11 +117,13 @@ export default function ReviewsModeration() {
           {review.featured && <span className={styles.badge} data-tone="gold"><Icon name="star" />Featured</span>}
           <time className={styles.time} dateTime={review.submittedAt}>{when(review.submittedAt)}</time>
         </div>
-        <p className={styles.meta}>{[review.stage && VIEW_STAGE[review.stage], review.course, review.institution, review.city].filter(Boolean).join(' · ')}</p>
-        {review.title && <p className={styles.title}>{review.title}</p>}
-        <p className={styles.text}>{review.text}</p>
-        {review.status === 'rejected' && review.rejectReason && <p className={styles.reason}><Icon name="alert" />Rejected: {review.rejectReason}</p>}
-        {review.moderatedBy && <p className={styles.moderated}>Last checked by {review.moderatedBy} · {when(review.moderatedAt)}</p>}
+        <div className={styles.body}>
+          <p className={styles.meta}>{[review.stage && VIEW_STAGE[review.stage], review.course, review.institution, review.city].filter(Boolean).join(' · ')}</p>
+          {review.title && <p className={styles.title}>{review.title}</p>}
+          <p className={styles.text}>{review.text}</p>
+          {review.status === 'rejected' && review.rejectReason && <p className={styles.reason}><Icon name="alert" />Rejected: {review.rejectReason}</p>}
+          {review.moderatedBy && <p className={styles.moderated}>Last checked by {review.moderatedBy} · {when(review.moderatedAt)}</p>}
+        </div>
 
         {rejecting === review.id ? <form className={styles.rejectForm} onSubmit={(event) => {
           event.preventDefault();

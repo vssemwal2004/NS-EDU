@@ -79,9 +79,13 @@ const specs = {
     [{ 'academics.classLevel': 1, createdAt: -1, _id: -1 }, { partialFilterExpression: { channel: 'school-drive' } }],
     [{ 'academics.schoolStream': 1, createdAt: -1, _id: -1 }, { partialFilterExpression: { channel: 'school-drive' } }],
     [{ 'careerField.slug': 1, createdAt: -1, _id: -1 }, { partialFilterExpression: { channel: 'callback' } }],
+    // Privacy requests from a parent are matched on the guardian's mobile. Only under-18 leads carry one, so the
+    // partial index stays small; queries repeat the { $type: 'string' } predicate so the planner can use it.
+    [{ 'guardian.phone': 1 }, { partialFilterExpression: { 'guardian.phone': { $type: 'string' } }, name: 'guardian_phone' }],
   ],
   application_notes: [[{ applicationId: 1, createdAt: -1 }], [{ createdAt: -1 }], [{ authorId: 1, createdAt: -1 }]],
-  lead_attendance: [[{ day: 1, employeeId: 1 }, { unique: true }], [{ day: 1, eligible: 1, checkedOutAt: 1 }]],
+  // (employeeId, day) serves an employee's own attendance history in the check-in popup.
+  lead_attendance: [[{ day: 1, employeeId: 1 }, { unique: true }], [{ day: 1, eligible: 1, checkedOutAt: 1 }], [{ employeeId: 1, day: -1 }]],
   lead_distribution_days: [[{ cutoffAt: 1, finalizedAt: 1 }]],
   // School drive registration forms: the public QR link resolves by the immutable short code.
   lead_forms: [[{ shortCode: 1 }, { unique: true }], [{ status: 1, 'school.state': 1, 'school.districtKey': 1 }], [{ createdAt: -1 }]],
@@ -137,6 +141,12 @@ const specs = {
     [{ status: 1, featured: 1, approvedAt: -1, _id: -1 }],
     [{ status: 1, submittedAt: -1, _id: -1 }],
     [{ status: 1, rating: 1, submittedAt: -1, _id: -1 }],
+  ],
+  // DPDP privacy requests (small): lookup by reference, the admin queue by status, a student's own requests.
+  privacy_requests: [
+    [{ ref: 1 }, { unique: true }],
+    [{ status: 1, createdAt: -1 }],
+    [{ studentId: 1, createdAt: -1 }, { partialFilterExpression: { studentId: { $type: 'objectId' } } }],
   ],
 };
 

@@ -170,8 +170,8 @@ export default function TeamTab({ admin, request, data, reload, notify, onViewAc
   const toggleAll = (on) => setSelected((current) => (on ? [...new Set([...current, ...visibleIds])] : current.filter((id) => !visibleIds.includes(id))));
 
   const summary = <><strong className="crm-tabnum">{number(staff.length)}</strong> accounts · {number(active)} active{staff.length - active > 0 ? ` · ${number(staff.length - active)} suspended` : ''}</>;
-  return <>
-    <PageToolbar summary={summary} start={view === 'list' && <>
+  const rosterTools = <div className={styles.toolbar}>
+    <PageToolbar start={view === 'list' && <>
       <label className={access.search}><Icon name="search" /><span className="sr-only">Search staff</span>
         <input type="search" className="adm-input" value={query} placeholder="Search employees" onChange={(event) => setQuery(event.target.value)} /></label>
       <label className="sr-only" htmlFor="team-status">Status</label>
@@ -181,9 +181,16 @@ export default function TeamTab({ admin, request, data, reload, notify, onViewAc
     </>}>
       {canManage && <button type="button" className="adm-btn adm-btn--primary" onClick={() => setDrawer({ mode: 'add' })}><Icon name="userPlus" />Add employee</button>}
     </PageToolbar>
+    <div className={styles.rosterMeta}>
+      <span>{summary}</span>
+      {filtering && <span>{number(rows.length)} matching {rows.length === 1 ? 'employee' : 'employees'}</span>}
+    </div>
+  </div>;
 
-    {view === 'chart' ? <OrgChart staff={staff} onOpen={(person) => setDrawer({ mode: 'view', id: person.id })} />
+  return <>
+    {view === 'chart' ? <>{rosterTools}<OrgChart staff={staff} onOpen={(person) => setDrawer({ mode: 'view', id: person.id })} /></>
       : <div className={`adm-panel ${access.tablePanel}`}>
+        {rosterTools}
         {canManage && chosen.length > 0 && <div className={styles.bulk} role="region" aria-label="Bulk actions">
           <span><strong className="crm-tabnum">{chosen.length}</strong> selected</span>
           <button type="button" className="adm-btn adm-btn--sm" disabled={!chosen.some((person) => person.status === 'active')} onClick={() => ask('suspend', chosen)}><Icon name="pause" />Suspend</button>
@@ -212,7 +219,7 @@ export default function TeamTab({ admin, request, data, reload, notify, onViewAc
                   </span>
                 </td>
                 <td className={styles.statusCell}><StatusDot status={person.status} /></td>
-                <td className={styles.seenCell} title={person.lastLoginAt ? dateTimeOf(person.lastLoginAt) : undefined}>{person.lastLoginAt ? shortDateTime(person.lastLoginAt) : <span className={access.muted}>Never</span>}</td>
+                <td className={styles.seenCell} data-label="Last sign-in" title={person.lastLoginAt ? dateTimeOf(person.lastLoginAt) : undefined}>{person.lastLoginAt ? shortDateTime(person.lastLoginAt) : <span className={access.muted}>Never</span>}</td>
                 <td className={`${access.menuCell} ${styles.menuCell}`}><RowMenu label={`Actions for ${nameOf(person)}`} items={menuItems(person)} /></td>
               </tr>;
             })}</tbody>

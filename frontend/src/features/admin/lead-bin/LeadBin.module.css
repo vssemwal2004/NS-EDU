@@ -1,4 +1,4 @@
-.page { display: grid; grid-template-columns: minmax(0, 1fr); min-width: 0; }
+.page { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; min-width: 0; }
 .tableCard { min-width: 0; overflow: hidden; }
 @media (min-width: 761px) {
   .tableCard table { min-width: 0; table-layout: fixed; font-size: var(--crm-text-sm); }
@@ -14,7 +14,7 @@
 .truncate { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .actions { display: flex; align-items: center; justify-content: flex-end; gap: 4px; }
 .actions > button:last-child { width: 28px; height: 28px; }
-.note { display: flex; align-items: flex-start; gap: 10px; padding: 12px 18px; color: var(--adm-muted); font-size: var(--crm-text-sm); }
+.note { display: flex; align-items: flex-start; gap: 10px; padding: 12px 18px; border-color: var(--crm-warn-line); background: var(--adm-gold-soft); color: var(--adm-muted); font-size: var(--crm-text-sm); }
 .note svg { flex: none; width: 16px; height: 16px; margin-top: 2px; color: var(--adm-gold-ink); }
 .note p { margin: 0; }
 @media (max-width: 760px) {

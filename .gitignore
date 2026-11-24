@@ -10,3 +10,15 @@ coverage/
 *.log
 test-results/
 playwright-report/
+
+# Extra Next build folders from NEXT_DIST_DIR (.next-admin, .next-verify, .next-audit…)
+.next-*/
+
+# Design mock-ups, templates and screenshots stay on the designer's machine; notes (.md/.json) are kept.
+design/**/*.png
+design/**/*.jpg
+design/**/*.jpeg
+design/**/*.webp
+design/**/*.gif
+design/**/*.avif
+design/**/*.svg

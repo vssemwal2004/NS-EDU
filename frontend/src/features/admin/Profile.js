@@ -49,11 +49,10 @@ export default function Profile() {
   const role = admin.isOwner ? 'Owner' : admin.roleName || 'Employee';
   return <div className={styles.page}>
     <section className={styles.hero}>
-      <span className={styles.arc} aria-hidden="true" />
       <span className={styles.avatar} aria-hidden="true">{initialsOf(admin.name || admin.email)}</span>
       <div className={styles.identity}>
-        <p className="adm-eyebrow">{role}{admin.title ? ` · ${admin.title}` : ''}</p>
-        <h2>{admin.name || 'Add your name'}</h2>
+        <h1>{admin.name || 'Add your name'}</h1>
+        <p className={styles.role}>{role}{admin.title ? ` · ${admin.title}` : ''}</p>
         <p className={styles.meta}>
           <span><Icon name="mail" />{admin.email}</span>
           {admin.phone && <span><Icon name="phone" />{admin.phone}</span>}
@@ -62,7 +61,7 @@ export default function Profile() {
         </p>
       </div>
       <div className={styles.heroActions}>
-        <Link href="/admin/change-password" className="adm-btn adm-btn--gold"><Icon name="lock" />Change password</Link>
+        <Link href="/admin/change-password" className="adm-btn"><Icon name="lock" />Change password</Link>
       </div>
     </section>
 

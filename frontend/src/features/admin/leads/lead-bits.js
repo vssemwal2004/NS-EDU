@@ -18,8 +18,8 @@ export function formatWhen(value, { time = true } = {}) {
 }
 
 /** A muted "—" for a missing value; `title` says what is missing. */
-export function Dash({ title }) {
-  return <span className={styles.dash} title={title}>—</span>;
+export function Dash({ title, keepOnCard = false }) {
+  return <span className={styles.dash} title={title} data-lead-placeholder={!keepOnCard || undefined}>—</span>;
 }
 
 /** Next follow-up as text: red "Overdue" / amber "Today 4 pm" with an icon, otherwise the plain date. */
@@ -37,7 +37,7 @@ export function FollowUpText({ at, closed = false }) {
 /** High / Urgent as a small icon + word; Normal and Low read as a dash (they need no attention). */
 export function PriorityText({ priority, dash = true }) {
   const config = PRIORITIES[priority];
-  if (!config || priority === 'normal' || priority === 'low') return dash ? <Dash title={`${config?.label ?? 'Normal'} priority`} /> : null;
+  if (!config || priority === 'normal' || priority === 'low') return dash ? <Dash title={`${config?.label ?? 'Normal'} priority`} keepOnCard={priority === 'low'} /> : null;
   return <span className={`crm-tone ${styles.priority}`} data-tone={config.tone} title={`${config.label} priority`}><Icon name={config.icon} />{config.label}</span>;
 }
 

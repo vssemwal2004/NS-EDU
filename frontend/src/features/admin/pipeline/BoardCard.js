@@ -47,11 +47,14 @@ function BoardCard({ lead, closed, perms, people, dragging, moved, onDragStart, 
   return <article className={styles.card} data-overdue={overdue || undefined} data-draggable={draggable || undefined} data-dragging={dragging || undefined} data-moved={moved || undefined}
     draggable={draggable} onDragStart={draggable ? (event) => onDragStart(event, lead) : undefined} onDragEnd={draggable ? onDragEnd : undefined}>
     <div className={styles.cardTop}>
-      <h3 className={styles.name}><Link href={`/admin/leads/${lead.id}`} draggable={false} title={info}>{name}</Link></h3>
+      <Avatar name={name} size={30} />
+      <div className={styles.cardIdentity}>
+        <h3 className={styles.name}><Link href={`/admin/leads/${lead.id}`} draggable={false} title={info}>{name}</Link></h3>
+        {line && <p className={styles.line} title={line}>{line}</p>}
+      </div>
       <PriorityText priority={crm.priority} dash={false} />
       <span className={styles.menuWrap}><RowMenu label={`Actions for ${name}`} items={items} /></span>
     </div>
-    {line && <p className={styles.line} title={line}>{line}</p>}
     <div className={styles.cardFoot}>
       <span className={styles.chips}>
         {crm.heat && <HeatChip heat={crm.heat} source={crm.heatSource} score={crm.score} size="sm" />}

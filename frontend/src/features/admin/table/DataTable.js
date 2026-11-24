@@ -14,7 +14,7 @@ const SKELETON_WIDTHS = ['72%', '54%', '86%', '62%', '44%'];
  */
 export default function DataTable({
   columns, rows = [], rowKey = 'id', loading = false, busy = false, pageSize = 10, caption, empty, error = '', onRetry,
-  scrollKey, selectable = false, selectedIds = [], onSelectionChange, renderCell = (row, column) => row[column.key], rowLabel = (row) => keyOf(row, rowKey),
+  scrollKey, selectable = false, selectedIds = [], highlightedId, onSelectionChange, renderCell = (row, column) => row[column.key], rowLabel = (row) => keyOf(row, rowKey),
 }) {
   const scroller = useRef(null);
   useEffect(() => { if (scroller.current) scroller.current.scrollTop = 0; }, [scrollKey]);
@@ -47,7 +47,7 @@ export default function DataTable({
           {columns.map((column, cell) => <td key={column.key}><span style={{ width: SKELETON_WIDTHS[(index + cell) % SKELETON_WIDTHS.length] }} /></td>)}
         </tr>) : rows.map((row) => {
           const id = keyOf(row, rowKey);
-          return <tr key={id} data-selected={chosen.has(id) || undefined}>
+          return <tr key={id} data-selected={chosen.has(id) || undefined} data-highlighted={id === highlightedId || undefined}>
             {selectable && <td className={styles.checkCell}>
               <input type="checkbox" aria-label={`Select ${rowLabel(row)}`} checked={chosen.has(id)} onChange={(event) => toggle(id, event.target.checked)} />
             </td>}

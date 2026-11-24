@@ -106,18 +106,23 @@ export default function DriveDetail({ id, initialTab = 'builder' }) {
   ];
 
   return <div className={styles.screen}>
-    <PageToolbar start={<div className={styles.detailHead}>
-      <Link href="/admin/drives" className={styles.back} aria-label="All school drives" title="All school drives"><Icon name="arrow" /></Link>
-      <div className={styles.detailTitle}>
-        <p><strong title={item.school.name}>{item.school.name}</strong><DriveStatus status={item.status} closedReason={item.closedReason} /></p>
-        <small><span title={place}>{place}</span><span className={styles.code}>/r/{item.shortCode}</span>{item.campaign && <span>{item.campaign}</span>}
-          <span className="crm-tabnum">{formatCount(item.submissionCount)}{item.maxSubmissions ? ` of ${formatCount(item.maxSubmissions)}` : ''} {item.submissionCount === 1 ? 'registration' : 'registrations'}</span></small>
-      </div>
-    </div>}>
-      <button type="button" className="adm-btn" onClick={copy}><Icon name="copy" />Copy link</button>
-      <a className="adm-btn" href={`/r/${item.shortCode}`} target="_blank" rel="noopener noreferrer"><Icon name="external" />Open form</a>
-      <RowMenu label="More drive actions" items={more} trigger={<><Icon name="more" /><span className="sr-only">More</span></>} className={styles.moreButton} />
-    </PageToolbar>
+    <div className={styles.detailBanner}>
+      <PageToolbar start={<div className={styles.detailHead}>
+        <Link href="/admin/drives" className={styles.back} aria-label="All school drives" title="All school drives"><Icon name="arrow" /></Link>
+        <div className={styles.detailTitle}>
+          <div className={styles.detailHeadline}>
+            <h1 title={item.school.name}>{item.school.name}</h1>
+            <DriveStatus status={item.status} closedReason={item.closedReason} />
+          </div>
+          <small><span title={place}>{place}</span><span className={styles.code}>/r/{item.shortCode}</span>{item.campaign && <span>{item.campaign}</span>}
+            <span className="crm-tabnum">{formatCount(item.submissionCount)}{item.maxSubmissions ? ` of ${formatCount(item.maxSubmissions)}` : ''} {item.submissionCount === 1 ? 'registration' : 'registrations'}</span></small>
+        </div>
+      </div>}>
+        <button type="button" className="adm-btn" onClick={copy}><Icon name="copy" />Copy link</button>
+        <a className="adm-btn" href={`/r/${item.shortCode}`} target="_blank" rel="noopener noreferrer"><Icon name="external" />Open form</a>
+        <RowMenu label="More drive actions" items={more} trigger={<><Icon name="more" /><span className="sr-only">More</span></>} className={styles.moreButton} />
+      </PageToolbar>
+    </div>
 
     <div className={styles.tabsRow}>
       <ViewTabs label="School drive sections" value={tab} onChange={choose} items={[

@@ -42,12 +42,12 @@ export function TrendTable({ data, title, valueLabel = 'Leads' }) {
 }
 
 /**
- * Counts over time, one accent series: columns up to 45 points, a line beyond. The highest point is labelled;
+ * Counts over time, one accent series: columns up to 45 points by default, or a line with variant="line". The highest point is labelled;
  * pointer and arrow keys move a tooltip; a visually hidden table carries the numbers for screen readers.
  * data: [{ key, value, short, long }] (short = axis label, long = tooltip/table label).
  * `table` shows the visible table view instead of the chart.
  */
-export default function TrendChart({ data, title, valueLabel = 'Leads', height = 200, table = false }) {
+export default function TrendChart({ data, title, valueLabel = 'Leads', height = 200, table = false, variant = 'auto' }) {
   const id = useId();
   const [ref, width] = useWidth();
   const [active, setActive] = useState(null);
@@ -63,7 +63,7 @@ export default function TrendChart({ data, title, valueLabel = 'Leads', height =
   const plotW = Math.max(width - PAD.left - PAD.right, 40);
   const plotH = height - PAD.top - PAD.bottom;
   const base = PAD.top + plotH;
-  const columns = count <= MAX_COLUMNS;
+  const columns = variant !== 'line' && count <= MAX_COLUMNS;
   const slot = plotW / count;
   const barW = Math.max(2, Math.min(24, slot - 2, slot * 0.72));
   const x = (index) => (columns ? PAD.left + slot * (index + 0.5) : PAD.left + (count > 1 ? (index / (count - 1)) * plotW : plotW / 2));
@@ -108,7 +108,9 @@ export default function TrendChart({ data, title, valueLabel = 'Leads', height =
         {Array.from({ length: steps + 1 }, (_, i) => i).map((tick) => <text key={tick} className={styles.axis} x={PAD.left - 8} y={y(tick * step) + 4} textAnchor="end">{fmt(tick * step)}</text>)}
         {columns
           ? data.map((item, index) => <path key={item.key} className={styles.column} data-active={active === index} d={column(index, item.value)} />)
-          : <><path className={styles.area} d={`${line}L${x(count - 1)} ${base}L${x(0)} ${base}Z`} /><path className={styles.line} d={line} /></>}
+          : <><path className={styles.area} d={`${line}L${x(count - 1)} ${base}L${x(0)} ${base}Z`} /><path className={styles.line} d={line} />
+            {variant === 'line' && count <= 14 && data.map((item, index) => <circle key={item.key} className={styles.dot} cx={x(index)} cy={y(item.value)} r={3.5} />)}
+          </>}
         <line className={styles.baseline} x1={PAD.left} x2={width - PAD.right} y1={base} y2={base} />
         {ticks.map((index) => <text key={data[index].key} className={styles.axis} x={x(index)} y={height - 8}
           textAnchor={!columns && index === 0 ? 'start' : !columns && index === count - 1 ? 'end' : 'middle'}>{data[index].short}</text>)}

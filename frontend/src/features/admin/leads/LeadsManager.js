@@ -2,8 +2,8 @@
 /**
  * Staff leads list (CRM work screen). The shell renders the page title and the section tabs, so this starts with
  * the toolbar: search, saved views and active filter chips on the left; sort, filters, columns, download and
- * "Add lead" on the right. Below: one quick-view strip (Hot, Follow-up today, Overdue, …) that filters the
- * table, stage tabs with counts, then the server-paged table with row menus and a sticky bulk bar.
+ * "Add lead" on the right. Quick views and stage tabs filter the server-paged table with row menus and a
+ * sticky bulk bar. A lead preview opens on demand so daily work can stay on the list.
  * Built for large volumes: server paging (25/50/100), debounced search, cached counts, no per-row requests.
  *
  * Embeddable (e.g. the submissions of one school drive):
@@ -23,10 +23,10 @@ import { useAdminSession } from '@/features/admin/AdminSession';
 import AdminDrawer from '@/features/admin/AdminDrawer';
 import RowMenu from '@/features/admin/crm/RowMenu';
 import { useToaster } from '@/features/admin/crm/toast';
-import { HeatChip, ScoreMeter } from '@/features/admin/crm/ui';
+import { Avatar, HeatChip, ScoreMeter } from '@/features/admin/crm/ui';
 import { CHANNELS, can, OPEN_STAGES, STAGES } from '@/features/admin/crm/meta';
 import { dateTimeOf, displayName, relativeTime } from '@/features/admin/crm/format';
-import { PageToolbar, StatStrip, ViewTabs } from '@/features/admin/ui/Page';
+import { PageToolbar, ViewTabs } from '@/features/admin/ui/Page';
 import { readSticky, writeSticky } from '@/features/admin/ui/useStickyState';
 import ActiveFilterChips from '@/features/admin/table/ActiveFilterChips';
 import ColumnPicker from '@/features/admin/table/ColumnPicker';
@@ -37,9 +37,11 @@ import Pagination from '@/features/admin/table/Pagination';
 import { useColumnPrefs } from '@/features/admin/table/useColumnPrefs';
 import { clearServerListCache, toQuery, useServerList } from '@/features/admin/table/useServerList';
 import AddLeadDrawer from './AddLeadDrawer';
+import LeadPreview from './LeadPreview';
 import { Dash, FollowUpText, formatWhen, Person, PriorityText, StageDot } from './lead-bits';
 import { BulkBar, BulkDialog } from './LeadBulk';
 import { activeFilterCount, apiFilterParams, DRAWER_KEYS, EMPTY_FILTERS, leadFilterChips, leadFilterSections, readFilters, urlParams, withoutPaging } from './lead-filters';
+import { isDialable } from '@/features/admin/lead-actions/contact';
 import { formatCount, isQuick, LEAD_PAGE_SIZES, LEAD_STATUSES, LEADS_FLASH_KEY, LEADS_QUERY_KEY, whatsAppLink } from './lead-format';
 import { activeViewOf, CLEAR_VIEW, personName, useCrmMeta, useSavedViews, viewKeys, viewsFor } from './lead-views';
 import styles from './Leads.module.css';
@@ -52,7 +54,7 @@ const PLACEHOLDER_COLUMNS = ['Lead', 'Temperature', 'Stage', 'Next follow-up', '
 // The defaults fit a 1280px screen without a horizontal scrollbar; Source, Received, Score… are one click away in Columns.
 const CRM_DEFAULTS = ['fullName', 'heat', 'status', 'nextFollowUp', 'priority', 'assigned', 'course'];
 // Fixed column widths (px) for the fixed-layout table; columns without one (Lead, Course, form answers) share the rest.
-const WIDTHS = { heat: 100, status: 112, nextFollowUp: 120, priority: 84, assigned: 140, createdAt: 120, channel: 128, score: 100, ref: 132, phone: 132, email: 190, tags: 150, lastActivity: 104, _menu: 44 };
+const WIDTHS = { fullName: 174, heat: 100, status: 112, nextFollowUp: 120, priority: 84, assigned: 130, createdAt: 120, channel: 128, score: 100, ref: 132, phone: 132, email: 190, tags: 150, lastActivity: 104, _menu: 70 };
 const SYNTHETIC_ASSIGNED = { key: 'assigned', label: 'Assigned to', group: 'Lead' };
 const MENU_COLUMN = { key: '_menu', label: 'Actions', width: WIDTHS._menu };
 const LABELS = { fullName: 'Lead', status: 'Stage', nextFollowUp: 'Next follow-up', createdAt: 'Received' };
@@ -77,7 +79,7 @@ function StageText({ status }) {
 
 function AssigneeCell({ item, people, text }) {
   const ids = item.assignedEmployeeIds ?? [];
-  if (!ids.length) return muted('Unassigned');
+  if (!ids.length) return <Dash title="Unassigned" keepOnCard />;
   const known = ids.map((id) => people.get(id)).filter(Boolean).map(personName);
   const names = known.length ? known : String(text ?? '').split(';').map((value) => displayName(value.trim())).filter(Boolean);
   if (!names.length) return <Person name={`${ids.length} assigned`} />;
@@ -88,12 +90,15 @@ function LeadCell({ item }) {
   const name = item.applicant?.fullName || 'Name not provided';
   const phone = item.applicant?.phone;
   const wa = whatsAppLink(phone);
+  // Masked on leads not assigned to the viewer: shown as text; the full number is revealed on the lead page (logged).
+  const dialable = isDialable(phone);
   return <div className={styles.leadCell}>
+    <span className={styles.leadAvatar}><Avatar name={name} size={32} /></span>
     <div className={styles.leadMain}>
       <Link className={styles.leadName} href={`/admin/leads/${item.id}`} title={`${name} · ${item.ref}`}>{name}</Link>
-      <small className={styles.leadSub}>{phone ? <a href={`tel:${phone}`}>{phone}</a> : 'No mobile'}<span aria-hidden="true"> · </span><span>{item.ref}</span></small>
+      <small className={styles.leadSub}>{!phone ? 'No mobile' : dialable ? <a href={`tel:${phone}`}>{phone}</a> : <span title="Masked: open the lead to reveal">{phone}</span>}<span aria-hidden="true"> · </span><span>{item.ref}</span></small>
     </div>
-    {phone && <span className={styles.quick}>
+    {dialable && <span className={styles.quick}>
       <a href={`tel:${phone}`} aria-label={`Call ${name}`} title="Call"><Icon name="phone" /></a>
       {wa && <a href={wa} target="_blank" rel="noopener noreferrer" aria-label={`WhatsApp ${name}`} title="WhatsApp"><Icon name="chat" /></a>}
     </span>}
@@ -196,6 +201,7 @@ export default function LeadsManager({ initial = NO_FILTERS, fixedFilters = NO_F
   const [selectedIds, setSelectedIds] = useState([]);
   const [bulkAction, setBulkAction] = useState(null);
   const [rowAction, setRowAction] = useState(null);
+  const [previewId, setPreviewId] = useState('');
   const toast = useToaster();
   // Say so when the list opened with remembered filters, so nobody wonders why leads are missing.
   useEffect(() => {
@@ -236,12 +242,14 @@ export default function LeadsManager({ initial = NO_FILTERS, fixedFilters = NO_F
   }, { scope, enabled: columnsReady, next: nextPage });
   const data = list.data;
   const items = data?.items ?? [];
+  const preview = items.find((item) => item.id === previewId);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
       const q = query.trim();
       setFilters((current) => (current.q === q ? current : { ...withoutPaging(current), q }));
       setSelectedIds([]);
+      setPreviewId('');
     }, 300);
     return () => window.clearTimeout(timer);
   }, [query]);
@@ -273,6 +281,7 @@ export default function LeadsManager({ initial = NO_FILTERS, fixedFilters = NO_F
   const update = useCallback((patch, { keepPage = false } = {}) => {
     setFilters((current) => ({ ...(keepPage ? current : withoutPaging(current)), ...patch }));
     setSelectedIds([]);
+    setPreviewId('');
   }, []);
   const countFor = useCallback((draft, signal) => request(`/leads?${toQuery({ ...apiFilterParams(draft, fixed), limit: LEAD_PAGE_SIZES[0] })}`, { signal }).then((result) => result.total), [fixed, request]);
   function close() {
@@ -286,6 +295,7 @@ export default function LeadsManager({ initial = NO_FILTERS, fixedFilters = NO_F
     setQuery('');
     setFilters((current) => ({ ...readFilters({}), limit: current.limit, sort: current.sort }));
     setSelectedIds([]);
+    setPreviewId('');
   }
   function refresh() {
     clearServerListCache('/leads');
@@ -308,11 +318,14 @@ export default function LeadsManager({ initial = NO_FILTERS, fixedFilters = NO_F
     const wa = whatsAppLink(phone);
     const open = isOpen(item);
     const act = (action) => () => setRowAction({ action, lead: item });
+    // Masked contacts (leads not assigned to you) are revealed on the lead page, where the reveal is logged.
+    const masked = Boolean(item.contactMasked);
+    const noPhone = masked ? 'Masked: open the lead and use Reveal' : 'This lead has no mobile number';
     return [
       { key: 'open', label: 'Open lead', icon: 'eye', href },
-      { key: 'call', label: 'Call', icon: 'phone', hint: phone, disabled: !phone, reason: 'This lead has no mobile number', onSelect: () => { window.location.href = `tel:${phone}`; } },
-      { key: 'wa', label: 'WhatsApp', icon: 'chat', disabled: !wa, reason: 'This lead has no mobile number', onSelect: () => window.open(wa, '_blank', 'noopener,noreferrer') },
-      { key: 'email', label: 'Email', icon: 'mail', disabled: !email, reason: 'This lead has no email address', onSelect: () => { window.location.href = `mailto:${email}`; } },
+      { key: 'call', label: 'Call', icon: 'phone', hint: phone, disabled: !isDialable(phone), reason: noPhone, onSelect: () => { window.location.href = `tel:${phone}`; } },
+      { key: 'wa', label: 'WhatsApp', icon: 'chat', disabled: !wa, reason: noPhone, onSelect: () => window.open(wa, '_blank', 'noopener,noreferrer') },
+      { key: 'email', label: 'Email', icon: 'mail', disabled: !email || masked, reason: masked ? 'Masked: open the lead and use Reveal' : 'This lead has no email address', onSelect: () => { window.location.href = `mailto:${email}`; } },
       { divider: true },
       { key: 'log', label: 'Log activity', icon: 'note', hidden: !canNotes, href: `${href}#log` },
       { key: 'follow', label: 'Schedule follow-up', icon: 'calendar', hidden: !canNotes, disabled: !open, reason: 'Closed leads have no follow-ups', href: `${href}#follow-up` },
@@ -322,7 +335,7 @@ export default function LeadsManager({ initial = NO_FILTERS, fixedFilters = NO_F
       { divider: true },
       { key: 'assign', label: 'Assign…', icon: 'userPlus', hidden: !(canAssign && assignees.length), onSelect: act('assign') },
       { key: 'edit', label: 'Edit details', icon: 'edit', hidden: !can(admin, 'leads.edit'), href: `${href}#edit` },
-      { key: 'copy', label: 'Copy phone number', icon: 'copy', disabled: !phone, reason: 'This lead has no mobile number', onSelect: () => copyPhone(phone) },
+      { key: 'copy', label: 'Copy phone number', icon: 'copy', disabled: !isDialable(phone), reason: noPhone, onSelect: () => copyPhone(phone) },
       { divider: true },
       { key: 'delete', label: 'Delete…', icon: 'trash', tone: 'danger', hidden: !can(admin, 'leads.delete'), onSelect: act('delete') },
     ];
@@ -366,6 +379,7 @@ export default function LeadsManager({ initial = NO_FILTERS, fixedFilters = NO_F
     setQuery(next.q);
     setFilters((current) => ({ ...next, limit: current.limit }));
     setSelectedIds([]);
+    setPreviewId('');
   }
   const savedMenu = [
     { heading: 'Your views' },
@@ -393,7 +407,10 @@ export default function LeadsManager({ initial = NO_FILTERS, fixedFilters = NO_F
     const blank = value === '' || value === null || value === undefined;
     const crm = item.crm ?? {};
     switch (column.key) {
-      case '_menu': return <RowMenu label={`Actions for ${item.applicant?.fullName || item.ref}`} items={menuItems(item)} />;
+      case '_menu': return <div className={styles.rowActions}>
+        <button type="button" className="adm-btn adm-btn--sm adm-btn--icon adm-btn--ghost" aria-label={`Preview ${item.applicant?.fullName || item.ref}`} title="Preview lead" aria-pressed={previewId === item.id} onClick={() => setPreviewId(previewId === item.id ? '' : item.id)}><Icon name="eye" /></button>
+        <RowMenu label={`Actions for ${item.applicant?.fullName || item.ref}`} items={menuItems(item)} />
+      </div>;
       case 'fullName': return <LeadCell item={item} />;
       case 'ref': return <><Link className={styles.refLink} href={`/admin/leads/${item.id}`}>{item.ref}</Link>{isQuick(item) && <span className={styles.mode} title="Submitted with the one-screen quick apply form">Quick</span>}</>;
       case 'status': return <StageText status={item.status} />;
@@ -407,8 +424,8 @@ export default function LeadsManager({ initial = NO_FILTERS, fixedFilters = NO_F
       case 'createdAt': return <span className="crm-tabnum" title={dateTimeOf(item.createdAt)}>{formatWhen(item.createdAt)}</span>;
       case 'course': return courseCell(item);
       case 'assigned': return <AssigneeCell item={item} people={people} text={value} />;
-      case 'phone': return blank ? muted() : <a className={styles.cellLink} href={`tel:${value}`}>{value}</a>;
-      case 'email': return blank ? muted() : <a className={styles.cellLink} href={`mailto:${value}`} title={value}>{value}</a>;
+      case 'phone': return blank ? muted() : !isDialable(String(value)) ? <span className={styles.truncate} title="Masked: open the lead to reveal">{value}</span> : <a className={styles.cellLink} href={`tel:${value}`}>{value}</a>;
+      case 'email': return blank ? muted() : item.contactMasked ? <span className={styles.truncate} title="Masked: open the lead to reveal">{value}</span> : <a className={styles.cellLink} href={`mailto:${value}`} title={value}>{value}</a>;
       default: return blank ? muted() : <span className={styles.truncate} title={String(value)}>{String(value)}</span>;
     }
   }
@@ -446,16 +463,34 @@ export default function LeadsManager({ initial = NO_FILTERS, fixedFilters = NO_F
       <button type="button" className="adm-btn" aria-haspopup="dialog" aria-label="Columns" title="Columns" disabled={!columnsInfo.data} onClick={() => setPanel('columns')}><Icon name="layers" /><span className={styles.btnText}>Columns</span></button>
       {canExport && <button type="button" className="adm-btn" aria-haspopup="dialog" aria-label="Download" title="Download" disabled={!columnsInfo.data} onClick={() => setPanel('export')}><Icon name="download" /><span className={styles.btnText}>Download</span></button>}
       {canCreate && !scoped && <button type="button" className="adm-btn adm-btn--primary" aria-haspopup="dialog" onClick={() => setPanel('add')}><Icon name="plus" />Add lead</button>}
-      {canCreate && !scoped && <Link className="adm-btn" href="/admin/leads/uploads"><Icon name="upload" />Uploaded leads / CSV</Link>}
+      {canCreate && !scoped && <Link className={`adm-btn ${styles.uploadLink}`} href="/admin/leads/uploads" aria-label="Uploaded leads / CSV" title="Uploaded leads / CSV"><Icon name="upload" /><span>Uploaded leads / CSV</span></Link>}
     </PageToolbar>
 
-    {!scoped && <StatStrip label="Quick views" items={statItems} loading={!viewCounts.data && !viewCounts.error} />}
-
+    <div className={styles.desk} data-views={!scoped || undefined} data-preview={Boolean(preview) || undefined}>
+      {!scoped && <aside className={styles.deskViews} aria-label="Lead views">
+        <h2>Quick views</h2>
+        <ul className={styles.viewLinks}>
+          {statItems.map((item) => <li key={item.key}>
+            <button type="button" className={item.tone ? 'crm-tone' : ''} data-tone={item.tone} aria-pressed={item.active} onClick={item.onClick} title={item.label}>
+              <Icon name={item.icon} /><span>{item.label}</span><strong className="crm-tabnum">{typeof item.value === 'number' ? formatCount(item.value) : item.value}</strong>
+            </button>
+          </li>)}
+        </ul>
+        {syncUrl && savedViews.length > 0 && <div className={styles.savedLinks}>
+          <h2>Saved views</h2>
+          <ul className={styles.viewLinks}>
+            {savedViews.map((item) => <li key={item.id}><button type="button" aria-pressed={item.id === activeSaved?.id} onClick={() => applySaved(item)} title={item.name}><Icon name="bookmark" /><span>{item.name}</span></button></li>)}
+          </ul>
+        </div>}
+      </aside>}
+      <div className={styles.deskList}>
     <div className={styles.stageRow}>
       {showStages && <ViewTabs label="Filter by stage" value={stageValue} items={stageTabs} onChange={(key) => update({ status: key === 'all' ? '' : key })} />}
       <p className={styles.summary} aria-live="polite"><strong>{totalText}</strong>
         {showStages && typeof newToday === 'number' && <span> · {formatCount(newToday)} new today</span>}
         {scopeText && <span> · {scopeText}</span>}</p>
+      {!hidden.includes('range') && <button type="button" className={`adm-btn adm-btn--sm ${styles.receiveToday}`} aria-pressed={filters.range === 'today'}
+        onClick={() => update({ range: filters.range === 'today' ? '' : 'today', from: '', to: '' })}><Icon name="calendar" />Received today</button>}
       <button type="button" className="adm-btn adm-btn--sm adm-btn--ghost adm-btn--icon" aria-label="Refresh the list" title="Refresh" onClick={refresh} disabled={list.busy}><Icon name="refresh" /></button>
     </div>
 
@@ -464,7 +499,7 @@ export default function LeadsManager({ initial = NO_FILTERS, fixedFilters = NO_F
       <DataTable columns={tableColumns} rows={items} loading={list.loading} busy={list.busy || columnsInfo.busy} pageSize={filters.limit}
         caption={`${heading}, ${filters.sort === 'oldest' ? 'oldest' : 'newest'} first`} scrollKey={`${filters.page}|${filters.cursor}`}
         error={columnsInfo.error || list.error} onRetry={columnsInfo.error ? columnsInfo.reload : list.reload}
-        selectable={selectable} selectedIds={selectedIds} onSelectionChange={setSelectedIds} rowLabel={(item) => item.ref} renderCell={renderCell}
+        selectable={selectable} selectedIds={selectedIds} highlightedId={previewId} onSelectionChange={setSelectedIds} rowLabel={(item) => item.ref} renderCell={renderCell}
         empty={emptyState} />
       {data && !list.error && (items.length > 0 || filters.page > 1) && <Pagination page={filters.page} pageSize={filters.limit} pageSizes={LEAD_PAGE_SIZES}
         total={data.total} totalExact={data.totalExact} rowCount={items.length} hasNext={data.hasNext} hasPrevious={data.hasPrevious} maxSkip={data.maxSkip}
@@ -474,6 +509,9 @@ export default function LeadsManager({ initial = NO_FILTERS, fixedFilters = NO_F
         onNext={() => update({ page: filters.page + 1, cursor: data.cursors?.last ?? '', dir: 'after' }, { keepPage: true })}
         onPrevious={() => update({ page: Math.max(1, filters.page - 1), cursor: data.cursors?.first ?? '', dir: 'before' }, { keepPage: true })} />}
     </section>
+      </div>
+      {preview && <LeadPreview key={preview.id} item={preview} request={request} scope={scope} canNotes={canNotes} onClose={() => setPreviewId('')} onChanged={refresh} />}
+    </div>
 
     {selectedIds.length > 0 && bulkAllowed && <BulkBar count={selectedIds.length} allowed={bulkAllowed} onAction={setBulkAction} onClear={() => setSelectedIds([])} />}
 

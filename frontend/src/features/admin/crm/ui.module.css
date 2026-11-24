@@ -24,7 +24,7 @@
 .count { display: inline-grid; min-width: 26px; height: 22px; padding: 0 8px; place-items: center; border-radius: 999px; background: var(--tone-soft); color: var(--tone); font-size: var(--crm-text-xs); font-weight: 700; font-variant-numeric: tabular-nums; }
 
 .empty { display: grid; justify-items: center; gap: 8px; padding: 32px 16px; color: var(--adm-muted); text-align: center; }
-.empty strong { color: var(--adm-text); font-family: var(--adm-serif); font-size: calc(1.25rem * var(--crm-scale)); font-weight: 400; }
+.empty strong { color: var(--adm-text); font-family: var(--adm-heading, inherit); font-size: calc(1.125rem * var(--crm-scale)); font-weight: 700; }
 .empty p { max-width: 42ch; margin: 0; font-size: var(--crm-text-sm); line-height: 1.5; }
-.emptyIcon { display: grid; width: 52px; height: 52px; place-items: center; border-radius: 50%; background: var(--crm-neutral-soft); color: var(--adm-gold-ink); box-shadow: 0 0 0 6px #FCF8F4; }
+.emptyIcon { display: grid; width: 46px; height: 46px; place-items: center; border-radius: 12px; background: var(--adm-accent-soft); color: var(--adm-wine); }
 .emptyIcon svg { width: 22px; height: 22px; }

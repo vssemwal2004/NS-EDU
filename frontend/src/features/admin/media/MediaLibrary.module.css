@@ -9,16 +9,16 @@
 .notice svg { flex-shrink: 0; width: 14px; height: 14px; }
 
 .panel { min-width: 0; overflow: hidden; }
-.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 14px; margin: 0; padding: 16px; list-style: none; transition: opacity 120ms ease; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(185px, 1fr)); gap: 16px; margin: 0; padding: 18px; list-style: none; transition: opacity 120ms ease; }
 .grid[data-busy] { opacity: .55; }
-.card { display: flex; flex-direction: column; min-width: 0; overflow: hidden; border: 1px solid var(--adm-line); border-radius: var(--adm-radius); background: var(--adm-surface); box-shadow: var(--adm-shadow); transition: transform var(--adm-fast) ease, box-shadow var(--adm-fast) ease; }
-.card:hover { transform: translateY(-2px); box-shadow: var(--adm-shadow-lift); }
+.card { display: flex; flex-direction: column; min-width: 0; overflow: hidden; border: 1px solid var(--adm-line); border-radius: var(--adm-radius-sm); background: var(--adm-surface); transition: border-color var(--adm-fast) ease, box-shadow var(--adm-fast) ease; }
+.card:hover, .card:focus-within { border-color: var(--adm-accent-line); box-shadow: var(--adm-shadow); }
 .thumb { display: block; aspect-ratio: 4 / 3; overflow: hidden; border-bottom: 1px solid var(--adm-line); background: repeating-conic-gradient(var(--adm-hover) 0% 25%, var(--adm-surface) 0% 50%) 50% / 16px 16px; }
 .thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .thumb:focus-visible { outline: none; box-shadow: inset var(--adm-focus); }
-.cardBody { display: grid; gap: 2px; padding: 6px 6px 10px 12px; line-height: 1.35; }
+.cardBody { display: grid; gap: 4px; padding: 6px 8px 12px 12px; line-height: 1.35; }
 .cardHead { display: flex; align-items: center; justify-content: space-between; gap: 4px; min-width: 0; }
-.name { overflow: hidden; font-size: var(--crm-text-sm); font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.name { overflow: hidden; font-size: var(--crm-text-sm); font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
 .empty { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 10px; padding: 32px 16px; color: var(--adm-muted); font-size: var(--crm-text-sm); text-align: center; }
 .empty p { margin: 0; }
 .required { color: var(--crm-bad); }
@@ -42,7 +42,7 @@
 /* Upload drawer */
 .form { display: grid; gap: 12px; font-size: var(--crm-text-sm); }
 .fieldBlock { display: grid; gap: 6px; }
-.drop { position: relative; display: grid; min-height: 140px; place-items: center; overflow: hidden; border: 1.5px dashed var(--adm-line-strong); border-radius: var(--adm-radius); background: var(--adm-subtle); cursor: pointer; transition: border-color var(--adm-fast) ease, background var(--adm-fast) ease; }
+.drop { position: relative; display: grid; min-height: 168px; place-items: center; overflow: hidden; border: 1.5px dashed var(--adm-line-strong); border-radius: var(--adm-radius); background: var(--adm-subtle); cursor: pointer; transition: border-color var(--adm-fast) ease, background var(--adm-fast) ease; }
 .drop:hover { border-color: var(--adm-wine); background: var(--adm-accent-soft); }
 .drop:focus-within { border-color: var(--adm-wine); box-shadow: var(--adm-focus); }
 .drop[data-invalid] { border-color: var(--crm-bad-solid); }

@@ -1,12 +1,9 @@
-/* Forced password change (first sign-in). Same card as the sign-in page: ivory sheet, white card, serif title
-   over a short gold rule, wine only for the primary action and focus. */
-.passwordPage { display: grid; min-height: 100dvh; place-items: center; padding: 32px 16px; background: var(--adm-bg); color: var(--adm-text); font-size: var(--crm-text-sm); }
+.passwordPage { display: grid; min-height: 100dvh; place-items: center; padding: 32px 16px; background: var(--adm-subtle); color: var(--adm-text); font-size: var(--crm-text-sm); }
 .column { display: grid; gap: 20px; width: min(440px, 100%); }
-.brand { --brand-height: 52px; display: flex; align-items: center; justify-content: center; gap: 14px; }
-.brand span { padding-left: 14px; border-left: 1px solid var(--adm-line-strong); color: var(--adm-gold-ink); font-size: .6875rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
+.brand { --brand-height: 49px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+.brand span { padding: 5px 9px; border-radius: var(--adm-radius-sm); background: var(--adm-accent-soft); color: var(--adm-wine); font-size: var(--crm-text-xs); font-weight: 650; }
 .card { padding: 30px 30px 28px; border: 1px solid var(--adm-line); border-radius: var(--adm-radius-lg); background: var(--adm-surface); box-shadow: var(--adm-shadow-lift); }
-.card h1 { position: relative; margin: 0; padding-bottom: 12px; color: var(--adm-wine); font-family: var(--adm-serif); font-size: calc(1.875rem * var(--crm-scale)); font-weight: 400; letter-spacing: -.01em; line-height: 1.1; }
-.card h1::after { content: ''; position: absolute; left: 0; bottom: 0; width: 56px; height: 2px; border-radius: 2px; background: var(--adm-gold); }
+.card h1 { margin: 0; color: var(--adm-text); font-family: var(--adm-heading); font-size: calc(1.875rem * var(--crm-scale)); font-weight: 700; letter-spacing: -.045em; line-height: 1.15; }
 .lead { margin: 12px 0 0; color: var(--adm-muted); line-height: 1.5; }
 .form { display: grid; gap: 14px; margin-top: 22px; }
 .form :global(.adm-input) { min-height: 44px; }

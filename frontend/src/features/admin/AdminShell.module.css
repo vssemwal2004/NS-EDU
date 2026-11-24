@@ -145,23 +145,16 @@
 .accountLinks svg { width: 16px; height: 16px; color: var(--adm-gold-ink); }
 
 /* ---------- The sheet ---------- */
-.content { min-height: calc(100dvh - var(--adm-topbar)); padding: 30px 34px 48px; border-radius: var(--adm-sheet-radius) 0 0 0; background: var(--adm-bg); outline: none; }
-.content > * { animation: adm-rise .45s var(--adm-ease) backwards; }
-.content > :nth-child(2) { animation-delay: 60ms; }
-.content > :nth-child(3) { animation-delay: 110ms; }
-.content > :nth-child(n + 4) { animation-delay: 150ms; }
+.content { --adm-page-gutter: clamp(20px, 2.55vw, 36px); min-height: calc(100dvh - var(--adm-topbar)); padding: 24px var(--adm-page-gutter) 48px; border-radius: var(--adm-sheet-radius) 0 0 0; background: var(--adm-bg); outline: none; }
 
-/* Page header: eyebrow, serif title, description, tabs (or a gold hairline when the section has no tabs). */
-.pageHeader { display: grid; gap: 18px; margin: 0 0 24px; }
-.pageHeading h1 { margin: 6px 0 0; color: var(--adm-wine); font-family: var(--adm-serif); font-size: calc(2.125rem * var(--crm-scale)); font-weight: 400; letter-spacing: -.01em; line-height: 1.05; }
-.pageHeading p:last-child { margin: 8px 0 0; color: var(--adm-muted); font-size: var(--crm-text-md); }
-.pageHeader:not(:has(.tabs))::after { content: ''; height: 1px; background: linear-gradient(90deg, var(--adm-gold), rgb(201 164 106 / 0%) 70%); }
-.tabs { display: flex; gap: 26px; overflow-x: auto; border-bottom: 1px solid var(--adm-line); scrollbar-width: none; }
-.tabs::-webkit-scrollbar { display: none; }
-.tab { display: inline-flex; flex-shrink: 0; align-items: center; gap: 7px; margin-bottom: -1px; padding: 10px 0 11px; border-bottom: 2px solid transparent; color: var(--adm-muted); font-size: var(--crm-text-sm); font-weight: 600; text-decoration: none; white-space: nowrap; transition: color var(--adm-fast) ease, border-color var(--adm-fast) ease; }
+.pageHeader { display: grid; gap: 16px; margin: 0 0 20px; }
+.pageHeading h1 { margin: 0; color: var(--adm-text); font-family: var(--adm-heading); font-size: clamp(1.6rem, calc(2rem * var(--crm-scale)), 2.5rem); font-weight: 700; letter-spacing: -.045em; line-height: 1.15; }
+.pageHeading p { margin: 6px 0 0; color: var(--adm-muted); font-size: var(--crm-text-sm); line-height: 1.6; }
+.tabs { display: flex; gap: 4px; max-width: 100%; overflow-x: auto; border-bottom: 1px solid var(--adm-line); scrollbar-width: thin; }
+.tab { display: inline-flex; flex-shrink: 0; align-items: center; gap: 7px; padding: 11px 13px 10px; border-bottom: 2px solid transparent; border-radius: 8px 8px 0 0; color: var(--adm-muted); font-size: var(--crm-text-sm); font-weight: 650; text-decoration: none; white-space: nowrap; transition: background var(--adm-fast) ease, color var(--adm-fast) ease; }
 .tab svg { width: 15px; height: 15px; }
-.tab:hover { color: var(--adm-text); }
-.tab[aria-current="page"] { border-color: var(--adm-wine); color: var(--adm-wine); }
+.tab:hover { background: var(--adm-subtle); color: var(--adm-text); }
+.tab[aria-current="page"] { border-color: var(--adm-wine); background: var(--adm-accent-soft); color: var(--adm-wine); }
 .tab:focus-visible { outline: none; box-shadow: var(--adm-focus); border-radius: 6px 6px 0 0; }
 
 /* ---------- Phones ---------- */
@@ -188,7 +181,7 @@
   .createButton span { display: none; }
   .createButton { padding: 0 11px !important; }
   .workspace::before { display: none; }
-  .content { padding: 20px 14px 96px; border-radius: var(--adm-sheet-radius) var(--adm-sheet-radius) 0 0; }
+  .content { --adm-page-gutter: 14px; padding: 20px var(--adm-page-gutter) 96px; border-radius: var(--adm-sheet-radius) var(--adm-sheet-radius) 0 0; }
   .followPanel { position: fixed; top: calc(var(--adm-topbar) + 4px); right: 10px; left: 10px; width: auto; }
   .bottomNav { position: fixed; inset: auto 0 0; z-index: 34; display: flex; justify-content: space-around; padding: 6px 4px calc(6px + env(safe-area-inset-bottom)); border-top: 1px solid rgb(255 255 255 / 8%); background: var(--adm-oxblood); }
   .bottomNav a, .bottomNav button { display: grid; justify-items: center; gap: 3px; min-width: 60px; padding: 6px 4px; border: 0; background: transparent; color: var(--adm-sidebar-muted); font: inherit; font-size: .6875rem; font-weight: 600; text-decoration: none; cursor: pointer; }

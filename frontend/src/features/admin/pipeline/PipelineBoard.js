@@ -212,6 +212,7 @@ export default function PipelineBoard() {
   }
   const clearAll = () => { setQInput(''); setFilters(NO_FILTERS); };
   const openTotal = grand - closedTotal;
+  const shownTotal = showClosed ? grand : openTotal;
   const heatValue = filters.heats.length === 1 ? filters.heats[0] : '';
 
   return <div className={styles.page}>
@@ -246,6 +247,15 @@ export default function PipelineBoard() {
     </PageToolbar>
 
     {loaded.error && !columns && <div className={cx('adm-panel', styles.errorBox)} role="alert"><Icon name="alert" /><span>{loaded.error}</span><button type="button" className="adm-btn adm-btn--sm" onClick={() => setVersion((value) => value + 1)}>Retry</button></div>}
+
+    {columns && shown.length > 0 && <nav className={styles.stageOverview} aria-label="Pipeline by stage">
+      {shown.map((status) => <button key={status} type="button" className={`crm-tone ${styles.stageSummary}`} data-tone={STAGES[status].tone}
+        style={{ '--stage-share': `${Math.round(100 * totals[status] / Math.max(1, shownTotal))}%` }}
+        onClick={() => focusStage(status)}>
+        <span className={styles.stageSummaryLabel}><span>{STAGES[status].label}</span><strong className="crm-tabnum">{formatNumber(totals[status])}</strong></span>
+        <span className={styles.stageTrack} aria-hidden="true"><i /></span>
+      </button>)}
+    </nav>}
 
     {columns && <div className={styles.phoneTabs}>
       <ViewTabs label="Choose a stage" value={current} onChange={(status) => focusStage(status)} items={shown.map((status) => ({ key: status, label: STAGES[status].label, count: totals[status] }))} />

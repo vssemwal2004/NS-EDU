@@ -45,16 +45,9 @@ export default function AdminLogin({ next }) {
     }
   }
 
-  return <main className={styles.page}>
-    <aside className={styles.frame}>
-      <header className={styles.brand}><Brand priority /><span>Admin console</span></header>
-      <svg className={styles.arches} viewBox="0 0 420 230" aria-hidden="true" focusable="false">
-        <g opacity=".55"><path d="M10 230V120Q10 60 70 40Q130 60 130 120V230" /><path d="M150 230V100Q150 34 210 12Q270 34 270 100V230" /><path d="M290 230V120Q290 60 350 40Q410 60 410 120V230" /></g>
-        <g opacity=".3"><path d="M30 230V128Q30 78 70 62Q110 78 110 128V230" /><path d="M172 230V108Q172 54 210 36Q248 54 248 108V230" /><path d="M310 230V128Q310 78 350 62Q390 78 390 128V230" /></g>
-      </svg>
-    </aside>
-
+  return <main className={`${styles.page} adm-workspace`}>
     <div className={styles.column}>
+      <header className={styles.brand}><Brand priority /><span>Admin console</span></header>
       <section className={styles.card} aria-labelledby="admin-login-title">
         <h1 id="admin-login-title">Sign in</h1>
         <p className={styles.lead}>Authorised staff only. Sessions last 8 hours.</p>

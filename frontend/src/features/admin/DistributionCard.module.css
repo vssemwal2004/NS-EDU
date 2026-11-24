@@ -2,9 +2,9 @@
 .body { display: grid; gap: 14px; }
 .loading { margin: 0; color: var(--adm-muted); font-size: var(--crm-text-sm); }
 .figures { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin: 0; }
-.figures > div { display: grid; gap: 2px; padding: 12px 14px; border-radius: 12px; background: var(--tone-soft); }
+.figures > div { display: grid; gap: 4px; padding: 12px 14px; border: 1px solid var(--adm-line); border-radius: var(--adm-radius-sm); background: var(--adm-subtle); }
 .figures dt { color: var(--adm-text); font-size: var(--crm-text-xs); font-weight: 600; }
-.figures dd { margin: 0; color: var(--tone); font-family: var(--adm-serif); font-size: calc(1.75rem * var(--crm-scale)); line-height: 1.1; }
+.figures dd { margin: 0; color: var(--adm-text); font-family: var(--adm-heading, inherit); font-size: calc(1.65rem * var(--crm-scale)); font-weight: 750; letter-spacing: -.035em; line-height: 1.1; }
 .status { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 0; color: var(--adm-muted); font-size: var(--crm-text-sm); }
 .status strong { color: var(--adm-text); }
 .pill { padding: 3px 10px; border-radius: 999px; background: var(--crm-warn-soft); color: var(--crm-warn); font-size: var(--crm-text-xs); font-weight: 700; }
@@ -20,13 +20,11 @@
 .table .num { text-align: right; }
 .chip { display: inline-flex; padding: 2px 9px; border-radius: 999px; background: var(--tone-soft); color: var(--tone); font-size: var(--crm-text-xs); font-weight: 700; }
 /* Employee check-in strip */
-.checkin { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; padding: 16px; border-radius: 14px; background: var(--adm-oxblood); color: var(--adm-on-dark); }
-.checkin[data-state="in"] { background: linear-gradient(135deg, #176B55, #1F8A6E); }
-.checkIcon { display: grid; flex: none; width: 42px; height: 42px; place-items: center; border-radius: 12px; background: rgb(255 255 255 / 12%); color: var(--adm-gold); }
-.checkin[data-state="in"] .checkIcon { color: #fff; }
+.checkin { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; padding: 16px; border: 1px solid var(--adm-line); border-radius: var(--adm-radius); background: var(--adm-subtle); color: var(--adm-text); }
+.checkin[data-state="in"] { border-color: var(--crm-good-line); background: var(--crm-good-soft); }
+.checkIcon { display: grid; flex: none; width: 42px; height: 42px; place-items: center; border-radius: var(--adm-radius-sm); background: var(--adm-gold-soft); color: var(--adm-gold-ink); }
+.checkin[data-state="in"] .checkIcon { background: var(--adm-surface); color: var(--crm-good); }
 .checkIcon svg { width: 20px; height: 20px; }
 .checkText { display: grid; flex: 1 1 220px; gap: 2px; }
 .checkText strong { font-size: var(--crm-text-md); }
-.checkText span { color: var(--adm-on-dark-muted); font-size: var(--crm-text-xs); }
-.checkin :global(.adm-btn) { border-color: rgb(255 255 255 / 30%); background: transparent; color: var(--adm-on-dark); }
-.checkin :global(.adm-btn--primary) { border-color: var(--adm-gold); background: var(--adm-gold); color: var(--adm-oxblood); font-weight: 700; }
+.checkText span { color: var(--adm-muted); font-size: var(--crm-text-xs); }

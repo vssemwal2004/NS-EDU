@@ -10,7 +10,7 @@
 .table td small { display: block; overflow: hidden; color: var(--adm-muted); font-size: var(--crm-text-xs); text-overflow: ellipsis; white-space: nowrap; }
 .table tbody tr { transition: background 100ms ease, opacity 100ms ease; }
 .table tbody tr:hover, .table tbody tr[data-selected="true"] { background: var(--adm-hover); }
-.table tbody tr[data-selected="true"] { background: var(--adm-selected); box-shadow: inset 3px 0 0 var(--adm-wine); }
+.table tbody tr:is([data-selected="true"], [data-highlighted="true"]) { background: var(--adm-selected); box-shadow: inset 3px 0 0 var(--adm-wine); }
 .table tbody tr:last-child td { border-bottom: 0; }
 .scroll[data-busy="true"] tbody tr { opacity: .55; }
 .checkCell { width: 36px; padding-right: 0 !important; }

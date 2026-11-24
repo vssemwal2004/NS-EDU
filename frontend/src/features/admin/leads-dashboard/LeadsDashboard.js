@@ -80,17 +80,17 @@ export default function LeadsDashboard({ initial }) {
             typeof data.unassigned === 'number' && { key: 'unassigned', label: 'Not assigned', value: data.unassigned, icon: 'user', tone: data.unassigned ? 'warn' : 'good', href: leadsHref({ ...scope, assignee: 'unassigned' }) },
           ]} />
           <div className={styles.grid} data-busy={busy || undefined} aria-busy={busy || undefined}>
-            <Panel className={styles.wide} title="Leads per day" meta={<><InfoHint text="New leads received each day, India time. Hover or use the arrow keys to read a day." />{total ? `${n(total)} leads${peak ? ` · busiest ${dayShort(peak.date)} (${n(peak.count)})` : ''}` : `No leads in ${rangeText(range) || 'this range'}`}</>}
+            <Panel className={styles.twoThirds} title="Leads per day" meta={<><InfoHint text="New leads received each day, India time. Hover or use the arrow keys to read a day." />{total ? `${n(total)} leads${peak ? ` · busiest ${dayShort(peak.date)} (${n(peak.count)})` : ''}` : `No leads in ${rangeText(range) || 'this range'}`}</>}
               actions={<><TableToggle table={table} onChange={setTable} /><PanelLink href={leadsHref(scope)} label="Leads per day">View leads</PanelLink></>}>
-              <TrendChart data={trend} title={`Leads per day, ${rangeText(range)}`} height={180} table={table} />
+              <TrendChart data={trend} title={`Leads per day, ${rangeText(range)}`} height={220} table={table} variant="line" />
             </Panel>
-            <Breakdown title="Sources" description="Where this range’s leads came from" href={leadsHref(scope)}>
-              <BarList label="Leads by source" total={total} emptyText={empty} rows={rows(data.byChannel, (row) => ({ key: row.value, label: row.label, value: row.count, href: leadsHref({ ...scope, channel: row.value }) }))} />
-            </Breakdown>
             <Breakdown title="Funnel" description="How far this range’s leads have got: each step counts leads at that stage or later, as a share of those received">
               {total ? <><BarList label="Funnel steps" total={total} rows={funnel} />
                 <dl className={styles.footRow}><dt>Lost or not interested</dt><dd>{n(lost)}</dd><dd>{formatShare(lost, total) || '0%'}</dd></dl></>
                 : <BarList rows={[]} emptyText={empty} />}
+            </Breakdown>
+            <Breakdown title="Sources" description="Where this range’s leads came from" href={leadsHref(scope)}>
+              <BarList label="Leads by source" total={total} emptyText={empty} rows={rows(data.byChannel, (row) => ({ key: row.value, label: row.label, value: row.count, href: leadsHref({ ...scope, channel: row.value }) }))} />
             </Breakdown>
             <Breakdown title="School drives" description="QR registrations per school drive" meta="Top 10" href={leadsHref({ ...scope, channel: 'school-drive' })}>
               <BarList label="School drive registrations by drive" total={total} emptyText="No school drive registrations in this range" rows={rows(data.bySchool, (row) => ({

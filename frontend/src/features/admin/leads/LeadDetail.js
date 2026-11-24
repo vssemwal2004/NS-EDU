@@ -149,8 +149,13 @@ export default function LeadDetail({ id }) {
   return <div className={styles.detail}>
     <LeadHeader item={item} backHref={backHref} onBack={back} admin={admin} busy={busy} onStage={changeStage} onLog={focusComposer} onSchedule={() => setScheduling(true)}
       onEdit={() => setEditing('applicant')} onDelete={() => setDeleting(true)} onCopy={copyPhone} />
+    <nav className={styles.recordLinks} aria-label="Sections in this lead">
+      <a href="#lead-activity"><Icon name="history" />Activity</a>
+      <a href="#follow-up"><Icon name="calendar" />Follow-ups</a>
+      <a href="#lead-details"><Icon name="user" />Student details</a>
+    </nav>
     <div className={styles.grid}>
-      <div className={styles.main}>
+      <div id="lead-activity" className={styles.main}>
         {can(admin, 'leads.notes') && <Composer item={item} request={request} onSaved={afterLog} textRef={composer} />}
         <Timeline timeline={timeline} onRetry={() => loadTimeline()} />
       </div>
@@ -158,7 +163,7 @@ export default function LeadDetail({ id }) {
         <FollowUps item={item} timeline={timeline} admin={admin} request={request} onChanged={refresh} onSchedule={() => setScheduling(true)} />
         <ScoringPanel item={item} admin={admin} busy={busy} save={saveCrm} />
         <AssignmentPanel key={item.assignedEmployeeIds.join(',')} item={item} admin={admin} assignees={assignees} request={request} onSaved={applyItem} />
-        <DetailPanels item={item} admin={admin} onEdit={setEditing} />
+        <div id="lead-details"><DetailPanels item={item} admin={admin} onEdit={setEditing} /></div>
         <DangerZone item={item} admin={admin} request={request} onDeleted={deleted} open={deleting} setOpen={setDeleting} />
       </aside>
     </div>

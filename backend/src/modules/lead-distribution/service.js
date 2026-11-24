@@ -154,6 +154,18 @@ export async function reconcileDistribution(now = new Date()) {
   return coll.findOne({ _id: doc._id });
 }
 
+// Check-in and check-out toggle any number of times a day. One attendance record per employee and day keeps:
+//   checkedInAt  first check-in of the day (decides `late` / `eligible` for the automatic share, never changes)
+//   checkedOutAt null while on duty, else the latest check-out — the distribution only gives leads to people with null
+//   sessions     every on-duty period [{ inAt, outAt }] for time tracking (records from before sessions have none)
+// While checked out an employee gets no new automatic leads; checking in again resumes them (up to the same
+// day's share — leads already given count towards it). Leads already assigned stay with the employee throughout.
+// No limit on how often (owner's decision, 2026-11-24); a session is ~60 bytes, so a day's record stays tiny.
+
+/** The sessions of a record, deriving one for records written before sessions existed. */
+export const sessionsOf = (record) => (record?.sessions?.length ? record.sessions
+  : record?.checkedInAt ? [{ inAt: record.checkedInAt, outAt: record.checkedOutAt ?? null }] : []);
+
 export async function checkIn(staff, now = new Date()) {
   if (staff.role !== 'employee') throw new HttpError(403, 'Only employees check in');
   const doc = await ensureDay(now);
@@ -162,18 +174,30 @@ export async function checkIn(staff, now = new Date()) {
   const late = now >= doc.cutoffAt;
   const notInRoster = !doc.rosterIds.some((id) => id.equals(staff._id));
   const id = `${doc._id}:${staff._id}`;
-  await coll.updateOne({ _id: id }, { $setOnInsert: { day: doc._id, employeeId: staff._id, checkedInAt: now, eligible, late, notInRoster, checkedOutAt: null } }, { upsert: true });
-  const record = await coll.findOne({ _id: id });
-  if (record.checkedOutAt) throw new HttpError(409, 'You have already checked out today');
+  const inserted = await coll.updateOne({ _id: id }, { $setOnInsert: {
+    day: doc._id, employeeId: staff._id, checkedInAt: now, eligible, late, notInRoster, checkedOutAt: null, sessions: [{ inAt: now, outAt: null }],
+  } }, { upsert: true });
+  if (!inserted.upsertedCount) {
+    const record = await coll.findOne({ _id: id });
+    if (record.checkedOutAt) {
+      const sessions = sessionsOf(record);
+      // Conditional on the check-out we read, so a double click or a second tab cannot open two sessions.
+      await coll.updateOne({ _id: id, checkedOutAt: record.checkedOutAt }, { $set: { checkedOutAt: null, sessions: [...sessions, { inAt: now, outAt: null }] } });
+    }
+  }
   await reconcileDistribution(now);
   return distributionStatus(staff, now);
 }
 
 export async function checkOut(staff, now = new Date()) {
   if (staff.role !== 'employee') throw new HttpError(403, 'Only employees check out');
-  const day = istToday(now);
-  const record = await (await attendance()).findOneAndUpdate({ _id: `${day}:${staff._id}`, checkedOutAt: null }, { $set: { checkedOutAt: now } }, { returnDocument: 'after' });
+  const coll = await attendance();
+  const id = `${istToday(now)}:${staff._id}`;
+  const record = await coll.findOne({ _id: id, checkedOutAt: null });
   if (!record) throw new HttpError(409, 'Check in before checking out');
+  const sessions = sessionsOf(record).map((session) => (session.outAt ? session : { ...session, outAt: now }));
+  const result = await coll.updateOne({ _id: id, checkedOutAt: null }, { $set: { checkedOutAt: now, sessions } });
+  if (!result.modifiedCount) throw new HttpError(409, 'You are already checked out');
   return distributionStatus(staff, now);
 }
 
@@ -197,8 +221,7 @@ export async function distributionStatus(staff, now = new Date()) {
     finalized: Boolean(doc.finalizedAt), remaining: doc.remainingAtCutoff ?? null, checkedInCount: doc.checkedInCount ?? null,
     currentlyCheckedIn,
     olderUnassigned,
-    checkedInAt: record?.checkedInAt ?? null, checkedOutAt: record?.checkedOutAt ?? null,
-    late: Boolean(record?.late), notInRoster: Boolean(record?.notInRoster), eligible: Boolean(record?.eligible), assignedToday, pending,
+    ...attendanceView(record, now), assignedToday, pending,
     ...(staff.isOwner && { employees: doc.rosterIds.map((id) => {
       const person = rosterById.get(String(id));
       const entry = attendanceById.get(String(id));
@@ -206,6 +229,56 @@ export async function distributionStatus(staff, now = new Date()) {
         checkedOutAt: entry?.checkedOutAt ?? null, late: Boolean(entry?.late), assignedToday: countById.get(String(id)) ?? 0 };
     }) }),
   };
+}
+
+/** Total on-duty minutes over the day's sessions (an open session runs to `now`); null before a check-in. */
+export function workedMinutes(record, now = new Date()) {
+  const sessions = sessionsOf(record);
+  if (!sessions.length) return null;
+  const ms = sessions.reduce((sum, { inAt, outAt }) => sum + Math.max(0, (outAt ? new Date(outAt) : now) - new Date(inAt)), 0);
+  return Math.round(ms / 60_000);
+}
+
+const attendanceView = (record, now) => {
+  const sessions = sessionsOf(record);
+  const open = sessions.at(-1)?.outAt === null ? sessions.at(-1) : null;
+  return {
+    checkedInAt: record?.checkedInAt ?? null, checkedOutAt: record?.checkedOutAt ?? null,
+    onDutySince: open?.inAt ?? null, sessions, sessionCount: sessions.length,
+    late: Boolean(record?.late), notInRoster: Boolean(record?.notInRoster), eligible: Boolean(record?.eligible),
+    workedMinutes: workedMinutes(record, now),
+  };
+};
+
+/**
+ * The top-bar check-in button's state. Read-only and cheap (three point reads, no distribution run), so every
+ * open console tab can poll it; the full figures come from distributionStatus when the popup opens.
+ */
+export async function myAttendance(staff, now = new Date()) {
+  const day = istToday(now);
+  const [doc, settings, record] = await Promise.all([
+    (await days()).findOne({ _id: day }, { projection: { cutoffAt: 1, workEndTime: 1 } }),
+    distributionSettings(),
+    staff.role === 'employee' ? (await attendance()).findOne({ _id: `${day}:${staff._id}` }) : null,
+  ]);
+  const cutoff = doc?.cutoffAt ?? cutoffAt(day, settings.checkInCutoff);
+  return {
+    day, canCheckIn: staff.role === 'employee', cutoffAt: cutoff, cutoffPassed: now >= cutoff,
+    workEndTime: doc?.workEndTime ?? settings.workEndTime, ...attendanceView(record, now),
+  };
+}
+
+/** The signed-in employee's own recent days, newest first, with the automatic leads each day brought. */
+export async function attendanceHistory(staff, { limit = 14 } = {}, now = new Date()) {
+  if (staff.role !== 'employee') return { items: [] };
+  const size = Math.min(Math.max(Number(limit) || 14, 1), 60);
+  const records = await (await attendance()).find({ employeeId: staff._id }).sort({ day: -1 }).limit(size).toArray();
+  const counts = records.length ? await (await applications()).aggregate([
+    { $match: { autoAssigneeId: staff._id, autoDistributionDay: { $in: records.map((entry) => entry.day) } } },
+    { $group: { _id: '$autoDistributionDay', count: { $sum: 1 } } },
+  ]).toArray() : [];
+  const countByDay = new Map(counts.map((entry) => [entry._id, entry.count]));
+  return { items: records.map((record) => ({ day: record.day, ...attendanceView(record, now), assigned: countByDay.get(record.day) ?? 0 })) };
 }
 
 export function startDistributionWorker() {

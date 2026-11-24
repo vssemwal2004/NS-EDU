@@ -1,5 +1,5 @@
 /* Team & access: page frame and the small pieces every tab shares (tables, fields, states, segmented control). */
-.page { display: grid; gap: 12px; min-width: 0; color: var(--adm-text); font-size: var(--crm-text-sm); }
+.page { display: grid; gap: 16px; min-width: 0; color: var(--adm-text); font-size: var(--crm-text-sm); }
 .page > * { min-width: 0; }
 .panel { display: grid; gap: 12px; min-width: 0; outline: none; }
 .panel > * { min-width: 0; }
@@ -42,7 +42,7 @@
 .sheet > dt { padding-right: 12px; color: var(--adm-muted); font-size: var(--crm-text-xs); font-weight: 500; }
 .sheet > dd { min-width: 0; gap: 8px; overflow-wrap: anywhere; }
 .sheet > dt:nth-last-child(2), .sheet > dd:last-child { border-bottom: 0; }
-.sectionLabel { margin: 0; color: var(--adm-gold-ink); font-family: inherit; font-size: .6875rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+.sectionLabel { margin: 0; color: var(--adm-text); font-family: var(--adm-heading, inherit); font-size: var(--crm-text-sm); font-weight: 700; }
 
 /* Search box with icon, used in toolbars */
 .search { position: relative; display: flex; flex: 1 1 200px; align-items: center; min-width: 0; max-width: 300px; }
@@ -55,8 +55,8 @@
 .scroll { position: relative; max-height: max(360px, calc(100dvh - 190px)); overflow: auto; overscroll-behavior-x: contain; }
 .scroll[data-busy="true"] tbody { opacity: .55; }
 .table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: var(--crm-text-sm); }
-.table th { position: sticky; top: 0; z-index: 2; height: 40px; padding: 0 12px; border-bottom: 1px solid var(--adm-line); background: var(--adm-subtle); color: var(--adm-muted); font-size: var(--crm-text-xs); font-weight: 600; text-align: left; white-space: nowrap; }
-.table td { height: var(--crm-row); padding: 4px 12px; border-bottom: 1px solid var(--adm-line); vertical-align: middle; }
+.table th { position: sticky; top: 0; z-index: 2; height: 40px; padding: 0 16px; border-bottom: 1px solid var(--adm-line); background: var(--adm-subtle); color: var(--adm-muted); font-size: var(--crm-text-xs); font-weight: 650; text-align: left; white-space: nowrap; }
+.table td { height: calc(var(--crm-row) + 4px); padding: 6px 16px; border-bottom: 1px solid var(--adm-line-soft); vertical-align: middle; }
 .table tbody tr:last-child td { border-bottom: 0; }
 .table tbody tr { transition: background var(--adm-fast) ease; }
 .table tbody tr:hover { background: var(--adm-hover); }

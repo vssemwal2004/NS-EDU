@@ -10,6 +10,7 @@ import { ErrorState, Facts, FormSkeleton } from '../catalogue/CatalogueParts';
 import { exportUrl, formatCount, formatDate } from './data-api';
 import { JOB_ORDER, JOB_STATUS } from './data-ui';
 import styles from '../catalogue/Catalogue.module.css';
+import overview from './DataOps.module.css';
 
 const SOURCE_LABELS = { seed: 'Seed data', admin: 'Admin console', import: 'File import', scrape: 'Official websites', unknown: 'Unknown' };
 const COVERAGE = [
@@ -55,13 +56,9 @@ export default function DataOverview() {
         { key: 'hidden', label: 'Hidden', value: institutions?.hidden ?? 0, icon: 'eyeOff' },
       ]} />
 
-      <div className={styles.grid}>
+      <div className={overview.overviewGrid}>
         <Panel title="Profile coverage" description="Records that carry each kind of content. The crawler fills these from official websites.">
           {data ? <BarList label="Profile coverage" unit="universities" total={total} rows={COVERAGE.map(([key, label]) => ({ key, label, value: data.coverage?.[key] ?? 0 }))} /> : <FormSkeleton rows={4} />}
-        </Panel>
-        <Panel title="Where records come from">
-          {data ? <BarList label="Record sources" unit="universities" total={total} emptyText="No universities yet. Import a file or queue a crawl."
-            rows={Object.entries(institutions.bySource ?? {}).sort((a, b) => b[1] - a[1]).map(([kind, value]) => ({ key: kind, label: SOURCE_LABELS[kind] ?? kind, value, href: kind === 'unknown' ? undefined : `/admin/institutions?source.kind=${kind}` }))} /> : <FormSkeleton rows={3} />}
         </Panel>
         <Panel title="Crawler queue" meta={data ? `${formatCount(scraper.sources.total)} sources · ${formatCount(scraper.sources.neverCrawled)} never crawled` : undefined}
           actions={<Link className="adm-btn adm-btn--sm" href="/admin/data/scraper">Open scraper</Link>}>
@@ -72,6 +69,10 @@ export default function DataOverview() {
               scraper.lastRun && ['Last run', <span key="run" title={`by ${scraper.lastRun.createdBy}`}>{formatDate(scraper.lastRun.createdAt)} · {formatCount(scraper.lastRun.counts.done)} done · {formatCount(scraper.lastRun.counts.failed)} failed · {formatCount(scraper.lastRun.counts.queued + scraper.lastRun.counts.running)} open</span>],
             ]} />
           </> : <FormSkeleton rows={2} />}
+        </Panel>
+        <Panel title="Where records come from">
+          {data ? <BarList label="Record sources" unit="universities" total={total} emptyText="No universities yet. Import a file or queue a crawl."
+            rows={Object.entries(institutions.bySource ?? {}).sort((a, b) => b[1] - a[1]).map(([kind, value]) => ({ key: kind, label: SOURCE_LABELS[kind] ?? kind, value, href: kind === 'unknown' ? undefined : `/admin/institutions?source.kind=${kind}` }))} /> : <FormSkeleton rows={3} />}
         </Panel>
         <Panel title="Export" description="CSV in UTF-8 (opens in Excel or Sheets). Edit and import it again; rows match on slug.">
           <div className={styles.exportLinks}>{EXPORTS.map(([label, params]) => <a key={label} className="adm-btn adm-btn--sm" href={exportUrl(params)} download><Icon name="download" />{label}</a>)}</div>

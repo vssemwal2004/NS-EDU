@@ -64,12 +64,12 @@ export default function InsightsDashboard({ initial = {} }) {
             { key: 'estimate', label: 'Estimated visitors', value: typeof est === 'number' ? `≈ ${n(est)}` : '—', icon: 'eye', tone: 'neutral' },
           ]} />
           <div className={styles.grid} data-busy={overview.busy || undefined}>
-            <Panel className={styles.half} title="Daily active students" description="Signed-in students who searched or opened a university"
+            <Panel className={styles.twoThirds} title="Daily active students" description="Signed-in students who searched or opened a university"
               actions={data.dailyStudents?.length > 0 && <TableToggle table={table} onChange={setTable} />}>
-              {data.dailyStudents?.length ? <TrendChart data={trendRows(fillDays(data.dailyStudents, days), 'day')} title={`Daily active students, last ${days} days`} valueLabel="Students" height={240} table={table} />
+              {data.dailyStudents?.length ? <TrendChart data={trendRows(fillDays(data.dailyStudents, days), 'day')} title={`Daily active students, last ${days} days`} valueLabel="Students" height={240} table={table} variant="line" />
                 : <Empty title="No signed-in activity in this window" />}
             </Panel>
-            <ConsentPanel className={styles.half} data={consent.data} />
+            <ConsentPanel data={consent.data} />
             <Panel title="Most viewed universities" meta={<><InfoHint text="University profiles opened by opted-in visitors. Click a row to find it in the directory." />Top 10</>}>
               <BarList label="Most viewed universities" unit="views" emptyText="No profile views in this window"
                 rows={(data.topViewed ?? []).slice(0, 10).map((row) => ({ key: row.slug, label: row.name, title: [row.name, row.place].filter(Boolean).join(' · '), value: row.count, href: catalogue(row.name) }))} />

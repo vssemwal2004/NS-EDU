@@ -7,10 +7,15 @@
 .drop strong { color: var(--adm-text); font-weight: 650; overflow-wrap: anywhere; }
 .drop span { color: var(--adm-muted); font-size: var(--crm-text-xs); }
 
-/* Result: four small figures, serif numbers; "Rejected" turns ruby only when it is not zero. */
+/* Dry-run figures and data-pipeline overview. */
 .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; margin: 0; }
 .summary div { display: grid; gap: 2px; padding: 10px 12px; border: 1px solid var(--adm-line); border-radius: var(--adm-radius-sm); background: var(--adm-surface); }
 .summary dt { color: var(--adm-muted); font-size: var(--crm-text-xs); font-weight: 600; }
-.summary dd { margin: 0; color: var(--adm-text); font-family: var(--adm-serif); font-size: calc(1.5rem * var(--crm-scale)); font-weight: 400; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.summary dd { margin: 0; color: var(--adm-text); font-family: var(--adm-heading, inherit); font-size: calc(1.5rem * var(--crm-scale)); font-weight: 720; line-height: 1.1; font-variant-numeric: tabular-nums; }
 .summary div[data-tone="bad"] { border-color: var(--crm-bad-line); background: var(--crm-bad-soft); }
 .summary div[data-tone="bad"] dd { color: var(--crm-bad); }
+
+.overviewGrid { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(280px, 1fr); align-items: start; gap: 16px; }
+@media (max-width: 1000px) {
+  .overviewGrid { grid-template-columns: minmax(0, 1fr); }
+}

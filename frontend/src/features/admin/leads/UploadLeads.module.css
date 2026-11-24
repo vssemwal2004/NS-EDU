@@ -2,16 +2,16 @@
 .page { display: grid; gap: 20px; min-width: 0; }
 .card { min-width: 0; overflow: hidden; }
 .head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px 20px; padding: 18px 22px 14px; border-bottom: 1px solid var(--adm-line); }
-.head h2 { display: flex; align-items: center; gap: 10px; margin: 0; color: var(--adm-text); font-family: inherit; font-size: var(--crm-text-md); font-weight: 700; }
+.head h2 { display: flex; align-items: center; gap: 10px; margin: 0; color: var(--adm-text); font-family: var(--adm-heading, inherit); font-size: var(--crm-text-lg); font-weight: 750; }
 .head p { margin: 4px 0 0; color: var(--adm-muted); font-size: var(--crm-text-xs); }
 .head code { padding: 1px 6px; border-radius: 5px; background: var(--crm-neutral-soft); color: var(--adm-wine); font-size: .75rem; }
 .count { padding: 1px 9px; border-radius: 999px; background: var(--crm-neutral-soft); color: var(--adm-gold-ink); font-size: var(--crm-text-xs); font-weight: 700; }
 .uploadForm { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; padding: 18px 22px; }
-.drop { display: flex; flex: 1 1 360px; align-items: center; gap: 14px; min-height: 76px; padding: 14px 18px; border: 2px dashed var(--adm-line-strong); border-radius: 14px; background: var(--adm-subtle); cursor: pointer; transition: border-color var(--adm-fast) ease, background var(--adm-fast) ease; }
-.drop:hover, .drop[data-drag] { border-color: var(--adm-gold); background: var(--adm-gold-soft); }
+.drop { display: flex; flex: 1 1 360px; align-items: center; gap: 14px; min-height: 94px; padding: 14px 18px; border: 1px dashed var(--adm-accent-line); border-radius: var(--adm-radius); background: color-mix(in srgb, var(--adm-accent-soft) 38%, var(--adm-surface)); cursor: pointer; transition: border-color var(--adm-fast) ease, background var(--adm-fast) ease; }
+.drop:hover, .drop[data-drag] { border-color: var(--adm-accent); background: var(--adm-accent-soft); }
 .drop:focus-within { box-shadow: var(--adm-focus); }
 .drop[data-file] { border-style: solid; border-color: var(--crm-good-line); background: var(--crm-good-soft); }
-.dropIcon { display: grid; flex: none; width: 44px; height: 44px; place-items: center; border-radius: 12px; background: var(--adm-surface); color: var(--adm-wine); box-shadow: var(--adm-shadow); }
+.dropIcon { display: grid; flex: none; width: 42px; height: 42px; place-items: center; border-radius: 10px; background: var(--adm-accent-soft); color: var(--adm-wine); }
 .drop[data-file] .dropIcon { color: var(--crm-good); }
 .dropIcon svg { width: 20px; height: 20px; }
 .dropText { display: grid; gap: 2px; min-width: 0; }
@@ -40,7 +40,7 @@
 .empty { display: grid; justify-items: center; gap: 8px; padding: 36px 16px; color: var(--adm-muted); text-align: center; }
 .empty > span { display: grid; width: 52px; height: 52px; place-items: center; border-radius: 50%; background: var(--crm-neutral-soft); color: var(--adm-gold-ink); }
 .empty svg { width: 22px; height: 22px; }
-.empty strong { color: var(--adm-text); font-family: var(--adm-serif); font-size: calc(1.25rem * var(--crm-scale)); font-weight: 400; }
+.empty strong { color: var(--adm-text); font-family: var(--adm-heading, inherit); font-size: var(--crm-text-lg); font-weight: 750; }
 .empty p { margin: 0; font-size: var(--crm-text-sm); }
 .pager { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 22px; border-top: 1px solid var(--adm-line); color: var(--adm-muted); font-size: var(--crm-text-xs); }
 .pager > span:last-child { display: flex; gap: 6px; }

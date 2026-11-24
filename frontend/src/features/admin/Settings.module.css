@@ -1,5 +1,11 @@
-/* Settings: account, platform status and the go-live notes — all as label → value definition lists. */
-.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: stretch; gap: 12px; margin-bottom: 12px; }
+.screen { display: grid; gap: 16px; min-width: 0; }
+.screen > :first-child { margin-bottom: 0; }
+.grid, .settingsLower { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 16px; }
+.settingsLower > :only-child { grid-column: 1 / -1; }
+.settingsForm { display: grid; gap: 14px; }
+.settingsForm > button { justify-self: start; }
+.settingsForm > p { margin: 0; }
+.settingsFields { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr)); gap: 12px; }
 .muted { color: var(--adm-muted); }
 
 /* Definition list: muted 12px label column, value on the right with one shared left edge */
@@ -13,7 +19,7 @@
 .note code { padding: 1px 6px; border: 1px solid var(--adm-line); border-radius: 6px; background: var(--adm-subtle); color: var(--adm-text); font-size: var(--crm-text-xs); overflow-wrap: anywhere; }
 .dot { flex-shrink: 0; width: 8px; height: 8px; border-radius: 50%; background: var(--tone-solid); }
 
-.subhead { margin: 18px 0 4px; color: var(--adm-gold-ink); font-family: inherit; font-size: .6875rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+.subhead { margin: 18px 0 6px; color: var(--adm-text); font-family: inherit; font-size: var(--crm-text-sm); font-weight: 700; }
 /* Published counts: label left, number right-aligned with tabular digits */
 .counts { margin: 0; font-size: var(--crm-text-sm); }
 .counts > div { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 30px; border-bottom: 1px solid var(--adm-line); }
@@ -23,5 +29,5 @@
 .skeleton { display: inline-block; width: 44px; height: 12px; border-radius: 6px; background: linear-gradient(90deg, var(--adm-hover), var(--adm-subtle), var(--adm-hover)); background-size: 200% 100%; animation: shimmer 1.2s linear infinite; }
 @keyframes shimmer { to { background-position: -200% 0; } }
 @media (prefers-reduced-motion: reduce) { .skeleton { animation: none; } }
-@media (max-width: 900px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 900px) { .grid, .settingsLower { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 480px) { .sheet { grid-template-columns: 112px minmax(0, 1fr); } }

@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Icon from '@/components/ui/Icon';
 import { useAdminSession } from './AdminSession';
+import { ATTENDANCE_EVENT } from './CheckIn';
 import { useServerList } from './table/useServerList';
 import { Panel } from './ui/Page';
 import styles from './DistributionCard.module.css';
@@ -36,15 +37,18 @@ export default function DistributionCard() {
   const [actionError, setActionError] = useState('');
   useEffect(() => {
     const timer = window.setInterval(reload, 30_000);
-    return () => window.clearInterval(timer);
+    // The top-bar check-in button (CheckIn.js) announces its actions; follow them here.
+    window.addEventListener(ATTENDANCE_EVENT, reload);
+    return () => { window.clearInterval(timer); window.removeEventListener(ATTENDANCE_EVENT, reload); };
   }, [reload]);
 
   async function act(kind) {
     setBusy(true); setActionError(''); setMessage('');
     try {
       const result = await request(`/lead-distribution/${kind}`, { method: 'POST' });
-      setMessage(kind === 'check-in' ? result.late ? 'Checked in late. Work your pending leads; no automatic leads will be added today.' : result.notInRoster ? 'Checked in. You were added after today’s roster was set; ask the admin for a manual assignment.' : 'Checked in. Your initial share is being assigned.' : 'Checked out. Pending leads remain assigned to you.');
+      setMessage(kind === 'check-in' ? result.late ? 'Checked in late. Work your pending leads; no automatic leads will be added today.' : result.notInRoster ? 'Checked in. You were added after today’s roster was set; ask the admin for a manual assignment.' : 'Checked in. Your share is being assigned.' : 'Checked out. No new leads until you check in again; pending leads remain assigned to you.');
       reload();
+      window.dispatchEvent(new window.Event(ATTENDANCE_EVENT));
     } catch (problem) { setActionError(problem.message); }
     finally { setBusy(false); }
   }
@@ -85,13 +89,13 @@ export default function DistributionCard() {
         <span className={styles.checkIcon} aria-hidden="true"><Icon name={checkedIn ? 'check' : data.checkedOutAt ? 'logout' : 'clock'} /></span>
         <div className={styles.checkText}>
           <strong>{data.checkedOutAt ? `Checked out at ${time(data.checkedOutAt)}` : checkedIn ? `Checked in at ${time(data.checkedInAt)}` : `Check in by ${time(data.cutoffAt) || '—'} IST`}</strong>
-          <span>{data.checkedOutAt ? 'Your pending leads remain in your list.'
+          <span>{data.checkedOutAt ? 'No new leads while you are checked out. Your pending leads remain in your list; check in again to resume.'
             : checkedIn ? (data.late ? 'Late check-in: no automatic leads today.' : data.notInRoster ? 'Not on today’s roster: ask for a manual assignment.' : `Expected work end: ${data.workEndTime ?? '—'} IST`)
               : data.cutoffPassed ? 'The cutoff has passed. You can still check in and work older pending leads.' : 'Check in to receive today’s automatic share.'}</span>
         </div>
-        {!data.checkedOutAt && <button type="button" className={`adm-btn ${checkedIn ? '' : 'adm-btn--primary'}`} disabled={busy} onClick={() => act(checkedIn ? 'check-out' : 'check-in')}>
-          {busy ? 'Saving…' : checkedIn ? 'Check out' : 'Check in'}
-        </button>}
+        <button type="button" className={`adm-btn ${checkedIn ? '' : 'adm-btn--primary'}`} disabled={busy} onClick={() => act(checkedIn ? 'check-out' : 'check-in')}>
+          {busy ? 'Saving…' : checkedIn ? 'Check out' : data.checkedOutAt ? 'Check in again' : 'Check in'}
+        </button>
       </div>
       <Figures items={[
         ['On-time share', num(data.baseline), 'warn'],

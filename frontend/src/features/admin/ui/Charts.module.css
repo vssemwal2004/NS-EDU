@@ -1,21 +1,20 @@
 /* Shared admin chart pieces ("Jewel"): KPI card, the daily trend chart and horizontal bar lists.
    One wine series (--adm-wine); neutral hairline grid; values and labels in text ink, never the series colour.
    Jewel tone colours appear only when a row carries a status tone (data-tone + .crm-tone). */
-.kpi { position: relative; display: grid; align-content: start; gap: 6px; min-width: 0; min-height: 88px; padding: 14px 16px; border: 1px solid var(--adm-line); border-radius: var(--adm-radius); background: var(--adm-surface); color: var(--adm-text); text-decoration: none; box-shadow: var(--adm-shadow); transition: transform var(--adm-fast) ease, box-shadow var(--adm-fast) ease, border-color var(--adm-fast) ease; }
-a.kpi:hover { transform: translateY(-2px); box-shadow: var(--adm-shadow-lift); }
+.kpi { position: relative; display: grid; align-content: start; gap: 6px; min-width: 0; min-height: 88px; padding: 14px 16px; border: 1px solid var(--adm-line); border-radius: var(--adm-radius); background: var(--adm-surface); color: var(--adm-text); text-decoration: none; transition: background var(--adm-fast) ease, border-color var(--adm-fast) ease; }
+a.kpi:hover { border-color: var(--adm-line-strong); background: var(--adm-subtle); }
 a.kpi:focus-visible { outline: none; box-shadow: var(--adm-focus); }
 .kpiLabel { padding-right: 40px; color: var(--adm-muted); font-size: var(--crm-text-xs); font-weight: 600; }
-.kpiValue { color: var(--adm-text); font-family: var(--adm-serif); font-size: calc(1.875rem * var(--crm-scale)); font-weight: 400; letter-spacing: -.01em; line-height: 1.05; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.kpiValue { color: var(--adm-text); font-family: var(--adm-heading, inherit); font-size: calc(1.75rem * var(--crm-scale)); font-weight: 700; letter-spacing: -.035em; line-height: 1.1; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 .kpiNote { color: var(--adm-muted); font-size: var(--crm-text-xs); }
 .kpiIcon { position: absolute; top: 12px; right: 12px; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 8px; background: var(--crm-neutral-soft); color: var(--adm-gold-ink); }
 .kpiIcon :global(.icon), .kpiIcon svg { width: 15px; height: 15px; }
 .kpiSkeleton { display: block; width: 60%; height: 1.9rem; margin-block: 2px; border-radius: 6px; }
-@media (prefers-reduced-motion: reduce) { a.kpi:hover { transform: none; } }
 
 /* Trend chart: drawn in real pixels (the container is measured), so text never scales with the width. */
 .chart { position: relative; min-width: 0; margin: 0; }
 .plot { position: relative; width: 100%; min-width: 0; }
-.plot svg { display: block; overflow: visible; touch-action: pan-y; }
+.plot svg { display: block; max-width: 100%; touch-action: pan-y; }
 .plot svg:focus-visible { outline: none; box-shadow: var(--adm-focus); border-radius: 6px; }
 .grid { stroke: var(--adm-line); stroke-width: 1; shape-rendering: crispEdges; }
 .baseline { stroke: var(--adm-line-strong); stroke-width: 1; shape-rendering: crispEdges; }

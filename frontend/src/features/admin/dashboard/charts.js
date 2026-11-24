@@ -1,9 +1,10 @@
 'use client';
 // Dashboard building blocks shared by the console home and its Insights block: a titled card, the pipeline bar,
-// the stage donut and the 7-day bars. Colours come from each stage's jewel tone (crm/meta STAGES).
+// the stage donut and a 7-day lead trend. Stages retain their status colors.
 import Link from 'next/link';
-import { n, cx } from '../analytics/shared';
+import { n, cx, dayLong } from '../analytics/shared';
 import { STAGES } from '../crm/meta';
+import TrendChart from '../ui/TrendChart';
 import styles from '../Dashboard.module.css';
 
 const weekday = new Intl.DateTimeFormat('en-IN', { weekday: 'short', timeZone: 'UTC' });
@@ -55,15 +56,14 @@ export function Donut({ stages, className = styles.w3 }) {
 }
 
 export function Week({ days }) {
-  const max = Math.max(1, ...days.map((day) => day.count));
   const total = days.reduce((sum, day) => sum + day.count, 0);
-  return <Card title="New leads, last 7 days" meta={`${n(total)} in total`} className={styles.w4}>
-    <div className={styles.bars} role="img" aria-label={days.map((day) => `${day.day}: ${day.count}`).join(', ')}>
-      {days.map((day, index) => <div key={day.day} className={styles.bar}>
-        <small className="crm-tabnum">{n(day.count)}</small>
-        <span data-today={index === days.length - 1 || undefined} style={{ height: `${Math.max(4, Math.round((day.count / max) * 100))}%` }} />
-        <em>{index === days.length - 1 ? 'Today' : weekday.format(new Date(`${day.day}T12:00:00Z`))}</em>
-      </div>)}
-    </div>
+  const rows = days.map(({ day, count }, index) => ({
+    key: day,
+    value: count,
+    short: index === days.length - 1 ? 'Today' : weekday.format(new Date(`${day}T12:00:00Z`)),
+    long: dayLong(day),
+  }));
+  return <Card title="New leads, last 7 days" meta={`${n(total)} in total`}>
+    <div className={styles.chartBody}><TrendChart data={rows} title="New leads, last 7 days" height={240} variant="line" /></div>
   </Card>;
 }

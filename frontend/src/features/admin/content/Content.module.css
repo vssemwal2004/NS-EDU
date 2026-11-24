@@ -18,7 +18,7 @@
 .table th { position: sticky; top: 0; z-index: 1; height: 40px; padding: 0 16px; border-bottom: 1px solid var(--adm-line); background: var(--adm-subtle); color: var(--adm-muted); font-size: var(--crm-text-xs); font-weight: 600; text-align: left; white-space: nowrap; }
 .table th:first-child { border-top-left-radius: var(--adm-radius); }
 .table th:last-child { border-top-right-radius: var(--adm-radius); }
-.table td { height: var(--crm-row); padding: 8px 16px; border-bottom: 1px solid var(--adm-line); color: var(--adm-text); vertical-align: middle; }
+.table td { height: calc(var(--crm-row) + 4px); padding: 10px 16px; border-bottom: 1px solid var(--adm-line-soft); color: var(--adm-text); vertical-align: middle; }
 .table tbody tr:last-child td { border-bottom: 0; }
 .num { text-align: right !important; white-space: nowrap; }
 .colMenu { width: 52px; padding-inline: 6px !important; text-align: right; }
@@ -28,6 +28,7 @@
 .entryLink { color: var(--adm-text); font-weight: 650; text-decoration: none; }
 .entryLink:hover { color: var(--adm-accent); text-decoration: underline; text-underline-offset: 3px; }
 .entryLink:focus-visible { border-radius: 4px; outline: none; box-shadow: var(--adm-focus); }
+.mobileDescription { display: none; }
 .key { display: inline-block; margin-left: 8px; padding: 1px 6px; border-radius: 5px; background: var(--adm-hover); color: var(--adm-muted); font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace; font-size: .75rem; vertical-align: 1px; }
 .truncate { display: block; overflow: hidden; color: var(--adm-muted); text-overflow: ellipsis; white-space: nowrap; }
 .when { display: block; white-space: nowrap; }
@@ -36,17 +37,17 @@
 @keyframes shimmer { to { background-position: -200% 0; } }
 
 /* ---- Editor chrome ---- */
-.editor { display: grid; gap: 14px; min-width: 0; }
-.editor > :first-child { margin-bottom: 0; }
-.editorStart { display: grid; gap: 4px; min-width: 0; }
+.editor { display: grid; gap: 16px; min-width: 0; }
+.editor > :first-child { margin-bottom: 0; padding: 16px 18px; border: 1px solid var(--adm-line); border-radius: var(--adm-radius); background: var(--adm-surface); }
+.editorStart { display: grid; gap: 6px; min-width: 0; }
 .back { display: inline-flex; align-items: center; gap: 6px; width: fit-content; color: var(--adm-muted); font-size: var(--crm-text-xs); font-weight: 600; text-decoration: none; }
 .back:hover { color: var(--adm-accent); }
 .back svg { width: 15px; height: 15px; }
 .flip { transform: rotate(180deg); }
 .down { transform: rotate(180deg); }
-.editorTitle { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 0; margin: 0; font-size: var(--crm-text-md); }
+.editorTitle { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 0; margin: 0; color: var(--adm-text); font-family: var(--adm-heading, inherit); font-size: calc(1.375rem * var(--crm-scale)); font-weight: 720; letter-spacing: -.025em; line-height: 1.25; }
 .editorMeta { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; color: var(--adm-muted); font-size: var(--crm-text-xs); }
-.description { max-width: 90ch; margin: -6px 0 0; color: var(--adm-muted); font-size: var(--crm-text-xs); line-height: 1.5; }
+.description { max-width: 70ch; margin: 2px 0 0; color: var(--adm-muted); font-size: var(--crm-text-sm); line-height: 1.5; }
 .tabsRow { display: flex; min-width: 0; }
 .alert { display: flex; align-items: flex-start; gap: 8px; margin: 0; padding: 8px 10px; border: 1px solid var(--crm-bad-line); border-radius: var(--adm-radius-sm); background: var(--crm-bad-soft); color: var(--crm-bad); font-size: var(--crm-text-sm); }
 .alert > svg { flex-shrink: 0; width: 18px; height: 18px; margin-top: 2px; }
@@ -56,14 +57,14 @@
 .linkButton { padding: 0; border: 0; background: none; color: inherit; font: inherit; font-weight: 700; text-decoration: underline; cursor: pointer; }
 
 /* ---- Form layout: section navigation + one section ---- */
-.formLayout { display: grid; grid-template-columns: 200px minmax(0, 1fr); align-items: start; gap: 10px; }
+.formLayout { display: grid; grid-template-columns: 220px minmax(0, 1fr); align-items: start; gap: 16px; }
 .sectionNav { position: sticky; top: calc(var(--adm-topbar) + 16px); min-width: 0; }
 .sectionSelect { display: none; }
-.sectionBox { padding: 4px; }
-.navLabel { display: flex; justify-content: space-between; margin: 0; padding: 10px 8px 8px; color: var(--adm-gold-ink); font-size: .6875rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+.sectionBox { padding: 8px; }
+.navLabel { display: flex; justify-content: space-between; margin: 0; padding: 8px 10px; color: var(--adm-text); font-size: var(--crm-text-xs); font-weight: 700; }
 .navLabel span { letter-spacing: 0; }
 .sectionList { display: grid; gap: 1px; margin: 0; padding: 0; list-style: none; }
-.sectionList button { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; min-height: 32px; padding: 0 8px 0 10px; border: 0; border-radius: var(--adm-radius-sm); background: transparent; color: var(--adm-text); font: inherit; font-size: var(--crm-text-sm); text-align: left; cursor: pointer; }
+.sectionList button { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; min-height: 36px; padding: 0 8px 0 10px; border: 0; border-radius: var(--adm-radius-sm); background: transparent; color: var(--adm-text); font: inherit; font-size: var(--crm-text-sm); text-align: left; cursor: pointer; }
 .sectionList button:hover { background: var(--adm-hover); }
 .sectionList button:focus-visible { outline: none; box-shadow: var(--adm-focus); }
 .sectionList button[aria-current="true"] { background: var(--adm-accent-soft); box-shadow: inset 3px 0 0 var(--adm-wine); }
@@ -94,10 +95,10 @@
 .fields > :not([data-short]) { grid-column: 1 / -1; }
 .field { display: grid; align-content: start; gap: 6px; min-width: 0; }
 .sectionBody > .field { max-width: 640px; }
-/* Groups: a 12px uppercase label and a thin left rule instead of nested boxes */
+/* Nested fields keep a lightweight group heading. */
 .group { display: grid; gap: 12px; min-width: 0; margin: 0; padding: 0 0 2px 14px; border: 0; border-left: 2px solid var(--adm-line); background: none; }
 .group[data-error] { border-left-color: var(--crm-bad-solid); }
-.group > legend { display: inline-flex; align-items: center; gap: 8px; margin-bottom: 8px; padding: 0; color: var(--adm-gold-ink); font-size: .6875rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+.group > legend { display: inline-flex; align-items: center; gap: 8px; margin-bottom: 8px; padding: 0; color: var(--adm-text); font-size: var(--crm-text-xs); font-weight: 700; }
 .group > legend small { color: var(--adm-faint); font-size: var(--crm-text-xs); font-weight: 500; letter-spacing: 0; text-transform: none; }
 .switch { position: relative; display: inline-flex; align-items: center; gap: 8px; min-height: 28px; font-size: var(--crm-text-sm); cursor: pointer; }
 .switch input { position: absolute; opacity: 0; }
@@ -152,7 +153,7 @@ textarea.code[aria-invalid="true"] { border-color: var(--crm-bad-solid); }
 
 /* ---- Skeleton ---- */
 .editorSkeleton { display: grid; gap: 10px; }
-.skelColumns { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 10px; }
+.skelColumns { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 16px; }
 .skelBar, .skelBlock { display: block; height: 18px; border-radius: 8px; background: linear-gradient(90deg, var(--adm-hover), var(--adm-subtle), var(--adm-hover)); background-size: 200% 100%; animation: shimmer 1.2s linear infinite; }
 .skelBlock { height: 260px; border-radius: var(--adm-radius); }
 .skelBlock[data-tall] { height: 420px; }
@@ -168,8 +169,10 @@ textarea.code[aria-invalid="true"] { border-color: var(--crm-bad-solid); }
 }
 @media (max-width: 720px) {
   .colDescription { display: none; }
+  .mobileDescription { display: block; margin-top: 3px; color: var(--adm-muted); font-size: var(--crm-text-xs); }
   .table th:nth-child(4), .table td:nth-child(4) { display: none; }
   .table td, .table th { padding-inline: 12px; }
+  .editor > :first-child { padding: 14px; }
   .key { display: block; width: fit-content; margin: 3px 0 0; }
   .editorTitle .key { display: inline-block; margin-left: 8px; }
   .sectionHead, .sectionBody, .history > li { padding-inline: 14px; }

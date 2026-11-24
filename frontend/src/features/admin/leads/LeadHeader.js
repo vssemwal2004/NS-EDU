@@ -27,7 +27,8 @@ function Stepper({ status, canChange, busy, onPick }) {
         return <li key={key} className="crm-tone" data-tone={STAGES[key].tone} data-state={state} data-closed={closed || undefined}>
           <button type="button" disabled={!canChange || busy || key === status} aria-current={key === status ? 'step' : undefined}
             title={canChange ? (key === status ? 'Current stage' : `Move to ${STAGES[key].label}`) : 'You can view the stage but not change it'} onClick={() => onPick(key)}>
-            {state === 'past' && <Icon name="check" />}<span>{STAGES[key].label}</span>
+            <span className={styles.stepNode} aria-hidden="true">{state === 'past' && <Icon name="check" />}</span>
+            <span>{STAGES[key].label}</span>
           </button>
         </li>;
       })}
@@ -111,16 +112,17 @@ export default function LeadHeader({ item, backHref, onBack, admin, busy, onStag
         </p>
       </div>
       <div className={styles.actions}>
-        {phone ? <a className="adm-btn adm-btn--primary" href={`tel:${phone}`} title={`Call ${phone}`}><Icon name="phone" />Call</a>
+        {phone ? <a className="adm-btn" href={`tel:${phone}`} title={`Call ${phone}`}><Icon name="phone" />Call</a>
           : <span className="adm-btn" aria-disabled="true" title="This lead has no mobile number"><Icon name="phone" />No mobile</span>}
         {wa && <a className="adm-btn" href={wa} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp" title="WhatsApp"><Icon name="chat" /><span className={styles.hideNarrow}>WhatsApp</span></a>}
         {applicant.email && <a className="adm-btn" href={`mailto:${applicant.email}?subject=${encodeURIComponent(`Your Gyaan Vidhya enquiry ${item.ref}`)}`} aria-label="Email" title={applicant.email}><Icon name="mail" /><span className={styles.hideNarrow}>Email</span></a>}
-        {canNotes && <button type="button" className="adm-btn" onClick={onSchedule} disabled={!open} aria-label="Schedule a follow-up" title={open ? 'Schedule a follow-up' : 'Closed leads have no follow-ups'}><Icon name="calendar" /><span className={styles.hideNarrow}>Follow-up</span></button>}
+        {canNotes && <button type="button" className="adm-btn" onClick={onLog} aria-label="Jump to activity composer" title="Log activity"><Icon name="note" /><span className={styles.hideNarrow}>Log activity</span></button>}
+        {canNotes && <button type="button" className="adm-btn adm-btn--primary" onClick={onSchedule} disabled={!open} aria-label="Schedule a follow-up" title={open ? 'Schedule a follow-up' : 'Closed leads have no follow-ups'}><Icon name="calendar" /><span className={styles.hideNarrow}>Follow-up</span></button>}
         <RowMenu label="More actions for this lead" items={more} className={styles.moreButton} />
       </div>
     </div>
-    <Stepper status={item.status} canChange={canStage} busy={busy === 'stage'} onPick={pick} />
     </div>
+    <Stepper status={item.status} canChange={canStage} busy={busy === 'stage'} onPick={pick} />
 
     <ConfirmDialog open={Boolean(closing)} tone="danger" icon="lock" title={`Mark this lead as ${closing ? STAGES[closing].label.toLowerCase() : ''}?`}
       confirmLabel={closing ? `Mark ${STAGES[closing].label.toLowerCase()}` : 'Confirm'} busy={busy === 'stage'} error={closeError}

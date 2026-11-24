@@ -106,12 +106,11 @@ export default function ContentEditor({ contentKey, initialTab = 'edit' }) {
       <Link href="/admin/content" className={styles.back}><Icon name="arrow" className={styles.flip} />All site content</Link>
       <p className={styles.editorTitle} title={`Key: ${item.key}`}><strong>{item.label}</strong></p>
       <p className={styles.editorMeta}><span title={formatWhen(item.updatedAt)}>{item.updatedBy ? `Last saved ${relativeTime(item.updatedAt)} by ${item.updatedBy}` : 'Default content, never edited'}</span><span aria-hidden="true">·</span><span className="crm-tabnum">{formatSize(item.size)}</span></p>
+      <p className={styles.description}>{item.description}</p>
     </div>}>
       <button type="button" className="adm-btn" onClick={() => { setConfirmError(''); setConfirm({ type: 'reset' }); }} disabled={busy || !item.updatedBy}
         title={item.updatedBy ? undefined : 'Already the default content'}><Icon name="undo" />Reset to default…</button>
     </PageToolbar>
-
-    <p className={styles.description}>{item.description}</p>
 
     <div className={styles.tabsRow}>
       <ViewTabs label="Editor views" value={tab} onChange={choose} items={[

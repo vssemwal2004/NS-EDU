@@ -1,5 +1,59 @@
-/* Staff leads list: toolbar extras, stage row and the dense CRM table (the table machinery is features/admin/table). */
-.manager { display: grid; grid-template-columns: minmax(0, 1fr); min-width: 0; }
+/* The lead desk keeps views, the data grid and the optional record preview independently usable. */
+.manager { display: grid; grid-template-columns: minmax(0, 1fr); min-width: 0; container-type: inline-size; }
+.desk { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: 'list'; align-items: start; gap: 12px; min-width: 0; }
+.desk[data-views] { grid-template-areas: 'views' 'list'; }
+.desk[data-preview] { grid-template-areas: 'preview' 'list'; }
+.desk[data-views][data-preview] { grid-template-areas: 'views' 'preview' 'list'; }
+.deskList { grid-area: list; display: grid; gap: 8px; min-width: 0; container: lead-list / inline-size; }
+.deskViews { grid-area: views; display: grid; gap: 8px; min-width: 0; }
+.deskViews h2 { margin: 0; color: var(--adm-text); font-family: var(--adm-heading, inherit); font-size: var(--crm-text-xs); font-weight: 750; }
+.viewLinks { display: flex; gap: 5px; margin: 0; padding: 0 0 3px; overflow-x: auto; list-style: none; scrollbar-width: thin; }
+.viewLinks li { min-width: 0; }
+.viewLinks button { display: flex; align-items: center; gap: 7px; min-height: max(34px, var(--adm-control)); padding: 4px 9px; border: 1px solid var(--adm-line); border-radius: 8px; background: var(--adm-surface); color: var(--adm-text); font: inherit; font-size: var(--crm-text-xs); text-align: left; white-space: nowrap; cursor: pointer; }
+.viewLinks button:hover { background: var(--adm-hover); }
+.viewLinks button:focus-visible { outline: none; box-shadow: inset var(--adm-focus); }
+.viewLinks button[aria-pressed="true"] { border-color: var(--adm-accent-line); background: var(--adm-accent-soft); color: var(--adm-accent); }
+.viewLinks button svg { width: 14px; height: 14px; flex: none; color: var(--tone, var(--adm-muted)); }
+.viewLinks button span { overflow: hidden; text-overflow: ellipsis; }
+.viewLinks button strong { margin-left: auto; color: var(--adm-muted); font-weight: 650; }
+.savedLinks { display: none; }
+
+.preview { grid-area: preview; display: grid; gap: 12px; min-width: 0; padding: 14px; border: 1px solid var(--adm-line); border-radius: var(--adm-radius); background: var(--adm-surface); scroll-margin-top: calc(var(--adm-topbar) + 16px); }
+.preview:focus { outline: 1px solid var(--adm-accent-line); outline-offset: 1px; }
+.previewHead { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 9px; }
+.previewHead h2 { margin: 0; color: var(--adm-text); font-family: var(--adm-heading, inherit); font-size: var(--crm-text-lg); font-weight: 750; line-height: 1.25; overflow-wrap: anywhere; }
+.previewHead p { margin: 3px 0 0; color: var(--adm-muted); font-size: var(--crm-text-xs); overflow-wrap: anywhere; }
+.previewMeta, .previewActions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; min-width: 0; }
+.previewMeta { color: var(--adm-muted); font-size: var(--crm-text-xs); }
+.previewFollow { display: grid; justify-items: start; gap: 6px; padding: 10px; border-radius: 8px; background: var(--adm-subtle); font-size: var(--crm-text-xs); }
+.preview > section { border: 0; border-top: 1px solid var(--adm-line); border-radius: 0; box-shadow: none; }
+
+@container (max-width: 1049px) {
+  .viewLinks li { flex: none; }
+}
+@container (min-width: 1050px) {
+  .desk { grid-template-areas: 'list'; }
+  .desk[data-views] { grid-template-columns: 160px minmax(0, 1fr); grid-template-areas: 'views list'; }
+  .desk[data-preview] { grid-template-columns: minmax(0, 1fr) minmax(246px, 26cqw); grid-template-areas: 'list preview'; }
+  .desk[data-views][data-preview] { grid-template-areas: 'views views' 'list preview'; }
+  .desk[data-views]:not([data-preview]) .deskViews { padding: 12px 8px; border: 1px solid var(--adm-line); border-radius: var(--adm-radius); background: var(--adm-subtle); }
+  .desk[data-views]:not([data-preview]) .viewLinks { flex-direction: column; }
+  .desk[data-views]:not([data-preview]) .viewLinks button { width: 100%; border-color: transparent; background: transparent; white-space: normal; }
+  .desk[data-views]:not([data-preview]) .viewLinks button:hover { background: var(--adm-hover); }
+  .desk[data-views]:not([data-preview]) .viewLinks button[aria-pressed="true"] { background: var(--adm-accent-soft); }
+  .desk[data-views]:not([data-preview]) .savedLinks { display: grid; gap: 8px; padding-top: 8px; border-top: 1px solid var(--adm-line); }
+  .desk[data-views]:not([data-preview]) .deskViews h2 { padding-inline: 8px; }
+}
+@container (min-width: 1330px) {
+  .desk[data-views][data-preview] { grid-template-columns: 160px minmax(0, 1fr) minmax(246px, 22cqw); grid-template-areas: 'views list preview'; }
+  .desk[data-views][data-preview] .deskViews { padding: 12px 8px; border: 1px solid var(--adm-line); border-radius: var(--adm-radius); background: var(--adm-subtle); }
+  .desk[data-views][data-preview] .viewLinks { flex-direction: column; }
+  .desk[data-views][data-preview] .viewLinks button { width: 100%; border-color: transparent; background: transparent; white-space: normal; }
+  .desk[data-views][data-preview] .viewLinks button:hover { background: var(--adm-hover); }
+  .desk[data-views][data-preview] .viewLinks button[aria-pressed="true"] { background: var(--adm-accent-soft); }
+  .desk[data-views][data-preview] .savedLinks { display: grid; gap: 8px; padding-top: 8px; border-top: 1px solid var(--adm-line); }
+  .desk[data-views][data-preview] .deskViews h2 { padding-inline: 8px; }
+}
 
 /* Toolbar (one line on desktop) */
 .search { display: flex; flex: 1 1 220px; align-items: center; gap: 6px; max-width: 320px; height: var(--adm-control); padding-inline: 10px; border: 1px solid var(--adm-line-strong); border-radius: var(--adm-radius-sm); background: var(--adm-surface); color: var(--adm-muted); }
@@ -20,15 +74,22 @@
 /* Stage tabs + count line */
 .stageRow { display: flex; flex-wrap: nowrap; align-items: center; gap: 6px 12px; min-width: 0; margin: -2px 0 2px; }
 .stageRow > [role="tablist"] { flex: 0 1 auto; min-width: 0; }
-.summary { flex: 1 0 auto; max-width: 45%; margin: 0; overflow: hidden; color: var(--adm-muted); font-size: var(--crm-text-xs); font-variant-numeric: tabular-nums; text-align: right; text-overflow: ellipsis; white-space: nowrap; }
+.summary { flex: 1 0 auto; min-width: 0; max-width: 45%; margin: 0; color: var(--adm-muted); font-size: var(--crm-text-xs); font-variant-numeric: tabular-nums; text-align: right; }
 .summary strong { color: var(--adm-text); font-weight: 650; }
+.receiveToday { flex: none; }
+.receiveToday[aria-pressed="true"] { border-color: var(--adm-accent-line); background: var(--adm-accent-soft); color: var(--adm-accent); }
+@container lead-list (max-width: 1200px) {
+  .stageRow { flex-wrap: wrap; }
+  .stageRow > [role="tablist"] { flex-basis: 100%; }
+  .summary { flex: 1 1 0; max-width: none; text-align: left; }
+}
 
 /* Table panel: fixed layout so the default columns always fit; long text truncates with a tooltip. */
 .tableCard { min-width: 0; overflow: hidden; }
 @media (min-width: 761px) {
   /* Taller than the shared default so ≥ 15 rows show in a 900px window. */
   .tableCard > div:first-child { max-height: max(420px, calc(100dvh - 236px)); }
-  .tableCard table { min-width: 0; table-layout: fixed; font-size: var(--crm-text-sm); }
+  .tableCard table { min-width: 812px; table-layout: fixed; font-size: var(--crm-text-sm); }
   /* Many columns switched on: scroll inside the panel instead of squeezing every column. */
   .tableCard table:has(thead th:nth-child(11)) { min-width: 1240px; }
   .tableCard table:has(thead th:nth-child(14)) { min-width: 1640px; }
@@ -41,8 +102,9 @@
   .tableCard table tbody tr[data-selected="true"] { background: var(--adm-selected); }
 }
 
-.leadCell { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 6px; min-width: 0; }
-.leadMain { display: grid; min-width: 0; line-height: 1.3; }
+.leadCell { position: relative; display: flex; align-items: center; gap: 7px; min-width: 0; }
+.leadAvatar { flex: none; }
+.leadMain { display: grid; flex: 1; min-width: 0; line-height: 1.3; }
 .leadName { overflow: hidden; color: var(--adm-text); font-weight: 650; text-decoration: none; text-overflow: ellipsis; white-space: nowrap; }
 .leadName:hover { color: var(--adm-wine); text-decoration: underline; text-underline-offset: 3px; }
 .leadName:focus-visible { border-radius: 4px; outline: none; box-shadow: var(--adm-focus); }
@@ -72,11 +134,14 @@
 .mode { margin-left: 6px; padding: 0 6px; border: 1px solid var(--adm-line); border-radius: 999px; color: var(--adm-muted); font-size: .6875rem; font-weight: 650; vertical-align: middle; }
 
 .menuCell { padding-inline: 2px !important; text-align: right; }
+.rowActions { display: flex; justify-content: flex-end; gap: 2px; }
+.rowActions > button[aria-pressed="true"] { background: var(--adm-accent-soft); color: var(--adm-accent); }
 @media (min-width: 761px) {
   .tableCard table th:last-child, .tableCard table td.menuCell { position: sticky; right: 0; z-index: 1; }
   .tableCard table td.menuCell { background: var(--adm-surface); overflow: visible; }
   .tableCard table th:last-child { z-index: 2; color: transparent; }
-  .tableCard table tbody tr:hover td.menuCell, .tableCard table tbody tr[data-selected="true"] td.menuCell { background: var(--adm-hover); }
+  .tableCard table tbody tr:hover td.menuCell { background: var(--adm-hover); }
+  .tableCard table tbody tr:is([data-selected="true"], [data-highlighted="true"]) td.menuCell { background: var(--adm-selected); }
   .tableCard table td.menuCell button { width: 30px; height: 30px; }
 }
 
@@ -93,19 +158,18 @@
   .tableCard table td.menuCell { position: absolute; top: 8px; right: 12px; width: auto; }
   .tableCard table td.menuCell::before { display: none !important; }
   .tableCard table tr:has(> td:first-child > input[type="checkbox"]) > td.menuCell { right: 48px; }
-  .tableCard table td:empty { display: none; }
+  .tableCard table td:empty, .tableCard table td:has(> [data-lead-placeholder]:only-child) { display: none; }
   /* Dense phone cards: two cells per line; the lead and the course take the full width. */
   .tableCard table tbody tr { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 12px; padding: 10px 12px; }
   .tableCard table tbody td:has(.leadCell), .tableCard table tbody td.col_course { grid-column: 1 / -1; }
   .tableCard table tbody td:has(.leadCell)::before { display: none; }
   .tableCard table tbody td { font-size: var(--crm-text-sm); }
-  .leadCell { padding-right: 44px; }
+  .leadCell { padding-right: 82px; }
+  .leadAvatar { display: none; }
   .search { max-width: none; flex-basis: 100%; }
-  .stageRow { flex-wrap: wrap; }
-  .stageRow > [role="tablist"] { flex-basis: 100%; }
-  .summary { flex: 1 1 0; max-width: none; text-align: left; }
 }
 @media (max-width: 640px) {
   .sort { flex: 1 1 120px; }
   .sort select { width: 100%; }
+  .uploadLink span { display: none; }
 }

@@ -98,6 +98,36 @@
   --adm-control: 36px;
 }
 
+/* Page surfaces are scoped inside the staff console so the existing navigation keeps its own tokens. */
+.adm-workspace {
+  --adm-heading: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --adm-serif: var(--adm-heading);
+  --adm-bg: #FCFBFA;
+  --adm-surface: #FFFFFF;
+  --adm-subtle: #F8F6F5;
+  --adm-hover: #F5F0F1;
+  --adm-line: #E9E4E2;
+  --adm-line-strong: #D8CFCE;
+  --adm-line-soft: #F0ECEB;
+  --adm-selected: #F9ECEF;
+  --adm-step-next: #F2EDEC;
+  --adm-accent-soft: #F7EBEE;
+  --adm-text: #241C20;
+  --adm-muted: #655B60;
+  --adm-faint: #786B71;
+  --adm-radius: 12px;
+  --adm-radius-sm: 8px;
+  --adm-radius-lg: 16px;
+  --adm-shadow: 0 1px 2px rgb(36 28 32 / 5%);
+  --adm-shadow-lift: 0 8px 24px rgb(36 28 32 / 9%);
+  --crm-card: var(--adm-surface);
+  --crm-card-line: var(--adm-line);
+  --crm-card-shadow: var(--adm-shadow);
+  --crm-radius: var(--adm-radius);
+  --crm-radius-sm: var(--adm-radius-sm);
+  font-family: var(--adm-heading);
+}
+
 /* var() inside a custom property is resolved where it is declared, so the scale is declared on :root AND
    on the element that carries data-crm-text; otherwise the text-size switch would never reach the screens. */
 :root, [data-crm-text] {

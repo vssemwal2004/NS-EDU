@@ -4,8 +4,9 @@
 //  - Sidebar: an icon rail by default that slides open over the page on hover (0.8 s) and slides back when the
 //    pointer leaves, so the page never shrinks. The pin at its top keeps it open; then the page slides right to make
 //    room. The choice is remembered per browser (useDisplayPrefs `nav`: 'collapsed' = rail, 'expanded' = pinned).
-//  - Top bar: breadcrumb, Ctrl+K search, quick-create, the follow-ups panel and the account menu.
-//  - Page header: eyebrow (group), serif title, description and the section's tabs.
+//  - Top bar: breadcrumb, Ctrl+K search, the employee check-in button (CheckIn.js), quick-create, the follow-ups
+//    panel and the account menu.
+//  - Page heading, description and the section's tabs live inside the workspace.
 //  - Phones: the sidebar becomes a drawer and a bottom bar carries the five most used places.
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
@@ -14,6 +15,7 @@ import Brand from '@/components/ui/Brand';
 import Icon from '@/components/ui/Icon';
 import { adminPages, canOpen, findAdminPage, homeFor, navigationFor } from '@/data/admin-navigation';
 import { AdminSessionProvider, useAdminSession } from './AdminSession';
+import CheckIn from './CheckIn';
 import CommandPalette from './CommandPalette';
 import RowMenu from './crm/RowMenu';
 import { ToastProvider } from './crm/toast';
@@ -216,6 +218,7 @@ function Topbar({ admin, request, page, exact, prefs, update, onMenu, onSearch, 
       <Icon name="search" /><span>Search leads, universities, pages</span><kbd>Ctrl K</kbd>
     </button>
     <div className={styles.actions}>
+      <CheckIn />
       {canCreate && <RowMenu label="Create new" align="end" className={styles.createButton} trigger={<><Icon name="plus" /><span>New</span></>} items={[{ heading: 'Create' }, ...createItems]} />}
       <FollowUpsPanel admin={admin} request={request} followUps={followUps} />
       <AccountMenu admin={admin} prefs={prefs} update={update} logout={logout} />
@@ -223,12 +226,11 @@ function Topbar({ admin, request, page, exact, prefs, update, onMenu, onSearch, 
   </header>;
 }
 
-/** Eyebrow, serif title, description and the section's tabs. Shown on a section's own screens, not on detail pages. */
+/** Page title, description and section tabs. Detail views provide their own headings. */
 function PageHeader({ admin, page }) {
   const tabs = page.section.tabs?.filter((tab) => canOpen(admin, tab)) ?? [];
   return <div className={styles.pageHeader}>
     <div className={styles.pageHeading}>
-      <p className="adm-eyebrow">{page.group}</p>
       <h1>{page.section.label}</h1>
       <p>{page.description}</p>
     </div>
@@ -285,7 +287,7 @@ function Workspace({ children }) {
     <div className={styles.workspace}>
       <Topbar admin={admin} request={request} page={page} exact={exact} prefs={prefs} update={updatePrefs} followUps={followUps} logout={logout}
         onMenu={() => setOpen(true)} onSearch={() => setSearching(true)} />
-      <main id="main" className={styles.content} tabIndex={-1}>
+      <main id="main" className={`${styles.content} adm-workspace`} tabIndex={-1}>
         {exact && !page.section.hero && <PageHeader admin={admin} page={page} />}
         {children}
       </main>

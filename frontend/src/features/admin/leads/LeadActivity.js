@@ -188,10 +188,10 @@ function describe(entry) {
   return { icon: 'history', title: entry.type, text: entry.text ?? '' };
 }
 
-export function Timeline({ timeline, onRetry }) {
+export function Timeline({ timeline, onRetry, title = 'Activity timeline', compact = false }) {
   const [shown, setShown] = useState(20);
   const items = timeline.items;
-  return <Panel title="Timeline" meta={timeline.loaded && items.length ? `${items.length} ${items.length === 1 ? 'entry' : 'entries'}` : undefined} flush>
+  return <Panel title={title} meta={timeline.loaded && items.length ? `${items.length} ${items.length === 1 ? 'entry' : 'entries'}` : undefined} className={compact ? styles.timelineCompact : undefined} flush>
     <div className={styles.listBody}>
       {timeline.error ? <div className={styles.inlineError} role="alert"><span>{timeline.error}</span><button type="button" className="adm-btn adm-btn--sm" onClick={onRetry}>Retry</button></div>
         : !timeline.loaded ? <div className={styles.lineSkeleton} aria-busy="true"><span /><span /><span /></div>

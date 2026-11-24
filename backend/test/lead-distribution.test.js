@@ -1,7 +1,29 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { ObjectId } from 'mongodb';
-import { cutoffAt, leastLoaded, onTimeForBatch, previousDay, sharePerEmployee } from '../src/modules/lead-distribution/service.js';
+import { cutoffAt, leastLoaded, onTimeForBatch, previousDay, sessionsOf, sharePerEmployee, workedMinutes } from '../src/modules/lead-distribution/service.js';
+
+test('worked time runs to now while on duty and stops at check-out', () => {
+  const checkedInAt = new Date('2026-12-01T04:00:00Z');
+  assert.equal(workedMinutes(null), null);
+  assert.equal(workedMinutes({ checkedInAt: null }), null);
+  assert.equal(workedMinutes({ checkedInAt }, new Date('2026-12-01T06:15:20Z')), 135);
+  assert.equal(workedMinutes({ checkedInAt, checkedOutAt: new Date('2026-12-01T12:30:00Z') }, new Date('2026-12-02T00:00:00Z')), 510);
+  // A clock skew never shows negative time.
+  assert.equal(workedMinutes({ checkedInAt }, new Date('2026-12-01T03:59:00Z')), 0);
+});
+
+test('worked time adds up every session; gaps while checked out do not count', () => {
+  const at = (time) => new Date(`2026-12-01T${time}:00Z`);
+  const record = { checkedInAt: at('04:00'), checkedOutAt: null, sessions: [
+    { inAt: at('04:00'), outAt: at('06:00') }, // 2 h
+    { inAt: at('07:00'), outAt: at('07:30') }, // 30 min
+    { inAt: at('08:00'), outAt: null }, // open: runs to now
+  ] };
+  assert.equal(workedMinutes(record, at('09:15')), 120 + 30 + 75);
+  assert.deepEqual(sessionsOf({ checkedInAt: at('04:00'), checkedOutAt: at('05:00') }), [{ inAt: at('04:00'), outAt: at('05:00') }]);
+  assert.deepEqual(sessionsOf(null), []);
+});
 
 test('IST source day and cutoff cross UTC and month boundaries correctly', () => {
   assert.equal(previousDay('2026-12-01'), '2026-11-30');

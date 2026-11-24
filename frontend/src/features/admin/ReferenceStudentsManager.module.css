@@ -23,7 +23,7 @@
 .table th, .table td { white-space: nowrap; }
 .table td { max-width: none; }
 .mainCell { max-width: 0; width: 20%; }
-.rowLink { display: block; max-width: 100%; padding: 0; overflow: hidden; border: 0; background: none; color: var(--adm-text); font: inherit; font-weight: 600; text-align: left; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+.rowLink { display: block; max-width: 100%; padding: 0; overflow: hidden; border: 0; background: none; color: var(--adm-text); font: inherit; font-weight: 700; text-align: left; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
 .rowLink:hover { color: var(--adm-accent); text-decoration: underline; }
 .rowLink:focus-visible { border-radius: 4px; outline: none; box-shadow: var(--adm-focus); }
 .table td.optional { max-width: 0; }
@@ -31,12 +31,12 @@
 .menuCell { width: 44px; text-align: right; }
 .clickRow { cursor: pointer; }
 .clickRow[data-muted] td:not(:last-child) { color: var(--adm-muted); }
-.emptyLine { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 12px; padding: 14px 12px; color: var(--adm-muted); text-align: center; }
-.bulkBar { position: sticky; top: 0; z-index: 3; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; padding: 6px 10px; border-bottom: 1px solid var(--adm-accent-line); background: var(--adm-accent-soft); }
+.emptyLine { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 12px; padding: 28px 12px; color: var(--adm-muted); text-align: center; }
+.bulkBar { position: sticky; top: 0; z-index: 3; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; padding: 8px 12px; border-bottom: 1px solid var(--adm-accent-line); background: var(--adm-accent-soft); }
 .bulkBar strong { margin-right: 6px; }
 
 /* Forms and drawers */
-.form { display: grid; gap: 12px; }
+.form { display: grid; gap: 16px; }
 .two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .formError { display: flex; align-items: flex-start; gap: 8px; margin: 0; padding: 8px 10px; border: 1px solid var(--crm-bad-line); border-radius: var(--adm-radius-sm); background: var(--crm-bad-soft); color: var(--crm-bad); font-size: var(--crm-text-sm); font-weight: 600; }
 .formError :global(.icon) { flex-shrink: 0; width: 16px; height: 16px; margin-top: 1px; }
@@ -61,7 +61,7 @@
 .drawerStack { display: grid; gap: 16px; }
 /* Label → value: muted label column on the left, value on the right, hairlines between rows (no boxes). */
 .facts { display: grid; margin: 0; }
-.facts > div { display: grid; grid-template-columns: 120px minmax(0, 1fr); align-items: center; gap: 12px; min-height: 34px; padding: 4px 0; border-bottom: 1px solid var(--adm-line); }
+.facts > div { display: grid; grid-template-columns: minmax(95px, 1fr) minmax(0, 2fr); align-items: center; gap: 12px; min-height: 38px; padding: 6px 0; border-bottom: 1px solid var(--adm-line-soft); }
 .facts dt { color: var(--adm-muted); font-size: var(--crm-text-xs); font-weight: 500; }
 .facts dd { min-width: 0; margin: 0; overflow: hidden; color: var(--adm-text); text-overflow: ellipsis; white-space: nowrap; }
 .factRow { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
@@ -69,7 +69,7 @@
 .person { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; min-width: 0; vertical-align: middle; }
 .person .more { flex: none; font-size: var(--crm-text-xs); }
 .notes { display: grid; gap: 8px; }
-.notes h3 { display: flex; align-items: baseline; gap: 6px; margin: 0; color: var(--adm-gold-ink); font-family: inherit; font-size: .6875rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+.notes h3 { display: flex; align-items: baseline; gap: 6px; margin: 0; color: var(--adm-text); font-family: inherit; font-size: var(--crm-text-sm); font-weight: 700; }
 .noteForm { display: grid; gap: 6px; }
 .noteActions { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .noteList { display: grid; margin: 0; padding: 0; list-style: none; }

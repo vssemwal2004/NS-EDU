@@ -1,22 +1,10 @@
-/* Admin sign-in ("Jewel"): split screen. Left, the console's oxblood frame with its wine/bronze glow, the logo and
-   gold jharokha arches; right, the ivory sheet with one white card, a serif title and wine for the primary action. */
-.page { display: grid; grid-template-columns: minmax(320px, 5fr) minmax(0, 7fr); min-height: 100dvh; background: var(--adm-bg); color: var(--adm-text); font-size: var(--crm-text-sm); }
-
-/* Frame */
-.frame { position: relative; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; padding: 44px 48px; background: var(--adm-frame-bg); color: var(--adm-on-dark); }
-.brand { --brand-height: 56px; position: relative; z-index: 1; display: grid; justify-items: start; gap: 18px; }
-/* The logo is drawn in one light colour on the frame, like the console sidebar. */
-.brand img { filter: brightness(0) invert(1); }
-.brand span { color: var(--adm-gold); font-size: .6875rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
-.arches { position: relative; align-self: center; width: min(420px, 100%); height: auto; margin-bottom: -44px; fill: none; stroke: var(--adm-gold); stroke-width: 1.2; pointer-events: none; }
-
-/* Sheet */
-.column { display: grid; align-content: center; justify-items: center; gap: 20px; padding: 40px 24px; }
-.column > * { width: min(420px, 100%); }
-.card { padding: 30px 30px 28px; border: 1px solid var(--adm-line); border-radius: var(--adm-radius-lg); background: var(--adm-surface); box-shadow: var(--adm-shadow-lift); }
-.card h1 { position: relative; margin: 0; padding-bottom: 12px; color: var(--adm-wine); font-family: var(--adm-serif); font-size: calc(2rem * var(--crm-scale)); font-weight: 400; letter-spacing: -.01em; line-height: 1.1; }
-.card h1::after { content: ''; position: absolute; left: 0; bottom: 0; width: 56px; height: 2px; border-radius: 2px; background: var(--adm-gold); }
-.lead { margin: 12px 0 0; color: var(--adm-muted); line-height: 1.5; }
+.page { display: grid; place-items: center; min-height: 100dvh; padding: 40px 20px; background: var(--adm-subtle); color: var(--adm-text); font-size: var(--crm-text-sm); }
+.column { display: grid; gap: 20px; width: min(100%, 440px); }
+.brand { --brand-height: 49px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+.brand span { padding: 5px 9px; border-radius: var(--adm-radius-sm); background: var(--adm-accent-soft); color: var(--adm-wine); font-size: var(--crm-text-xs); font-weight: 650; }
+.card { padding: 30px; border: 1px solid var(--adm-line); border-radius: var(--adm-radius-lg); background: var(--adm-surface); box-shadow: var(--adm-shadow-lift); }
+.card h1 { margin: 0; color: var(--adm-text); font-family: var(--adm-heading); font-size: calc(2rem * var(--crm-scale)); font-weight: 700; letter-spacing: -.045em; line-height: 1.15; }
+.lead { margin: 8px 0 0; color: var(--adm-muted); line-height: 1.55; }
 .form { display: grid; gap: 6px; margin-top: 22px; }
 .form .inputWrap { margin-bottom: 12px; }
 .inputWrap { display: flex; align-items: center; gap: 10px; min-height: 44px; padding-inline: 12px 4px; border: 1px solid var(--adm-line-strong); border-radius: var(--adm-radius-sm); background: var(--adm-surface); transition: border-color var(--adm-fast) ease, box-shadow var(--adm-fast) ease; }
@@ -41,14 +29,8 @@
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 2s; } }
 
-/* Narrow screens: the frame becomes a band above the sheet. */
-@media (max-width: 860px) {
-  .page { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr; }
-  .frame { padding: 22px 20px; }
-  .frame::after { content: ''; position: absolute; inset: auto 20px 0; height: 1px; background: linear-gradient(90deg, var(--adm-gold), rgb(201 164 106 / 0%)); }
-  .brand { --brand-height: 44px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
-  .brand span { padding-left: 14px; border-left: 1px solid rgb(255 255 255 / 22%); }
-  .arches { display: none; }
-  .column { align-content: start; padding: 28px 16px 32px; }
+@media (max-width: 520px) {
+  .page { place-items: start center; padding: 32px 16px; }
+  .brand { --brand-height: 42px; }
   .card { padding: 24px 20px; }
 }

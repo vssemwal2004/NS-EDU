@@ -93,19 +93,21 @@ export default function ActivityFeed({ mine = false, limit = 40, compact = false
   const filtered = Object.values(filters).some(Boolean);
 
   return <div className={styles.feed} data-compact={compact || undefined}>
-    {!mine && <div className={styles.filters}>
-      <label className="sr-only" htmlFor="activity-person">Person</label>
-      <select id="activity-person" className="adm-select" value={filters.author} onChange={set('author')}>
-        <option value="">Everyone I can see</option>
-        {people.map((person) => <option key={person.id} value={person.id}>{person.name || displayName(person.email)}</option>)}
-      </select>
-      <label className="sr-only" htmlFor="activity-type">Type</label>
-      <select id="activity-type" className="adm-select" value={filters.kind} onChange={set('kind')}>
-        {TYPES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-      </select>
-      <label className={styles.date}>From<input type="date" className="adm-input" value={filters.from} max={filters.to || undefined} onChange={set('from')} /></label>
-      <label className={styles.date}>To<input type="date" className="adm-input" value={filters.to} min={filters.from || undefined} onChange={set('to')} /></label>
-      {filtered && <button type="button" className="adm-btn adm-btn--ghost adm-btn--sm" onClick={() => setFilters({ author: '', kind: '', from: '', to: '' })}><Icon name="close" />Clear</button>}
+    {!mine && <div className={styles.filters} role="group" aria-label="Activity filters">
+      <label className={styles.filter}>Person
+        <select className="adm-select" value={filters.author} onChange={set('author')}>
+          <option value="">Everyone I can see</option>
+          {people.map((person) => <option key={person.id} value={person.id}>{person.name || displayName(person.email)}</option>)}
+        </select>
+      </label>
+      <label className={styles.filter}>Type
+        <select className="adm-select" value={filters.kind} onChange={set('kind')}>
+          {TYPES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+        </select>
+      </label>
+      <label className={styles.filter}>From<input type="date" className="adm-input" value={filters.from} max={filters.to || undefined} onChange={set('from')} /></label>
+      <label className={styles.filter}>To<input type="date" className="adm-input" value={filters.to} min={filters.from || undefined} onChange={set('to')} /></label>
+      {filtered && <button type="button" className="adm-btn adm-btn--ghost" onClick={() => setFilters({ author: '', kind: '', from: '', to: '' })}><Icon name="close" />Clear</button>}
     </div>}
 
     {state.status === 'error' ? <p className={styles.error} role="alert"><Icon name="alert" />{state.error}</p>

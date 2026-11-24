@@ -79,6 +79,7 @@ export default function ContentList() {
             </tr>) : items.map((item) => <tr key={item.key} className={styles.clickRow} onClick={() => router.push(`/admin/content/${item.key}`)}>
               <td>
                 <Link className={styles.entryLink} href={`/admin/content/${item.key}`} title={`Key: ${item.key}`} onClick={(event) => event.stopPropagation()}>{item.label}</Link>
+                <small className={styles.mobileDescription}>{item.description}</small>
               </td>
               <td className={styles.colDescription}><span className={styles.truncate} title={item.description}>{item.description}</span></td>
               <td>

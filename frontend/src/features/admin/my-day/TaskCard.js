@@ -30,7 +30,7 @@ export default function TaskCard({ task, section, now, people, teamMode, canEdit
     { key: 'delete', label: 'Delete follow-up…', icon: 'trash', tone: 'danger', hidden: !canEdit, onSelect: () => onDelete(task) },
   ];
 
-  return <article className={styles.task} data-done={done || undefined} data-completing={completing || undefined}>
+  return <article id={`follow-up-${task.id}`} tabIndex={-1} className={styles.task} data-done={done || undefined} data-completing={completing || undefined}>
     {canEdit ? <button type="button" className={styles.tick} aria-label={done ? `Mark not done: ${task.title}` : `Mark done: ${task.title}`} aria-pressed={done} disabled={completing} onClick={() => (done ? onUndo(task) : onDone(task))}>
       <Icon name="check" />
     </button> : <span className={styles.kindIcon} title={kind}><Icon name={KIND_ICON[task.kind] ?? 'note'} /></span>}

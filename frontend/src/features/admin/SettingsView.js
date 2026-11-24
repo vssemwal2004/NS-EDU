@@ -65,7 +65,7 @@ export default function SettingsView() {
   const counts = stats.data ? PUBLISHED.filter((row) => Number.isFinite(stats.data[row.key])) : PUBLISHED;
   const apiTone = health.state === 'ok' ? 'good' : health.state === 'down' ? 'bad' : 'neutral';
 
-  return <>
+  return <div className={styles.screen}>
     <PageToolbar summary={<>Signed in as <strong>{admin?.email}</strong></>}>
       <button type="button" className="adm-btn" onClick={recheck} disabled={health.state === 'checking'}><Icon name="refresh" />Check again</button>
       <button type="button" className="adm-btn" onClick={logout}><Icon name="logout" />Log out</button>
@@ -98,20 +98,25 @@ export default function SettingsView() {
       </Panel>
     </div>
 
-    {admin?.isOwner && <Panel title="Daily lead distribution" description="Employees check in to receive yesterday’s unassigned leads. At the cutoff, remaining leads go to employees still checked in.">
-      <form onSubmit={saveDistribution} style={{ display: 'grid', gap: 16, maxWidth: 360 }}>
-        <label>Check-in cutoff (IST)<input className="adm-input" type="time" value={distribution.checkInCutoff} disabled={distribution.loading} onChange={(event) => setDistribution((current) => ({ ...current, checkInCutoff: event.target.value }))} /></label>
-        <label>Expected work end (IST)<input className="adm-input" type="time" value={distribution.workEndTime} disabled={distribution.loading} onChange={(event) => setDistribution((current) => ({ ...current, workEndTime: event.target.value }))} /></label>
-        <p className={styles.note}>Employees may check in late to work older pending leads, but receive no automatic leads that day. Checkout keeps unfinished leads assigned.</p>
-        {distribution.error && <p role="alert" className="adm-error">{distribution.error}</p>}
-        {distribution.message && <p role="status">{distribution.message}</p>}
-        <button type="submit" className="adm-btn adm-btn--primary" disabled={distribution.loading || distribution.busy}>{distribution.busy ? 'Saving…' : 'Save times'}</button>
-      </form>
-    </Panel>}
+    <div className={styles.settingsLower}>
+      {admin?.isOwner && <Panel title="Daily lead distribution" description="Employees check in to receive yesterday’s unassigned leads. At the cutoff, remaining leads go to employees still checked in.">
+        <form onSubmit={saveDistribution} className={styles.settingsForm}>
+          <div className={styles.settingsFields}>
+            <label className="adm-label">Check-in cutoff (IST)<input className="adm-input" type="time" value={distribution.checkInCutoff} disabled={distribution.loading} onChange={(event) => setDistribution((current) => ({ ...current, checkInCutoff: event.target.value }))} /></label>
+            <label className="adm-label">Expected work end (IST)<input className="adm-input" type="time" value={distribution.workEndTime} disabled={distribution.loading} onChange={(event) => setDistribution((current) => ({ ...current, workEndTime: event.target.value }))} /></label>
+          </div>
+          <p className={styles.note}>Employees may check in late to work older pending leads, but receive no automatic leads that day. Checkout keeps unfinished leads assigned.</p>
+          {distribution.error && <p role="alert" className="adm-error">{distribution.error}</p>}
+          {distribution.message && <p role="status">{distribution.message}</p>}
+          <button type="submit" className="adm-btn adm-btn--primary" disabled={distribution.loading || distribution.busy}>{distribution.busy ? 'Saving…' : 'Save times'}</button>
+        </form>
+      </Panel>}
 
-    <Panel title="Before going live" description="How this deployment is set up today. Change these before real students sign in.">
-      <dl className={styles.sheet}>
-        {CHECKLIST.map((item) => <div key={item.key} className={styles.sheetRow}><dt>{item.label}</dt><dd className={styles.note}>{item.text}</dd></div>)}
-      </dl>
-    </Panel>  </>;
+      <Panel title="Before going live" description="How this deployment is set up today. Change these before real students sign in.">
+        <dl className={styles.sheet}>
+          {CHECKLIST.map((item) => <div key={item.key} className={styles.sheetRow}><dt>{item.label}</dt><dd className={styles.note}>{item.text}</dd></div>)}
+        </dl>
+      </Panel>
+    </div>
+  </div>;
 }

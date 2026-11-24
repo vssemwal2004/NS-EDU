@@ -102,7 +102,7 @@ function Trend({ trend, range }) {
     action={<div className={styles.segmentedSmall} role="radiogroup" aria-label="What to chart">
       {METRICS.map(([key, text]) => <button key={key} type="button" role="radio" aria-checked={metric === key} onClick={() => setMetric(key)}>{text}</button>)}
     </div>}>
-    <div className={styles.chartBody}>{rows.length ? <TrendChart data={rows} title={`${label} per day`} valueLabel={label} height={220} /> : <p className={styles.empty}>No data for this period.</p>}</div>
+    <div className={styles.chartBody}>{rows.length ? <TrendChart data={rows} title={`${label} per day`} valueLabel={label} height={220} variant="line" /> : <p className={styles.empty}>No data for this period.</p>}</div>
   </Card>;
 }
 

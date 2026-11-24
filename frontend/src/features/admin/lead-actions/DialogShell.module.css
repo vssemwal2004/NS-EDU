@@ -1,15 +1,14 @@
 .dialog { width: min(500px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); margin: auto; padding: 0; border: 0; border-radius: var(--adm-radius-lg); background: var(--adm-surface); color: var(--adm-text); box-shadow: var(--adm-shadow-pop); overflow: hidden; }
 .dialog[open] { display: flex; flex-direction: column; animation: adm-pop .26s var(--adm-ease); }
 .panel { display: flex; flex-direction: column; min-height: 0; max-height: calc(100dvh - 24px); }
-.head { position: relative; display: flex; align-items: flex-start; gap: 14px; padding: 20px 22px 18px; background: linear-gradient(180deg, #FBF4EF, var(--adm-surface)); }
-.head::after { content: ''; position: absolute; left: 22px; right: 22px; bottom: 0; height: 1px; background: linear-gradient(90deg, var(--adm-gold), rgb(201 164 106 / 0%)); }
-.badge { display: grid; flex-shrink: 0; width: 42px; height: 42px; place-items: center; border-radius: 12px; background: var(--adm-oxblood); color: var(--adm-gold); }
+.head { display: flex; align-items: flex-start; gap: 14px; padding: 18px 20px; border-bottom: 1px solid var(--adm-line); background: var(--adm-surface); }
+.badge { display: grid; flex-shrink: 0; width: 42px; height: 42px; place-items: center; border-radius: 10px; background: var(--adm-accent-soft); color: var(--adm-wine); }
 .badge svg { width: 19px; height: 19px; }
 .titles { flex: 1; min-width: 0; }
-.head h2 { margin: 2px 0 0; color: var(--adm-wine); font-family: var(--adm-serif); font-size: calc(1.5rem * var(--crm-scale)); font-weight: 400; line-height: 1.1; }
+.head h2 { margin: 2px 0 0; color: var(--adm-text); font-family: var(--adm-heading, inherit); font-size: calc(1.3rem * var(--crm-scale)); font-weight: 750; line-height: 1.15; }
 .head p { margin: 4px 0 0; color: var(--adm-muted); font-size: var(--crm-text-xs); }
 .close { display: grid; flex-shrink: 0; width: 32px; height: 32px; place-items: center; border: 1px solid var(--adm-line); border-radius: 9px; background: var(--adm-surface); color: var(--adm-muted); cursor: pointer; transition: transform .2s ease, background var(--adm-fast) ease; }
-.close:hover { background: var(--adm-hover); color: var(--adm-text); transform: rotate(90deg); }
+.close:hover { background: var(--adm-hover); color: var(--adm-text); }
 .close:focus-visible { outline: none; box-shadow: var(--adm-focus); }
 .close svg { width: 15px; height: 15px; }
 .body { min-height: 0; padding: 18px 22px 20px; overflow-y: auto; }

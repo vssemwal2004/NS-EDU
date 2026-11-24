@@ -1,10 +1,7 @@
 'use client';
-// The console home (/admin/dashboard): an oxblood greeting with today's follow-up numbers, jewel-coloured stat cards,
-// the lead distribution card,
-// the pipeline by stage (bar + donut), new leads over the last 7 days, what needs attention, the person's follow-ups,
-// recent activity and quick actions. Colours follow the Jewel palette (see crm/crm-tokens.css): each stage keeps
-// its colour everywhere. Analytics live under Analytics; this is the start of the day.
+// The console home pairs live admissions numbers with the next actions for the current staff member.
 import Link from 'next/link';
+import { useState } from 'react';
 import Icon from '@/components/ui/Icon';
 import { useAdminSession } from './AdminSession';
 import { displayName, initialsOf, relativeTime } from './crm/format';
@@ -15,10 +12,9 @@ import { useServerList } from './table/useServerList';
 import DistributionCard from './DistributionCard';
 import { Card, Donut, Pipeline, Week } from './dashboard/charts';
 import Insights from './dashboard/Insights';
-
-const ANALYTICS = ['analytics.view_own', 'analytics.view_team', 'analytics.view_all'];
 import styles from './Dashboard.module.css';
 
+const ANALYTICS = ['analytics.view_own', 'analytics.view_team', 'analytics.view_all'];
 const today = new Intl.DateTimeFormat('en-IN', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Asia/Kolkata' });
 const istHour = () => Number(new Intl.DateTimeFormat('en-GB', { hour: 'numeric', hourCycle: 'h23', timeZone: 'Asia/Kolkata' }).format(new Date()));
 const greeting = () => { const hour = istHour(); return hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'; };
@@ -56,7 +52,7 @@ function statItems(data) {
   return items.slice(0, 4);
 }
 
-function Hero({ name, data, admin }) {
+function OverviewHeader({ name, data, admin }) {
   const tasks = data?.tasks;
   const leads = data?.leads;
   const overdue = tasks?.overdue ?? leads?.overdue ?? 0;
@@ -64,24 +60,22 @@ function Hero({ name, data, admin }) {
   const hot = leads?.hotWaiting ?? 0;
   const parts = [overdue && `${plural(overdue, 'follow-up')} ${overdue === 1 ? 'is' : 'are'} overdue`, hot && `${plural(hot, 'hot lead')} ${hot === 1 ? 'is' : 'are'} waiting for a first call`].filter(Boolean);
   const line = !data ? 'Loading your day…' : parts.length ? `${parts.join(' and ')}. Start with those.` : dueToday ? `${plural(dueToday, 'follow-up')} due today. Nothing overdue.` : 'Nothing is overdue. A good day to reach new leads.';
-  return <section className={styles.hero}>
-    <svg className={styles.arches} viewBox="0 0 420 230" aria-hidden="true">
-      <g opacity=".55"><path d="M10 230V120Q10 60 70 40Q130 60 130 120V230" /><path d="M150 230V100Q150 34 210 12Q270 34 270 100V230" /><path d="M290 230V120Q290 60 350 40Q410 60 410 120V230" /></g>
-      <g opacity=".3"><path d="M30 230V128Q30 78 70 62Q110 78 110 128V230" /><path d="M172 230V108Q172 54 210 36Q248 54 248 108V230" /><path d="M310 230V128Q310 78 350 62Q390 78 390 128V230" /></g>
-    </svg>
-    <div className={styles.heroCopy}>
-      <p className="adm-eyebrow">{today.format(new Date())}</p>
-      <h1>{greeting()}, {name}.</h1>
-      <p>{line}</p>
-      <div className={styles.heroActions}>
-        {can(admin, 'leads.notes') && <Link className="adm-btn adm-btn--gold" href="/admin/my-day">Start my day<Icon name="arrow" /></Link>}
-        {can(admin, 'leads.create') && <Link className={styles.ghost} href="/admin/leads?add=1"><Icon name="plus" />Add a lead</Link>}
+  return <section className={styles.overview}>
+    <header className={styles.overviewHead}>
+      <div>
+        <h1>Admissions overview</h1>
+        <p>{greeting()}, {name}. {line}</p>
       </div>
-    </div>
-    {(tasks || leads) && <dl className={styles.heroStats}>
-      <div><dt><i data-tone="bad" />Overdue</dt><dd>{n(overdue)}</dd></div>
-      <div><dt><i data-tone="warn" />Due today</dt><dd>{n(dueToday)}</dd></div>
-      {leads && <div><dt><i />Hot, not called</dt><dd>{n(hot)}</dd></div>}
+      <div className={styles.overviewActions}>
+        <span className={styles.date}><Icon name="calendar" />{today.format(new Date())}</span>
+        {can(admin, 'leads.notes') && <Link className="adm-btn" href="/admin/my-day">Start my day<Icon name="arrow" /></Link>}
+        {can(admin, 'leads.create') && <Link className="adm-btn adm-btn--primary" href="/admin/leads?add=1"><Icon name="plus" />Add a lead</Link>}
+      </div>
+    </header>
+    {(tasks || leads) && <dl className={styles.todayCounts} aria-label="Follow-up priorities">
+      <div className="crm-tone" data-tone="bad"><dt>Overdue</dt><dd>{n(overdue)}</dd></div>
+      <div className="crm-tone" data-tone="warn"><dt>Due today</dt><dd>{n(dueToday)}</dd></div>
+      {leads && <div className="crm-tone" data-tone="wine"><dt>Hot, not called</dt><dd>{n(hot)}</dd></div>}
     </dl>}
   </section>;
 }
@@ -90,10 +84,11 @@ function StatCards({ items, loading }) {
   return <ul className={styles.stats} aria-label="Today">
     {items.map((item) => <li key={item.key}>
       <Link href={item.href} className={cx('crm-tone', styles.stat)} data-tone={item.tone}>
-        <Icon name={item.icon} className={styles.glyph} />
         <span className={styles.statBadge}><Icon name={item.icon} /></span>
-        <span className={styles.statLabel}>{item.label}</span>
-        <strong className={cx(styles.statValue, 'crm-tabnum')}>{loading ? '…' : n(item.value)}</strong>
+        <span className={styles.statText}>
+          <strong className={cx(styles.statValue, 'crm-tabnum')}>{loading ? '…' : n(item.value)}</strong>
+          <span className={styles.statLabel}>{item.label}</span>
+        </span>
       </Link>
     </li>)}
   </ul>;
@@ -101,6 +96,7 @@ function StatCards({ items, loading }) {
 
 
 function Attention({ data }) {
+  const [expanded, setExpanded] = useState(false);
   const rows = [];
   if (data.tasks?.overdue) rows.push({ key: 'tasks', href: '/admin/my-day', title: `${plural(data.tasks.overdue, 'follow-up')} of yours ${data.tasks.overdue === 1 ? 'is' : 'are'} overdue`, meta: 'Open My day to clear them', tone: 'bad', word: 'Overdue', initials: '!' });
   for (const item of data.attention ?? []) {
@@ -110,15 +106,22 @@ function Attention({ data }) {
       : { key: `h${item.id}`, href: `/admin/leads/${item.id}`, title: item.name || 'Unnamed lead', meta: `Arrived ${when(item.at)} · ${who}`, tone: 'warn', word: 'Hot, not called', initials: initialsOf(item.name) });
   }
   if (data.catalogue?.held) rows.push({ key: 'held', href: '/admin/data/review', title: `${n(data.catalogue.held)} directory records waiting to publish`, meta: 'Imported or crawled, not yet reviewed', tone: 'info', word: 'Review', initials: n(data.catalogue.held) });
-  return <Card title="Needs attention" action={data.leads?.overdue > 0 && <Link className={styles.cardLink} href="/admin/leads?followUp=overdue">All {n(data.leads.overdue)} overdue</Link>}>
+  const previewLength = 4;
+  const visible = expanded ? rows : rows.slice(0, previewLength);
+  return <Card title="Needs attention" className={styles.attention} action={data.leads?.overdue > 0 && <Link className={styles.cardLink} href="/admin/leads?followUp=overdue">All {n(data.leads.overdue)} overdue</Link>}>
     {!rows.length ? <p className={styles.empty}><Icon name="checkCircle" />Nothing needs attention right now.</p>
-      : <ul className={styles.rows}>{rows.map((row) => <li key={row.key}>
+      : <ul className={styles.rows} id="attention-queue">{visible.map((row) => <li key={row.key}>
         <Link href={row.href} className={styles.row}>
           <span className={cx('crm-tone', styles.avatar)} data-tone={row.tone}>{row.initials}</span>
           <span className={styles.who}><strong>{row.title}</strong><small>{row.meta}</small></span>
           <span className={cx('crm-tone', styles.chip)} data-tone={row.tone}>{row.word}</span>
         </Link>
       </li>)}</ul>}
+    {rows.length > previewLength && <div className={styles.attentionFoot}>
+      <button type="button" className="adm-btn adm-btn--ghost adm-btn--sm" aria-controls="attention-queue" aria-expanded={expanded} onClick={() => setExpanded((current) => !current)}>
+        {expanded ? 'Show fewer' : `Show ${n(rows.length - previewLength)} more`}<Icon name="chevron" />
+      </button>
+    </div>}
   </Card>;
 }
 
@@ -150,7 +153,7 @@ function Activity({ items, scope }) {
 function QuickActions({ admin }) {
   const items = QUICK.filter((item) => [].concat(item.permission).some((key) => can(admin, key)));
   if (!items.length) return null;
-  return <Card title="Quick actions">
+  return <Card title="Quick actions" className={styles.full}>
     <ul className={styles.quick}>{items.map((item) => <li key={item.href}>
       <Link className={cx('crm-tone', styles.quickTile)} data-tone={item.tone} href={item.href}><span><Icon name={item.icon} /></span>{item.label}</Link>
     </li>)}</ul>
@@ -163,23 +166,27 @@ export default function Dashboard() {
   const { data, error, loading, busy, refreshing, reload } = useServerList(request, '/home', {}, { scope: admin?.id ?? '' });
   const name = (admin?.name || displayName(admin?.email ?? '') || 'there').split(' ')[0];
   const items = data ? statItems(data) : [1, 2, 3, 4].map((key) => ({ key, label: '…', value: 0, icon: 'clock', tone: 'neutral', href: '#' }));
+  const analytics = canAny(admin, ANALYTICS);
+  const showAttention = Boolean(data?.attention || data?.catalogue);
+  const showWeek = Boolean(data?.leads?.week?.length);
   return <div className={styles.page}>
-    <Hero name={name} data={data} admin={admin} />
+    <OverviewHeader name={name} data={data} admin={admin} />
     {error && !data ? <ErrorBanner title="Your dashboard could not load." message={error} onRetry={reload} />
       : <>
         {items.length > 0 && <StatCards items={items} loading={loading || !data} />}
-        {/* People with analytics get the filtered Insights block (16 sections); others the simple stage overview. */}
-        {canAny(admin, ANALYTICS) ? <Insights /> : data?.leads?.byStage && <div className={styles.grid}>
-          <Pipeline stages={data.leads.byStage} />
-          <Donut stages={data.leads.byStage} />
-          {data.leads.week && <Week days={data.leads.week} />}
+        {(showWeek || showAttention) && <div className={styles.priorityGrid} data-paired={showWeek && showAttention || undefined}>
+          {showWeek && <Week days={data.leads.week} />}
+          {showAttention && <Attention data={data} />}
         </div>}
         {data && <div className={styles.grid}>
-          {(data.attention || data.catalogue) && <Attention data={data} />}
           {data.tasks && <FollowUps tasks={data.tasks} />}
           {data.activity && <Activity items={data.activity} scope={data.leads?.scope} />}
           <QuickActions admin={admin} />
           <div className={styles.full}><DistributionCard /></div>
+        </div>}
+        {analytics ? <Insights /> : data?.leads?.byStage && <div className={styles.stageGrid}>
+          <Pipeline stages={data.leads.byStage} />
+          <Donut stages={data.leads.byStage} />
         </div>}
         {data?.generatedAt && <p className={styles.updated}><Icon name="clock" />{busy || refreshing ? 'Updating…' : `Updated ${relativeTime(data.generatedAt)}`}
           <button type="button" className="adm-btn adm-btn--ghost adm-btn--sm" onClick={reload} disabled={busy || refreshing}><Icon name="refresh" />Refresh</button></p>}

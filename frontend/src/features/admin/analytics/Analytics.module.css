@@ -1,5 +1,5 @@
 /* Shared layout for the analytics screens and the console home: toolbar → one stat strip → a 12-column grid of panels. */
-.page { display: grid; gap: 12px; min-width: 0; }
+.page { display: grid; gap: 16px; min-width: 0; }
 .page > * { min-width: 0; }
 
 /* Panels: 2-up on desktop (span 6), 3-up from 1200px (span 4); .half keeps 2-up, .wide is full width; 1-up below 900px.
@@ -13,6 +13,60 @@
 .grid :global(.adm-panel) { display: flex; flex-direction: column; }
 .grid :global(.adm-panel) > div:last-child { display: flex; flex: 1 1 auto; flex-direction: column; min-width: 0; }
 .stretch { align-self: stretch; }
+
+/* CRM performance uses a dark report canvas below the regular page filters. */
+.studio {
+  --adm-bg: #1f1418;
+  --adm-surface: #2b2024;
+  --adm-subtle: #34272c;
+  --adm-hover: #3d2d34;
+  --adm-line: #543e46;
+  --adm-line-soft: #48363d;
+  --adm-line-strong: #765c66;
+  --adm-text: #fff7f3;
+  --adm-muted: #d9c7ce;
+  --adm-faint: #bea7b0;
+  --adm-wine: #efbf85;
+  --adm-accent: #efbf85;
+  --adm-accent-soft: #44303a;
+  --adm-accent-line: #755261;
+  --adm-gold-ink: #efbf85;
+  --adm-shadow: none;
+  --adm-focus: 0 0 0 2px #efbf85;
+  --crm-neutral: #eadbe0;
+  --crm-neutral-soft: #44323a;
+  --crm-neutral-line: #765c66;
+  --crm-neutral-solid: #b49da7;
+  --crm-good: #a5dfc9;
+  --crm-good-soft: #243c34;
+  --crm-good-line: #496d60;
+  --crm-good-solid: #74c7a8;
+  --crm-warn: #f0c88e;
+  --crm-warn-soft: #47362b;
+  --crm-warn-line: #775b36;
+  --crm-bad: #ffb5c9;
+  --crm-bad-soft: #4d2736;
+  --crm-bad-line: #7e4258;
+  --crm-bad-solid: #e581a3;
+  --crm-info: #c1d8ff;
+  --crm-info-soft: #29374d;
+  --crm-info-line: #4c617e;
+  --crm-info-solid: #8eb3f2;
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+  padding: clamp(12px, 2vw, 22px);
+  border-radius: calc(var(--adm-radius) + 2px);
+  background: var(--adm-bg);
+  color: var(--adm-text);
+}
+.studioGrid { gap: 16px; }
+.studioPanel { display: grid; }
+.studio :global(.adm-panel) h2 { color: var(--adm-text); }
+.studio :global(.adm-btn--ghost):hover { background: var(--adm-hover); color: var(--adm-text); }
+@media (min-width: 1200px) {
+  .studioGrid > .oneThird { grid-column: span 4; }
+}
 
 /* Toolbar controls: a segmented control on sand with a white selected pill (same as the Page quick views). */
 .segmented { display: inline-flex; flex: none; gap: 2px; max-width: 100%; padding: 3px; overflow-x: auto; border-radius: 11px; background: var(--crm-neutral-soft); scrollbar-width: none; }
@@ -46,7 +100,7 @@
 .figures { display: flex; flex-wrap: wrap; gap: 10px 40px; margin: 0; }
 .figures > div { display: grid; align-content: start; gap: 4px; min-width: 0; }
 .figures dt { color: var(--adm-muted); font-size: var(--crm-text-xs); font-weight: 600; white-space: nowrap; }
-.figures dd { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin: 0; color: var(--adm-text); font-family: var(--adm-serif); font-size: calc(1.75rem * var(--crm-scale)); font-weight: 400; font-variant-numeric: tabular-nums; letter-spacing: -.01em; line-height: 1.1; }
+.figures dd { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin: 0; color: var(--adm-text); font-family: var(--adm-heading, inherit); font-size: calc(1.75rem * var(--crm-scale)); font-weight: 750; font-variant-numeric: tabular-nums; letter-spacing: -.035em; line-height: 1.1; }
 .figures dd .status { font-family: var(--font-body, inherit); font-size: var(--crm-text-xs); font-weight: 600; letter-spacing: normal; }
 .figuresRule { margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--adm-line); }
 .chartBlock { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--adm-line); }

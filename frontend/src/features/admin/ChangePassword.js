@@ -35,7 +35,7 @@ export default function ChangePassword() {
     } catch (error) { setState({ checking: false, busy: false, error: error.message }); }
   }
 
-  return <main className={styles.passwordPage}>
+  return <main className={`${styles.passwordPage} adm-workspace`}>
     <div className={styles.column}>
       <header className={styles.brand}><Brand priority /><span>Admin console</span></header>
       <section className={styles.card} aria-labelledby="change-password-title">
