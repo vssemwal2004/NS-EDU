@@ -27,6 +27,7 @@ import { HeatChip, ScoreMeter } from '@/features/admin/crm/ui';
 import { CHANNELS, can, OPEN_STAGES, STAGES } from '@/features/admin/crm/meta';
 import { dateTimeOf, displayName, relativeTime } from '@/features/admin/crm/format';
 import { PageToolbar, StatStrip, ViewTabs } from '@/features/admin/ui/Page';
+import { readSticky, writeSticky } from '@/features/admin/ui/useStickyState';
 import ActiveFilterChips from '@/features/admin/table/ActiveFilterChips';
 import ColumnPicker from '@/features/admin/table/ColumnPicker';
 import DataTable from '@/features/admin/table/DataTable';
@@ -178,16 +179,29 @@ export default function LeadsManager({ initial = NO_FILTERS, fixedFilters = NO_F
   const views = useMemo(() => viewsFor(admin), [admin]);
   const [savedViews, savedActions] = useSavedViews(scoped ? '' : admin?.id);
 
+  // Filters are remembered per person and per list (all leads, pending leads, one school drive …). A link that
+  // carries filters in its URL wins; arriving without any (the sidebar, a new tab, a new sign-in) restores the last ones.
+  const stickyName = `leads:${fixedKey || 'all'}`;
+  const [restored] = useState(() => {
+    const urlHasFilters = Object.entries(initial ?? {}).some(([key, value]) => key !== 'add' && String(value ?? '') !== '');
+    return urlHasFilters ? null : readSticky(admin?.id, stickyName);
+  });
   const [filters, setFilters] = useState(() => {
-    const start = readFilters(initial);
+    const start = readFilters(restored ?? initial);
     return { ...start, ...Object.fromEntries(hidden.map((key) => [key, ''])) };
   });
+  useEffect(() => { writeSticky(admin?.id, stickyName, urlParams(withoutPaging(filters))); }, [admin?.id, stickyName, filters]);
   const [query, setQuery] = useState(filters.q);
   const [panel, setPanel] = useState(() => (!scoped && String(initial.add ?? '') === '1' ? 'add' : ''));
   const [selectedIds, setSelectedIds] = useState([]);
   const [bulkAction, setBulkAction] = useState(null);
   const [rowAction, setRowAction] = useState(null);
   const toast = useToaster();
+  // Say so when the list opened with remembered filters, so nobody wonders why leads are missing.
+  useEffect(() => {
+    if (restored && Object.entries(restored).some(([key, value]) => !['sort', 'limit', 'page'].includes(key) && String(value ?? '') !== '')) toast.info('Your last filters are back. Use Clear all to see every lead.');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const router = useRouter();
 
   // A school drive chosen in the filters (or fixed by the embedding page) adds that form's answer columns.

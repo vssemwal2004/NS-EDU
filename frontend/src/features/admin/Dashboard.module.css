@@ -110,3 +110,82 @@
   .heroStats { width: 100%; justify-content: space-between; }
   .heroStats div { min-width: 0; padding: 0 14px; }
 }
+
+/* ---------- Insights: filter bar + analytics sections ---------- */
+.insights { display: grid; gap: 18px; min-width: 0; padding: 22px; border: 1px solid var(--adm-line); border-radius: 20px; background: linear-gradient(180deg, var(--adm-surface), var(--adm-bg) 220px); }
+.insightsHead h2 { margin: 6px 0 0; color: var(--adm-wine); font-family: var(--adm-serif); font-size: calc(1.75rem * var(--crm-scale)); font-weight: 400; line-height: 1.1; }
+.filterBar { position: sticky; top: calc(var(--adm-topbar) + 8px); z-index: 15; display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px 18px; padding: 12px 14px; border: 1px solid var(--adm-line); border-radius: 14px; background: rgb(255 255 255 / 94%); box-shadow: var(--adm-shadow); backdrop-filter: blur(8px); }
+.filterGroup { display: grid; gap: 5px; }
+.filterGroup :global(.adm-select) { width: auto; min-width: 200px; }
+.filterLabel { display: inline-flex; align-items: center; gap: 6px; color: var(--adm-gold-ink); font-size: .65625rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+.filterLabel svg { width: 13px; height: 13px; }
+.segmented, .segmentedSmall { display: inline-flex; flex-wrap: wrap; gap: 2px; padding: 3px; border-radius: 10px; background: var(--crm-neutral-soft); }
+.segmented button, .segmentedSmall button { height: 32px; padding: 0 12px; border: 0; border-radius: 8px; background: transparent; color: var(--adm-muted); font: inherit; font-size: var(--crm-text-xs); font-weight: 650; white-space: nowrap; cursor: pointer; }
+.segmentedSmall button { height: 26px; padding: 0 9px; }
+.segmented button[aria-checked="true"], .segmentedSmall button[aria-checked="true"] { background: var(--adm-wine); color: var(--adm-on-dark); box-shadow: 0 4px 10px -6px var(--adm-wine); }
+.segmented button:focus-visible, .segmentedSmall button:focus-visible { outline: none; box-shadow: var(--adm-focus); }
+.segmentedSmall { margin-left: auto; }
+.customRange { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; }
+.customRange label { display: grid; gap: 4px; color: var(--adm-muted); font-size: var(--crm-text-xs); font-weight: 600; }
+.customRange :global(.adm-input) { width: 150px; }
+.filterEnd { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-left: auto; }
+.rangeNote { color: var(--adm-text); font-size: var(--crm-text-xs); font-weight: 650; }
+.live { display: inline-flex; align-items: center; gap: 6px; color: var(--adm-muted); font-size: var(--crm-text-xs); }
+.live i { width: 8px; height: 8px; border-radius: 50%; background: var(--crm-good-solid); box-shadow: 0 0 0 3px var(--crm-good-soft); animation: live 2s ease-in-out infinite; }
+.live[data-busy] i { background: var(--adm-gold); box-shadow: 0 0 0 3px var(--adm-gold-soft); }
+@keyframes live { 50% { opacity: .45; } }
+.insightsBody { display: grid; gap: 18px; transition: opacity .2s ease; }
+.insightsBody[data-busy] { opacity: .7; }
+.insightSkeleton { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.insightSkeleton span { height: 120px; border-radius: 14px; background: linear-gradient(90deg, var(--adm-hover), var(--adm-bg), var(--adm-hover)); background-size: 200% 100%; animation: shimmer 1.3s linear infinite; }
+.insightSkeleton span:nth-child(n + 5) { height: 220px; }
+@keyframes shimmer { to { background-position: -200% 0; } }
+
+/* Headline KPIs: jewel cards with the change against the previous period. */
+.kpiRow { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+.kpi { display: grid; gap: 4px; padding: 16px 18px; border: 1px solid var(--tone-line); border-radius: 16px; background: var(--tone-soft); color: var(--adm-text); text-decoration: none; transition: transform var(--adm-fast) ease, box-shadow var(--adm-fast) ease; }
+a.kpi:hover { transform: translateY(-2px); box-shadow: 0 14px 28px -18px var(--tone-solid); }
+a.kpi:focus-visible { outline: none; box-shadow: var(--adm-focus); }
+.kpiTop { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.kpiIcon { display: grid; width: 36px; height: 36px; place-items: center; border-radius: 11px; background: var(--tone-solid); color: #fff; }
+.kpiIcon svg { width: 17px; height: 17px; }
+.delta { padding: 3px 9px; border-radius: 999px; background: var(--adm-surface); font-size: .71875rem; font-weight: 750; font-variant-numeric: tabular-nums; }
+.delta[data-dir="up"] { color: var(--crm-good); }
+.delta[data-dir="down"] { color: var(--crm-bad); }
+.delta[data-dir="flat"] { color: var(--adm-muted); }
+.kpiLabel { color: var(--adm-text); font-size: var(--crm-text-sm); font-weight: 600; }
+.kpiValue { color: var(--tone); font-family: var(--adm-serif); font-size: calc(2.375rem * var(--crm-scale)); font-weight: 400; line-height: 1.05; }
+.kpiNote { color: var(--adm-muted); font-size: var(--crm-text-xs); }
+
+/* Health tiles: compact, one tone each. */
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: 10px; }
+@media (min-width: 1280px) { .tiles { grid-template-columns: repeat(7, minmax(0, 1fr)); } }
+.tile { display: grid; gap: 2px; padding: 12px 14px; border: 1px solid var(--adm-line); border-radius: 12px; background: var(--adm-surface); box-shadow: var(--adm-shadow); color: var(--adm-text); text-decoration: none; }
+.tile > span:first-child { display: inline-flex; align-items: center; gap: 6px; }
+.tile > span:first-child::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--tone-solid); }
+a.tile:hover { background: var(--tone-soft); }
+.tile span { color: var(--adm-muted); font-size: var(--crm-text-xs); font-weight: 600; }
+.tile strong { color: var(--tone); font-family: var(--adm-serif); font-size: calc(1.625rem * var(--crm-scale)); font-weight: 400; line-height: 1.1; }
+.tile small { color: var(--adm-faint); font-size: .6875rem; }
+
+/* Funnel: bars shrink with the stage, each in its stage colour, with the step conversion. */
+.funnel { display: grid; gap: 10px; margin: 0; padding: 2px 20px 20px; list-style: none; }
+.funnel li { position: relative; display: grid; gap: 3px; }
+.funnelBar { display: block; height: 30px; border-radius: 8px; background: var(--tone-solid); opacity: .9; }
+.funnelText { position: absolute; inset: 0 auto auto 0; display: flex; align-items: center; gap: 8px; height: 30px; padding: 0 10px; color: var(--adm-text); font-size: var(--crm-text-xs); font-weight: 650; }
+.funnelText span { padding: 1px 7px; border-radius: 6px; background: rgb(255 255 255 / 88%); }
+.funnelText strong { padding: 1px 7px; border-radius: 6px; background: rgb(255 255 255 / 88%); font-weight: 800; }
+.funnelRate { color: var(--adm-muted); font-size: .6875rem; }
+
+.chartBody { flex: 1; min-width: 0; padding: 0 20px 18px; }
+.cell { display: grid; min-width: 0; }
+.cell > * { min-width: 0; height: 100%; }
+@media (min-width: 1280px) { .grid > .w6 { grid-column: span 6; } .grid > .w8 { grid-column: span 8; } .grid > .w12 { grid-column: 1 / -1; } }
+@media (max-width: 1279px) { .grid > .w8, .grid > .w12 { grid-column: 1 / -1; } }
+@media (max-width: 760px) {
+  .insights { padding: 14px; }
+  .filterBar { position: static; }
+  .filterEnd { margin-left: 0; }
+  .filterGroup :global(.adm-select) { width: 100%; }
+  .insightSkeleton { grid-template-columns: minmax(0, 1fr); }
+}

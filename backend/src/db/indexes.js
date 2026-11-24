@@ -69,7 +69,7 @@ const specs = {
     // CRM: temperature and priority filters, the pipeline board (best-first inside a stage), follow-up queues and idle leads.
     [{ 'crm.heat': 1, createdAt: -1, _id: -1 }],
     [{ 'crm.priority': 1, createdAt: -1, _id: -1 }],
-    [{ status: 1, 'crm.score': -1, createdAt: -1 }],
+    [{ status: 1, 'crm.score': -1, createdAt: -1, _id: -1 }],
     [{ 'crm.nextFollowUpAt': 1 }, { partialFilterExpression: { 'crm.nextFollowUpAt': { $type: 'date' } } }],
     [{ 'crm.lastActivityAt': 1 }],
     [{ 'crm.tags': 1, createdAt: -1 }],
@@ -142,7 +142,7 @@ const specs = {
 
 // Superseded indexes, dropped once their replacements exist (missing ones are ignored).
 const obsolete = {
-  applications: ['status_1_createdAt_-1', 'preference.institutionSlug_1_createdAt_-1', 'assignedEmployeeIds_1_createdAt_-1', 'createdAt_-1'],
+  applications: ['status_1_createdAt_-1', 'preference.institutionSlug_1_createdAt_-1', 'assignedEmployeeIds_1_createdAt_-1', 'createdAt_-1', 'status_1_crm.score_-1_createdAt_-1'],
 };
 
 export async function ensureIndexes(db) {

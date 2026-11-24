@@ -56,6 +56,22 @@ export async function countLeads(filter, key) {
   });
 }
 
+// The board needs every stage total for the same filter, so count them in one request.
+export function leadTotalsByStatus(filter, key) {
+  return leadCounts.wrap(`status-totals:${key}`, async () => {
+    try {
+      const rows = await (await applications()).aggregate([
+        { $match: { ...filter, status: { $in: STATUSES } } },
+        { $group: { _id: '$status', total: { $sum: 1 } } },
+      ], { maxTimeMS: 3000 }).toArray();
+      return new Map(rows.map((row) => [row._id, row.total]));
+    } catch (error) {
+      if (error?.code !== 50) throw error;
+      return null; // Keep the cards usable when the counts take too long.
+    }
+  });
+}
+
 // Human reference GV-<year>-<6 digits>, from an atomic per-year counter.
 export async function nextRef(now = new Date()) {
   const year = new Date(now.getTime() + IST_OFFSET_MS).getUTCFullYear();
@@ -110,6 +126,11 @@ export const serializeForStudent = (doc, { full = false } = {}) => ({
     statusHistory: (doc.statusHistory ?? []).map((entry) => ({ status: entry.status, statusLabel: statusLabel(entry.status), at: entry.at })),
   } : {}),
 });
+
+export const LEAD_SUMMARY_FIELDS = [
+  'applicant', 'preference', 'ref', 'channel', 'mode', 'status', 'school', 'academics.classLevel', 'academics.schoolStream',
+  'careerField', 'assignedEmployeeIds', 'assignmentSource', 'crm', 'createdAt', 'updatedAt',
+];
 
 export const serializeLeadSummary = (doc) => ({
   id: doc._id.toString(),

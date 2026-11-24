@@ -19,6 +19,7 @@ import { PageToolbar, StatStrip, ViewTabs } from '@/features/admin/ui/Page';
 import HotWaiting from './HotWaiting';
 import TaskCard from './TaskCard';
 import styles from './MyDay.module.css';
+import { useStickyState } from '../ui/useStickyState';
 
 const cx = (...parts) => parts.filter(Boolean).join(' ');
 const SCOPES = [['mine', 'Mine', 'user'], ['team', 'My team', 'people'], ['all', 'Everyone', 'building']];
@@ -46,7 +47,7 @@ export default function MyDay() {
   const toast = useToaster();
   const team = admin?.isOwner || admin?.leadScope === 'team' || admin?.leadScope === 'all' || can(admin, 'tasks.manage_team');
   const everyone = admin?.isOwner || admin?.leadScope === 'all';
-  const [scope, setScope] = useState('mine');
+  const [scope, setScope] = useStickyState('my-day:scope', 'mine');
   const [blocked, setBlocked] = useState([]);
   const [version, setVersion] = useState(0);
   const [data, setData] = useState({ key: null, tasks: null, counts: { overdue: 0, today: 0, upcoming: 0 }, error: '' });
@@ -92,7 +93,7 @@ export default function MyDay() {
         setData((current) => ({ ...current, key, error: failure.message || 'Could not load your follow-ups.' }));
       });
     return () => controller.abort();
-  }, [key, scope, request]);
+  }, [key, scope, request, setScope]);
 
   const reload = useCallback(() => setVersion((value) => value + 1), []);
   const loading = !data.tasks;

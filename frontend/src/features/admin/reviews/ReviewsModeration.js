@@ -6,6 +6,7 @@ import { useToaster } from '@/features/admin/crm/toast';
 import { PageToolbar, ViewTabs } from '@/features/admin/ui/Page';
 import { Stars } from '@/features/reviews/Stars';
 import styles from './ReviewsModeration.module.css';
+import { useStickyState } from '../ui/useStickyState';
 
 const VIEWS = [
   { key: 'pending', label: 'Waiting', icon: 'clock' },
@@ -22,8 +23,8 @@ const when = (value) => (value ? new Date(value).toLocaleString('en-IN', { day: 
  */
 export default function ReviewsModeration() {
   const toast = useToaster();
-  const [status, setStatus] = useState('pending');
-  const [rating, setRating] = useState('');
+  const [status, setStatus] = useStickyState('reviews:status', 'pending');
+  const [rating, setRating] = useStickyState('reviews:rating', '');
   const [data, setData] = useState({ items: [], nextCursor: null, counts: {} });
   const [state, setState] = useState({ loading: true, error: '' });
   const [busy, setBusy] = useState(null);

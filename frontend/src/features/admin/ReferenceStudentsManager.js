@@ -17,6 +17,7 @@ import { PageToolbar, ViewTabs } from './ui/Page';
 import t from './table/Table.module.css';
 import { AssignDrawer, Assignees, contactOf, StudentDrawer, studentName, studentRights, useAssignees } from './students-ui';
 import styles from './ReferenceStudentsManager.module.css';
+import { useStickyState } from './ui/useStickyState';
 
 const KINDS = {
   reference: { path: '/reference-students', assign: (id) => `/reference-students/${id}/assignments`, bulk: '/reference-students/assignments/bulk', noun: 'reference students' },
@@ -56,9 +57,9 @@ export default function ReferenceStudentsManager() {
   const { admin, request } = useAdminSession();
   const toast = useToaster();
   const rights = studentRights(admin);
-  const [kind, setKind] = useState('reference');
-  const [query, setQuery] = useState('');
-  const [filters, setFilters] = useState({ q: '', assignee: '', page: 1, limit: 25 });
+  const [kind, setKind] = useStickyState('reference-students:kind', 'reference');
+  const [filters, setFilters] = useStickyState('reference-students', { q: '', assignee: '', page: 1, limit: 25 });
+  const [query, setQuery] = useState(filters.q);
   const [selected, setSelected] = useState([]);
   const [open, setOpen] = useState(null);
   const [editing, setEditing] = useState(null);
@@ -81,7 +82,7 @@ export default function ReferenceStudentsManager() {
   useEffect(() => {
     const timer = window.setTimeout(() => setFilters((current) => (current.q === query.trim() ? current : { ...current, q: query.trim(), page: 1 })), 300);
     return () => window.clearTimeout(timer);
-  }, [query]);
+  }, [query, setFilters]);
 
   const update = (patch) => { setSelected([]); setFilters((current) => ({ ...current, page: 1, ...patch })); };
   const switchKind = (next) => { setKind(next); setSelected([]); setOpen(null); setQuery(''); setFilters({ q: '', assignee: '', page: 1, limit: filters.limit }); };

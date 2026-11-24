@@ -12,6 +12,7 @@ import RowMenu from './crm/RowMenu';
 import { Chip } from './crm/ui';
 import { useToaster } from './crm/toast';
 import { PageToolbar, StatStrip } from './ui/Page';
+import { readSticky, writeSticky } from './ui/useStickyState';
 import Pagination from './table/Pagination';
 import { useServerList } from './table/useServerList';
 import CatalogueTable, { ACTIONS_COLUMN } from './catalogue/CatalogueTable';
@@ -63,9 +64,19 @@ export default function ResourceManager({ resource }) {
 
   const [query, setQuery] = useState(urlQuery ?? '');
   // Filters can arrive in the URL too (e.g. ?source.kind=scrape from the data overview).
-  const [filters, setFilters] = useState(() => Object.fromEntries([...(resourceFilters[resource] ?? []).map((filter) => filter.key), ...URL_FILTERS]
-    .filter((key) => searchParams.get(key)).map((key) => [key, searchParams.get(key)])));
-  const [limit, setLimit] = useState(PAGE_SIZES[0]);
+  // URL filters win; without any, the person's last filters for this list come back (kept per resource).
+  const [filters, setFilters] = useState(() => {
+    const fromUrl = Object.fromEntries([...(resourceFilters[resource] ?? []).map((filter) => filter.key), ...URL_FILTERS]
+      .filter((key) => searchParams.get(key)).map((key) => [key, searchParams.get(key)]));
+    if (Object.keys(fromUrl).length || urlQuery !== null) return fromUrl;
+    const saved = readSticky(admin?.id, `catalogue:${resource}`)?.filters;
+    return saved && typeof saved === 'object' ? saved : {};
+  });
+  const [limit, setLimit] = useState(() => {
+    const saved = Number(readSticky(admin?.id, `catalogue:${resource}`)?.limit);
+    return PAGE_SIZES.includes(saved) ? saved : PAGE_SIZES[0];
+  });
+  useEffect(() => { writeSticky(admin?.id, `catalogue:${resource}`, { filters, limit }); }, [admin?.id, resource, filters, limit]);
   const [paging, setPaging] = useState({ key: '', page: 1 });
   const [selected, setSelected] = useState([]);
   const [editor, setEditor] = useState(null);

@@ -13,6 +13,7 @@ import { PageToolbar } from '../ui/Page';
 import { resizedImage } from '@/lib/image-url';
 import { formatBytes, MAX_IMAGE_BYTES, uploadImage } from './upload';
 import styles from './MediaLibrary.module.css';
+import { useStickyState } from '../ui/useStickyState';
 
 const USAGES = [{ value: 'logo', label: 'University logo' }, { value: 'cover', label: 'Cover image' }, { value: 'site', label: 'Site artwork' }, { value: 'place', label: 'City or state tile' }, { value: 'counsellor', label: 'Counsellor photo' }, { value: 'other', label: 'Other' }];
 const usageLabel = (value) => USAGES.find((item) => item.value === value)?.label ?? 'Other';
@@ -97,8 +98,8 @@ export default function MediaLibrary() {
   const { admin, request } = useAdminSession();
   const toast = useToaster();
   const [config, setConfig] = useState(null);
-  const [query, setQuery] = useState('');
-  const [filters, setFilters] = useState({ q: '', usage: '', page: 1, limit: PAGE_SIZES[0] });
+  const [filters, setFilters] = useStickyState('media', { q: '', usage: '', page: 1, limit: PAGE_SIZES[0] });
+  const [query, setQuery] = useState(filters.q);
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(null);
   const [deleteState, setDeleteState] = useState({ busy: false, error: '' });
@@ -114,7 +115,7 @@ export default function MediaLibrary() {
   useEffect(() => {
     const timer = window.setTimeout(() => setFilters((current) => (current.q === query.trim() ? current : { ...current, q: query.trim(), page: 1 })), 300);
     return () => window.clearTimeout(timer);
-  }, [query]);
+  }, [query, setFilters]);
   // ?add=1 (from the New menu) opens the upload drawer once the configuration is known.
   useEffect(() => {
     if (!config?.configured) return;

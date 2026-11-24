@@ -15,6 +15,7 @@ import { PageToolbar } from './ui/Page';
 import t from './table/Table.module.css';
 import { AssignDrawer, Assignees, contactOf, StudentDrawer, studentName, studentRights, useAssignees } from './students-ui';
 import styles from './ReferenceStudentsManager.module.css';
+import { useStickyState } from './ui/useStickyState';
 
 const STATUS_OPTIONS = [{ value: '', label: 'All statuses' }, { value: 'active', label: 'Active' }, { value: 'blocked', label: 'Blocked' }];
 
@@ -22,8 +23,8 @@ export default function StudentsManager() {
   const { admin, request } = useAdminSession();
   const toast = useToaster();
   const rights = studentRights(admin);
-  const [query, setQuery] = useState('');
-  const [filters, setFilters] = useState({ q: '', status: '', page: 1, limit: 25 });
+  const [filters, setFilters] = useStickyState('student-accounts', { q: '', status: '', page: 1, limit: 25 });
+  const [query, setQuery] = useState(filters.q);
   const [selected, setSelected] = useState([]);
   const [open, setOpen] = useState(null);
   const [assigning, setAssigning] = useState(null);
@@ -40,7 +41,7 @@ export default function StudentsManager() {
   useEffect(() => {
     const timer = window.setTimeout(() => setFilters((current) => (current.q === query.trim() ? current : { ...current, q: query.trim(), page: 1 })), 300);
     return () => window.clearTimeout(timer);
-  }, [query]);
+  }, [query, setFilters]);
   const update = (patch) => { setSelected([]); setFilters((current) => ({ ...current, page: 1, ...patch })); };
 
   async function setStatus(student, status) {

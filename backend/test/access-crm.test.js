@@ -375,15 +375,28 @@ describe('roles, teams and the CRM', { skip }, () => {
       db.collection('application_notes').insertMany([myLead, otherLead].map((applicationId) => ({ applicationId, authorId: employee.id, kind: 'note', createdAt: earlier }))),
       db.collection('applications').updateMany({ _id: { $in: [myLead, otherLead] } }, { $set: { 'crm.heat': 'hot' } }),
     ]);
-    const [batch, counts, list, home, cards, dashboard, denied] = await Promise.all([
+    await db.collection('lead_tasks').insertMany([
+      ...Array.from({ length: 6 }, (_, index) => ({
+        leadId: myLead, title: `Extra overdue call ${index + 1}`, kind: 'call',
+        dueAt: new Date(earlier.getTime() + (index + 1) * 1000), doneAt: null, assigneeId: employee.id,
+      })),
+      { leadId: otherLead, title: 'Outside overdue call', kind: 'call', dueAt: new Date(earlier.getTime() - 1000), doneAt: null, assigneeId: who.outsider.id },
+    ]);
+    const [batch, counts, list, home, cards, dashboard, denied, preview, unsignedPreview] = await Promise.all([
       '/crm/tasks/sections', '/crm/tasks/counts', '/crm/tasks?state=overdue&limit=100', '/home',
-      '/crm/dashboard/hot-waiting', '/crm/dashboard?range=7d', '/crm/tasks/sections?scope=all',
-    ].map((path) => api(`/api/admin${path}`, { as: 'crm-snapshot' })));
-    for (const result of [batch, counts, list, home, cards, dashboard]) assert.equal(result.status, 200, JSON.stringify(result.body));
+      '/crm/dashboard/hot-waiting', '/crm/dashboard?range=7d', '/crm/tasks/sections?scope=all', '/crm/tasks/preview?scope=all',
+    ].map((path) => api(`/api/admin${path}`, { as: 'crm-snapshot' })).concat(api('/api/admin/crm/tasks/preview', { as: 'nobody' })));
+    for (const result of [batch, counts, list, home, cards, dashboard, preview]) assert.equal(result.status, 200, JSON.stringify(result.body));
     assert.equal(denied.status, 403);
+    assert.equal(unsignedPreview.status, 401);
     assert.deepEqual(counts.body, { counts: batch.body.counts });
     assert.deepEqual(batch.body.counts, list.body.counts);
     assert.deepEqual(batch.body.sections.overdue.items, list.body.items);
+    assert.equal(preview.body.sections.overdue.items.length, 6);
+    assert.deepEqual(preview.body, { sections: {
+      overdue: { items: batch.body.sections.overdue.items.slice(0, 6) },
+      today: { items: batch.body.sections.today.items.slice(0, 6) },
+    } });
     assert.ok(batch.body.sections.overdue.items.some((row) => row.id === String(task.insertedId)));
     assert.ok(!batch.body.sections.today.items.some((row) => row.id === String(task.insertedId)));
     assert.ok(home.body.activity.some((row) => row.leadId === mine && row.leadName === 'My hot lead'));
@@ -418,5 +431,49 @@ describe('roles, teams and the CRM', { skip }, () => {
     assert.equal(board.body.columns.length, 7);
     assert.ok(board.body.columns.every((column) => typeof column.total === 'number' || column.total === null));
     assert.equal((await api('/api/admin/crm/board', { as: 'editor' })).status, 403);
+  });
+
+  test('pipeline board batches stage totals, keeps score ties ordered and scopes both pages', async () => {
+    const employee = await makeStaff('crm-board');
+    await signIn('crm-board');
+    const createdAt = new Date();
+    const docs = Array.from({ length: 23 }, (_, index) => ({
+      _id: new ObjectId(),
+      ref: `GV-BOARD-${index}`,
+      status: 'new',
+      applicant: { fullName: `Board Lead ${index}` },
+      assignedEmployeeIds: [index === 22 ? who.outsider.id : employee.id],
+      assignmentSource: 'manual',
+      crm: { heat: 'hot', heatSource: 'manual', score: 90 },
+      createdAt,
+    }));
+    await db.collection('applications').insertMany(docs);
+
+    const path = '/api/admin/crm/board';
+    const filter = 'heat=hot&status=closed'; // Board applies the heat filter across all stages.
+    const board = await api(`${path}?${filter}`, { as: 'crm-board' });
+    assert.equal(board.status, 200, JSON.stringify(board.body));
+    assert.equal(board.body.pageSize, 20);
+    assert.deepEqual(board.body.columns.map((column) => column.status), ['new', 'contacted', 'in-progress', 'applied-to-university', 'admitted', 'not-interested', 'closed']);
+    const fresh = board.body.columns[0];
+    const ownIds = docs.slice(0, -1).reverse().map((doc) => String(doc._id));
+    assert.equal(fresh.total, 22);
+    assert.deepEqual(fresh.items.map((item) => item.id), ownIds.slice(0, 20));
+    assert.equal(fresh.items[0].assignmentSource, 'manual');
+    assert.ok(board.body.columns.slice(1).every((column) => column.total === 0 && !column.items.length));
+    assert.equal(board.body.columns.at(-1).closed, true);
+
+    const next = await api(`${path}/new?${filter}&page=2`, { as: 'crm-board' });
+    assert.equal(next.status, 200, JSON.stringify(next.body));
+    assert.equal(next.body.hasNext, false);
+    assert.deepEqual(next.body.items.map((item) => item.id), ownIds.slice(20));
+
+    const moved = await api(`/api/admin/leads/${ownIds[0]}/status`, { method: 'PATCH', body: { status: 'contacted' } });
+    assert.equal(moved.status, 200, JSON.stringify(moved.body));
+    const refreshed = await api(`${path}?${filter}`, { as: 'crm-board' });
+    assert.equal(refreshed.status, 200, JSON.stringify(refreshed.body));
+    assert.equal(refreshed.body.columns[0].total, 21);
+    assert.equal(refreshed.body.columns[1].total, 1);
+    assert.equal(refreshed.body.columns[1].items[0].id, ownIds[0]);
   });
 });

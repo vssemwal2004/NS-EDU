@@ -195,6 +195,26 @@ export async function listTasks(staff, query = {}) {
   return { items, total, page, limit, counts };
 }
 
+export async function taskPreview(staff) {
+  const coll = await tasks();
+  const window = taskWindow(new Date());
+  const preview = (state) => [
+    { $match: { assigneeId: staff._id, ...window.states[state] } },
+    { $sort: { dueAt: 1 } },
+    { $limit: 6 },
+    { $project: { ...TASK_FIELDS, section: { $literal: state } } },
+  ];
+  // Limit both indexed date ranges before merging them into the widget's response.
+  const rows = await coll.aggregate([
+    ...preview('overdue'),
+    { $unionWith: { coll: COLLECTIONS.leadTasks, pipeline: preview('today') } },
+    { $sort: { dueAt: 1 } },
+  ]).toArray();
+  const sections = { overdue: { items: [] }, today: { items: [] } };
+  for (const row of rows) sections[row.section].items.push(serializeTask(row, window.now));
+  return { sections };
+}
+
 const MY_DAY_LIMITS = { overdue: 100, today: 100, upcoming: 50, done: 50 };
 
 export async function listTaskSections(staff, query = {}) {

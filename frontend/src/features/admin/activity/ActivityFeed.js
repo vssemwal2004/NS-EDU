@@ -8,6 +8,7 @@ import { useAdminSession } from '../AdminSession';
 import { displayName, initialsOf, relativeTime } from '../crm/format';
 import { ACTIVITY, OUTCOMES, STAGES } from '../crm/meta';
 import styles from './Activity.module.css';
+import { useStickyState } from '../ui/useStickyState';
 
 const TYPES = [['', 'All activity'], ['call', 'Calls'], ['whatsapp', 'WhatsApp'], ['email', 'Emails'], ['meeting', 'Meetings'], ['visit', 'Campus visits'], ['note', 'Notes'], ['stage', 'Stage changes']];
 const dayKey = (value) => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date(value));
@@ -53,7 +54,8 @@ function Entry({ item, mine }) {
 export default function ActivityFeed({ mine = false, limit = 40, compact = false }) {
   const { request } = useAdminSession();
   const [people, setPeople] = useState([]);
-  const [filters, setFilters] = useState({ author: '', kind: '', from: '', to: '' });
+  // The log's filters are remembered; the profile's own feed (mine) has none.
+  const [filters, setFilters] = useStickyState(mine ? '' : 'activity-log', { author: '', kind: '', from: '', to: '' });
   const [state, setState] = useState({ items: [], next: null, status: 'loading', error: '' });
   const query = useMemo(() => ({ ...(mine ? { mine: '1' } : filters), limit }), [mine, filters, limit]);
 

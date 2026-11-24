@@ -19,6 +19,7 @@ import { toQuery } from '@/features/admin/table/useServerList';
 import { PageToolbar, ViewTabs } from '@/features/admin/ui/Page';
 import BoardCard from './BoardCard';
 import styles from './Pipeline.module.css';
+import { useStickyState } from '../ui/useStickyState';
 
 const CLOSED = new Set(['not-interested', 'closed']);
 const NO_FILTERS = { q: '', heats: [], assignee: '', channel: '' };
@@ -50,12 +51,12 @@ export default function PipelineBoard() {
   }), [admin]);
   const wide = admin?.isOwner || admin?.leadScope === 'team' || admin?.leadScope === 'all';
 
-  const [filters, setFilters] = useState(NO_FILTERS);
-  const [qInput, setQInput] = useState('');
+  const [filters, setFilters] = useStickyState('pipeline', NO_FILTERS);
+  const [qInput, setQInput] = useState(filters.q);
   const [meta, setMeta] = useState({ assignees: [] });
   const [version, setVersion] = useState(0);
   const [loaded, setLoaded] = useState({ key: null, columns: null, error: '' });
-  const [showClosed, setShowClosed] = useState(false);
+  const [showClosed, setShowClosed] = useStickyState('pipeline:closed', false);
   const [activeStage, setActiveStage] = useState('new');
   const [drag, setDrag] = useState(null);
   const [over, setOver] = useState('');
@@ -78,7 +79,7 @@ export default function PipelineBoard() {
   useEffect(() => {
     const timer = window.setTimeout(() => setFilters((current) => (current.q === qInput.trim() ? current : { ...current, q: qInput.trim() })), 300);
     return () => window.clearTimeout(timer);
-  }, [qInput]);
+  }, [qInput, setFilters]);
 
   useEffect(() => {
     const controller = new AbortController();

@@ -117,13 +117,15 @@ function FollowUpsPanel({ admin, request, followUps }) {
   useEffect(() => {
     if (!open) return undefined;
     const controller = new AbortController();
-    Promise.all(['overdue', 'today'].map((state) => request(`/crm/tasks?state=${state}&limit=6`, { signal: controller.signal }).then((data) => [state, data.items ?? []])))
-      .then((entries) => setLists(Object.fromEntries(entries))).catch(() => {});
+    const { signal } = controller;
+    request('/crm/tasks/preview', { signal })
+      .then(({ sections }) => { if (!signal.aborted) setLists(sections); })
+      .catch(() => {});
     return () => controller.abort();
   }, [open, request]);
   if (!holds(admin, 'leads.notes')) return null;
   const due = followUps ? followUps.overdue + followUps.today : 0;
-  const items = lists[tab];
+  const items = lists[tab]?.items;
   return <div className={styles.popover} ref={box}>
     <button type="button" className={styles.iconButton} aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen((value) => !value)}
       aria-label={followUps ? `Follow-ups: ${followUps.overdue} overdue, ${followUps.today} due today` : 'Follow-ups'}>

@@ -19,6 +19,7 @@ import t from '@/features/admin/table/Table.module.css';
 import { copyText, driveStatusLabel, qrUrl, SORTS, STATUS_ICONS, STATUS_TONES } from './drive-format';
 import NewDriveDrawer from './NewDriveDrawer';
 import styles from './Drives.module.css';
+import { useStickyState } from '../ui/useStickyState';
 
 const START = { q: '', status: 'current', state: '', district: '', sort: 'place', page: 1, limit: 25 };
 const plural = (count, one, many) => `${formatCount(count)} ${count === 1 ? one : many}`;
@@ -44,8 +45,8 @@ export default function DrivesManager() {
   const searchParams = useSearchParams();
   const { admin, request } = useAdminSession();
   const toast = useToaster();
-  const [query, setQuery] = useState('');
-  const [filters, setFilters] = useState(START);
+  const [filters, setFilters] = useStickyState('drives', START);
+  const [query, setQuery] = useState(filters.q);
   const [selected, setSelected] = useState([]);
   const [creating, setCreating] = useState(false);
   const [confirm, setConfirm] = useState(null);
@@ -66,7 +67,7 @@ export default function DrivesManager() {
   useEffect(() => {
     const timer = window.setTimeout(() => setFilters((current) => (current.q === query.trim() ? current : { ...current, q: query.trim(), page: 1 })), 300);
     return () => window.clearTimeout(timer);
-  }, [query]);
+  }, [query, setFilters]);
 
   const update = (patch) => { setSelected([]); setFilters((current) => ({ ...current, page: 1, ...patch })); };
   const refresh = () => { clearServerListCache('/drives'); list.reload(); };

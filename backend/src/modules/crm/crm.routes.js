@@ -3,16 +3,17 @@ import { HttpError } from '../../lib/http-error.js';
 import { pagination, queryString } from '../../lib/query.js';
 import { requireOwnerAdmin, requirePermission } from '../../middleware/auth.js';
 import { assignableIds, can, staffDirectory } from '../access/access-service.js';
+import { projectionFor } from '../applications/lead-columns.js';
 import { CLOSED_STATUSES, STATUS_LABELS, STATUSES } from '../applications/schema.js';
 import {
-  applications, countLeads, filterKey, resolveLeadFilter, serializeLeadDetail, serializeLeadSummary, staffEmails, statusLabel, visibleLead,
+  applications, filterKey, LEAD_SUMMARY_FIELDS, leadTotalsByStatus, resolveLeadFilter, serializeLeadDetail, serializeLeadSummary, staffEmails, statusLabel, visibleLead,
 } from '../applications/service.js';
 import { activityFeed } from './crm-activity.js';
 import { crmDashboard, crmHotWaiting } from './crm-analytics.js';
 import { ACTIVITY_KINDS, CALL_OUTCOMES, HEAT_LABELS, HEATS, PRIORITIES, PRIORITY_LABELS, TASK_KINDS } from './crm-model.js';
 import {
   bulkAct, createLead, createTask, deleteLead, deleteTask, editLead, listTasks, listTaskSections, listTrash, logActivity, purgeLead, restoreLead, setCrm,
-  taskSectionCounts, timeline, updateTask,
+  taskPreview, taskSectionCounts, timeline, updateTask,
 } from './crm-service.js';
 
 // Mounted at /api/admin/crm. Visibility of leads always follows the viewer's lead scope; each action has its own permission.
@@ -21,6 +22,8 @@ export const crmRouter = Router();
 const full = async (doc, staff) => serializeLeadDetail(doc, { staff, people: await staffEmails([...(doc.assignedEmployeeIds ?? []), ...(doc.statusHistory ?? []).map((entry) => entry.byAdminId)]) });
 const BOARD_PAGE = 20;
 const MAX_BOARD_SKIP = 2000;
+const BOARD_SORT = { 'crm.score': -1, createdAt: -1, _id: -1 };
+const BOARD_PROJECTION = projectionFor([], LEAD_SUMMARY_FIELDS);
 
 crmRouter.get('/meta', async (request, response) => {
   const canAssign = can(request.admin, 'leads.assign') || can(request.admin, 'tasks.manage_team');
@@ -48,14 +51,22 @@ crmRouter.get('/board', requirePermission('leads.view_own', 'leads.view_team', '
   const { status: _ignored, ...query } = request.query;
   const base = await resolveLeadFilter(query, request.admin);
   const leads = await applications();
-  const key = filterKey(query, request.admin);
-  const columns = await Promise.all(STATUSES.map(async (status) => {
-    const filter = Object.keys(base).length ? { $and: [base, { status }] } : { status };
-    const [count, docs] = await Promise.all([
-      countLeads(filter, `${key}|board=${status}`),
-      leads.find(filter).sort({ 'crm.score': -1, createdAt: -1, _id: -1 }).limit(BOARD_PAGE).maxTimeMS(8000).toArray(),
-    ]);
-    return { status, label: statusLabel(status), closed: CLOSED_STATUSES.includes(status), total: count.total, items: docs.map(serializeLeadSummary) };
+  // Keep each stage's indexed top page and send them in one command. The final sort sees only the capped result.
+  const [first, ...rest] = STATUSES.map((status) => [
+    { $match: { ...base, status } }, { $sort: BOARD_SORT }, { $limit: BOARD_PAGE }, { $project: BOARD_PROJECTION },
+  ]);
+  const [docs, totals] = await Promise.all([
+    leads.aggregate([
+      ...first,
+      ...rest.map((pipeline) => ({ $unionWith: { coll: leads.collectionName, pipeline } })),
+      { $sort: BOARD_SORT },
+    ], { batchSize: STATUSES.length * BOARD_PAGE + 1, maxTimeMS: 8000 }).toArray(),
+    leadTotalsByStatus(base, filterKey(query, request.admin)),
+  ]);
+  const columns = STATUSES.map((status) => ({
+    status, label: statusLabel(status), closed: CLOSED_STATUSES.includes(status),
+    total: totals ? totals.get(status) ?? 0 : null,
+    items: docs.filter((doc) => doc.status === status).map(serializeLeadSummary),
   }));
   response.json({ columns, pageSize: BOARD_PAGE });
 });
@@ -66,14 +77,16 @@ crmRouter.get('/board/:status', requirePermission('leads.view_own', 'leads.view_
   if (skip > MAX_BOARD_SKIP) throw new HttpError(400, 'Use the filters to narrow this stage; the board shows the best leads first.');
   const { status: _ignored, ...query } = request.query;
   const base = await resolveLeadFilter(query, request.admin);
-  const filter = Object.keys(base).length ? { $and: [base, { status: request.params.status }] } : { status: request.params.status };
-  const docs = await (await applications()).find(filter).sort({ 'crm.score': -1, createdAt: -1, _id: -1 }).skip(skip).limit(BOARD_PAGE + 1).maxTimeMS(8000).toArray();
+  const filter = { ...base, status: request.params.status };
+  const docs = await (await applications()).find(filter, { projection: BOARD_PROJECTION })
+    .sort(BOARD_SORT).skip(skip).limit(BOARD_PAGE + 1).maxTimeMS(8000).toArray();
   response.json({ items: docs.slice(0, BOARD_PAGE).map(serializeLeadSummary), page, hasNext: docs.length > BOARD_PAGE });
 });
 
 // Follow-ups ("My day").
 crmRouter.get('/tasks', async (request, response) => response.json(await listTasks(request.admin, request.query)));
 crmRouter.get('/tasks/counts', async (request, response) => response.json(await taskSectionCounts(request.admin, request.query)));
+crmRouter.get('/tasks/preview', async (request, response) => response.json(await taskPreview(request.admin)));
 crmRouter.get('/tasks/sections', async (request, response) => response.json(await listTaskSections(request.admin, request.query)));
 crmRouter.patch('/tasks/:id', requirePermission('leads.notes'), async (request, response) => response.json({ item: await updateTask(request.admin, request.params.id, request.body) }));
 crmRouter.delete('/tasks/:id', requirePermission('leads.notes'), async (request, response) => {

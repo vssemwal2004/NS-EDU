@@ -18,7 +18,8 @@
 .brandLink { position: relative; display: block; width: 150px; height: 40px; }
 .lockup, .mark { position: absolute; top: 50%; transform: translateY(-50%); transition: opacity .35s ease; }
 .lockup { left: 2px; --brand-height: 38px; opacity: 0; }
-.mark { left: 7px; --brand-height: 26px; opacity: 1; }
+/* Rail logo: as large as the 48px inner width of the rail allows (the mark is 512×389, so 36px tall ≈ 47px wide). */
+.mark { left: 0; --brand-height: 36px; opacity: 1; }
 .pin { display: grid; flex-shrink: 0; place-items: center; width: 30px; height: 30px; margin-left: auto; border: 1px solid rgb(255 255 255 / 14%); border-radius: 8px; background: transparent; color: var(--adm-sidebar-text); cursor: pointer; opacity: 0; transition: opacity .3s ease, background var(--adm-fast) ease, transform .3s ease; }
 .pin svg { width: 15px; height: 15px; }
 .pin:hover { background: rgb(255 255 255 / 8%); }

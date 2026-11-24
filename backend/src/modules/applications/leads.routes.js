@@ -15,7 +15,7 @@ import { leadInsights } from './lead-insights.js';
 import { CLASS_LEVELS, INDIAN_STATES, SCHOOL_STREAMS, STATUSES } from './schema.js';
 import {
   accessFilter, applicationNotes, applications, CHANNEL_LABELS, CHANNELS, clearLeadCounts, countLeads, cursorClause, DATE_RANGES, DAY,
-  filterKey, IST_OFFSET, istDayStart, istToday, leadStatusTrend, LIST_SORTS, resolveLeadFilter,
+  filterKey, IST_OFFSET, istDayStart, istToday, LEAD_SUMMARY_FIELDS, leadStatusTrend, LIST_SORTS, resolveLeadFilter,
   serializeLeadDetail, serializeLeadSummary, serializeNote, staffEmails, statusLabel, visibleLead,
 } from './service.js';
 
@@ -32,7 +32,6 @@ async function detail(doc, staff) {
 // "next" stays fast at any depth while a jump to an arbitrary deep page asks for narrower filters.
 export const MAX_SKIP = 50_000;
 const PAGE_SIZES = [25, 50, 100];
-const SUMMARY_FIELDS = ['applicant', 'preference', 'ref', 'channel', 'mode', 'status', 'school', 'academics.classLevel', 'academics.schoolStream', 'careerField', 'assignedEmployeeIds', 'assignmentSource', 'crm', 'updatedAt'];
 
 async function employeeEmails() {
   const employees = (await staffDirectory()).filter((doc) => doc.role === 'employee');
@@ -61,7 +60,7 @@ leadsRouter.get('/', async (request, response) => {
   // Reading backwards from a cursor flips the sort; the page is reversed again below.
   const sortOrder = cursor && direction === 'before' ? -order : order;
   const [docs, count, people] = await Promise.all([
-    leads.find(query, { projection: projectionFor(columns, SUMMARY_FIELDS) }).sort({ createdAt: sortOrder, _id: sortOrder })
+    leads.find(query, { projection: projectionFor(columns, LEAD_SUMMARY_FIELDS) }).sort({ createdAt: sortOrder, _id: sortOrder })
       .skip(cursor ? 0 : skip).limit(limit + 1).maxTimeMS(10_000).toArray(),
     countLeads(filter, filterKey(request.query, request.admin)),
     columns.some((column) => column.key === 'assigned') ? employeeEmails() : new Map(),
@@ -91,7 +90,7 @@ leadsRouter.get('/uploads', requirePermission('leads.create'), async (request, r
   const filter = { createdByAdminId: employeeId };
   const leads = await applications();
   const [docs, total] = await Promise.all([
-    leads.find(filter, { projection: { ...Object.fromEntries(SUMMARY_FIELDS.map((field) => [field, 1])), createdAt: 1, createdByAdminId: 1 } }).sort({ createdAt: -1, _id: -1 }).skip(skip).limit(limit).toArray(),
+    leads.find(filter, { projection: projectionFor([], [...LEAD_SUMMARY_FIELDS, 'createdByAdminId']) }).sort({ createdAt: -1, _id: -1 }).skip(skip).limit(limit).toArray(),
     leads.countDocuments(filter),
   ]);
   response.json({ items: docs.map((doc) => ({ ...serializeLeadSummary(doc), canWork: request.admin.isOwner || (doc.assignedEmployeeIds ?? []).some((id) => id.equals(request.admin._id)) })), total, page, limit });
