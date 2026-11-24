@@ -16,6 +16,7 @@ import FollowUpDialog from '@/features/admin/lead-actions/FollowUpDialog';
 import LogCallDialog from '@/features/admin/lead-actions/LogCallDialog';
 import { toQuery } from '@/features/admin/table/useServerList';
 import { PageToolbar, StatStrip, ViewTabs } from '@/features/admin/ui/Page';
+import EditFollowUpDialog from './EditFollowUpDialog';
 import HotWaiting from './HotWaiting';
 import TaskCard from './TaskCard';
 import WeekAgenda from './WeekAgenda';
@@ -63,6 +64,7 @@ export default function MyDay() {
   const [visible, setVisible] = useState({});
   const [logFor, setLogFor] = useState(null);
   const [rescheduleFor, setRescheduleFor] = useState(null);
+  const [editFor, setEditFor] = useState(null);
   const [deleting, setDeleting] = useState(null);
   const sectionRefs = useRef({});
   const dataRef = useRef(data);
@@ -203,6 +205,15 @@ export default function MyDay() {
     bump(from, classify(after, new Date()));
     toast.success(`Rescheduled to ${dateTimeOf(task.dueAt)}`);
   }
+  function edited(result) {
+    const task = result.item;
+    const before = dataRef.current.tasks?.find((entry) => entry.id === task.id);
+    if (!before) return;
+    const patch = { title: task.title, dueAt: task.dueAt, overdue: false };
+    if (!before.doneAt) bump(classify(before, new Date()), classify({ ...before, ...patch }, new Date()));
+    patchTask(task.id, patch);
+    toast.success(`Follow-up saved · due ${dateTimeOf(task.dueAt)}`);
+  }
   async function deleteTask() {
     const { task } = deleting;
     setDeleting({ task, busy: true, error: '' });
@@ -244,7 +255,7 @@ export default function MyDay() {
   const analytics = canAny(admin, ['analytics.view_own', 'analytics.view_team', 'analytics.view_all']);
   const showHot = analytics || canAny(admin, ['leads.view_own', 'leads.view_team', 'leads.view_all']);
 
-  const cardProps = { now: nowDate, people, teamMode, onDone: markDone, onUndo: undoDone, onLog: setLogFor, onReschedule: setRescheduleFor, onDelete: (task) => setDeleting({ task, busy: false, error: '' }), canEdit: can(admin, 'leads.notes') };
+  const cardProps = { now: nowDate, people, teamMode, onDone: markDone, onUndo: undoDone, onLog: setLogFor, onReschedule: setRescheduleFor, onEdit: setEditFor, onDelete: (task) => setDeleting({ task, busy: false, error: '' }), canEdit: can(admin, 'leads.notes') };
 
 
   const todo = counts.overdue + counts.today;
@@ -309,6 +320,7 @@ export default function MyDay() {
         reload();
       }} />
     <FollowUpDialog open={Boolean(rescheduleFor)} mode="reschedule" task={rescheduleFor} onClose={() => setRescheduleFor(null)} onSaved={rescheduled} />
+    <EditFollowUpDialog open={Boolean(editFor)} task={editFor} onClose={() => setEditFor(null)} onSaved={edited} />
     <ConfirmDialog open={Boolean(deleting)} tone="danger" icon="trash" title="Delete this follow-up?" confirmLabel="Delete follow-up" busy={deleting?.busy} error={deleting?.error}
       onCancel={() => setDeleting(null)} onConfirm={deleteTask}>
       <p><strong>{deleting?.task.title}</strong> for {deleting?.task.leadName} will be removed. The lead itself is not affected. To only change the time, use Reschedule instead.</p>

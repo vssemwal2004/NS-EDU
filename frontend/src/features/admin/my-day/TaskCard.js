@@ -11,7 +11,7 @@ import styles from './MyDay.module.css';
 
 const KIND_ICON = { call: 'phone', whatsapp: 'chat', email: 'mail', meeting: 'people', visit: 'building', document: 'document', other: 'note' };
 
-export default function TaskCard({ task, section, now, people, teamMode, canEdit, onDone, onUndo, onLog, onReschedule, onDelete }) {
+export default function TaskCard({ task, section, now, people, teamMode, canEdit, onDone, onUndo, onLog, onReschedule, onEdit, onDelete }) {
   const done = section === 'done' || Boolean(task.doneAt);
   const completing = Boolean(task._hold) && Boolean(task.doneAt);
   const person = people.get(task.assigneeId);
@@ -23,6 +23,7 @@ export default function TaskCard({ task, section, now, people, teamMode, canEdit
   const items = [
     { key: 'done', label: done ? 'Mark as not done' : 'Mark done', icon: done ? 'undo' : 'checkCircle', hidden: !canEdit, onSelect: () => (done ? onUndo(task) : onDone(task)) },
     { key: 'reschedule', label: 'Reschedule', icon: 'calendar', hidden: !canEdit || done, onSelect: () => onReschedule(task) },
+    { key: 'edit', label: 'Edit follow-up…', icon: 'edit', hidden: !canEdit || !onEdit, onSelect: () => onEdit(task) },
     { key: 'log', label: 'Log call', icon: 'note', hidden: !canEdit, onSelect: () => onLog(task) },
     { divider: true },
     { key: 'call', label: 'Call', icon: 'phone', hint: task.leadPhone, hidden: !dialable, onSelect: () => { window.location.href = telHref(task.leadPhone); } },

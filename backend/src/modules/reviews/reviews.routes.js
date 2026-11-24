@@ -46,13 +46,11 @@ reviewsRouter.delete('/mine', privateOnly, requireStudent, async (request, respo
 // Admin: /api/admin/reviews (mounted behind reviews.view; site-content editors keep full access)
 export const adminReviewsRouter = Router();
 adminReviewsRouter.get('/', async (request, response) => response.json(await listForModeration(request.query)));
-adminReviewsRouter.post('/bulk', requirePermission('reviews.moderate', 'content.edit'), async (request, response) => {
+// Bulk delete needs reviews.delete; every other bulk action needs reviews.moderate (content.edit allows both).
+adminReviewsRouter.post('/bulk', (request, response, next) => requirePermission(request.body?.action === 'delete' ? 'reviews.delete' : 'reviews.moderate', 'content.edit')(request, response, next), async (request, response) => {
   const { ids, action } = request.body ?? {};
   const changes = { approve: { status: 'approved' }, reject: { status: 'rejected', featured: false }, pending: { status: 'pending', featured: false }, delete: null };
   if (!Object.hasOwn(changes, action)) throw new HttpError(400, 'Choose approve, reject, pending or delete', { fields: { action: 'Unknown action' } });
-  if (action === 'delete' && !request.admin.isOwner && !['reviews.delete', 'content.edit'].some((key) => request.admin.permissions?.includes(key))) {
-    throw new HttpError(403, 'Your role does not include this action', { permission: 'reviews.delete' });
-  }
   const list = Array.isArray(ids) ? [...new Set(ids.map(String))] : [];
   if (!list.length || list.length > 100) throw new HttpError(400, 'Select between 1 and 100 reviews', { fields: { ids: 'Invalid selection' } });
   let done = 0;

@@ -1,4 +1,5 @@
-.bar { position: sticky; top: 0; z-index: 3; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; padding: 6px 10px; border-bottom: 1px solid var(--adm-accent-line); background: var(--adm-accent-soft); font-size: var(--crm-text-sm); }
+/* Sticks just below the console's sticky top bar (also sticky, z-index 30) while the list scrolls. */
+.bar { position: sticky; top: var(--adm-topbar, 0px); z-index: 4; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; padding: 6px 10px; border-bottom: 1px solid var(--adm-accent-line); background: var(--adm-accent-soft); font-size: var(--crm-text-sm); }
 .count { margin-right: 6px; font-variant-numeric: tabular-nums; }
 .bar :global(.adm-btn)[data-tone="danger"] { color: var(--crm-bad); }
 /* The ⋮ trigger reads "More actions" here, so it is wider than the row-menu dot. */

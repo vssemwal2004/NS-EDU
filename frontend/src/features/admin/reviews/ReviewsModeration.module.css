@@ -26,11 +26,16 @@
 .moderated { color: var(--adm-faint); font-size: var(--crm-text-xs); }
 .actions { display: flex; flex-wrap: wrap; gap: 6px; }
 .item > .actions { padding-top: 12px; border-top: 1px solid var(--adm-line-soft); }
-.delete { margin-left: auto; color: var(--crm-bad); }
+/* Selection: the shared crm/BulkBar docked under the top bar, a "select all" line, a tick on each card. */
+.bulkDock { position: sticky; top: var(--adm-topbar); z-index: 4; overflow: clip; border-radius: var(--adm-radius); }
+.bulkDock + .selectAll { margin-top: -6px; }
+.selectAll { display: inline-flex; align-items: center; justify-self: start; gap: 8px; color: var(--adm-muted); font-size: var(--crm-text-xs); font-weight: 600; cursor: pointer; }
+.selectAll input, .pick { width: 15px; height: 15px; margin: 0; accent-color: var(--adm-accent); cursor: pointer; }
+.item[data-selected] { border-color: var(--adm-accent); box-shadow: 0 0 0 1px var(--adm-accent), var(--adm-shadow); }
+.bulkReason { margin-top: 10px; }
 .rejectForm { display: grid; gap: 10px; max-width: 520px; padding: 12px 14px; border: 1px solid var(--adm-line); border-radius: var(--adm-radius); background: var(--adm-subtle); }
 .moreRow { display: flex; justify-content: center; padding-top: 4px; }
 @media (max-width: 640px) {
   .item { padding: 14px; }
   .time { margin-left: 0; width: 100%; }
-  .delete { margin-left: 0; }
 }

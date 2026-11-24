@@ -36,15 +36,6 @@ export function FilterSelect({ label, value, onChange, options, allLabel }) {
   </div>;
 }
 
-/** Sticky bar shown while rows are selected. Children are the bulk action buttons. */
-export function BulkBar({ count, children, onClear }) {
-  return <div className={styles.bulk} role="region" aria-label="Bulk actions">
-    <strong className="crm-tabnum">{count.toLocaleString('en-IN')} selected</strong>
-    <div className={styles.bulkActions}>{children}</div>
-    <button type="button" className="adm-btn adm-btn--ghost adm-btn--sm" onClick={onClear}>Clear selection</button>
-  </div>;
-}
-
 /** Empty list: one muted line (extra words go into a tooltip) and at most one secondary action. */
 export function EmptyState({ title, children, action }) {
   return <div className={styles.state} title={typeof children === 'string' ? children : undefined}>
