@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Icon from '@/components/ui/Icon';
 import { useAdminSession } from '@/features/admin/AdminSession';
 import ConfirmDialog from '@/features/admin/crm/ConfirmDialog';
+import { can } from '@/features/admin/crm/meta';
 import RowMenu from '@/features/admin/crm/RowMenu';
 import { useToaster } from '@/features/admin/crm/toast';
 import LeadsManager from '@/features/admin/leads/LeadsManager';
@@ -24,7 +25,11 @@ const DISCARD = 'The form has unsaved changes. Discard them?';
 
 export default function DriveDetail({ id, initialTab = 'builder' }) {
   const router = useRouter();
-  const { request } = useAdminSession();
+  const { admin, request } = useAdminSession();
+  // Same rules as the list: edit (form, details, close/reopen/restore), delete = archive, deleting for good = master admin.
+  const canEdit = can(admin, 'drives.edit');
+  const canDelete = can(admin, 'drives.delete');
+  const isOwner = Boolean(admin?.isOwner);
   const toast = useToaster();
   const [item, setItem] = useState(null);
   const [error, setError] = useState('');
@@ -98,11 +103,13 @@ export default function DriveDetail({ id, initialTab = 'builder' }) {
     { key: 'poster', label: 'Print poster', icon: 'printer', onSelect: () => window.open(`/admin/drives/${item.id}/poster`, '_blank', 'noopener') },
     { key: 'download', label: 'Download QR (PNG)', icon: 'download', onSelect: () => window.location.assign(qrUrl(item.id)) },
     { divider: true },
-    { key: 'close', label: 'Close registration', icon: 'lock', hidden: item.status !== 'active', onSelect: () => step('close') },
-    { key: 'reopen', label: 'Reopen registration', icon: 'refresh', hidden: item.status !== 'closed', onSelect: () => step('reopen') },
-    { key: 'restore', label: 'Restore drive', icon: 'undo', hidden: item.status !== 'archived', onSelect: () => step('restore') },
-    { key: 'archive', label: 'Archive…', icon: 'archive', hidden: item.status === 'archived', onSelect: () => setConfirm('archive') },
-    { key: 'delete', label: 'Delete permanently…', icon: 'trash', tone: 'danger', disabled: item.submissionCount > 0, reason: 'Drives with registrations can only be archived', onSelect: () => setConfirm('delete') },
+    { key: 'edit', label: 'Edit details', icon: 'edit', hidden: !canEdit || tab === 'settings', onSelect: () => choose('settings') },
+    { divider: true },
+    { key: 'close', label: 'Close registration', icon: 'lock', hidden: !canEdit || item.status !== 'active', onSelect: () => step('close') },
+    { key: 'reopen', label: 'Reopen registration', icon: 'refresh', hidden: !canEdit || item.status !== 'closed', onSelect: () => step('reopen') },
+    { key: 'restore', label: 'Restore drive', icon: 'undo', hidden: !canEdit || item.status !== 'archived', onSelect: () => step('restore') },
+    { key: 'archive', label: 'Archive…', icon: 'archive', hidden: !canDelete || item.status === 'archived', onSelect: () => setConfirm('archive') },
+    { key: 'delete', label: 'Delete permanently…', icon: 'trash', tone: 'danger', hidden: !isOwner, disabled: item.submissionCount > 0, reason: 'Drives with registrations can only be archived', onSelect: () => setConfirm('delete') },
   ];
 
   return <div className={styles.screen}>
@@ -134,10 +141,11 @@ export default function DriveDetail({ id, initialTab = 'builder' }) {
     </div>
 
     <div role="tabpanel" aria-label={{ builder: 'Form builder', qr: 'QR & link', submissions: 'Registrations', settings: 'Settings' }[tab]}>
-      {tab === 'builder' && <FormBuilder item={item} request={request} onSaved={saved} onDirtyChange={setDirty} toast={toast} />}
+      {tab === 'builder' && <FormBuilder item={item} request={request} onSaved={saved} onDirtyChange={setDirty} toast={toast} readOnly={!canEdit} />}
       {tab === 'qr' && <DriveQrPanel item={item} toast={toast} />}
       {tab === 'submissions' && <LeadsManager fixedFilters={{ form: item.id }} syncUrl={false} formId={item.id} heading={`Registrations at ${item.school.name}`} />}
-      {tab === 'settings' && <DriveSettings item={item} request={request} onSaved={saved} toast={toast} onArchive={() => setConfirm('archive')} onDelete={() => setConfirm('delete')} onStep={step} />}
+      {tab === 'settings' && <DriveSettings item={item} request={request} onSaved={saved} toast={toast} onArchive={() => setConfirm('archive')} onDelete={() => setConfirm('delete')} onStep={step}
+        canEdit={canEdit} canArchive={canDelete} canDeleteForGood={isOwner} />}
     </div>
 
     <ConfirmDialog open={Boolean(confirm)} busy={working} error={confirm?.error} tone="danger" requireText={kind === 'delete' ? 'DELETE' : undefined}

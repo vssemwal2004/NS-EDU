@@ -32,8 +32,6 @@
 .clickRow { cursor: pointer; }
 .clickRow[data-muted] td:not(:last-child) { color: var(--adm-muted); }
 .emptyLine { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 12px; padding: 28px 12px; color: var(--adm-muted); text-align: center; }
-.bulkBar { position: sticky; top: 0; z-index: 3; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; padding: 8px 12px; border-bottom: 1px solid var(--adm-accent-line); background: var(--adm-accent-soft); }
-.bulkBar strong { margin-right: 6px; }
 
 /* Forms and drawers */
 .form { display: grid; gap: 16px; }

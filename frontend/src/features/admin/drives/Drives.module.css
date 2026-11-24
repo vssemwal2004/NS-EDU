@@ -31,8 +31,6 @@
 .groupRow th :global(.icon) { width: 14px; height: 14px; color: var(--adm-gold-ink); }
 .groupRow th small { display: inline; margin-left: 10px; color: var(--adm-muted); font-weight: 500; }
 .emptyLine { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 12px; padding: 14px 12px; color: var(--adm-muted); font-size: var(--crm-text-sm); text-align: center; }
-.bulkBar { position: sticky; top: 0; z-index: 3; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; padding: 6px 10px; border-bottom: 1px solid var(--adm-accent-line); background: var(--adm-accent-soft); font-size: var(--crm-text-sm); }
-.bulkBar strong { margin-right: 6px; }
 
 /* Forms (drawer and settings) */
 .form { display: grid; gap: 12px; }
@@ -109,6 +107,8 @@
 /* Form builder */
 .builder { display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 340px); align-items: start; gap: 18px; }
 .builderMain { display: grid; gap: 12px; min-width: 0; }
+/* A fieldset only there to switch a section to read-only (`disabled`) for roles without drives.edit; it adds no box. */
+.plainSet { display: contents; }
 .notice { display: flex; align-items: flex-start; gap: 8px; margin: 0; padding: 8px 10px; border: 1px solid var(--crm-info-line); border-radius: var(--adm-radius-sm); background: var(--crm-info-soft); color: var(--crm-info); font-size: var(--crm-text-xs); line-height: 1.45; }
 .notice :global(.icon) { flex-shrink: 0; width: 14px; height: 14px; margin-top: 1px; }
 .down { transform: rotate(180deg); }

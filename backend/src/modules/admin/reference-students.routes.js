@@ -37,7 +37,8 @@ function cleanStudent(input) {
   return value;
 }
 
-const seesAllStudents = (staff) => staff.isOwner || staff.permissions?.includes('students.manage');
+const holds = (staff, key) => Boolean(staff.isOwner || staff.permissions?.includes(key));
+const seesAllStudents = (staff) => holds(staff, 'students.view_all');
 const accessFilter = (staff) => seesAllStudents(staff) ? {} : { $or: [
   { assignedEmployeeIds: staff._id },
   { createdById: staff._id },
@@ -67,8 +68,8 @@ function newStudent(data, staff, source) {
 const LIST_PROJECTION = { name: 1, email: 1, phone: 1, assignedEmployeeIds: 1, createdById: 1, createdByEmail: 1, source: 1, createdAt: 1, updatedAt: 1 };
 const withAssignees = (item, names) => ({ ...item, assignees: item.assignedEmployeeIds.map((id) => ({ id, name: names.get(id) ?? 'Removed staff' })) });
 
-// The person who added a reference student, or a students.manage holder, may edit or delete it.
-const mayChange = (staff, student) => seesAllStudents(staff) || student.createdById?.toString() === staff._id.toString();
+// The person who added a reference student may edit or delete it; anyone else needs students.edit / students.delete.
+const mayChange = (staff, student, key) => holds(staff, key) || student.createdById?.toString() === staff._id.toString();
 
 referenceStudentsRouter.get('/', async (request, response) => {
   const { page, limit, skip } = pagination(request.query, { defaultLimit: 25, maxLimit: 100 });
@@ -89,19 +90,20 @@ referenceStudentsRouter.get('/', async (request, response) => {
   response.json({ items: docs.map((doc) => withAssignees(serialize(doc), names)), total, page, limit });
 });
 
-// Staff who can be given students (the assign drawers). Same rule as employeeAssignmentIds: employee accounts.
-referenceStudentsRouter.get('/assignees', requirePermission('students.manage'), async (_request, response) => {
+// Staff who can be given students (the assign drawers on both student screens, so either assign key opens it).
+// Same rule as employeeAssignmentIds: employee accounts.
+referenceStudentsRouter.get('/assignees', requirePermission('students.assign', 'accounts.assign'), async (_request, response) => {
   const docs = (await staffDirectory()).filter((doc) => doc.role === 'employee' && doc.status !== 'suspended').slice(0, 500);
   response.json({ items: docs.map((doc) => ({ id: doc._id.toString(), name: doc.name || '', email: doc.email })) });
 });
 
-referenceStudentsRouter.post('/', async (request, response) => {
+referenceStudentsRouter.post('/', requirePermission('students.create'), async (request, response) => {
   const doc = newStudent(cleanStudent(request.body), request.admin, 'manual');
   await (await collection(COLLECTIONS.referenceStudents)).insertOne(doc);
   response.status(201).json({ item: serialize(doc) });
 });
 
-referenceStudentsRouter.post('/import', async (request, response) => {
+referenceStudentsRouter.post('/import', requirePermission('students.create'), async (request, response) => {
   const rows = request.body?.students;
   if (!Array.isArray(rows) || rows.length < 1 || rows.length > 200) {
     throw new HttpError(400, 'Upload 1 to 200 students at a time');
@@ -117,8 +119,25 @@ referenceStudentsRouter.post('/import', async (request, response) => {
   response.status(201).json({ count: docs.length });
 });
 
-referenceStudentsRouter.post('/assignments/bulk', requirePermission('students.manage'), async (request, response) => {
+referenceStudentsRouter.post('/assignments/bulk', requirePermission('students.assign'), async (request, response) => {
   response.json(await bulkAssignStudents(COLLECTIONS.referenceStudents, request.body, { touchUpdatedAt: true }));
+});
+
+// Bulk version of DELETE /:id with the same rule per student: students the caller cannot see, or did not add
+// and may not delete, are skipped (counted), not an error for the whole batch.
+referenceStudentsRouter.post('/bulk-delete', async (request, response) => {
+  const ids = Array.isArray(request.body?.ids) ? [...new Set(request.body.ids.map(String))].map(toObjectId) : [];
+  if (!ids.length || ids.length > 100 || ids.some((id) => !id)) throw new HttpError(400, 'Select between 1 and 100 students', { fields: { ids: 'Invalid selection' } });
+  const students = await collection(COLLECTIONS.referenceStudents);
+  const found = await students.find({ $and: [{ _id: { $in: ids } }, accessFilter(request.admin)] }, { projection: { createdById: 1 } }).toArray();
+  const allowed = found.filter((student) => mayChange(request.admin, student, 'students.delete')).map((student) => student._id);
+  if (!allowed.length) {
+    response.json({ requested: ids.length, deleted: 0, skipped: ids.length, followupsDeleted: 0 });
+    return;
+  }
+  const { deletedCount } = await students.deleteMany({ _id: { $in: allowed } });
+  const followups = await (await collection(COLLECTIONS.studentFollowups)).deleteMany({ studentId: { $in: allowed }, studentKind: { $ne: 'account' } });
+  response.json({ requested: ids.length, deleted: deletedCount, skipped: ids.length - deletedCount, followupsDeleted: followups.deletedCount });
 });
 
 referenceStudentsRouter.get('/:id', async (request, response) => {
@@ -127,7 +146,7 @@ referenceStudentsRouter.get('/:id', async (request, response) => {
 
 referenceStudentsRouter.patch('/:id', async (request, response) => {
   const student = await visibleStudent(request.params.id, request.admin);
-  if (!mayChange(request.admin, student)) throw new HttpError(403, 'Only the person who added this student, or staff who manage students, can edit it');
+  if (!mayChange(request.admin, student, 'students.edit')) throw new HttpError(403, 'Only the person who added this student, or staff allowed to edit students, can edit it');
   const value = cleanStudent({ name: student.name, email: student.email ?? '', phone: student.phone ?? '', ...request.body });
   const updated = await (await collection(COLLECTIONS.referenceStudents)).findOneAndUpdate(
     { _id: student._id }, { $set: { name: value.name, email: value.email ?? '', phone: value.phone ?? '', updatedAt: new Date() } }, { returnDocument: 'after' },
@@ -138,13 +157,13 @@ referenceStudentsRouter.patch('/:id', async (request, response) => {
 // Removes the student and their follow-up notes for good (the screen asks to type DELETE first).
 referenceStudentsRouter.delete('/:id', async (request, response) => {
   const student = await visibleStudent(request.params.id, request.admin);
-  if (!mayChange(request.admin, student)) throw new HttpError(403, 'Only the person who added this student, or staff who manage students, can delete it');
+  if (!mayChange(request.admin, student, 'students.delete')) throw new HttpError(403, 'Only the person who added this student, or staff allowed to delete students, can delete it');
   await (await collection(COLLECTIONS.referenceStudents)).deleteOne({ _id: student._id });
   const { deletedCount } = await (await collection(COLLECTIONS.studentFollowups)).deleteMany({ studentId: student._id, studentKind: { $ne: 'account' } });
   response.json({ deleted: true, followupsDeleted: deletedCount });
 });
 
-referenceStudentsRouter.patch('/:id/assignments', requirePermission('students.manage'), async (request, response) => {
+referenceStudentsRouter.patch('/:id/assignments', requirePermission('students.assign'), async (request, response) => {
   const employeeIds = await employeeAssignmentIds(request.body?.employeeIds);
   const _id = toObjectId(request.params.id);
   const student = _id && await (await collection(COLLECTIONS.referenceStudents)).findOneAndUpdate(

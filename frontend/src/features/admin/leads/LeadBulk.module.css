@@ -1,16 +1,4 @@
-/* Sticky bulk action bar and the bulk dialogs. */
-/* The bulk bar floats over the list as a dark oxblood strip with the selected count in gold. */
-.bar { position: sticky; bottom: 16px; z-index: 20; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; width: fit-content; max-width: 100%; margin: 14px auto 0; padding: 8px 10px 8px 18px; border-radius: 14px; background: var(--adm-oxblood); color: var(--adm-on-dark); box-shadow: 0 24px 50px -14px rgb(20 4 10 / 60%); animation: adm-rise .3s var(--adm-ease); }
-.count { margin: 0; padding-right: 14px; border-right: 1px solid rgb(255 255 255 / 16%); color: var(--adm-on-dark); font-size: var(--crm-text-sm); white-space: nowrap; }
-.count strong { color: var(--adm-gold); font-size: var(--crm-text-md); }
-.actions { display: flex; flex: 1 1 auto; flex-wrap: wrap; gap: 4px; }
-.actions :global(.adm-btn) { border-color: transparent; background: transparent; color: var(--adm-on-dark); }
-.actions :global(.adm-btn:hover) { background: rgb(255 255 255 / 10%); }
-.actions :global(.adm-btn--danger) { color: #F7B8C8; }
-.hint { color: var(--adm-on-dark-muted); font-size: var(--crm-text-xs); }
-.bar :global(.adm-btn--ghost) { color: var(--adm-on-dark); }
-.bar :global(.adm-btn--ghost:hover) { background: rgb(255 255 255 / 10%); }
-
+/* The bulk dialogs (the bar above the list is crm/BulkBar). */
 .choices { display: grid; gap: 6px; }
 .choices label { position: relative; display: flex; align-items: center; gap: 12px; min-height: 46px; padding: 8px 12px; border: 1px solid var(--adm-line); border-radius: var(--adm-radius-sm); background: var(--adm-surface); cursor: pointer; font-size: var(--crm-text-sm); }
 .choices label:hover { background: var(--adm-hover); }
@@ -30,8 +18,3 @@
 
 .note { display: flex; align-items: flex-start; gap: 8px; margin: 0; padding: 10px 12px; border: 1px solid var(--crm-warn-line); border-radius: var(--adm-radius-sm); background: var(--crm-warn-soft); color: var(--crm-warn); font-size: var(--crm-text-sm); }
 .note svg { flex: none; width: 18px; height: 18px; }
-
-@media (max-width: 640px) {
-  .bar { bottom: 8px; }
-  .actions :global(.adm-btn) { flex: 1 1 calc(50% - 6px); }
-}

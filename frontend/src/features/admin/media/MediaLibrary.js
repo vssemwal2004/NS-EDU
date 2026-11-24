@@ -1,9 +1,15 @@
 'use client';
+// Media library: every uploaded image as a card grid. Each card has a ⋮ menu (copy, open, edit details,
+// delete) and a checkbox; ticked cards get one bulk bar (copy URLs, delete). Permissions: media.view lists,
+// media.upload (or any editor that has image fields) uploads, media.edit changes alt text / usage,
+// media.delete deletes. Actions the person cannot use are hidden.
 import { useEffect, useRef, useState } from 'react';
 import Icon from '@/components/ui/Icon';
 import { useAdminSession } from '../AdminSession';
 import AdminDrawer from '../AdminDrawer';
+import BulkBar from '../crm/BulkBar';
 import ConfirmDialog from '../crm/ConfirmDialog';
+import { canAny } from '../crm/meta';
 import RowMenu from '../crm/RowMenu';
 import { dateTimeOf } from '../crm/format';
 import { useToaster } from '../crm/toast';
@@ -92,18 +98,74 @@ function UploadDrawer({ open, onClose, request, onUploaded }) {
   </AdminDrawer>;
 }
 
+/** Alt text and "used for" of one image (PATCH /media/:id); the stored file and its URL never change. */
+function EditDetailsForm({ item, request, onCancel, onSaved }) {
+  const [alt, setAlt] = useState(item.alt ?? '');
+  const [usage, setUsage] = useState(USAGES.some((entry) => entry.value === item.usage) ? item.usage : 'other');
+  const [state, setState] = useState({ busy: false, error: '' });
+
+  async function submit(event) {
+    event.preventDefault();
+    const body = { ...(alt.trim() !== (item.alt ?? '') && { alt: alt.trim() }), ...(usage !== item.usage && { usage }) };
+    if (!Object.keys(body).length) { onCancel(); return; }
+    setState({ busy: true, error: '' });
+    try {
+      const { item: saved } = await request(`/media/${item.id}`, { method: 'PATCH', body });
+      onSaved(saved);
+    } catch (error) { setState({ busy: false, error: error.message }); }
+  }
+
+  return <form className={styles.form} onSubmit={submit} noValidate>
+    <div className={styles.editPreview}><img src={thumb(item.url)} alt="" /></div>
+    <p className={styles.fileName} title={item.publicId}>{item.publicId}</p>
+    <div className={styles.two}>
+      <label className="adm-label">Used for
+        <select className="adm-select" value={usage} disabled={state.busy} onChange={(event) => setUsage(event.target.value)}>
+          {USAGES.map((entry) => <option key={entry.value} value={entry.value}>{entry.label}</option>)}
+        </select>
+      </label>
+      <label className="adm-label">Alt text
+        <input className="adm-input" value={alt} maxLength={200} placeholder="What the image shows" title="Read aloud by screen readers. Describe what the image shows." disabled={state.busy} onChange={(event) => setAlt(event.target.value)} />
+      </label>
+    </div>
+    <p className="adm-hint">The image and its URL stay the same, so pages already using it are not affected.</p>
+    {state.error && <p className={styles.formError} role="alert"><Icon name="alert" />{state.error}</p>}
+    <div className={styles.formFooter}>
+      <button type="button" className="adm-btn adm-btn--ghost" onClick={onCancel} disabled={state.busy}>Cancel</button>
+      <button type="submit" className="adm-btn adm-btn--primary" disabled={state.busy}>{state.busy ? 'Saving…' : 'Save details'}</button>
+    </div>
+  </form>;
+}
+
 export default function MediaLibrary() {
   const { admin, request } = useAdminSession();
   const toast = useToaster();
+  const rights = {
+    // Same rule as the server: the library's uploaders and every editor whose image fields upload here.
+    upload: canAny(admin, ['media.upload', 'catalogue.edit', 'locations.edit', 'career.edit', 'content.edit']),
+    edit: canAny(admin, ['media.edit']),
+    delete: canAny(admin, ['media.delete']),
+  };
   const [config, setConfig] = useState(null);
   const [filters, setFilters] = useStickyState('media', { q: '', usage: '', page: 1, limit: PAGE_SIZES[0] });
   const [query, setQuery] = useState(filters.q);
   const [uploading, setUploading] = useState(false);
-  const [deleting, setDeleting] = useState(null);
+  const [editing, setEditing] = useState(null);
+  const [deleting, setDeleting] = useState(null); // one image, or { bulk: true } for the selection
   const [deleteState, setDeleteState] = useState({ busy: false, error: '' });
+  const [selected, setSelected] = useState([]);
   const list = useServerList(request, '/media', filters, { scope: admin?.id ?? '' });
   const items = list.data?.items ?? [];
   const total = list.data?.total ?? 0;
+  // A selection belongs to one page of one search; it never silently carries over.
+  const selectionKey = JSON.stringify(filters);
+  const [selectionFor, setSelectionFor] = useState(selectionKey);
+  if (selectionFor !== selectionKey) { setSelectionFor(selectionKey); if (selected.length) setSelected([]); }
+  const chosen = new Set(selected);
+  const pageIds = items.map((item) => item.id);
+  const allOnPage = pageIds.length > 0 && pageIds.every((id) => chosen.has(id));
+  const someOnPage = pageIds.some((id) => chosen.has(id));
+  const toggle = (id, on) => setSelected((current) => (on ? [...current.filter((entry) => entry !== id), id] : current.filter((entry) => entry !== id)));
 
   useEffect(() => {
     const controller = new AbortController();
@@ -115,24 +177,44 @@ export default function MediaLibrary() {
     return () => window.clearTimeout(timer);
   }, [query, setFilters]);
   // ?add=1 (from the New menu) opens the upload drawer once the configuration is known.
+  const canUpload = rights.upload;
   useEffect(() => {
-    if (!config?.configured) return;
+    if (!config?.configured || !canUpload) return;
     const url = new URL(window.location.href);
     if (url.searchParams.get('add') !== '1') return;
     url.searchParams.delete('add');
     window.history.replaceState(null, '', url);
     Promise.resolve().then(() => setUploading(true));
-  }, [config]);
+  }, [config, canUpload]);
 
   async function copy(item) {
     if (await copyText(item.url)) toast.success('Image URL copied. Paste it into a Logo, Cover or image field.');
     else toast.error('Could not copy. Open the original and copy the address from the browser.');
   }
+  async function copySelected() {
+    const urls = items.filter((item) => chosen.has(item.id)).map((item) => item.url);
+    if (await copyText(urls.join('\n'))) toast.success(`${urls.length} image URL${urls.length === 1 ? '' : 's'} copied, one per line.`);
+    else toast.error('Could not copy. Open each original and copy the address from the browser.');
+  }
+  const askDelete = (target) => { setDeleteState({ busy: false, error: '' }); setDeleting(target); };
   async function remove() {
     setDeleteState({ busy: true, error: '' });
     try {
-      await request(`/media/${deleting.id}`, { method: 'DELETE' });
-      toast.success(`Deleted “${nameOf(deleting)}”.`);
+      if (deleting.bulk) {
+        const ids = [...selected];
+        const result = await request('/media/bulk-delete', { method: 'POST', body: { ids } });
+        const failed = result.failed ?? [];
+        if (!result.deleted && failed.length) { setDeleteState({ busy: false, error: failed[0].error }); return; }
+        const message = `Deleted ${result.deleted.toLocaleString('en-IN')} image${result.deleted === 1 ? '' : 's'}.`;
+        if (failed.length) toast.warn(`${message} ${failed.length} could not be deleted: ${failed[0].error}`); else toast.success(message);
+        const kept = new Set(failed.map((entry) => entry.id));
+        setSelected((current) => current.filter((id) => kept.has(id)));
+        if (result.deleted >= items.length && filters.page > 1) setFilters((current) => ({ ...current, page: current.page - 1 }));
+      } else {
+        await request(`/media/${deleting.id}`, { method: 'DELETE' });
+        toast.success(`Deleted “${nameOf(deleting)}”.`);
+        setSelected((current) => current.filter((id) => id !== deleting.id));
+      }
       setDeleting(null); setDeleteState({ busy: false, error: '' });
       list.reload();
     } catch (error) { setDeleteState({ busy: false, error: error.message }); }
@@ -156,13 +238,29 @@ export default function MediaLibrary() {
         </select>
       </label>
     </>}>
-      <button type="button" className="adm-btn adm-btn--primary" onClick={() => setUploading(true)} disabled={!config?.configured}
-        title={notConfigured ? 'Set up R2 image storage to upload' : undefined}><Icon name="upload" />Upload image</button>
+      {rights.upload && <button type="button" className="adm-btn adm-btn--primary" onClick={() => setUploading(true)} disabled={!config?.configured}
+        title={notConfigured ? 'Set up R2 image storage to upload' : undefined}><Icon name="upload" />Upload image</button>}
     </PageToolbar>
 
-    {notConfigured && <p className={styles.notice} role="status"><Icon name="alert" />Set up R2 image storage on the server to enable uploads.</p>}
+    {notConfigured && rights.upload && <p className={styles.notice} role="status"><Icon name="alert" />Set up R2 image storage on the server to enable uploads.</p>}
 
     <section className={`adm-panel ${styles.panel}`} aria-label="Images" aria-busy={list.loading || list.busy}>
+      {selected.length > 0 && <div className={styles.bulkDock}>
+        <BulkBar count={selected.length} noun={['image', 'images']} onClear={() => setSelected([])} busy={deleteState.busy}
+          quick={[{ key: 'copy', label: 'Copy URLs', icon: 'copy', onSelect: copySelected }]}
+          menu={[
+            { key: 'copy', label: 'Copy URLs', icon: 'copy', onSelect: copySelected },
+            { divider: true },
+            { key: 'delete', label: 'Delete…', icon: 'trash', tone: 'danger', hidden: !rights.delete, onSelect: () => askDelete({ bulk: true }) },
+          ]} />
+      </div>}
+      {!list.error && !list.loading && items.length > 0 && <div className={styles.selectRow}>
+        <label className={styles.selectAll}>
+          <input type="checkbox" checked={allOnPage} ref={(node) => { if (node) node.indeterminate = someOnPage && !allOnPage; }}
+            onChange={(event) => setSelected((current) => (event.target.checked ? [...new Set([...current, ...pageIds])] : current.filter((id) => !pageIds.includes(id))))} />
+          Select all on this page
+        </label>
+      </div>}
       {list.error ? <div className={styles.state} role="alert">
         <span className={styles.stateIcon} data-tone="bad"><Icon name="alert" /></span>
         <strong>Could not load images</strong><p>{list.error}</p>
@@ -172,9 +270,12 @@ export default function MediaLibrary() {
       </ul> : !items.length ? <div className={styles.empty}>
         <p>{filtered ? 'No images match this search.' : 'No images yet. Uploaded images can be pasted into any image field.'}</p>
         {filtered ? <button type="button" className="adm-btn adm-btn--sm" onClick={() => { setQuery(''); setFilters((current) => ({ ...current, q: '', usage: '', page: 1 })); }}>Clear filters</button>
-          : config?.configured && <button type="button" className="adm-btn adm-btn--sm" onClick={() => setUploading(true)}><Icon name="upload" />Upload image</button>}
+          : config?.configured && rights.upload && <button type="button" className="adm-btn adm-btn--sm" onClick={() => setUploading(true)}><Icon name="upload" />Upload image</button>}
       </div> : <ul className={styles.grid} data-busy={list.busy || undefined}>
-        {items.map((item) => <li key={item.id} className={styles.card}>
+        {items.map((item) => <li key={item.id} className={styles.card} data-selected={chosen.has(item.id) || undefined}>
+          <label className={styles.pick} title={chosen.has(item.id) ? 'Selected' : 'Select'}>
+            <input type="checkbox" checked={chosen.has(item.id)} aria-label={`Select ${nameOf(item)}`} onChange={(event) => toggle(item.id, event.target.checked)} />
+          </label>
           <a className={styles.thumb} href={item.url} target="_blank" rel="noopener noreferrer" aria-label={`Open ${nameOf(item)} in a new tab`}>
             <img src={thumb(item.url)} alt={item.alt || ''} loading="lazy" />
           </a>
@@ -184,8 +285,9 @@ export default function MediaLibrary() {
               <RowMenu label={`Actions for ${nameOf(item)}`} items={[
                 { key: 'copy', label: 'Copy URL', icon: 'copy', onSelect: () => copy(item) },
                 { key: 'open', label: 'Open original', icon: 'external', onSelect: () => window.open(item.url, '_blank', 'noopener,noreferrer') },
+                { key: 'edit', label: 'Edit details…', icon: 'edit', hidden: !rights.edit, onSelect: () => setEditing(item) },
                 { divider: true },
-                { key: 'delete', label: 'Delete…', icon: 'trash', tone: 'danger', onSelect: () => { setDeleteState({ busy: false, error: '' }); setDeleting(item); } },
+                { key: 'delete', label: 'Delete…', icon: 'trash', tone: 'danger', hidden: !rights.delete, onSelect: () => askDelete(item) },
               ]} />
             </div>
             <small className={styles.meta}>{usageLabel(item.usage)}</small>
@@ -201,9 +303,17 @@ export default function MediaLibrary() {
     <UploadDrawer open={uploading} onClose={() => setUploading(false)} request={request}
       onUploaded={(item) => { setUploading(false); toast.success(`Uploaded “${nameOf(item)}”. Copy its URL from the ⋮ menu.`); list.reload(); }} />
 
-    <ConfirmDialog open={Boolean(deleting)} tone="danger" title="Delete this image?" confirmLabel="Delete image" requireText="DELETE" busy={deleteState.busy} error={deleteState.error}
+    <AdminDrawer open={Boolean(editing)} onClose={() => setEditing(null)} title="Edit image details" subtitle={editing ? nameOf(editing) : ''}>
+      {editing && <EditDetailsForm key={editing.id} item={editing} request={request} onCancel={() => setEditing(null)}
+        onSaved={(saved) => { setEditing(null); toast.success(`Saved “${nameOf(saved)}”.`); list.reload(); }} />}
+    </AdminDrawer>
+
+    <ConfirmDialog open={Boolean(deleting)} tone="danger" icon="trash" busy={deleteState.busy} error={deleteState.error} requireText="DELETE"
+      title={deleting?.bulk ? `Delete ${selected.length} image${selected.length === 1 ? '' : 's'}?` : 'Delete this image?'} confirmLabel={deleting?.bulk ? 'Delete images' : 'Delete image'}
       onCancel={() => setDeleting(null)} onConfirm={remove}>
-      <strong>{deleting ? nameOf(deleting) : ''}</strong> will be permanently removed. Pages that still use its URL will show a broken image.
+      {deleting?.bulk
+        ? <>The {selected.length === 1 ? 'selected image' : `${selected.length} selected images`} will be permanently removed. Pages that still use their URLs will show broken images.</>
+        : <><strong>{deleting ? nameOf(deleting) : ''}</strong> will be permanently removed. Pages that still use its URL will show a broken image.</>}
     </ConfirmDialog>
   </>;
 }

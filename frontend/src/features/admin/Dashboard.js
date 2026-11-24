@@ -25,10 +25,10 @@ const plural = (count, word) => `${n(count)} ${word}${count === 1 ? '' : 's'}`;
 
 const QUICK = [
   { label: 'Add a lead', href: '/admin/leads?add=1', icon: 'plus', permission: 'leads.create', tone: 'bad' },
-  { label: 'School drive', href: '/admin/drives?add=1', icon: 'building', permission: 'drives.manage', tone: 'info' },
+  { label: 'School drive', href: '/admin/drives?add=1', icon: 'building', permission: 'drives.create', tone: 'info' },
   { label: 'Add students', href: '/admin/reference-students/new', icon: 'userPlus', permission: 'students.create', tone: 'purple' },
-  { label: 'Add a university', href: '/admin/institutions?new=1', icon: 'book', permission: 'catalogue.edit', tone: 'warn' },
-  { label: 'Review queue', href: '/admin/data/review', icon: 'checkCircle', permission: 'data.manage', tone: 'good' },
+  { label: 'Add a university', href: '/admin/institutions?new=1', icon: 'book', permission: 'catalogue.create', tone: 'warn' },
+  { label: 'Review queue', href: '/admin/data/review', icon: 'checkCircle', permission: 'data.view', tone: 'good' },
   { label: 'Pipeline board', href: '/admin/leads/board', icon: 'board', permission: ['leads.view_own', 'leads.view_team', 'leads.view_all'], tone: 'orange' },
 ];
 

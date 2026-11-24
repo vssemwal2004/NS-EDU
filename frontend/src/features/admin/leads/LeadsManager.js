@@ -21,6 +21,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Icon from '@/components/ui/Icon';
 import { useAdminSession } from '@/features/admin/AdminSession';
 import AdminDrawer from '@/features/admin/AdminDrawer';
+import BulkBar from '@/features/admin/crm/BulkBar';
 import RowMenu from '@/features/admin/crm/RowMenu';
 import { useToaster } from '@/features/admin/crm/toast';
 import { Avatar, HeatChip, ScoreMeter } from '@/features/admin/crm/ui';
@@ -39,7 +40,7 @@ import { clearServerListCache, toQuery, useServerList } from '@/features/admin/t
 import AddLeadDrawer from './AddLeadDrawer';
 import LeadPreview from './LeadPreview';
 import { Dash, FollowUpText, formatWhen, Person, PriorityText, StageDot } from './lead-bits';
-import { BulkBar, BulkDialog } from './LeadBulk';
+import { BulkDialog } from './LeadBulk';
 import { activeFilterCount, apiFilterParams, DRAWER_KEYS, EMPTY_FILTERS, leadFilterChips, leadFilterSections, readFilters, urlParams, withoutPaging } from './lead-filters';
 import { isDialable } from '@/features/admin/lead-actions/contact';
 import { formatCount, isQuick, LEAD_PAGE_SIZES, LEAD_STATUSES, LEADS_FLASH_KEY, LEADS_QUERY_KEY, whatsAppLink } from './lead-format';
@@ -340,6 +341,22 @@ export default function LeadsManager({ initial = NO_FILTERS, fixedFilters = NO_F
       { key: 'delete', label: 'Delete…', icon: 'trash', tone: 'danger', hidden: !can(admin, 'leads.delete'), onSelect: act('delete') },
     ];
   }
+  // The bar above the table once rows are ticked (POST /crm/leads/bulk). Each action needs leads.bulk plus its own key.
+  const bulk = (action) => () => setBulkAction(action);
+  const bulkQuick = bulkAllowed ? [
+    { key: 'assign', label: 'Assign', icon: 'userPlus', hidden: !bulkAllowed.assign, onSelect: bulk('assign') },
+    { key: 'status', label: 'Change stage', icon: 'trend', hidden: !bulkAllowed.status, onSelect: bulk('status') },
+  ] : [];
+  const bulkMenu = bulkAllowed ? [
+    { key: 'status', label: 'Change stage…', icon: 'trend', hidden: !bulkAllowed.status, onSelect: bulk('status') },
+    { key: 'heat', label: 'Set temperature…', icon: 'flame', hidden: !bulkAllowed.heat, onSelect: bulk('heat') },
+    { key: 'priority', label: 'Set priority…', icon: 'flag', hidden: !bulkAllowed.priority, onSelect: bulk('priority') },
+    { key: 'tag', label: 'Add tag…', icon: 'tag', hidden: !bulkAllowed.tag, onSelect: bulk('tag') },
+    { divider: true },
+    { key: 'assign', label: 'Assign to colleagues…', icon: 'userPlus', hidden: !bulkAllowed.assign, onSelect: bulk('assign') },
+    { divider: true },
+    { key: 'delete', label: 'Delete…', icon: 'trash', tone: 'danger', hint: 'to Lead bin', hidden: !bulkAllowed.delete, onSelect: bulk('delete') },
+  ] : [];
 
   // ---- quick views, stage tabs, chips ----
   const view = scoped ? null : activeViewOf(filters, views);
@@ -496,6 +513,7 @@ export default function LeadsManager({ initial = NO_FILTERS, fixedFilters = NO_F
 
     {/* A click anywhere on a row (not on its links, buttons or checkbox) opens the lead, like the name link does. */}
     <section className={`adm-panel ${styles.tableCard}`} aria-label={heading} onClick={openRow}>
+      {selectable && <BulkBar count={selectedIds.length} noun={['lead', 'leads']} onClear={() => setSelectedIds([])} quick={bulkQuick} menu={bulkMenu} />}
       <DataTable columns={tableColumns} rows={items} loading={list.loading} busy={list.busy || columnsInfo.busy} pageSize={filters.limit}
         caption={`${heading}, ${filters.sort === 'oldest' ? 'oldest' : 'newest'} first`} scrollKey={`${filters.page}|${filters.cursor}`}
         error={columnsInfo.error || list.error} onRetry={columnsInfo.error ? columnsInfo.reload : list.reload}
@@ -512,8 +530,6 @@ export default function LeadsManager({ initial = NO_FILTERS, fixedFilters = NO_F
       </div>
       {preview && <LeadPreview key={preview.id} item={preview} request={request} scope={scope} canNotes={canNotes} onClose={() => setPreviewId('')} onChanged={refresh} />}
     </div>
-
-    {selectedIds.length > 0 && bulkAllowed && <BulkBar count={selectedIds.length} allowed={bulkAllowed} onAction={setBulkAction} onClear={() => setSelectedIds([])} />}
 
     <FilterDrawer open={panel === 'filters'} onClose={close} title="Filter leads" subtitle="Combine any filters; the count updates as you choose."
       sections={sections} value={filters} emptyValue={EMPTY_FILTERS} countFor={countFor} noun={NOUN}

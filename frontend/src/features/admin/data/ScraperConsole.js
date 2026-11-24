@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from 'react';
 import Icon from '@/components/ui/Icon';
 import { useAdminSession } from '../AdminSession';
 import ConfirmDialog from '../crm/ConfirmDialog';
+import { can } from '../crm/meta';
 import RowMenu from '../crm/RowMenu';
 import { useToaster } from '../crm/toast';
 import { PageToolbar, StatStrip, ViewTabs } from '../ui/Page';
@@ -22,8 +23,9 @@ const ENQUEUE = [
 ];
 
 export default function ScraperConsole() {
-  const { request } = useAdminSession();
+  const { admin, request } = useAdminSession();
   const toast = useToaster();
+  const canQueue = can(admin, 'data.edit');
   const [stats, setStats] = useState(null);
   const [runs, setRuns] = useState(null);
   const [error, setError] = useState('');
@@ -64,9 +66,9 @@ export default function ScraperConsole() {
   return <div className={styles.screen}>
     <PageToolbar summary={stats ? <>{workers ? <><strong>{workers}</strong> worker{workers === 1 ? '' : 's'} crawling</> : <>No worker running · queued jobs wait for <code>npm run scrape -- work</code></>}</> : 'Loading the crawler status…'}>
       <button type="button" className="adm-btn adm-btn--ghost adm-btn--icon" onClick={refresh} aria-label="Refresh" title="Refresh"><Icon name="refresh" /></button>
-      <RowMenu label="Queue a crawl" className={styles.menuButton} trigger={<><Icon name="play" /><span>{busy ? 'Queueing…' : 'Queue crawl'}</span></>}
+      {canQueue && <RowMenu label="Queue a crawl" className={styles.menuButton} trigger={<><Icon name="play" /><span>{busy ? 'Queueing…' : 'Queue crawl'}</span></>}
         items={[{ heading: 'Queue one job per source' }, ...ENQUEUE.map((option) => ({ key: option.mode, label: option.label, hint: option.hint, icon: 'play', disabled: busy,
-          onSelect: () => (option.confirm ? setConfirmAll(true) : enqueue({ mode: option.mode, staleDays: option.staleDays })) }))]} />
+          onSelect: () => (option.confirm ? setConfirmAll(true) : enqueue({ mode: option.mode, staleDays: option.staleDays })) }))]} />}
     </PageToolbar>
 
     {error && <p className={styles.alert} role="alert"><Icon name="alert" />{error}<button type="button" className="adm-btn adm-btn--sm" style={{ marginLeft: 'auto' }} onClick={refresh}>Try again</button></p>}

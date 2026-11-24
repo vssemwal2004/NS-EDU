@@ -68,8 +68,9 @@ const UNIVERSITY_OVERRIDES = { state: { type: 'select', options: ['', ...STATES]
 /**
  * editor: { mode: 'create' | 'edit' | 'copy', id?, title?, seed? } — `seed` pre-fills a create (e.g. a copy).
  * onSaved(item, mode) runs after a successful save; the editor closes itself through onClose.
+ * `readOnly` (the person may view but not edit): an opened record shows its fields disabled and no Save.
  */
-export default function RecordEditor({ resource, meta, editor, refOptions, onClose, onSaved }) {
+export default function RecordEditor({ resource, meta, editor, refOptions, readOnly = false, onClose, onSaved }) {
   const { request } = useAdminSession();
   const [record, setRecord] = useState({ id: null, item: null, error: '' });
   const [confirmClose, setConfirmClose] = useState(false);
@@ -115,14 +116,22 @@ export default function RecordEditor({ resource, meta, editor, refOptions, onClo
   const item = editing ? record.item : editor?.seed ?? null;
   const formKey = `${editor?.mode}-${editor?.id ?? editor?.key ?? 'new'}`;
   const singular = meta?.singular ?? 'record';
-  const title = editing ? `Edit ${singular}` : editor?.mode === 'copy' ? `Copy of ${editor.title}` : `New ${singular}`;
+  const viewOnly = readOnly && editing;
+  const title = viewOnly ? `View ${singular}` : editing ? `Edit ${singular}` : editor?.mode === 'copy' ? `Copy of ${editor.title}` : `New ${singular}`;
   const subtitle = editing ? (record.item?.name ?? record.item?.label ?? editor?.title ?? '') : editor?.mode === 'copy' ? 'Change what differs, then save.' : `Adds a ${singular} to the Gyaan Vidhya catalogue.`;
+  const form = !open || !ready ? null
+    : <ResourceForm key={formKey} meta={meta} mode={editing ? 'edit' : 'create'} item={item} refOptions={refOptions} onSubmit={save} onCancel={requestClose} onDirtyChange={onDirtyChange}
+      layout={wide ? 'sections' : 'drawer'} sections={wide ? UNIVERSITY_SECTIONS : undefined} fieldOverrides={wide ? UNIVERSITY_OVERRIDES : undefined}
+      footerNote={viewOnly ? 'View only: your role cannot change this record.' : wide ? (editing ? 'Fields you change are protected from later imports.' : 'New universities are marked as added by an administrator.') : undefined} />;
+  // View only: a disabled <fieldset> disables every control in the form (CSS hides Save and Cancel; the
+  // header's close button stays outside it).
   const body = !open ? null
     : editing && record.id === editId && record.error ? <ErrorState message={record.error} onRetry={retry} />
       : !ready ? <FormSkeleton />
-        : <ResourceForm key={formKey} meta={meta} mode={editing ? 'edit' : 'create'} item={item} refOptions={refOptions} onSubmit={save} onCancel={requestClose} onDirtyChange={onDirtyChange}
-          layout={wide ? 'sections' : 'drawer'} sections={wide ? UNIVERSITY_SECTIONS : undefined} fieldOverrides={wide ? UNIVERSITY_OVERRIDES : undefined}
-          footerNote={wide ? (editing ? 'Fields you change are protected from later imports.' : 'New universities are marked as added by an administrator.') : undefined} />;
+        : viewOnly ? <fieldset disabled className={styles.viewOnly}>
+          {!wide && <p className={styles.viewOnlyNote}><Icon name="eye" />View only: your role cannot change this {singular}.</p>}
+          {form}
+        </fieldset> : form;
 
   return <>
     {wide ? <dialog ref={sheet} className={styles.sheet} aria-labelledby="record-editor-title"
@@ -130,7 +139,7 @@ export default function RecordEditor({ resource, meta, editor, refOptions, onClo
       onClick={(event) => { if (event.target === event.currentTarget) requestClose(); }}>
       {open && <div className={styles.sheetPanel}>
         <header className={styles.sheetHead}>
-          <div className={styles.sheetHeadText}><h2 id="record-editor-title">{editing && record.item ? record.item.name : title}</h2><p>{editing ? 'Edit university' : subtitle}</p></div>
+          <div className={styles.sheetHeadText}><h2 id="record-editor-title">{editing && record.item ? record.item.name : title}</h2><p>{viewOnly ? 'View university (read only)' : editing ? 'Edit university' : subtitle}</p></div>
           <button type="button" className="adm-btn adm-btn--ghost adm-btn--icon" onClick={requestClose} aria-label="Close"><Icon name="close" /></button>
         </header>
         {editing && !ready ? <div className={styles.sheetScroll}>{body}</div> : body}

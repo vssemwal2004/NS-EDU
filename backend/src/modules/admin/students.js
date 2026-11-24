@@ -2,6 +2,7 @@ import { collection, COLLECTIONS, toObjectId } from '../../db/collections.js';
 import { HttpError } from '../../lib/http-error.js';
 import { pagination, queryString } from '../../lib/query.js';
 import { assertValid, escapeRegex } from '../../lib/validation.js';
+import { audit } from '../access/access-service.js';
 import { employeeAssignmentIds, staffNames } from './employee-assignments.js';
 
 const STATUSES = ['active', 'blocked'];
@@ -51,6 +52,63 @@ export async function updateStudent(id, body) {
     : await students.findOne({ _id }));
   if (!student) throw new HttpError(404, 'Student not found');
   return serializeStudentForAdmin(student);
+}
+
+const MAX_BULK = 100;
+function bulkIds(body) {
+  const values = Array.isArray(body?.ids) ? [...new Set(body.ids.map(String))] : [];
+  const ids = values.map(toObjectId);
+  if (!ids.length || ids.length > MAX_BULK || ids.some((id) => !id)) throw new HttpError(400, `Select between 1 and ${MAX_BULK} students`, { fields: { ids: 'Invalid selection' } });
+  return ids;
+}
+
+/** Block or restore sign-in for up to 100 accounts at once. */
+export async function bulkUpdateStudents(body) {
+  const { status } = assertValid([{ name: 'status', type: 'select', options: STATUSES, required: true }], { status: body?.status });
+  const ids = bulkIds(body);
+  const result = await (await collection(COLLECTIONS.students)).updateMany({ _id: { $in: ids } }, { $set: { status } });
+  return { status, matched: result.matchedCount, modified: result.modifiedCount };
+}
+
+/**
+ * Deletes a student's sign-in account for good: the account, its review, its staff follow-up notes and its
+ * one-time codes. Leads it submitted stay (an institution may already be acting on them) but lose the link,
+ * and analytics events keep no student id. Shared with the privacy erasure flow.
+ */
+export async function eraseStudentAccount(studentId, now = new Date()) {
+  const students = await collection(COLLECTIONS.students);
+  const account = await students.findOne({ _id: studentId }, { projection: { email: 1, phone: 1, name: 1 } });
+  if (!account) return null;
+  await (await collection(COLLECTIONS.applications)).updateMany({ studentId }, { $set: { studentId: null, updatedAt: now } });
+  await (await collection(COLLECTIONS.reviews)).deleteMany({ studentId });
+  await (await collection(COLLECTIONS.studentEvents)).updateMany({ studentId }, { $unset: { studentId: '' } });
+  await (await collection(COLLECTIONS.studentFollowups)).deleteMany({ studentId, studentKind: 'account' });
+  const codes = await collection(COLLECTIONS.otpCodes);
+  for (const [channel, identifier] of [['email', account.email], ['phone', account.phone]]) if (identifier) await codes.deleteMany({ channel, identifier });
+  await students.deleteOne({ _id: studentId });
+  return account;
+}
+
+const accountLabel = (account) => account.name || account.email || account.phone || 'Student account';
+
+export async function deleteStudentAccount(staff, id) {
+  const _id = toObjectId(id);
+  const account = _id && await eraseStudentAccount(_id);
+  if (!account) throw new HttpError(404, 'Student not found');
+  await audit(staff, 'student_account.delete', { type: 'student', id: _id, label: accountLabel(account) });
+  return { deleted: 1 };
+}
+
+export async function bulkDeleteStudentAccounts(staff, body) {
+  const ids = bulkIds(body);
+  let deleted = 0;
+  for (const _id of ids) {
+    const account = await eraseStudentAccount(_id);
+    if (!account) continue;
+    deleted++;
+    await audit(staff, 'student_account.delete', { type: 'student', id: _id, label: accountLabel(account) }, { bulk: true });
+  }
+  return { requested: ids.length, deleted };
 }
 
 export async function assignStudent(id, body) {

@@ -9,9 +9,21 @@ import { Avatar } from './crm/ui';
 import styles from './ReferenceStudentsManager.module.css';
 
 const holds = (admin, key) => Boolean(admin?.isOwner || admin?.permissions?.includes(key));
+// One flag per permission key (see backend modules/access/permissions.js); the server checks the same keys.
 export const studentRights = (admin) => ({
+  // Reference students (added by staff)
+  viewAll: holds(admin, 'students.view_all'),
+  create: holds(admin, 'students.create'),
+  edit: holds(admin, 'students.edit'),
+  delete: holds(admin, 'students.delete'),
+  assign: holds(admin, 'students.assign'),
+  // Student sign-in accounts
+  accountsView: holds(admin, 'accounts.view'),
+  accountsEdit: holds(admin, 'accounts.edit'),
+  accountsAssign: holds(admin, 'accounts.assign'),
+  accountsDelete: holds(admin, 'accounts.delete'),
+  /** @deprecated every key at once (the old students.manage); prefer the flags above. */
   manage: holds(admin, 'students.manage'),
-  create: holds(admin, 'students.create') || holds(admin, 'students.manage'),
 });
 export const studentName = (student) => student?.name || student?.email || student?.phone || 'Unnamed student';
 export const contactOf = (student) => [student?.email, student?.phone].filter(Boolean).join(' · ');

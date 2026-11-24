@@ -6,7 +6,9 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Icon from '@/components/ui/Icon';
 import { useAdminSession } from '@/features/admin/AdminSession';
+import BulkBar from '@/features/admin/crm/BulkBar';
 import ConfirmDialog from '@/features/admin/crm/ConfirmDialog';
+import { can } from '@/features/admin/crm/meta';
 import RowMenu from '@/features/admin/crm/RowMenu';
 import { useToaster } from '@/features/admin/crm/toast';
 import { Chip } from '@/features/admin/crm/ui';
@@ -51,9 +53,15 @@ export default function DrivesManager() {
   const [creating, setCreating] = useState(false);
   const [confirm, setConfirm] = useState(null);
   const [working, setWorking] = useState(false);
+  // Each change has its own permission (backend drives.routes.js); deleting for good is the master admin's alone.
+  const canCreate = can(admin, 'drives.create');
+  const canEdit = can(admin, 'drives.edit');
+  const canDelete = can(admin, 'drives.delete');
+  const isOwner = Boolean(admin?.isOwner);
+  const selectable = canEdit || canDelete;
   // `?add=1` (the shell's New menu) opens the New drive drawer; closing it removes the parameter.
   const addAsked = searchParams.get('add') === '1';
-  const drawerOpen = creating || addAsked;
+  const drawerOpen = canCreate && (creating || addAsked);
 
   const list = useServerList(request, '/drives', {
     q: filters.q, status: filters.status === 'current' ? '' : filters.status, state: filters.state, district: filters.district,
@@ -94,13 +102,43 @@ export default function DrivesManager() {
     } catch (failure) { toast.error(failure.fields?.status || failure.message); }
   }
 
+  // POST /drives/bulk has no "reopen", so the closed drives among the chosen ones are reopened one by one.
+  async function reopenMany(targets) {
+    const closed = targets.filter((item) => item.status === 'closed');
+    setWorking(true);
+    let done = 0;
+    let firstError = '';
+    for (const item of closed) {
+      try { await request(`/drives/${item.id}`, { method: 'PATCH', body: { status: 'active' } }); done += 1; }
+      catch (failure) { firstError ||= `${nameOf(item)}: ${failure.fields?.status || failure.message}`; }
+    }
+    setWorking(false);
+    setSelected([]);
+    refresh();
+    if (done) toast.success(`${plural(done, 'drive', 'drives')} reopened${targets.length > done ? ` · ${formatCount(targets.length - done)} not reopened` : ''}.`);
+    if (firstError) toast.error(firstError);
+  }
+
   async function runConfirm() {
     const { kind, items: targets } = confirm;
     setWorking(true);
     try {
       if (kind === 'delete') {
-        await request(`/drives/${targets[0].id}?permanent=1`, { method: 'DELETE' });
-        toast.success(`${nameOf(targets[0])} deleted.`);
+        // No bulk endpoint for deleting for good: one DELETE ?permanent=1 per drive, stopping at the first refusal.
+        let deleted = 0;
+        try {
+          for (const item of targets) { await request(`/drives/${item.id}?permanent=1`, { method: 'DELETE' }); deleted += 1; }
+        } catch (failure) {
+          if (!deleted) throw failure;
+          // Some went: keep the dialog open on the rest so a retry does not ask for the deleted ones again.
+          const gone = new Set(targets.slice(0, deleted).map((item) => item.id));
+          setSelected((current) => current.filter((id) => !gone.has(id)));
+          setConfirm({ kind, items: targets.slice(deleted), error: `${plural(deleted, 'drive', 'drives')} deleted, then: ${failure.message}` });
+          refresh();
+          return;
+        }
+        toast.success(targets.length === 1 ? `${nameOf(targets[0])} deleted.` : `${plural(deleted, 'drive', 'drives')} deleted.`);
+        setSelected([]);
       } else if (kind === 'archive' && targets.length === 1) {
         const previous = targets[0].status;
         await request(`/drives/${targets[0].id}`, { method: 'DELETE' });
@@ -119,28 +157,44 @@ export default function DrivesManager() {
   }
 
   const menuFor = (item) => [
-    { key: 'open', label: 'Open form builder', icon: 'edit', href: `/admin/drives/${item.id}` },
+    { key: 'open', label: canEdit ? 'Open form builder' : 'Open drive', icon: 'eye', href: `/admin/drives/${item.id}` },
+    { key: 'edit', label: canEdit ? 'Edit details' : 'View details', icon: canEdit ? 'edit' : 'settings', href: `/admin/drives/${item.id}?tab=settings` },
     { key: 'qr', label: 'QR & link', icon: 'link', href: `/admin/drives/${item.id}?tab=qr` },
     { key: 'registrations', label: 'Registrations', icon: 'people', href: `/admin/drives/${item.id}?tab=submissions`, hint: formatCount(item.submissionCount) },
-    { key: 'settings', label: 'Settings', icon: 'settings', href: `/admin/drives/${item.id}?tab=settings` },
     { divider: true },
     { key: 'copy', label: 'Copy link', icon: 'copy', onSelect: () => copy(item) },
     { key: 'download', label: 'Download QR (PNG)', icon: 'download', onSelect: () => window.location.assign(qrUrl(item.id)) },
     { key: 'poster', label: 'Print poster', icon: 'printer', onSelect: () => window.open(`/admin/drives/${item.id}/poster`, '_blank', 'noopener') },
     { divider: true },
-    { key: 'close', label: 'Close registration', icon: 'lock', hidden: item.status !== 'active', onSelect: () => patchStatus(item, 'close') },
-    { key: 'reopen', label: 'Reopen registration', icon: 'refresh', hidden: item.status !== 'closed', onSelect: () => patchStatus(item, 'reopen') },
-    { key: 'restore', label: 'Restore drive', icon: 'undo', hidden: item.status !== 'archived', onSelect: () => patchStatus(item, 'restore') },
-    { key: 'archive', label: 'Archive…', icon: 'archive', hidden: item.status === 'archived', onSelect: () => setConfirm({ kind: 'archive', items: [item] }) },
-    { key: 'delete', label: 'Delete permanently…', icon: 'trash', tone: 'danger', disabled: item.submissionCount > 0, reason: 'Drives with registrations can only be archived', onSelect: () => setConfirm({ kind: 'delete', items: [item] }) },
+    { key: 'close', label: 'Close registration', icon: 'lock', hidden: !canEdit || item.status !== 'active', onSelect: () => patchStatus(item, 'close') },
+    { key: 'reopen', label: 'Reopen registration', icon: 'refresh', hidden: !canEdit || item.status !== 'closed', onSelect: () => patchStatus(item, 'reopen') },
+    { key: 'restore', label: 'Restore drive', icon: 'undo', hidden: !canEdit || item.status !== 'archived', onSelect: () => patchStatus(item, 'restore') },
+    { key: 'archive', label: 'Archive…', icon: 'archive', hidden: !canDelete || item.status === 'archived', onSelect: () => setConfirm({ kind: 'archive', items: [item] }) },
+    { key: 'delete', label: 'Delete permanently…', icon: 'trash', tone: 'danger', hidden: !isOwner, disabled: item.submissionCount > 0, reason: 'Drives with registrations can only be archived', onSelect: () => setConfirm({ kind: 'delete', items: [item] }) },
+  ];
+
+  // Bulk: one bar above the table. Close/restore/archive go through POST /drives/bulk; reopen and delete loop per drive.
+  const pickedItems = items.filter((item) => selected.includes(item.id));
+  const anyWith = (status) => pickedItems.some((item) => item.status === status);
+  const withRegistrations = pickedItems.filter((item) => item.submissionCount > 0).length;
+  const bulkQuick = [
+    { key: 'close', label: 'Close registration', icon: 'lock', hidden: !canEdit || !anyWith('active'), onSelect: () => setConfirm({ kind: 'close', items: pickedItems }) },
+  ];
+  const bulkMenu = [
+    { key: 'close', label: 'Close registration…', icon: 'lock', hidden: !canEdit || !anyWith('active'), onSelect: () => setConfirm({ kind: 'close', items: pickedItems }) },
+    { key: 'reopen', label: 'Reopen registration', icon: 'refresh', hidden: !canEdit || !anyWith('closed'), onSelect: () => reopenMany(pickedItems) },
+    { key: 'restore', label: 'Restore…', icon: 'undo', hidden: !canEdit || !anyWith('archived'), onSelect: () => setConfirm({ kind: 'restore', items: pickedItems }) },
+    { divider: true },
+    { key: 'archive', label: 'Archive…', icon: 'archive', hidden: !canDelete || pickedItems.every((item) => item.status === 'archived'), onSelect: () => setConfirm({ kind: 'archive', items: pickedItems }) },
+    { key: 'delete', label: 'Delete permanently…', icon: 'trash', tone: 'danger', hidden: !isOwner, disabled: withRegistrations > 0,
+      reason: `${plural(withRegistrations, 'chosen drive has', 'chosen drives have')} registrations; drives with registrations can only be archived`, onSelect: () => setConfirm({ kind: 'delete', items: pickedItems }) },
   ];
 
   const byPlace = filters.sort === 'place';
-  const columnCount = byPlace ? 7 : 8;
+  const columnCount = (byPlace ? 6 : 7) + (selectable ? 1 : 0);
   const ids = items.map((item) => item.id);
   const allChosen = ids.length > 0 && ids.every((id) => selected.includes(id));
   const someChosen = ids.some((id) => selected.includes(id));
-  const chosenItems = items.filter((item) => selected.includes(item.id));
   const openRow = (event, item) => { if (!event.target.closest('a, button, input, label, [role="menu"]')) router.push(`/admin/drives/${item.id}`); };
 
   const rows = [];
@@ -157,8 +211,8 @@ export default function DrivesManager() {
     }
     const sub = [item.school.city && !sameName(item.school.city, item.school.district) && item.school.city, item.campaign].filter(Boolean).join(' · ');
     rows.push(<tr key={item.id} className={styles.clickRow} data-selected={selected.includes(item.id) || undefined} onClick={(event) => openRow(event, item)}>
-      <td className={t.checkCell}><input type="checkbox" aria-label={`Select ${nameOf(item)}`} checked={selected.includes(item.id)}
-        onChange={(event) => setSelected((current) => (event.target.checked ? [...current, item.id] : current.filter((id) => id !== item.id)))} /></td>
+      {selectable && <td className={t.checkCell}><input type="checkbox" aria-label={`Select ${nameOf(item)}`} checked={selected.includes(item.id)}
+        onChange={(event) => setSelected((current) => (event.target.checked ? [...current, item.id] : current.filter((id) => id !== item.id)))} /></td>}
       <td className={styles.mainCell}><div className={styles.oneLine}><Link href={`/admin/drives/${item.id}`} className={styles.rowLink} title={nameOf(item)}>{nameOf(item)}</Link>{sub && <small title={sub}>{sub}</small>}</div></td>
       {!byPlace && <td data-label="Place" className={styles.optional}><span className={styles.clip} title={`${item.school.district}, ${item.school.state}`}>{item.school.district}<span className={styles.muted}>, {item.school.state}</span></span></td>}
       <td data-label="Status"><DriveStatus status={item.status} closedReason={item.closedReason} dot /></td>
@@ -197,7 +251,7 @@ export default function DrivesManager() {
       </label>
       {filtered && <button type="button" className="adm-btn adm-btn--ghost adm-btn--sm" onClick={() => { setQuery(''); update({ ...START, sort: filters.sort, limit: filters.limit }); }}>Clear</button>}
     </>}>
-      <button type="button" className="adm-btn adm-btn--primary" onClick={() => setCreating(true)}><Icon name="plus" />New drive</button>
+      {canCreate && <button type="button" className="adm-btn adm-btn--primary" onClick={() => setCreating(true)}><Icon name="plus" />New drive</button>}
     </PageToolbar>
 
     <StatStrip loading={!counts} label="Drives by status" items={[
@@ -209,21 +263,15 @@ export default function DrivesManager() {
     ]} />
 
     <section className={`adm-panel ${styles.tablePanel}`} aria-label="School drives">
-      {selected.length > 0 && <div className={styles.bulkBar} role="region" aria-label="Bulk actions">
-        <strong>{plural(selected.length, 'drive', 'drives')} selected</strong>
-        <button type="button" className="adm-btn adm-btn--sm" onClick={() => setConfirm({ kind: 'close', items: chosenItems })}><Icon name="lock" />Close registration</button>
-        <button type="button" className="adm-btn adm-btn--sm" onClick={() => setConfirm({ kind: 'archive', items: chosenItems })}><Icon name="archive" />Archive</button>
-        {chosenItems.some((item) => item.status === 'archived') && <button type="button" className="adm-btn adm-btn--sm" onClick={() => setConfirm({ kind: 'restore', items: chosenItems })}><Icon name="undo" />Restore</button>}
-        <button type="button" className="adm-btn adm-btn--ghost adm-btn--sm" onClick={() => setSelected([])}>Clear selection</button>
-      </div>}
+      {selectable && <BulkBar count={pickedItems.length} noun={['drive', 'drives']} onClear={() => setSelected([])} quick={bulkQuick} menu={bulkMenu} busy={working} />}
       {list.error ? <div className={t.state} role="alert"><Icon name="alert" /><p>{list.error}</p><button type="button" className="adm-btn adm-btn--sm" onClick={list.reload}>Try again</button></div>
         : <div className={t.scroll} data-busy={list.busy || undefined}>
           <table className={`${t.table} ${styles.table}`} aria-busy={list.loading || list.busy}>
             <caption className="sr-only">School drives{scopeLabel ? ` in ${scopeLabel}` : ''}</caption>
             <thead><tr>
-              <th scope="col" className={t.checkCell}><input type="checkbox" aria-label="Select all drives on this page" checked={allChosen} disabled={!ids.length}
+              {selectable && <th scope="col" className={t.checkCell}><input type="checkbox" aria-label="Select all drives on this page" checked={allChosen} disabled={!ids.length}
                 ref={(node) => { if (node) node.indeterminate = someChosen && !allChosen; }}
-                onChange={(event) => setSelected(event.target.checked ? [...new Set([...selected, ...ids])] : selected.filter((id) => !ids.includes(id)))} /></th>
+                onChange={(event) => setSelected(event.target.checked ? [...new Set([...selected, ...ids])] : selected.filter((id) => !ids.includes(id)))} /></th>}
               <th scope="col">School</th>
               {!byPlace && <th scope="col" className={styles.optional} style={{ width: '17%' }}>Place</th>}
               <th scope="col" style={{ width: 104 }}>Status</th>
@@ -234,13 +282,13 @@ export default function DrivesManager() {
             </tr></thead>
             <tbody>
               {list.loading && !items.length ? Array.from({ length: 10 }, (_, index) => <tr key={index} className={t.skeletonRow} aria-hidden="true">
-                {Array.from({ length: columnCount }, (_, cell) => <td key={cell} className={cell === 0 ? t.checkCell : undefined}><span style={{ width: cell === 1 ? '60%' : '70%' }} /></td>)}
+                {Array.from({ length: columnCount }, (_, cell) => <td key={cell} className={cell === 0 && selectable ? t.checkCell : undefined}><span style={{ width: cell === 1 ? '60%' : '70%' }} /></td>)}
               </tr>) : rows}
             </tbody>
           </table>
           {data && !items.length && <div className={styles.emptyLine}>
             {filtered ? <><span>No drives match these filters.</span><button type="button" className="adm-btn adm-btn--sm" onClick={() => { setQuery(''); update({ ...START, sort: filters.sort, limit: filters.limit }); }}>Clear filters</button></>
-              : <><span title="A drive gives a school its own registration form, link and QR code.">No school drives yet.</span><button type="button" className="adm-btn adm-btn--sm" onClick={() => setCreating(true)}><Icon name="plus" />New drive</button></>}
+              : <><span title="A drive gives a school its own registration form, link and QR code.">No school drives yet.</span>{canCreate && <button type="button" className="adm-btn adm-btn--sm" onClick={() => setCreating(true)}><Icon name="plus" />New drive</button>}</>}
           </div>}
         </div>}
       {data && data.total > 0 && <Pagination page={filters.page} pageSize={filters.limit} total={data.total} rowCount={items.length} noun="drives"
@@ -248,18 +296,18 @@ export default function DrivesManager() {
         onPage={(page) => { setSelected([]); setFilters((current) => ({ ...current, page })); }} onPageSize={(limit) => update({ limit })} />}
     </section>
 
-    <NewDriveDrawer open={drawerOpen} onClose={closeDrawer} request={request} groups={groups}
-      onCreated={(item) => { closeDrawer(); refresh(); toast.success(`${nameOf(item)} created. Add your questions, then print the QR code.`); router.push(`/admin/drives/${item.id}`); }} />
+    {canCreate && <NewDriveDrawer open={drawerOpen} onClose={closeDrawer} request={request} groups={groups}
+      onCreated={(item) => { closeDrawer(); refresh(); toast.success(`${nameOf(item)} created. Add your questions, then print the QR code.`); router.push(`/admin/drives/${item.id}`); }} />}
 
     <ConfirmDialog open={Boolean(confirm)} busy={working} error={confirm?.error} tone={confirm?.kind === 'delete' || confirm?.kind === 'archive' ? 'danger' : 'primary'}
       requireText={confirm?.kind === 'delete' ? 'DELETE' : undefined}
       icon={confirm?.kind === 'close' ? 'lock' : confirm?.kind === 'restore' ? 'undo' : undefined}
-      title={!confirm ? '' : confirm.kind === 'delete' ? `Delete ${nameOf(confirm.items[0])}?`
-        : confirm.items.length === 1 ? `${{ archive: 'Archive', close: 'Close registration for', restore: 'Restore' }[confirm.kind]} ${nameOf(confirm.items[0])}?`
-          : `${{ archive: 'Archive', close: 'Close registration for', restore: 'Restore' }[confirm.kind]} ${plural(confirm.items.length, 'drive', 'drives')}?`}
-      confirmLabel={!confirm ? '' : { delete: 'Delete drive', archive: 'Archive', close: 'Close registration', restore: 'Restore' }[confirm.kind]}
+      title={!confirm ? '' : confirm.items.length === 1 ? `${{ delete: 'Delete', archive: 'Archive', close: 'Close registration for', restore: 'Restore' }[confirm.kind]} ${nameOf(confirm.items[0])}?`
+        : `${{ delete: 'Delete', archive: 'Archive', close: 'Close registration for', restore: 'Restore' }[confirm.kind]} ${plural(confirm.items.length, 'drive', 'drives')}?`}
+      confirmLabel={!confirm ? '' : { delete: confirm.items.length === 1 ? 'Delete drive' : 'Delete drives', archive: 'Archive', close: 'Close registration', restore: 'Restore' }[confirm.kind]}
       onConfirm={runConfirm} onCancel={() => setConfirm(null)}>
-      {confirm?.kind === 'delete' && 'The drive has no registrations. Its form, link and QR code are removed for good; printed posters stop working.'}
+      {confirm?.kind === 'delete' && (confirm.items.length === 1 ? 'The drive has no registrations. Its form, link and QR code are removed for good; printed posters stop working.'
+        : 'None of these drives has registrations. Their forms, links and QR codes are removed for good; printed posters stop working.')}
       {confirm?.kind === 'archive' && 'The link and QR code will show “Registration closed” and the drive leaves this list. Registrations stay in Leads, and you can restore it later.'}
       {confirm?.kind === 'close' && 'Students who scan the QR code will see “Registration closed”. You can reopen each drive from its menu.'}
       {confirm?.kind === 'restore' && 'Archived drives come back to the list as closed. Reopen them one by one when you visit the school again.'}

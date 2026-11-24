@@ -1,11 +1,14 @@
 'use client';
 // Reference students (and the login accounts assigned to this person): a dense, server-paged table with
-// search, an assignee filter, row menus, bulk assignment and a drawer for contact details and follow-up notes.
+// search, an assignee filter, row menus, a bulk bar (assign / delete) and a drawer for contact details and
+// follow-up notes. Actions are hidden without their permission; the person who added a reference student may
+// always edit or delete it (the server applies the same rule and skips the rest in bulk deletes).
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import Icon from '@/components/ui/Icon';
 import { useAdminSession } from './AdminSession';
 import AdminDrawer from './AdminDrawer';
+import BulkBar from './crm/BulkBar';
 import ConfirmDialog from './crm/ConfirmDialog';
 import RowMenu from './crm/RowMenu';
 import { useToaster } from './crm/toast';
@@ -65,10 +68,12 @@ export default function ReferenceStudentsManager() {
   const [editing, setEditing] = useState(null);
   const [assigning, setAssigning] = useState(null);
   const [assignState, setAssignState] = useState({ busy: false, error: '' });
+  // { student } for one row, { ids } for the ticked ones; `error` keeps the last failure inside the dialog.
   const [removing, setRemoving] = useState(null);
   const [working, setWorking] = useState(false);
   const config = KINDS[kind];
-  const staff = useAssignees(request, rights.manage);
+  // Loaded for either assign key: it feeds the assign drawer and names the assignees of login accounts.
+  const staff = useAssignees(request, rights.assign || rights.accountsAssign);
 
   const list = useServerList(request, config.path, {
     q: filters.q, assignee: kind === 'reference' ? filters.assignee : '', page: filters.page > 1 ? filters.page : '', limit: filters.limit,
@@ -86,7 +91,11 @@ export default function ReferenceStudentsManager() {
 
   const update = (patch) => { setSelected([]); setFilters((current) => ({ ...current, page: 1, ...patch })); };
   const switchKind = (next) => { setKind(next); setSelected([]); setOpen(null); setQuery(''); setFilters({ q: '', assignee: '', page: 1, limit: filters.limit }); };
-  const mayChange = (student) => kind === 'reference' && (rights.manage || student.createdById === admin?.id);
+  // Same rule as the server: the person who added a reference student may edit / delete it; others need the key.
+  const addedByMe = (student) => Boolean(admin?.id) && student.createdById === admin.id;
+  const mayEdit = (student) => kind === 'reference' && (rights.edit || addedByMe(student));
+  const mayDelete = (student) => kind === 'reference' && (rights.delete || addedByMe(student));
+  const mayAssign = kind === 'reference' ? rights.assign : rights.accountsAssign;
   const filtered = Boolean(filters.q || filters.assignee);
 
   async function saveAssign(employeeIds) {
@@ -106,39 +115,59 @@ export default function ReferenceStudentsManager() {
     } catch (failure) { setAssignState({ busy: false, error: failure.message }); }
   }
 
+  const notes = (count) => (count ? ` with ${formatCount(count)} ${count === 1 ? 'note' : 'notes'}` : '');
   async function remove() {
     setWorking(true);
     try {
-      const { followupsDeleted } = await request(`/reference-students/${removing.id}`, { method: 'DELETE' });
-      toast.success(`${studentName(removing)} deleted${followupsDeleted ? ` with ${formatCount(followupsDeleted)} ${followupsDeleted === 1 ? 'note' : 'notes'}` : ''}.`);
-      setRemoving(null); setOpen(null); setSelected((current) => current.filter((id) => id !== removing.id));
+      if (removing.student) {
+        const { student } = removing;
+        const { followupsDeleted } = await request(`/reference-students/${student.id}`, { method: 'DELETE' });
+        toast.success(`${studentName(student)} deleted${notes(followupsDeleted)}.`);
+        setSelected((current) => current.filter((id) => id !== student.id));
+        if (open?.id === student.id) setOpen(null);
+      } else {
+        const { deleted, skipped, followupsDeleted } = await request('/reference-students/bulk-delete', { method: 'POST', body: { ids: removing.ids } });
+        const message = `${formatCount(deleted)} ${deleted === 1 ? 'student' : 'students'} deleted${notes(followupsDeleted)}.`;
+        if (skipped) toast.info(`${message} ${formatCount(skipped)} skipped: already gone, or added by someone else and you may not delete them.`);
+        else toast.success(message);
+        setSelected([]);
+        if (open && removing.ids.includes(open.id)) setOpen(null);
+      }
+      setRemoving(null);
       list.reload();
     } catch (failure) { setRemoving((current) => current && { ...current, error: failure.message }); } finally { setWorking(false); }
   }
 
   const menuFor = (student) => [
     { key: 'open', label: 'Open notes', icon: 'note', onSelect: () => setOpen(student) },
-    { key: 'edit', label: 'Edit details', icon: 'edit', hidden: !mayChange(student), onSelect: () => setEditing(student) },
-    { key: 'assign', label: 'Assign staff…', icon: 'userPlus', hidden: !rights.manage, onSelect: () => setAssigning({ student }) },
+    { key: 'edit', label: 'Edit details…', icon: 'edit', hidden: !mayEdit(student), onSelect: () => setEditing(student) },
+    { key: 'assign', label: 'Assign staff…', icon: 'userPlus', hidden: !mayAssign, onSelect: () => setAssigning({ student }) },
     { divider: true },
-    { key: 'delete', label: 'Delete…', icon: 'trash', tone: 'danger', hidden: !mayChange(student), onSelect: () => setRemoving(student) },
+    { key: 'delete', label: 'Delete…', icon: 'trash', tone: 'danger', hidden: !mayDelete(student), onSelect: () => setRemoving({ student }) },
   ];
   const ids = rows.map((row) => row.id);
   const allChosen = ids.length > 0 && ids.every((id) => selected.includes(id));
   const someChosen = ids.some((id) => selected.includes(id));
-  const columns = rights.manage ? 7 : 6;
+  // Selection clears on every page / filter change, so the ticked rows are always on this page.
+  const chosenRows = rows.filter((row) => selected.includes(row.id));
+  const deletable = chosenRows.filter(mayDelete).length;
+  // Ticking is offered when some bulk action can work: assigning, or deleting (own rows count for creators).
+  const canSelect = mayAssign || (kind === 'reference' && (rights.delete || rights.create || rows.some(addedByMe)));
+  const columns = canSelect ? 7 : 6;
+  const bulkAssign = () => setAssigning({ bulk: true, ids: selected });
+  const removingCount = removing?.student ? 1 : removing?.ids?.length ?? 0;
   const openRow = (event, student) => { if (!event.target.closest('a, button, input, label')) setOpen(student); };
 
   return <div className={styles.screen}>
     <PageToolbar start={<>
       <span className={styles.kindTabs}><ViewTabs label="Student list" value={kind} onChange={switchKind} items={[
         { key: 'reference', label: 'Reference students', count: kind === 'reference' ? data?.total : undefined },
-        { key: 'account', label: rights.manage ? 'Login accounts' : 'Assigned login accounts', count: kind === 'account' ? data?.total : undefined },
+        { key: 'account', label: rights.accountsView ? 'Login accounts' : 'Assigned login accounts', count: kind === 'account' ? data?.total : undefined },
       ]} /></span>
       <label className={styles.search}><Icon name="search" /><span className="sr-only">Search students</span>
         <input type="search" value={query} maxLength={120} placeholder="Name, email or mobile" onChange={(event) => setQuery(event.target.value)} />
       </label>
-      {rights.manage && kind === 'reference' && <label className={styles.inlineSelect}><span className="sr-only">Assigned to</span>
+      {rights.assign && kind === 'reference' && <label className={styles.inlineSelect}><span className="sr-only">Assigned to</span>
         <select className="adm-select" value={filters.assignee} onChange={(event) => update({ assignee: event.target.value })}>
           <option value="">Anyone assigned</option>
           <option value="none">Unassigned</option>
@@ -150,17 +179,20 @@ export default function ReferenceStudentsManager() {
     </PageToolbar>
 
     <section className={`adm-panel ${styles.tablePanel}`} aria-label={config.noun}>
-      {selected.length > 0 && <div className={styles.bulkBar} role="region" aria-label="Bulk actions">
-        <strong>{formatCount(selected.length)} selected</strong>
-        <button type="button" className="adm-btn adm-btn--sm" onClick={() => setAssigning({ bulk: true, ids: selected })}><Icon name="userPlus" />Assign staff</button>
-        <button type="button" className="adm-btn adm-btn--ghost adm-btn--sm" onClick={() => setSelected([])}>Clear selection</button>
-      </div>}
+      {canSelect && <BulkBar count={selected.length} noun={['student', 'students']} busy={working} onClear={() => setSelected([])}
+        quick={[{ key: 'assign', label: 'Assign staff', icon: 'userPlus', hidden: !mayAssign, onSelect: bulkAssign }]}
+        menu={[
+          { key: 'assign', label: 'Assign staff…', icon: 'userPlus', hidden: !mayAssign, onSelect: bulkAssign },
+          { divider: true },
+          { key: 'delete', label: 'Delete…', icon: 'trash', tone: 'danger', hidden: kind !== 'reference' || !deletable,
+            hint: deletable < selected.length ? `${formatCount(deletable)} of ${formatCount(selected.length)}` : undefined, onSelect: () => setRemoving({ ids: [...selected] }) },
+        ]} />}
       {list.error ? <div className={t.state} role="alert"><Icon name="alert" /><p>{list.error}</p><button type="button" className="adm-btn adm-btn--sm" onClick={list.reload}>Try again</button></div>
         : <div className={t.scroll} data-busy={list.busy || undefined}>
           <table className={`${t.table} ${styles.table}`} aria-busy={list.loading || list.busy}>
             <caption className="sr-only">{config.noun}</caption>
             <thead><tr>
-              {rights.manage && <th scope="col" className={t.checkCell}><input type="checkbox" aria-label="Select all students on this page" checked={allChosen} disabled={!ids.length}
+              {canSelect && <th scope="col" className={t.checkCell}><input type="checkbox" aria-label="Select all students on this page" checked={allChosen} disabled={!ids.length}
                 ref={(node) => { if (node) node.indeterminate = someChosen && !allChosen; }}
                 onChange={(event) => setSelected(event.target.checked ? [...new Set([...selected, ...ids])] : selected.filter((id) => !ids.includes(id)))} /></th>}
               <th scope="col">Student</th>
@@ -172,9 +204,9 @@ export default function ReferenceStudentsManager() {
             </tr></thead>
             <tbody>
               {list.loading && !rows.length ? Array.from({ length: 10 }, (_, index) => <tr key={index} className={t.skeletonRow} aria-hidden="true">
-                {Array.from({ length: columns }, (_, cell) => <td key={cell} className={rights.manage && cell === 0 ? t.checkCell : undefined}><span style={{ width: '65%' }} /></td>)}
+                {Array.from({ length: columns }, (_, cell) => <td key={cell} className={canSelect && cell === 0 ? t.checkCell : undefined}><span style={{ width: '65%' }} /></td>)}
               </tr>) : rows.map((student) => <tr key={student.id} className={styles.clickRow} data-selected={selected.includes(student.id) || undefined} onClick={(event) => openRow(event, student)}>
-                {rights.manage && <td className={t.checkCell}><input type="checkbox" aria-label={`Select ${studentName(student)}`} checked={selected.includes(student.id)}
+                {canSelect && <td className={t.checkCell}><input type="checkbox" aria-label={`Select ${studentName(student)}`} checked={selected.includes(student.id)}
                   onChange={(event) => setSelected((current) => (event.target.checked ? [...current, student.id] : current.filter((id) => id !== student.id)))} /></td>}
                 <td className={styles.mainCell}><button type="button" className={styles.rowLink} title={studentName(student)} onClick={() => setOpen(student)}>{studentName(student)}</button></td>
                 <td data-label="Contact" className={styles.optional}><span className={styles.clip} title={contactOf(student)}>{contactOf(student) || '—'}</span></td>
@@ -191,7 +223,7 @@ export default function ReferenceStudentsManager() {
           {data && !rows.length && <div className={styles.emptyLine}>
             {filtered ? <><span>No students match.</span><button type="button" className="adm-btn adm-btn--sm" onClick={() => { setQuery(''); update({ q: '', assignee: '' }); }}>Clear filters</button></>
               : kind === 'account' ? <span title="Accounts appear here when a manager assigns them to you.">No login accounts are assigned to you.</span>
-                : <><span>{rights.manage ? 'No reference students yet.' : 'None assigned to you or added by you yet.'}</span>
+                : <><span>{rights.viewAll ? 'No reference students yet.' : 'None assigned to you or added by you yet.'}</span>
                   {rights.create && <Link className="adm-btn adm-btn--sm" href="/admin/reference-students/new"><Icon name="userPlus" />Add students</Link>}</>}
           </div>}
         </div>}
@@ -200,7 +232,7 @@ export default function ReferenceStudentsManager() {
         onPage={(page) => { setSelected([]); setFilters((current) => ({ ...current, page })); }} onPageSize={(limit) => update({ limit })} />}
     </section>
 
-    <StudentDrawer key={open?.id ?? 'none'} student={open} base={config.path} request={request} toast={toast} canAssign={rights.manage}
+    <StudentDrawer key={open?.id ?? 'none'} student={open} base={config.path} request={request} toast={toast} canAssign={mayAssign}
       meta={open && (kind === 'reference' ? `Added by ${open.createdById === admin?.id ? 'you' : open.createdByEmail} · ${formatDate(open.createdAt)}` : `Login account · last sign-in ${open.lastLoginAt ? formatWhen(open.lastLoginAt) : 'never'}`)}
       onAssign={() => setAssigning({ student: open })} onClose={() => setOpen(null)} />
     <AdminDrawer open={Boolean(editing)} onClose={() => setEditing(null)} title="Edit student" subtitle={editing ? studentName(editing) : ''}>
@@ -211,8 +243,11 @@ export default function ReferenceStudentsManager() {
       title={assigning?.bulk ? `Assign ${formatCount(assigning.ids.length)} students` : 'Assign staff'} subtitle={assigning?.student ? studentName(assigning.student) : undefined}
       onSave={saveAssign} onClose={() => { setAssigning(null); setAssignState({ busy: false, error: '' }); }} />
     <ConfirmDialog open={Boolean(removing)} tone="danger" requireText="DELETE" busy={working} error={removing?.error}
-      title={removing ? `Delete ${studentName(removing)}?` : ''} confirmLabel="Delete student" onConfirm={remove} onCancel={() => setRemoving(null)}>
-      The student and all their follow-up notes are removed for good. This cannot be undone.
+      title={removing?.student ? `Delete ${studentName(removing.student)}?` : removing ? `Delete ${formatCount(removingCount)} ${removingCount === 1 ? 'student' : 'students'}?` : ''}
+      confirmLabel={removingCount === 1 ? 'Delete student' : 'Delete students'} onConfirm={remove} onCancel={() => setRemoving(null)}>
+      {removing?.student || removingCount === 1 ? 'The student and all their follow-up notes are removed for good.' : 'These students and all their follow-up notes are removed for good.'}
+      {removing?.ids && deletable < removingCount && <> Only the {formatCount(deletable)} you added {deletable === 1 ? 'is' : 'are'} deleted; the other {formatCount(removingCount - deletable)} {removingCount - deletable === 1 ? 'is' : 'are'} skipped because deleting students added by others needs the “Delete reference students” permission.</>}
+      {' '}This cannot be undone.
     </ConfirmDialog>
   </div>;
 }

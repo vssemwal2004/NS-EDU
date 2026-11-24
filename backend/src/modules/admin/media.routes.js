@@ -6,6 +6,7 @@ import { collection, COLLECTIONS, toObjectId } from '../../db/collections.js';
 import { cloudinaryConfig, destroyImage, isOwnDeliveryUrl } from '../../lib/cloudinary.js';
 import { deleteObject, objectInfo, objectKey, publicUrlFor, r2Config, signBrowserUpload } from '../../lib/r2.js';
 import { HttpError } from '../../lib/http-error.js';
+import { requirePermission } from '../../middleware/auth.js';
 import { pagination, queryString } from '../../lib/query.js';
 import { assertValid, escapeRegex, slugify } from '../../lib/validation.js';
 
@@ -24,7 +25,10 @@ mediaRouter.get('/config', (_request, response) => {
   response.json({ configured: r2Config().configured, provider: 'r2' });
 });
 
-mediaRouter.post('/sign', (request, response) => {
+// Uploading: the library's uploaders, and every editor whose image fields upload through here.
+const uploader = requirePermission('media.upload', 'catalogue.edit', 'locations.edit', 'career.edit', 'content.edit');
+
+mediaRouter.post('/sign', uploader, (request, response) => {
   requireConfigured();
   const { filename, usage, width, height, format, bytes } = assertValid([
     { name: 'filename', type: 'string', maxLength: 255 },
@@ -42,7 +46,7 @@ mediaRouter.post('/sign', (request, response) => {
   response.json({ ...signBrowserUpload(key, FORMATS[format], bytes), receipt });
 });
 
-mediaRouter.post('/', async (request, response) => {
+mediaRouter.post('/', uploader, async (request, response) => {
   requireConfigured();
   const { receipt, alt } = assertValid([
     { name: 'receipt', type: 'string', required: true, maxLength: 2048 },
@@ -74,15 +78,45 @@ mediaRouter.get('/', async (request, response) => {
   response.json({ items: items.map(serialize), total, page, limit });
 });
 
-mediaRouter.delete('/:id', async (request, response) => {
+// Description (alt text) and usage label; the stored image and its address never change.
+mediaRouter.patch('/:id', requirePermission('media.edit'), async (request, response) => {
   const _id = toObjectId(request.params.id);
+  const data = assertValid([
+    { name: 'alt', type: 'string', maxLength: 200 },
+    { name: 'usage', type: 'select', options: USAGES },
+  ], request.body, { partial: true });
   const media = await collection(COLLECTIONS.media);
-  const item = _id && await media.findOne({ _id });
+  const item = _id && await media.findOneAndUpdate({ _id }, { $set: { ...data, updatedAt: new Date(), updatedBy: request.admin.email } }, { returnDocument: 'after' });
   if (!item) throw new HttpError(404, 'Image not found');
+  response.json({ item: serialize(item) });
+});
+
+// Only the library's own uploads are removed from storage; up to 100 at a time from the bulk bar.
+mediaRouter.post('/bulk-delete', requirePermission('media.delete'), async (request, response) => {
+  const ids = Array.isArray(request.body?.ids) ? [...new Set(request.body.ids.map(String))].map(toObjectId) : [];
+  if (!ids.length || ids.length > 100 || ids.some((id) => !id)) throw new HttpError(400, 'Select between 1 and 100 images', { fields: { ids: 'Invalid selection' } });
+  let deleted = 0;
+  const failed = [];
+  for (const _id of ids) {
+    try { if (await removeMedia(_id)) deleted++; } catch (error) { failed.push({ id: String(_id), error: error.message }); }
+  }
+  response.json({ requested: ids.length, deleted, failed });
+});
+
+async function removeMedia(_id) {
+  const media = await collection(COLLECTIONS.media);
+  const item = await media.findOne({ _id });
+  if (!item) return false;
   if (item.storage === 'r2') {
     requireConfigured();
     if (item.publicId.startsWith(objectKey('media/')) && item.url === publicUrlFor(item.publicId)) await deleteObject(item.publicId);
   } else if (cloudinaryConfig().configured && isOwnDeliveryUrl(item.url)) await destroyImage(item.publicId);
   await media.deleteOne({ _id });
+  return true;
+}
+
+mediaRouter.delete('/:id', requirePermission('media.delete'), async (request, response) => {
+  const _id = toObjectId(request.params.id);
+  if (!_id || !await removeMedia(_id)) throw new HttpError(404, 'Image not found');
   response.status(204).end();
 });

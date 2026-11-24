@@ -4,6 +4,7 @@ import { collection, COLLECTIONS, getDb, toObjectId } from '../../db/collections
 import { HttpError } from '../../lib/http-error.js';
 import { escapeRegex } from '../../lib/validation.js';
 import { audit } from '../access/access-service.js';
+import { eraseStudentAccount } from '../admin/students.js';
 import { applications, channelOf, clearLeadCounts, CHANNEL_LABELS, COUNTERS, statusLabel } from '../applications/service.js';
 import {
   anonymiseLeadUpdate, dueDateOf, ERASED_NAME, ERASED_TEXT, formatPrivacyRef, isOverdue, OPEN_STATUSES, PRIVACY_REF_PATTERN, REQUEST_STATUSES,
@@ -271,21 +272,8 @@ export async function anonymiseForRequest(staff, id, { leadIds, deleteAccount = 
     await (await collection(COLLECTIONS.leadTasks)).updateMany({ leadId: { $in: ids } }, { $set: { leadName: ERASED_NAME, leadPhone: '', title: 'Follow-up (erased)' } });
   }
   let accountDeleted = false;
-  if (deleteAccount && doc.studentId) {
-    const students = await collection(COLLECTIONS.students);
-    const account = await students.findOne({ _id: doc.studentId }, { projection: { email: 1, phone: 1 } });
-    if (account) {
-      // Leads still linked to the account lose the link; their contents were anonymised above if chosen.
-      await leads.updateMany({ studentId: doc.studentId }, { $set: { studentId: null, updatedAt: now } });
-      await (await collection(COLLECTIONS.reviews)).deleteMany({ studentId: doc.studentId });
-      await (await collection(COLLECTIONS.studentEvents)).updateMany({ studentId: doc.studentId }, { $unset: { studentId: '' } });
-      await (await collection(COLLECTIONS.studentFollowups)).deleteMany({ studentId: doc.studentId, studentKind: 'account' });
-      const codes = await collection(COLLECTIONS.otpCodes);
-      for (const [channel, identifier] of [['email', account.email], ['phone', account.phone]]) if (identifier) await codes.deleteMany({ channel, identifier });
-      await students.deleteOne({ _id: doc.studentId });
-      accountDeleted = true;
-    }
-  }
+  // Leads still linked to the account lose the link; their contents were anonymised above if chosen.
+  if (deleteAccount && doc.studentId) accountDeleted = Boolean(await eraseStudentAccount(doc.studentId, now));
   clearLeadCounts();
   const action = { kind: 'anonymise', at: now, byEmail: staff.email, count: docs.length, accountDeleted };
   const updated = await (await privacyRequests()).findOneAndUpdate({ _id: doc._id }, { $push: { actions: action }, $set: { status: 'in-progress', updatedAt: now } }, { returnDocument: 'after' });

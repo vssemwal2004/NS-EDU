@@ -47,7 +47,7 @@ export default function CommandPalette({ admin, request, onClose }) {
     })) : [];
     const searches = query ? [
       canLeads && { key: 'search:leads', kind: 'Search', icon: 'search', title: `Search all leads for “${query}”`, detail: 'Leads list', href: `/admin/leads?${new URLSearchParams({ q: query })}` },
-      holds(admin, 'catalogue.edit') && { key: 'search:universities', kind: 'Search', icon: 'building', title: `Search universities for “${query}”`, detail: 'Universities & courses', href: `/admin/institutions?${new URLSearchParams({ q: query })}` },
+      holds(admin, 'catalogue.view') && { key: 'search:universities', kind: 'Search', icon: 'building', title: `Search universities for “${query}”`, detail: 'Universities & courses', href: `/admin/institutions?${new URLSearchParams({ q: query })}` },
     ].filter(Boolean) : [];
     return [...found, ...searches, ...pages];
   }, [admin, query, leads, canLeads]);

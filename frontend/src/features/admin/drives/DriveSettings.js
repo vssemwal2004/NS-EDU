@@ -9,7 +9,8 @@ import styles from './Drives.module.css';
 const detailsOf = (item) => ({ ...item.school, title: item.title, campaign: item.campaign, notes: item.notes });
 const rulesOf = (item) => ({ maxSubmissions: item.maxSubmissions ? String(item.maxSubmissions) : '', guardianConsent: item.guardianConsent, consentText: item.consentText });
 
-export default function DriveSettings({ item, request, onSaved, toast, onArchive, onDelete, onStep }) {
+/** `canEdit` (drives.edit) unlocks the forms and close/reopen/restore; `canArchive` (drives.delete) and `canDeleteForGood` (master admin) the rest. */
+export default function DriveSettings({ item, request, onSaved, toast, onArchive, onDelete, onStep, canEdit = true, canArchive = true, canDeleteForGood = true }) {
   const [details, setDetails] = useState(() => detailsOf(item));
   const [rules, setRules] = useState(() => rulesOf(item));
   const [errors, setErrors] = useState({});
@@ -39,9 +40,13 @@ export default function DriveSettings({ item, request, onSaved, toast, onArchive
     patch({ maxSubmissions: rules.maxSubmissions.trim() ? rules.maxSubmissions.trim() : null, guardianConsent: rules.guardianConsent, consentText: rules.consentText }, 'rules', 'Registration rules saved.');
   };
 
+  const readOnlyNote = !canEdit && <p className={styles.notice}><Icon name="lock" />Your role can view these settings but not change them.</p>;
+
   return <div className={styles.settings}>
     <Panel title="School details" description="Shown at the top of the form. New registrations store the details as they are at that moment.">
       <form className={styles.form} onSubmit={saveDetails} noValidate>
+        {readOnlyNote}
+        <fieldset className={styles.plainSet} disabled={!canEdit}>
         <SchoolFields value={details} onChange={setDetails} errors={fieldErrors('details')} idPrefix="drive-settings" />
         <div className={styles.grid}>
           <TextField id="drive-title" label="Form title" value={details.title} onChange={(title) => setDetails({ ...details, title })} error={fieldErrors('details').title} maxLength={150} />
@@ -49,16 +54,18 @@ export default function DriveSettings({ item, request, onSaved, toast, onArchive
           <TextField id="drive-notes" label="Internal notes" textarea wide rows={3} value={details.notes} onChange={(notes) => setDetails({ ...details, notes })} error={fieldErrors('details').notes} maxLength={2000}
             placeholder="Contact teacher, visit date… (never shown to students)" />
         </div>
+        </fieldset>
         {sectionError('details')}
-        <div className={styles.panelFooter}>
+        {canEdit && <div className={styles.panelFooter}>
           {detailsDirty && <button type="button" className="adm-btn adm-btn--ghost" onClick={() => setDetails(detailsOf(item))}>Discard</button>}
           <button type="submit" className="adm-btn adm-btn--primary" disabled={busy === 'details' || !detailsDirty}>{busy === 'details' ? 'Saving…' : 'Save details'}</button>
-        </div>
+        </div>}
       </form>
     </Panel>
 
     <Panel title="Registration rules">
       <form className={styles.form} onSubmit={saveRules} noValidate>
+        <fieldset className={styles.plainSet} disabled={!canEdit}>
         <TextField id="drive-max" label="Registration limit" type="number" inputMode="numeric" min={1} max={1000000} placeholder="No limit" value={rules.maxSubmissions}
           onChange={(maxSubmissions) => setRules({ ...rules, maxSubmissions })} error={fieldErrors('rules').maxSubmissions}
           help="The form closes by itself when this many students have registered. Leave empty for no limit." />
@@ -69,11 +76,12 @@ export default function DriveSettings({ item, request, onSaved, toast, onArchive
         <TextField id="drive-consent" label="Contact consent wording" textarea rows={3} minLength={20} maxLength={600} value={rules.consentText}
           onChange={(consentText) => setRules({ ...rules, consentText })} error={fieldErrors('rules').consentText}
           help="Students tick this box. The exact text is stored with each registration. Leave empty to restore the default." />
+        </fieldset>
         {sectionError('rules')}
-        <div className={styles.panelFooter}>
+        {canEdit && <div className={styles.panelFooter}>
           {rulesDirty && <button type="button" className="adm-btn adm-btn--ghost" onClick={() => setRules(rulesOf(item))}>Discard</button>}
           <button type="submit" className="adm-btn adm-btn--primary" disabled={busy === 'rules' || !rulesDirty}>{busy === 'rules' ? 'Saving…' : 'Save rules'}</button>
-        </div>
+        </div>}
       </form>
     </Panel>
 
@@ -83,13 +91,13 @@ export default function DriveSettings({ item, request, onSaved, toast, onArchive
           {item.status === 'closed' && (item.closedReason === 'limit' ? 'Closed automatically: the registration limit was reached.' : 'The link shows “Registration closed”.')}
           {item.status === 'archived' && 'Hidden from the drive list. The link shows “Registration closed”; registrations stay in Leads.'}</span>
       </p>
-      <div className={styles.panelFooter} data-start="true">
-        {item.status === 'active' && <button type="button" className="adm-btn" onClick={() => onStep('close')}><Icon name="lock" />Close registration</button>}
-        {item.status === 'closed' && <button type="button" className="adm-btn adm-btn--primary" onClick={() => onStep('reopen')}><Icon name="refresh" />Reopen registration</button>}
-        {item.status === 'archived' && <button type="button" className="adm-btn" onClick={() => onStep('restore')}><Icon name="undo" />Restore drive</button>}
-        {item.status !== 'archived' && <button type="button" className="adm-btn" onClick={onArchive}><Icon name="archive" />Archive…</button>}
-        <button type="button" className="adm-btn adm-btn--danger" disabled={item.submissionCount > 0} title={item.submissionCount > 0 ? 'Drives with registrations can only be archived' : undefined} onClick={onDelete}><Icon name="trash" />Delete permanently…</button>
-      </div>
+      {(canEdit || canArchive || canDeleteForGood) && <div className={styles.panelFooter} data-start="true">
+        {canEdit && item.status === 'active' && <button type="button" className="adm-btn" onClick={() => onStep('close')}><Icon name="lock" />Close registration</button>}
+        {canEdit && item.status === 'closed' && <button type="button" className="adm-btn adm-btn--primary" onClick={() => onStep('reopen')}><Icon name="refresh" />Reopen registration</button>}
+        {canEdit && item.status === 'archived' && <button type="button" className="adm-btn" onClick={() => onStep('restore')}><Icon name="undo" />Restore drive</button>}
+        {canArchive && item.status !== 'archived' && <button type="button" className="adm-btn" onClick={onArchive}><Icon name="archive" />Archive…</button>}
+        {canDeleteForGood && <button type="button" className="adm-btn adm-btn--danger" disabled={item.submissionCount > 0} title={item.submissionCount > 0 ? 'Drives with registrations can only be archived' : undefined} onClick={onDelete}><Icon name="trash" />Delete permanently…</button>}
+      </div>}
     </Panel>
   </div>;
 }

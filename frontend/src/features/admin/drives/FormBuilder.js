@@ -41,15 +41,15 @@ function OptionsEditor({ field, onChange, error, idBase }) {
   </fieldset>;
 }
 
-function FieldEditor({ field, index, count, expanded, onToggle, onChange, onMove, onRemove, errors = {}, typeLocked }) {
+function FieldEditor({ field, index, count, expanded, onToggle, onChange, onMove, onRemove, errors = {}, typeLocked, readOnly }) {
   const idBase = useId();
   const locked = LOCKED_FIELDS.includes(field.id);
   const title = field.label || 'Untitled question';
   return <li className={styles.fieldCard} data-field-key={field.key} data-expanded={expanded || undefined} data-hidden={!field.enabled || undefined} data-invalid={Object.keys(errors).length ? true : undefined}>
     <div className={styles.fieldRow}>
       <div className={styles.reorder}>
-        <button type="button" className="adm-btn adm-btn--ghost adm-btn--icon adm-btn--sm" disabled={index === 0} onClick={() => onMove(-1)} aria-label={`Move “${title}” up`}><Icon name="arrowUp" /></button>
-        <button type="button" className="adm-btn adm-btn--ghost adm-btn--icon adm-btn--sm" disabled={index === count - 1} onClick={() => onMove(1)} aria-label={`Move “${title}” down`}><Icon name="arrowUp" className={styles.down} /></button>
+        <button type="button" className="adm-btn adm-btn--ghost adm-btn--icon adm-btn--sm" disabled={readOnly || index === 0} onClick={() => onMove(-1)} aria-label={`Move “${title}” up`}><Icon name="arrowUp" /></button>
+        <button type="button" className="adm-btn adm-btn--ghost adm-btn--icon adm-btn--sm" disabled={readOnly || index === count - 1} onClick={() => onMove(1)} aria-label={`Move “${title}” down`}><Icon name="arrowUp" className={styles.down} /></button>
       </div>
       <button type="button" className={styles.fieldSummary} aria-expanded={expanded} aria-controls={`${idBase}-panel`} onClick={onToggle}>
         <span className={styles.typeIcon}><Icon name={typeIcon(field.type)} /></span>
@@ -59,9 +59,10 @@ function FieldEditor({ field, index, count, expanded, onToggle, onChange, onMove
         {locked && <Icon name="lock" className={styles.lockIcon} />}
         <Icon name="chevron" className={styles.chevron} />
       </button>
-      {!field.builtIn && <button type="button" className="adm-btn adm-btn--ghost adm-btn--icon adm-btn--sm" data-tone="danger" onClick={onRemove} aria-label={`Delete “${title}”`} title="Delete question"><Icon name="trash" /></button>}
+      {!field.builtIn && !readOnly && <button type="button" className="adm-btn adm-btn--ghost adm-btn--icon adm-btn--sm" data-tone="danger" onClick={onRemove} aria-label={`Delete “${title}”`} title="Delete question"><Icon name="trash" /></button>}
     </div>
     {expanded && <div id={`${idBase}-panel`} className={styles.fieldPanel}>
+      <fieldset className={styles.plainSet} disabled={readOnly}>
       <div className={styles.grid}>
         <div className={styles.field} data-wide="true">
           <label className="adm-label" htmlFor={`${idBase}-label`}><span>Question<span className={styles.req} aria-hidden="true">*</span></span></label>
@@ -90,11 +91,13 @@ function FieldEditor({ field, index, count, expanded, onToggle, onChange, onMove
       </div>
       {locked && <p className="adm-hint"><Icon name="lock" /> Name and mobile number are always asked: every registration needs them for follow-up.</p>}
       {errors.id && <span className="adm-error">{errors.id}</span>}
+      </fieldset>
     </div>}
   </li>;
 }
 
-export default function FormBuilder({ item, request, onSaved, onDirtyChange, toast }) {
+/** `readOnly` (no drives.edit): questions can be opened and read, but not changed, added, moved or saved. */
+export default function FormBuilder({ item, request, onSaved, onDirtyChange, toast, readOnly = false }) {
   const [fields, setFields] = useState(() => withKeys(item.fields));
   const [expanded, setExpanded] = useState('');
   const [errors, setErrors] = useState({});
@@ -140,14 +143,15 @@ export default function FormBuilder({ item, request, onSaved, onDirtyChange, toa
 
   return <div className={styles.builder}>
     <div className={styles.builderMain}>
-      {item.submissionCount > 0 && <p className={styles.notice}><Icon name="shield" />{item.submissionCount.toLocaleString('en-IN')} students have registered. Edits apply to new registrations; earlier answers keep the question text they saw.</p>}
+      {readOnly && <p className={styles.notice}><Icon name="lock" />Your role can view this form but not change it.</p>}
+      {item.submissionCount > 0 && !readOnly && <p className={styles.notice}><Icon name="shield" />{item.submissionCount.toLocaleString('en-IN')} students have registered. Edits apply to new registrations; earlier answers keep the question text they saw.</p>}
       <ol className={styles.fieldList} aria-label="Questions">
-        {fields.map((field, index) => <FieldEditor key={field.key} field={field} index={index} count={fields.length} expanded={expanded === field.key} errors={errors[field.key]} typeLocked={typeLocked(field)}
+        {fields.map((field, index) => <FieldEditor key={field.key} field={field} index={index} count={fields.length} expanded={expanded === field.key} errors={errors[field.key]} typeLocked={typeLocked(field)} readOnly={readOnly}
           onToggle={() => setExpanded((current) => (current === field.key ? '' : field.key))}
           onChange={(patch) => change(field.key, patch)} onMove={(delta) => move(index, delta)}
           onRemove={() => setFields((current) => current.filter((entry) => entry.key !== field.key))} />)}
       </ol>
-      <div className={styles.addPanel}>
+      {!readOnly && <><div className={styles.addPanel}>
         <p className="adm-label">Add a question <small className="adm-hint">{fields.length} of {MAX_FIELDS}</small></p>
         <div className={styles.addTypes}>
           {FIELD_TYPES.map((type) => <button key={type.value} type="button" className={styles.addType} disabled={fields.length >= MAX_FIELDS} onClick={() => add(type.value)}>
@@ -159,7 +163,7 @@ export default function FormBuilder({ item, request, onSaved, onDirtyChange, toa
         <span role="status">{state.error ? <span className="adm-error">{state.error}</span> : dirty ? 'Unsaved changes' : 'All changes saved'}</span>
         <button type="button" className="adm-btn" disabled={!dirty || state.busy} onClick={discard}>Discard</button>
         <button type="button" className="adm-btn adm-btn--primary" disabled={!dirty || state.busy} onClick={save}>{state.busy ? 'Saving…' : 'Save form'}</button>
-      </div>
+      </div></>}
     </div>
 
     <aside className={styles.previewColumn} aria-label="Live preview">

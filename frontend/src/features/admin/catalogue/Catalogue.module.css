@@ -16,9 +16,14 @@
 .cardHead h2 { margin: 0; color: var(--adm-text); font-family: inherit; font-size: var(--crm-text-md); font-weight: 700; }
 .cardHead p { margin: 2px 0 0; color: var(--adm-muted); font-size: var(--crm-text-xs); }
 
-.bulk { position: sticky; top: var(--adm-topbar); z-index: 4; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; min-height: 40px; padding: 4px 12px; border-bottom: 1px solid var(--adm-accent-line); background: var(--adm-accent-soft); color: var(--adm-accent); font-size: var(--crm-text-sm); }
-.bulk strong { margin-right: 4px; font-weight: 700; }
-.bulkActions { display: flex; flex: 1; flex-wrap: wrap; gap: 8px; }
+/* Holds the shared crm/BulkBar under the sticky top bar while rows are selected (the bar itself sticks at 0). */
+.bulkDock { position: sticky; top: var(--adm-topbar); z-index: 4; }
+
+/* Record editor for someone who may view but not edit: everything disabled, no Save/Cancel (the header closes it). */
+.viewOnly { display: contents; min-width: 0; margin: 0; padding: 0; border: 0; }
+.viewOnly button[type="submit"], .viewOnly button:has(+ button[type="submit"]), .viewOnly :not(footer):has(> button[type="submit"]) { display: none; }
+.viewOnlyNote { display: flex; align-items: center; gap: 6px; margin: 0 0 12px; padding: 8px 10px; border: 1px solid var(--adm-line); border-radius: var(--adm-radius-sm); background: var(--adm-subtle); color: var(--adm-muted); font-size: var(--crm-text-xs); font-weight: 600; }
+.viewOnlyNote svg { flex-shrink: 0; width: 14px; height: 14px; }
 
 /* Cells */
 .primary { display: grid; gap: 0; min-width: 0; line-height: 1.25; }

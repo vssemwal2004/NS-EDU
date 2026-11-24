@@ -5,7 +5,7 @@
 // `resource` tabs are managed by the generic resource screen at /admin/[resource].
 const LEADS_VIEW = ['leads.view_own', 'leads.view_team', 'leads.view_all'];
 const ANALYTICS = ['analytics.view_own', 'analytics.view_team', 'analytics.view_all'];
-const STUDENTS = ['students.view_assigned', 'students.manage', 'students.create'];
+const STUDENTS = ['students.view_assigned', 'accounts.view', 'students.create'];
 
 export const adminNavigation = [
   { label: 'Workspace', items: [
@@ -27,44 +27,44 @@ export const adminNavigation = [
       { label: 'Lead volume', href: '/admin/leads/dashboard', icon: 'bars', permissions: ANALYTICS, description: 'Daily lead volume, sources, places and funnel' },
       { label: 'Search insights', href: '/admin/insights', icon: 'trend', permissions: ['analytics.search'], description: 'What students search and view, and the gaps in the directory' },
     ] },
-    { label: 'School drives', href: '/admin/drives', icon: 'building', permissions: ['drives.manage'], description: 'QR registration forms for school visits, grouped by state and district' },
+    { label: 'School drives', href: '/admin/drives', icon: 'building', permissions: ['drives.view'], description: 'QR registration forms for school visits, grouped by state and district' },
   ] },
   { label: 'Students', items: [
     { label: 'Students', href: '/admin/reference-students', icon: 'people', permissions: STUDENTS, description: 'Reference students, follow-up notes and student accounts', tabs: [
-      { label: 'Reference students', href: '/admin/reference-students', icon: 'people', permissions: ['students.view_assigned', 'students.manage'], description: 'Assigned students and follow-up notes' },
+      { label: 'Reference students', href: '/admin/reference-students', icon: 'people', permissions: ['students.view_assigned'], description: 'Assigned students and follow-up notes' },
       { label: 'Add students', href: '/admin/reference-students/new', icon: 'userPlus', permissions: ['students.create'], description: 'Add one student or upload many' },
-      { label: 'Student accounts', href: '/admin/students', icon: 'user', permissions: ['students.manage'], description: 'Student sign-in accounts and access' },
+      { label: 'Student accounts', href: '/admin/students', icon: 'user', permissions: ['accounts.view'], description: 'Student sign-in accounts and access' },
     ] },
   ] },
   { label: 'Catalogue', items: [
-    { label: 'Universities & courses', href: '/admin/institutions', icon: 'building', permissions: ['catalogue.edit'], description: 'The public directory', tabs: [
-      { label: 'Universities', href: '/admin/institutions', resource: 'institutions', icon: 'building', permissions: ['catalogue.edit'], description: 'Search, edit and publish 20k+ universities and colleges' },
-      { label: 'Programmes', href: '/admin/programmes', resource: 'programmes', icon: 'layers', permissions: ['catalogue.edit'], description: 'Course offerings, fees and placements' },
-      { label: 'Courses', href: '/admin/courses', resource: 'courses', icon: 'book', permissions: ['catalogue.edit'], description: 'Course directory and popular courses' },
-      { label: 'Exams', href: '/admin/exams', resource: 'exams', icon: 'document', permissions: ['catalogue.edit'], description: 'Entrance exam guides' },
-      { label: 'Scholarships', href: '/admin/scholarships', resource: 'scholarships', icon: 'cap', permissions: ['catalogue.edit'], description: 'Funding resources' },
+    { label: 'Universities & courses', href: '/admin/institutions', icon: 'building', permissions: ['catalogue.view'], description: 'The public directory', tabs: [
+      { label: 'Universities', href: '/admin/institutions', resource: 'institutions', icon: 'building', permissions: ['catalogue.view'], description: 'Search, edit and publish 20k+ universities and colleges' },
+      { label: 'Programmes', href: '/admin/programmes', resource: 'programmes', icon: 'layers', permissions: ['catalogue.view'], description: 'Course offerings, fees and placements' },
+      { label: 'Courses', href: '/admin/courses', resource: 'courses', icon: 'book', permissions: ['catalogue.view'], description: 'Course directory and popular courses' },
+      { label: 'Exams', href: '/admin/exams', resource: 'exams', icon: 'document', permissions: ['catalogue.view'], description: 'Entrance exam guides' },
+      { label: 'Scholarships', href: '/admin/scholarships', resource: 'scholarships', icon: 'cap', permissions: ['catalogue.view'], description: 'Funding resources' },
     ] },
-    { label: 'Locations', href: '/admin/cities', icon: 'location', permissions: ['locations.edit'], description: 'City and state destinations shown on the site', tabs: [
-      { label: 'Cities', href: '/admin/cities', resource: 'cities', icon: 'location', permissions: ['locations.edit'], description: 'City destinations and featured tiles' },
-      { label: 'States', href: '/admin/states', resource: 'states', icon: 'map', permissions: ['locations.edit'], description: 'State destinations and featured tiles' },
+    { label: 'Locations', href: '/admin/cities', icon: 'location', permissions: ['locations.view'], description: 'City and state destinations shown on the site', tabs: [
+      { label: 'Cities', href: '/admin/cities', resource: 'cities', icon: 'location', permissions: ['locations.view'], description: 'City destinations and featured tiles' },
+      { label: 'States', href: '/admin/states', resource: 'states', icon: 'map', permissions: ['locations.view'], description: 'State destinations and featured tiles' },
     ] },
-    { label: 'Career guidance', href: '/admin/career_fields', icon: 'compass', permissions: ['career.manage'], description: 'Career fields and the counsellors students can call', tabs: [
-      { label: 'Career fields', href: '/admin/career_fields', resource: 'career_fields', icon: 'compass', permissions: ['career.manage'], description: 'Fields students pick on the career guidance page' },
-      { label: 'Counsellors', href: '/admin/counsellors', resource: 'counsellors', icon: 'support', permissions: ['career.manage'], description: 'Counsellors per field; logged-in students see their numbers' },
+    { label: 'Career guidance', href: '/admin/career_fields', icon: 'compass', permissions: ['career.view'], description: 'Career fields and the counsellors students can call', tabs: [
+      { label: 'Career fields', href: '/admin/career_fields', resource: 'career_fields', icon: 'compass', permissions: ['career.view'], description: 'Fields students pick on the career guidance page' },
+      { label: 'Counsellors', href: '/admin/counsellors', resource: 'counsellors', icon: 'support', permissions: ['career.view'], description: 'Counsellors per field; logged-in students see their numbers' },
     ] },
-    { label: 'Data pipeline', href: '/admin/data', icon: 'layers', permissions: ['data.manage'], description: 'Imports, the official-website crawler and the review queue', tabs: [
-      { label: 'Overview', href: '/admin/data', icon: 'chart', permissions: ['data.manage'], description: 'Coverage, review backlog and scraper status' },
-      { label: 'Review queue', href: '/admin/data/review', icon: 'collegesCheckCircle', permissions: ['data.manage'], description: 'Verify, publish or hide imported and scraped records' },
-      { label: 'Scraper', href: '/admin/data/scraper', icon: 'guidesGlobe', permissions: ['data.manage'], description: 'Official-website crawl sources and job queue' },
-      { label: 'Import', href: '/admin/data/import', icon: 'upload', permissions: ['data.manage'], description: 'Bulk CSV or JSON import with a dry run' },
+    { label: 'Data pipeline', href: '/admin/data', icon: 'layers', permissions: ['data.view'], description: 'Imports, the official-website crawler and the review queue', tabs: [
+      { label: 'Overview', href: '/admin/data', icon: 'chart', permissions: ['data.view'], description: 'Coverage, review backlog and scraper status' },
+      { label: 'Review queue', href: '/admin/data/review', icon: 'collegesCheckCircle', permissions: ['data.view'], description: 'Verify, publish or hide imported and scraped records' },
+      { label: 'Scraper', href: '/admin/data/scraper', icon: 'guidesGlobe', permissions: ['data.view'], description: 'Official-website crawl sources and job queue' },
+      { label: 'Import', href: '/admin/data/import', icon: 'upload', permissions: ['data.create'], description: 'Bulk CSV or JSON import with a dry run' },
     ] },
   ] },
   { label: 'Administration', items: [
     { label: 'Employees', href: '/admin/access', icon: 'people', permissions: ['team.view', 'team.manage', 'audit.view'], description: 'Create employee accounts and review their activity' },
     { label: 'Activity log', href: '/admin/activity', icon: 'history', permissions: [...LEADS_VIEW, 'audit.view'], description: 'Calls, messages, notes and stage changes by your team, plus access changes' },
     { label: 'Site content', href: '/admin/content', icon: 'edit', permissions: ['content.edit'], description: 'Page copy, homepage, tools and site images' },
-    { label: 'Student reviews', href: '/admin/reviews', icon: 'chat', permissions: ['content.edit'], description: 'Check new reviews, publish or reject them, and feature the best on the homepage' },
-    { label: 'Media library', href: '/admin/media', icon: 'archive', permissions: ['media.manage'], description: 'Upload and manage site images' },
+    { label: 'Student reviews', href: '/admin/reviews', icon: 'chat', permissions: ['reviews.view', 'content.edit'], description: 'Check new reviews, publish or reject them, and feature the best on the homepage' },
+    { label: 'Media library', href: '/admin/media', icon: 'archive', permissions: ['media.view'], description: 'Upload and manage site images' },
     { label: 'Settings', href: '/admin/settings', icon: 'settings', permissions: ['settings.manage'], description: 'Your session and platform status' },
   ] },
 ];

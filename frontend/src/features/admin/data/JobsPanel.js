@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import Icon from '@/components/ui/Icon';
 import { useAdminSession } from '../AdminSession';
 import ConfirmDialog from '../crm/ConfirmDialog';
+import { can } from '../crm/meta';
 import RowMenu from '../crm/RowMenu';
 import { useToaster } from '../crm/toast';
 import Pagination from '../table/Pagination';
@@ -45,6 +46,7 @@ export default function JobsPanel({ status, onStatus, onChanged, reloadKey }) {
   const list = useServerList(request, '/data-ops/scraper/jobs', { q: search, status, page, limit }, { scope: `${admin?.id ?? ''}:${reloadKey}` });
   const items = useMemo(() => list.data?.items ?? [], [list.data]);
   const total = list.data?.total ?? 0;
+  const canRun = can(admin, 'data.edit'); // retry / cancel
 
   async function act(action, body, key) {
     setBusy(key);
@@ -70,8 +72,8 @@ export default function JobsPanel({ status, onStatus, onChanged, reloadKey }) {
       <span className={`${styles.truncate} ${job.error && job.status !== 'done' ? styles.errorText : ''}`} title={line}>{line}</span>{sub && <span className={styles.sub} title={sub}>{sub}</span>}
     </div> : <span className={styles.muted}>—</span>; } },
     { ...ACTIONS_COLUMN, render: (job) => <RowMenu label={`Actions for ${job.name}`} items={[
-      { key: 'retry', label: 'Retry', icon: 'refresh', onSelect: () => act('retry', { ids: [job.id] }, job.id), hidden: !['failed', 'skipped', 'cancelled'].includes(job.status) },
-      { key: 'cancel', label: 'Cancel job', icon: 'close', tone: 'danger', onSelect: () => act('cancel', { ids: [job.id] }, job.id), hidden: job.status !== 'queued' },
+      { key: 'retry', label: 'Retry', icon: 'refresh', onSelect: () => act('retry', { ids: [job.id] }, job.id), hidden: !canRun || !['failed', 'skipped', 'cancelled'].includes(job.status) },
+      { key: 'cancel', label: 'Cancel job', icon: 'close', tone: 'danger', onSelect: () => act('cancel', { ids: [job.id] }, job.id), hidden: !canRun || job.status !== 'queued' },
       { key: 'site', label: 'Visit website', icon: 'external', onSelect: () => window.open(job.website, '_blank', 'noopener') },
     ]} /> },
   ];
@@ -82,10 +84,10 @@ export default function JobsPanel({ status, onStatus, onChanged, reloadKey }) {
         <SearchBox label="Search jobs" value={query} onChange={setQuery} placeholder="Search name or domain…" maxLength={80} />
         <FilterSelect label="Status" value={status} onChange={onStatus} options={JOB_ORDER.map((value) => ({ value, label: JOB_STATUS[value][1] }))} allLabel="Any status" />
       </div>
-      <div className={styles.actionsRow} style={{ marginTop: 0 }}>
+      {canRun && <div className={styles.actionsRow} style={{ marginTop: 0 }}>
         <button type="button" className="adm-btn" disabled={Boolean(busy)} onClick={() => setConfirm('retry-all')}><Icon name="refresh" />Retry all failed</button>
         <button type="button" className="adm-btn adm-btn--ghost" disabled={Boolean(busy)} onClick={() => setConfirm('cancel-all')}><Icon name="close" />Cancel all queued</button>
-      </div>
+      </div>}
     </div>
     <CatalogueTable caption="Crawl jobs" columns={columns} rows={items} loading={list.loading} busy={list.busy} error={list.error} onRetry={list.reload}
       empty={status || search ? <EmptyState title="No jobs match these filters." action={<button type="button" className="adm-btn adm-btn--sm" onClick={() => { setQuery(''); onStatus(''); }}>Clear filters</button>} />

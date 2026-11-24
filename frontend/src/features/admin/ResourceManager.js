@@ -7,7 +7,9 @@ import { useSearchParams } from 'next/navigation';
 import Icon from '@/components/ui/Icon';
 import { resizedImage } from '@/lib/image-url';
 import { useAdminSession } from './AdminSession';
+import BulkBar from './crm/BulkBar';
 import ConfirmDialog from './crm/ConfirmDialog';
+import { can } from './crm/meta';
 import RowMenu from './crm/RowMenu';
 import { Chip } from './crm/ui';
 import { useToaster } from './crm/toast';
@@ -16,7 +18,7 @@ import { readSticky, writeSticky } from './ui/useStickyState';
 import Pagination from './table/Pagination';
 import { useServerList } from './table/useServerList';
 import CatalogueTable, { ACTIONS_COLUMN } from './catalogue/CatalogueTable';
-import { BulkBar, EmptyState, ErrorState, FilterSelect, SearchBox, StatusDot, useDebounced } from './catalogue/CatalogueParts';
+import { EmptyState, ErrorState, FilterSelect, SearchBox, StatusDot, useDebounced } from './catalogue/CatalogueParts';
 import RecordEditor from './catalogue/RecordEditor';
 import { duplicable, extraFilterLabels, resourceColumns, resourceFilters, resourceIcons, sitePath, statStyle } from './resource-config';
 import styles from './catalogue/Catalogue.module.css';
@@ -25,6 +27,18 @@ const PAGE_SIZES = [25, 50, 100];
 // Summary-strip filters that have no select of their own but can be linked to.
 const URL_FILTERS = ['source.kind', 'website', 'fees', 'imageUrl', 'popular', 'isMaster', 'verification'];
 const VERIFICATION_TONES = { verified: ['good', 'Verified'], unverified: ['warn', 'Unverified'], rejected: ['bad', 'Rejected'] };
+// The permission module that owns each editor (mirrors RESOURCE_MODULE in backend admin.routes.js):
+// `<module>.view` reads, `.create` adds, `.edit` saves and publishes/unpublishes, `.delete` deletes.
+const RESOURCE_MODULE = {
+  institutions: 'catalogue', programmes: 'catalogue', courses: 'catalogue', exams: 'catalogue', scholarships: 'catalogue',
+  cities: 'locations', states: 'locations', career_fields: 'career', counsellors: 'career',
+};
+/** What this person may do with a resource: { create, edit, delete } (owners hold everything). */
+export function resourceRights(admin, resource) {
+  const module = RESOURCE_MODULE[resource];
+  const holds = (action) => Boolean(admin?.isOwner || (module && can(admin, `${module}.${action}`)));
+  return { create: holds('create'), edit: holds('edit'), delete: holds('delete') };
+}
 
 let metaPromise = null;
 /** Field metadata for every resource this person may edit (one request per console visit). */
@@ -60,7 +74,8 @@ export default function ResourceManager({ resource }) {
   const toast = useToaster();
   const searchParams = useSearchParams();
   const urlQuery = searchParams.get('q');
-  const wantsCreate = searchParams.get('new') === '1' || searchParams.get('add') === '1';
+  const rights = resourceRights(admin, resource);
+  const wantsCreate = rights.create && (searchParams.get('new') === '1' || searchParams.get('add') === '1');
 
   const [query, setQuery] = useState(urlQuery ?? '');
   // Filters can arrive in the URL too (e.g. ?source.kind=scrape from the data overview).
@@ -137,6 +152,9 @@ export default function ResourceManager({ resource }) {
   const primary = resourceColumns[resource].find((column) => column.kind === 'primary');
   const titleOf = (item) => (primary.title?.(item, refLabels) ?? item?.[primary.key]) || 'this record';
   const hasVisibility = Boolean(meta?.fields.some((field) => field.name === 'active'));
+  const canToggle = hasVisibility && rights.edit;
+  // Rows are only selectable when at least one bulk action is allowed.
+  const bulkable = canToggle || rights.delete;
   const refresh = () => { list.reload(); statsList.reload(); };
 
   const closeEditor = () => { setEditor(null); dropParams(['new', 'add']); };
@@ -190,16 +208,23 @@ export default function ResourceManager({ resource }) {
   }
 
   const openRecord = (item) => setEditor({ mode: 'edit', id: item.id, title: titleOf(item), key: item.id });
+  const askBulk = (action) => { setConfirmError(''); setConfirm({ kind: 'bulk', action }); };
   const menuFor = (item) => [
-    { key: 'open', label: `Open ${singular}`, icon: 'edit', onSelect: () => openRecord(item) },
+    { key: 'open', label: `${rights.edit ? 'Edit' : 'View'} ${singular}`, icon: rights.edit ? 'edit' : 'eye', onSelect: () => openRecord(item) },
     { key: 'site', label: 'View on the site', icon: 'external', href: sitePath[resource]?.(item), hidden: !sitePath[resource] || item.active === false || !item.slug },
-    { key: 'duplicate', label: 'Duplicate', icon: 'copy', onSelect: () => duplicate(item), hidden: !duplicable.has(resource) },
+    { key: 'duplicate', label: 'Duplicate', icon: 'copy', onSelect: () => duplicate(item), hidden: !duplicable.has(resource) || !rights.create },
     { divider: true },
-    { key: 'visibility', label: item.active === false ? 'Publish (show to students)' : 'Unpublish (hide)', icon: item.active === false ? 'eye' : 'eyeOff', onSelect: () => setActive(item, item.active === false), hidden: !hasVisibility },
+    { key: 'visibility', label: item.active === false ? 'Publish (show to students)' : 'Unpublish (hide)', icon: item.active === false ? 'eye' : 'eyeOff', onSelect: () => setActive(item, item.active === false), hidden: !canToggle },
     { key: 'copy-link', label: 'Copy student link', icon: 'link', onSelect: () => copyText(`${window.location.origin}${sitePath[resource](item)}`, 'Link'), hidden: !sitePath[resource] || !item.slug },
     { key: 'copy-id', label: item.slug ? 'Copy slug' : 'Copy ID', icon: 'copy', onSelect: () => copyText(item.slug || item.id, item.slug ? 'Slug' : 'ID') },
     { divider: true },
-    { key: 'delete', label: 'Delete…', icon: 'trash', tone: 'danger', onSelect: () => { setConfirmError(''); setConfirm({ kind: 'delete', item }); } },
+    { key: 'delete', label: 'Delete…', icon: 'trash', tone: 'danger', hidden: !rights.delete, onSelect: () => { setConfirmError(''); setConfirm({ kind: 'delete', item }); } },
+  ];
+  const bulkMenu = [
+    { key: 'publish', label: 'Publish (show to students)', icon: 'eye', hidden: !canToggle, onSelect: () => askBulk('publish') },
+    { key: 'unpublish', label: 'Unpublish (hide)', icon: 'eyeOff', hidden: !canToggle, onSelect: () => askBulk('unpublish') },
+    { divider: true },
+    { key: 'delete', label: 'Delete…', icon: 'trash', tone: 'danger', hidden: !rights.delete, onSelect: () => askBulk('delete') },
   ];
 
   function renderCell(column, item) {
@@ -255,7 +280,7 @@ export default function ResourceManager({ resource }) {
 
   const emptyNode = search || filtered
     ? <EmptyState title={`No ${label} match${search ? ` “${search}”` : ' these filters'}.`} action={<button type="button" className="adm-btn adm-btn--sm" onClick={() => { setQuery(''); setFilters({}); dropParams(['q']); }}>Clear search and filters</button>} />
-    : <EmptyState title={`No ${label} yet.`} action={meta && <button type="button" className="adm-btn adm-btn--sm" onClick={() => setEditor({ mode: 'create', key: 'new' })}><Icon name="plus" />Add {singular}</button>} />;
+    : <EmptyState title={`No ${label} yet.`} action={meta && rights.create && <button type="button" className="adm-btn adm-btn--sm" onClick={() => setEditor({ mode: 'create', key: 'new' })}><Icon name="plus" />Add {singular}</button>} />;
 
   return <div className={styles.screen}>
     <PageToolbar start={<>
@@ -271,25 +296,23 @@ export default function ResourceManager({ resource }) {
       {(filtered || search) && <button type="button" className="adm-btn adm-btn--ghost adm-btn--sm" onClick={() => { setQuery(''); setFilters({}); dropParams(['q']); }}>Clear</button>}
     </>}>
       <button type="button" className="adm-btn adm-btn--ghost adm-btn--icon" onClick={refresh} aria-label="Refresh" title="Refresh"><Icon name="refresh" /></button>
-      <button type="button" className="adm-btn adm-btn--primary" disabled={!meta} onClick={() => setEditor({ mode: 'create', key: 'new' })}><Icon name="plus" />Add {singular}</button>
+      {rights.create && <button type="button" className="adm-btn adm-btn--primary" disabled={!meta} onClick={() => setEditor({ mode: 'create', key: 'new' })}><Icon name="plus" />Add {singular}</button>}
     </PageToolbar>
 
     {statItems.length > 0 && <StatStrip label={`${meta?.label ?? 'Records'} summary`} loading={!stats} items={statItems} />}
 
     <div className={styles.card}>
-      {selected.length > 0 && <BulkBar count={selected.length} onClear={() => setSelected([])}>
-        {hasVisibility && <button type="button" className="adm-btn adm-btn--sm" onClick={() => { setConfirmError(''); setConfirm({ kind: 'bulk', action: 'publish' }); }}><Icon name="eye" />Publish</button>}
-        {hasVisibility && <button type="button" className="adm-btn adm-btn--sm" onClick={() => { setConfirmError(''); setConfirm({ kind: 'bulk', action: 'unpublish' }); }}><Icon name="eyeOff" />Unpublish</button>}
-        <button type="button" className="adm-btn adm-btn--danger adm-btn--sm" onClick={() => { setConfirmError(''); setConfirm({ kind: 'bulk', action: 'delete' }); }}><Icon name="trash" />Delete…</button>
-      </BulkBar>}
+      {bulkable && selected.length > 0 && <div className={styles.bulkDock}>
+        <BulkBar count={selected.length} noun={[singular, label]} onClear={() => setSelected([])} busy={busy} menu={bulkMenu} />
+      </div>}
       <CatalogueTable caption={meta?.label} columns={columns} rows={items} loading={list.loading} busy={list.busy} error={list.error} onRetry={list.reload}
-        pageSize={Math.min(limit, 15)} selectable selected={selected} onSelectionChange={setSelected} rowLabel={titleOf} onRowClick={openRecord}
-        rowMuted={(item) => item.active === false} stickyOffset={selected.length ? 40 : 0} empty={emptyNode} />
+        pageSize={Math.min(limit, 15)} selectable={bulkable} selected={selected} onSelectionChange={setSelected} rowLabel={titleOf} onRowClick={openRecord}
+        rowMuted={(item) => item.active === false} stickyOffset={bulkable && selected.length ? 42 : 0} empty={emptyNode} />
       {(items.length > 0 || page > 1) && <Pagination page={page} pageSize={limit} pageSizes={PAGE_SIZES} total={total} rowCount={items.length} noun={label}
         hasNext={page * limit < total} hasPrevious={page > 1} disabled={list.busy} onPage={setPage} onPageSize={(size) => setLimit(size)} />}
     </div>
 
-    <RecordEditor resource={resource} meta={meta} editor={editor} refOptions={refOptions} onClose={closeEditor} onSaved={onSaved} />
+    <RecordEditor resource={resource} meta={meta} editor={editor} refOptions={refOptions} readOnly={!rights.edit} onClose={closeEditor} onSaved={onSaved} />
 
     <ConfirmDialog open={confirm?.kind === 'delete'} tone="danger" icon="trash" title={`Delete this ${singular}?`} confirmLabel="Delete permanently" busy={busy} error={confirmError}
       requireText={resource === 'institutions' ? 'DELETE' : undefined} onConfirm={runConfirm} onCancel={() => setConfirm(null)}>

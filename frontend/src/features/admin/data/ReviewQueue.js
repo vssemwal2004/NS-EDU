@@ -4,7 +4,9 @@
 import { useMemo, useState } from 'react';
 import Icon from '@/components/ui/Icon';
 import { useAdminSession } from '../AdminSession';
+import BulkBar from '../crm/BulkBar';
 import ConfirmDialog from '../crm/ConfirmDialog';
+import { can } from '../crm/meta';
 import RowMenu from '../crm/RowMenu';
 import { Chip } from '../crm/ui';
 import { useToaster } from '../crm/toast';
@@ -12,10 +14,10 @@ import { PageToolbar, ViewTabs } from '../ui/Page';
 import Pagination from '../table/Pagination';
 import { useServerList } from '../table/useServerList';
 import CatalogueTable, { ACTIONS_COLUMN } from '../catalogue/CatalogueTable';
-import { BulkBar, EmptyState, FilterSelect, SearchBox, StatusDot, useDebounced } from '../catalogue/CatalogueParts';
+import { EmptyState, FilterSelect, SearchBox, StatusDot, useDebounced } from '../catalogue/CatalogueParts';
 import { SOURCE_LABELS } from '../resource-config';
 import RecordEditor from '../catalogue/RecordEditor';
-import { useResourceMeta } from '../ResourceManager';
+import { resourceRights, useResourceMeta } from '../ResourceManager';
 import { formatCount, formatDate, hostOf } from './data-api';
 import styles from '../catalogue/Catalogue.module.css';
 
@@ -23,10 +25,10 @@ const PAGE_SIZES = [25, 50, 100];
 const VIEWS = [{ key: 'held', label: 'Held for review', count: 'held' }, { key: 'visible', label: 'Visible, unverified', count: 'visible' }, { key: 'all', label: 'All unverified' }];
 const SOURCES = [{ value: 'scrape', label: 'Scraped' }, { value: 'import', label: 'Imported' }, { value: 'admin', label: 'Admin' }, { value: 'seed', label: 'Seed' }];
 const ACTIONS = {
-  verify: { label: 'Verify', icon: 'checkCircle', done: 'verified and visible' },
-  publish: { label: 'Publish', icon: 'eye', done: 'visible to students' },
-  hide: { label: 'Hide', icon: 'eyeOff', done: 'hidden from students' },
-  reject: { label: 'Reject…', icon: 'ban', done: 'rejected and hidden', danger: true },
+  verify: { label: 'Verify', menu: 'Verify (and show to students)', icon: 'checkCircle', done: 'verified and visible' },
+  publish: { label: 'Publish', menu: 'Publish without verifying', icon: 'eye', done: 'visible to students' },
+  hide: { label: 'Hide', menu: 'Hide from students', icon: 'eyeOff', done: 'hidden from students' },
+  reject: { label: 'Reject…', menu: 'Reject…', icon: 'ban', done: 'rejected and hidden', danger: true },
 };
 
 export default function ReviewQueue({ initialView = 'held', initialSource = '' }) {
@@ -69,6 +71,14 @@ export default function ReviewQueue({ initialView = 'held', initialSource = '' }
     setBusy('');
   }
   const run = (action, ids) => (ACTIONS[action].danger ? setReject(ids) : apply(action, ids));
+  // Verify / publish / hide / reject all go through /data-ops/universities/bulk (data.edit). Opening a
+  // record needs catalogue.view (meta); saving it needs catalogue.edit.
+  const canAct = can(admin, 'data.edit');
+  const canEditRecord = resourceRights(admin, 'institutions').edit;
+  const bulkMenu = Object.entries(ACTIONS).flatMap(([action, config]) => [
+    ...(config.danger ? [{ divider: true }] : []),
+    { key: action, label: config.menu, icon: config.icon, tone: config.danger ? 'danger' : undefined, disabled: Boolean(busy), onSelect: () => run(action, selected) },
+  ]);
 
   const columns = [
     { key: 'name', label: 'University', render: (item) => <div className={styles.primary}>
@@ -86,13 +96,13 @@ export default function ReviewQueue({ initialView = 'held', initialSource = '' }
       : <span className={styles.muted}>—</span>) },
     { key: 'active', label: 'Visibility', width: 110, render: (item) => (item.active ? <StatusDot tone="good">Visible</StatusDot> : <Chip size="sm" tone="warn" icon="clock" title="Hidden from students until reviewed">Held</Chip>) },
     { ...ACTIONS_COLUMN, render: (item) => <RowMenu label={`Actions for ${item.name}`} items={[
-      { key: 'open', label: 'Open and edit', icon: 'edit', onSelect: () => setEditor({ mode: 'edit', id: item.id, title: item.name }), hidden: !meta?.institutions },
+      { key: 'open', label: canEditRecord ? 'Edit university' : 'View university', icon: canEditRecord ? 'edit' : 'eye', onSelect: () => setEditor({ mode: 'edit', id: item.id, title: item.name }), hidden: !meta?.institutions },
       { key: 'site', label: 'Visit official website', icon: 'external', onSelect: () => window.open(item.website, '_blank', 'noopener'), hidden: !item.website },
       { divider: true },
-      { key: 'verify', label: 'Verify', icon: 'checkCircle', onSelect: () => apply('verify', [item.id]) },
-      item.active ? { key: 'hide', label: 'Hide from students', icon: 'eyeOff', onSelect: () => apply('hide', [item.id]) } : { key: 'publish', label: 'Publish without verifying', icon: 'eye', onSelect: () => apply('publish', [item.id]) },
+      { key: 'verify', label: 'Verify', icon: 'checkCircle', hidden: !canAct, onSelect: () => apply('verify', [item.id]) },
+      item.active ? { key: 'hide', label: 'Hide from students', icon: 'eyeOff', hidden: !canAct, onSelect: () => apply('hide', [item.id]) } : { key: 'publish', label: 'Publish without verifying', icon: 'eye', hidden: !canAct, onSelect: () => apply('publish', [item.id]) },
       { divider: true },
-      { key: 'reject', label: 'Reject…', icon: 'ban', tone: 'danger', onSelect: () => setReject([item.id]) },
+      { key: 'reject', label: 'Reject…', icon: 'ban', tone: 'danger', hidden: !canAct, onSelect: () => setReject([item.id]) },
     ]} /> },
   ];
 
@@ -108,13 +118,12 @@ export default function ReviewQueue({ initialView = 'held', initialSource = '' }
     </PageToolbar>
 
     <div className={styles.card}>
-      {selected.length > 0 && <BulkBar count={selected.length} onClear={() => setSelected([])}>
-        {Object.entries(ACTIONS).map(([action, config]) => <button key={action} type="button" className={`adm-btn adm-btn--sm${config.danger ? ' adm-btn--danger' : ''}`} disabled={Boolean(busy)} onClick={() => run(action, selected)}>
-          <Icon name={config.icon} />{busy === action ? 'Working…' : config.label}
-        </button>)}
-      </BulkBar>}
+      {canAct && selected.length > 0 && <div className={styles.bulkDock}>
+        <BulkBar count={selected.length} noun={['university', 'universities']} onClear={() => setSelected([])} busy={Boolean(busy)}
+          quick={[{ key: 'verify', label: busy === 'verify' ? 'Working…' : 'Verify', icon: 'checkCircle', onSelect: () => run('verify', selected) }]} menu={bulkMenu} />
+      </div>}
       <CatalogueTable caption="Universities awaiting review" columns={columns} rows={items} loading={list.loading} busy={list.busy} error={list.error} onRetry={list.reload}
-        selectable selected={selected} onSelectionChange={setSelected} rowLabel={(item) => item.name} stickyOffset={selected.length ? 40 : 0}
+        selectable={canAct} selected={selected} onSelectionChange={setSelected} rowLabel={(item) => item.name} stickyOffset={canAct && selected.length ? 42 : 0}
         onRowClick={meta?.institutions ? (item) => setEditor({ mode: 'edit', id: item.id, title: item.name }) : undefined}
         empty={filtered ? <EmptyState title="Nothing matches these filters." action={<button type="button" className="adm-btn adm-btn--sm" onClick={() => { setQuery(''); setSource(''); }}>Clear filters</button>} />
           : <EmptyState title={view === 'held' ? 'Nothing is held for review.' : 'No unverified universities.'}>New imports and crawls appear here.</EmptyState>} />
@@ -122,7 +131,7 @@ export default function ReviewQueue({ initialView = 'held', initialSource = '' }
         hasNext={page * limit < total} hasPrevious={page > 1} disabled={list.busy} onPage={setPage} onPageSize={setLimit} />}
     </div>
 
-    <RecordEditor resource="institutions" meta={meta?.institutions} editor={editor} refOptions={{}} onClose={() => setEditor(null)}
+    <RecordEditor resource="institutions" meta={meta?.institutions} editor={editor} refOptions={{}} readOnly={!canEditRecord} onClose={() => setEditor(null)}
       onSaved={(item) => { setEditor(null); toast.success(`${item.name} saved. Edited fields are now protected from imports and crawls.`); list.reload(); }} />
 
     <ConfirmDialog open={Boolean(reject)} tone="danger" icon="ban" title={`Reject ${reject?.length ?? 0} ${reject?.length === 1 ? 'university' : 'universities'}?`} confirmLabel="Reject" busy={busy === 'reject'}

@@ -8,7 +8,7 @@ import { getDashboard } from './dashboard.js';
 import { homeSummary } from './home.js';
 import { describeResources } from './resources.js';
 import { bulkItems, createItem, deleteItem, getItem, listItems, resourceStats, updateItem } from './resource-service.js';
-import { assignStudent, listStudents, updateStudent } from './students.js';
+import { assignStudent, bulkDeleteStudentAccounts, bulkUpdateStudents, deleteStudentAccount, listStudents, updateStudent } from './students.js';
 import { referenceStudentsRouter } from './reference-students.routes.js';
 import { accountStudentsRouter } from './account-students.routes.js';
 import { bulkAssignStudents } from './employee-assignments.js';
@@ -38,14 +38,16 @@ adminRouter.use('/leads', leadsRouter);
 adminRouter.use('/crm', crmRouter);
 adminRouter.use('/lead-distribution', distributionRouter);
 
-adminRouter.use('/data-ops', requirePermission('data.manage'), dataOpsRouter);
-// Image upload backs the image fields of every editor, so anyone who can edit those areas can use it.
-adminRouter.use('/media', requirePermission('media.manage', 'catalogue.edit', 'locations.edit', 'career.manage', 'content.edit'), mediaRouter);
+// Each area is mounted behind its `view` key; changes inside check create / edit / delete separately.
+adminRouter.use('/data-ops', requirePermission('data.view'), dataOpsRouter);
+// Image upload backs the image fields of every editor, so anyone who can edit those areas can use it
+// (media.routes.js checks media.upload / media.edit / media.delete for the library's own actions).
+adminRouter.use('/media', requirePermission('media.view', 'catalogue.edit', 'locations.edit', 'career.edit', 'content.edit'), mediaRouter);
 adminRouter.use('/content', requirePermission('content.edit'), adminContentRouter);
-// Student reviews are public site content, so the people who edit site content moderate them.
-adminRouter.use('/reviews', requirePermission('content.edit'), adminReviewsRouter);
+// Student reviews: reviews.view / reviews.moderate / reviews.delete; site-content editors keep full access.
+adminRouter.use('/reviews', requirePermission('reviews.view', 'content.edit'), adminReviewsRouter);
 adminRouter.use('/insights', requirePermission('analytics.search'), adminInsightsRouter);
-adminRouter.use('/drives', requirePermission('drives.manage'), drivesRouter);
+adminRouter.use('/drives', requirePermission('drives.view'), drivesRouter);
 // DPDP privacy requests: requester contact details, matched leads and erasure. Owners only unless granted.
 // Reading needs privacy.view (implied by privacy.manage); every change checks privacy.manage in the router.
 adminRouter.use('/privacy', requirePermission('privacy.view', 'privacy.manage'), adminPrivacyRouter);
@@ -53,21 +55,36 @@ adminRouter.get('/dashboard', requirePermission('dashboard.view'), async (_reque
 // The console home: every signed-in staff member; each section follows their own permissions.
 adminRouter.get('/home', async (request, response) => response.json(await homeSummary(request.admin)));
 
-// Which permission opens which generic editor. A resource not listed here stays owner-only.
-const RESOURCE_PERMISSION = {
-  institutions: 'catalogue.edit', programmes: 'catalogue.edit', courses: 'catalogue.edit', exams: 'catalogue.edit', scholarships: 'catalogue.edit',
-  cities: 'locations.edit', states: 'locations.edit', career_fields: 'career.manage', counsellors: 'career.manage',
+// Which permission module owns which generic editor. A resource not listed here stays owner-only.
+// Reads need `<module>.view`, POST `.create`, PATCH and publish/unpublish `.edit`, DELETE and bulk delete `.delete`.
+const RESOURCE_MODULE = {
+  institutions: 'catalogue', programmes: 'catalogue', courses: 'catalogue', exams: 'catalogue', scholarships: 'catalogue',
+  cities: 'locations', states: 'locations', career_fields: 'career', counsellors: 'career',
 };
-const resourceGuard = (request, response, next) => requirePermission(RESOURCE_PERMISSION[request.params.resource] ?? '__owner_only__')(request, response, next);
-adminRouter.get('/resources', requirePermission('catalogue.edit', 'locations.edit', 'career.manage'), (request, response) => {
+const resourceAction = (request) => {
+  if (request.method === 'GET') return 'view';
+  if (request.method === 'DELETE') return 'delete';
+  if (request.method === 'PATCH') return 'edit';
+  if (/\/bulk$/.test(request.path)) return request.body?.action === 'delete' ? 'delete' : 'edit';
+  return 'create';
+};
+const resourceGuard = (request, response, next) => {
+  const module = RESOURCE_MODULE[request.params.resource];
+  requirePermission(module ? `${module}.${resourceAction(request)}` : '__owner_only__')(request, response, next);
+};
+adminRouter.get('/resources', requirePermission('catalogue.view', 'locations.view', 'career.view'), (request, response) => {
   const all = describeResources();
-  response.json({ resources: Object.fromEntries(Object.entries(all).filter(([name]) => can(request.admin, RESOURCE_PERMISSION[name] ?? '__owner_only__'))) });
+  response.json({ resources: Object.fromEntries(Object.entries(all).filter(([name]) => RESOURCE_MODULE[name] && can(request.admin, `${RESOURCE_MODULE[name]}.view`))) });
 });
 
-adminRouter.get('/students', requirePermission('students.manage'), async (request, response) => response.json(await listStudents(request.query)));
-adminRouter.post('/students/assignments/bulk', requirePermission('students.manage'), async (request, response) => response.json(await bulkAssignStudents(COLLECTIONS.students, request.body)));
-adminRouter.patch('/students/:id', requirePermission('students.manage'), async (request, response) => response.json({ item: await updateStudent(request.params.id, request.body) }));
-adminRouter.patch('/students/:id/assignments', requirePermission('students.manage'), async (request, response) => response.json({ item: await assignStudent(request.params.id, request.body) }));
+// Student sign-in accounts: accounts.view / accounts.edit (block, name) / accounts.assign / accounts.delete.
+adminRouter.get('/students', requirePermission('accounts.view'), async (request, response) => response.json(await listStudents(request.query)));
+adminRouter.post('/students/assignments/bulk', requirePermission('accounts.assign'), async (request, response) => response.json(await bulkAssignStudents(COLLECTIONS.students, request.body)));
+adminRouter.post('/students/bulk', requirePermission('accounts.edit'), async (request, response) => response.json(await bulkUpdateStudents(request.body)));
+adminRouter.post('/students/bulk-delete', requirePermission('accounts.delete'), async (request, response) => response.json(await bulkDeleteStudentAccounts(request.admin, request.body)));
+adminRouter.patch('/students/:id', requirePermission('accounts.edit'), async (request, response) => response.json({ item: await updateStudent(request.params.id, request.body) }));
+adminRouter.delete('/students/:id', requirePermission('accounts.delete'), async (request, response) => response.json(await deleteStudentAccount(request.admin, request.params.id)));
+adminRouter.patch('/students/:id/assignments', requirePermission('accounts.assign'), async (request, response) => response.json({ item: await assignStudent(request.params.id, request.body) }));
 
 // Older "Add employee" screen: the same data as the Team & access page, kept for existing clients.
 adminRouter.get('/employees', requirePermission('team.view', 'team.manage'), async (_request, response) => {

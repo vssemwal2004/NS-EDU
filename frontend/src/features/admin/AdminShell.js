@@ -197,9 +197,9 @@ function AccountMenu({ admin, prefs, update, logout }) {
 function Topbar({ admin, request, page, exact, prefs, update, onMenu, onSearch, followUps, logout }) {
   const createItems = [
     { key: 'lead', label: 'Lead', icon: 'eligibility', href: '/admin/leads?add=1', hidden: !holds(admin, 'leads.create') },
-    { key: 'drive', label: 'School drive', icon: 'building', href: '/admin/drives?add=1', hidden: !holds(admin, 'drives.manage') },
+    { key: 'drive', label: 'School drive', icon: 'building', href: '/admin/drives?add=1', hidden: !holds(admin, 'drives.create') },
     { key: 'student', label: 'Reference student', icon: 'userPlus', href: '/admin/reference-students/new', hidden: !holds(admin, 'students.create') },
-    { key: 'university', label: 'University', icon: 'building', href: '/admin/institutions?new=1', hidden: !holds(admin, 'catalogue.edit') },
+    { key: 'university', label: 'University', icon: 'building', href: '/admin/institutions?new=1', hidden: !holds(admin, 'catalogue.create') },
     { key: 'staff', label: 'Employee', icon: 'people', href: '/admin/access?tab=team&add=1', hidden: !holds(admin, 'team.manage') },
   ];
   const canCreate = createItems.some((item) => !item.hidden);

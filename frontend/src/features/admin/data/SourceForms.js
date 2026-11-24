@@ -55,6 +55,57 @@ export function AddSourceForm({ onDone, onCancel }) {
   </form>;
 }
 
+// Mirrors INSTITUTION_CATEGORIES in backend/src/modules/universities/schema.js.
+const CATEGORIES = [
+  ['central-university', 'Central university'], ['state-university', 'State university'], ['deemed-university', 'Deemed university'], ['private-university', 'Private university'],
+  ['institute-of-national-importance', 'Institute of national importance'], ['autonomous-college', 'Autonomous college'], ['affiliated-college', 'Affiliated college'],
+  ['standalone-institution', 'Standalone institution'], ['other', 'Other'],
+];
+// The editable fields of a crawl source (SOURCE_FIELDS in backend/src/scraper/sources.js; status has its own menu items).
+const EDITABLE = ['name', 'website', 'state', 'city', 'type', 'category', 'institutionSlug', 'seedListName', 'notes'];
+
+/** Edit one crawl source; sends only the fields that changed (PATCH /data-ops/scraper/sources/:id). */
+export function EditSourceForm({ source, onDone, onCancel }) {
+  const { request } = useAdminSession();
+  const [initial] = useState(() => Object.fromEntries(EDITABLE.map((key) => [key, source[key] ?? ''])));
+  const [values, setValues] = useState(initial);
+  const [errors, setErrors] = useState({});
+  const [formError, setFormError] = useState('');
+  const [busy, setBusy] = useState(false);
+  const set = (key) => (event) => { setValues((previous) => ({ ...previous, [key]: event.target.value })); setErrors((previous) => ({ ...previous, [key]: undefined })); };
+  // A state the directory spelt differently stays selectable instead of silently changing.
+  const states = values.state && !STATES.includes(values.state) ? [values.state, ...STATES] : STATES;
+
+  async function submit(event) {
+    event.preventDefault();
+    if (!values.name.trim() || !values.website.trim()) { setErrors({ name: values.name.trim() ? undefined : 'Enter the institution name.', website: values.website.trim() ? undefined : 'Enter the official website.' }); return; }
+    const changes = Object.fromEntries(EDITABLE.filter((key) => values[key].trim() !== String(initial[key]).trim()).map((key) => [key, values[key].trim()]));
+    if (!Object.keys(changes).length) { onCancel(); return; }
+    setBusy(true); setFormError('');
+    try {
+      const { item } = await request(`/data-ops/scraper/sources/${source.id}`, { method: 'PATCH', body: changes });
+      onDone(item, changes);
+    } catch (failure) { setErrors(failure.fields || {}); setFormError(failure.message); setBusy(false); }
+  }
+
+  return <form className={form.form} onSubmit={submit} noValidate>
+    <p className="adm-hint">Changing the website or the target university clears the last crawl result and cancels queued jobs for this source, so the next crawl uses the corrected details.</p>
+    <div className={form.formGrid}>
+      <Field id="edit-source-name" label="Institution name" required error={errors.name}><input id="edit-source-name" className="adm-input" maxLength={200} value={values.name} onChange={set('name')} aria-invalid={Boolean(errors.name)} /></Field>
+      <Field id="edit-source-website" label="Official website" required error={errors.website}><input id="edit-source-website" className="adm-input" inputMode="url" maxLength={500} value={values.website} onChange={set('website')} aria-invalid={Boolean(errors.website)} /></Field>
+      <Field id="edit-source-state" label="State / UT" error={errors.state}><select id="edit-source-state" className="adm-select" value={values.state} onChange={set('state')}><option value="">Detect from the website</option>{states.map((state) => <option key={state}>{state}</option>)}</select></Field>
+      <Field id="edit-source-city" label="City" error={errors.city}><input id="edit-source-city" className="adm-input" maxLength={80} value={values.city} onChange={set('city')} /></Field>
+      <Field id="edit-source-type" label="Type" error={errors.type}><select id="edit-source-type" className="adm-select" value={values.type} onChange={set('type')}><option value="">Detect from the name</option>{TYPES.map((type) => <option key={type}>{type}</option>)}</select></Field>
+      <Field id="edit-source-category" label="Category" error={errors.category}><select id="edit-source-category" className="adm-select" value={values.category} onChange={set('category')}><option value="">Not set</option>{CATEGORIES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></Field>
+      <Field id="edit-source-target" label="Target university slug" error={errors.institutionSlug} help="Optional. The catalogue record this source should update; without it the crawler matches by name and domain."><input id="edit-source-target" className="adm-input" maxLength={100} value={values.institutionSlug} placeholder="e.g. graphic-era-university" onChange={set('institutionSlug')} /></Field>
+      <Field id="edit-source-list" label="Seed list" error={errors.seedListName}><input id="edit-source-list" className="adm-input" maxLength={80} value={values.seedListName} onChange={set('seedListName')} /></Field>
+      <Field id="edit-source-notes" label="Notes" error={errors.notes}><textarea id="edit-source-notes" className="adm-textarea" rows={3} maxLength={500} value={values.notes} onChange={set('notes')} /></Field>
+    </div>
+    {formError && <p className={form.formError} role="alert"><Icon name="shield" />{formError}</p>}
+    <div className={form.formActions}><button type="button" className="adm-btn adm-btn--ghost" onClick={onCancel} disabled={busy}>Cancel</button><button type="submit" className="adm-btn adm-btn--primary" disabled={busy}>{busy ? 'Saving…' : 'Save changes'}</button></div>
+  </form>;
+}
+
 export function SeedUploadForm({ onDone, onCancel }) {
   const [file, setFile] = useState(null);
   const [listName, setListName] = useState('');

@@ -93,6 +93,7 @@ export const PERMISSIONS = [
   p('accounts.view', 'accounts', 'view', 'See student accounts', 'Every student who signed up, with contact details.', 'medium'),
   p('accounts.edit', 'accounts', 'edit', 'Block or unblock student accounts', 'Stops or restores a student’s sign-in.', 'high', ['accounts.view']),
   p('accounts.assign', 'accounts', 'other', 'Assign student accounts', 'Give student accounts to employees for follow-up.', 'medium', ['accounts.view']),
+  p('accounts.delete', 'accounts', 'delete', 'Delete student accounts', 'Removes the sign-in account, its review and follow-up notes for good. Their leads stay, unlinked.', 'high', ['accounts.view']),
 
   ...crud('catalogue', 'universities and courses', {
     view: 'Open the admin lists of universities, programmes, courses, exams and scholarships.',
@@ -124,6 +125,7 @@ export const PERMISSIONS = [
   p('reviews.delete', 'reviews', 'delete', 'Delete reviews', 'Removes a review for good.', 'high', ['reviews.view']),
   p('media.view', 'media', 'view', 'See the media library', 'Browse uploaded images.'),
   p('media.upload', 'media', 'create', 'Upload images', 'Add images to the library.', 'medium', ['media.view']),
+  p('media.edit', 'media', 'edit', 'Edit image details', 'Change an image’s description (alt text) and where it is used.', 'medium', ['media.view']),
   p('media.delete', 'media', 'delete', 'Delete images', 'Removes an image from storage; pages using it lose it.', 'high', ['media.view']),
 
   // Owners hold it automatically; give it to others deliberately.
@@ -141,8 +143,8 @@ export const PERMISSIONS = [
   alias('drives.manage', 'drives', 'School drives (all)', ['drives.view', 'drives.create', 'drives.edit', 'drives.delete']),
   alias('career.manage', 'career', 'Career guidance (all)', ['career.view', 'career.create', 'career.edit', 'career.delete']),
   alias('data.manage', 'data', 'Data pipeline (all)', ['data.view', 'data.create', 'data.edit', 'data.delete']),
-  alias('media.manage', 'media', 'Media library (all)', ['media.view', 'media.upload', 'media.delete']),
-  alias('students.manage', 'accounts', 'Students (all)', ['students.view_all', 'students.create', 'students.edit', 'students.delete', 'students.assign', 'accounts.view', 'accounts.edit', 'accounts.assign']),
+  alias('media.manage', 'media', 'Media library (all)', ['media.view', 'media.upload', 'media.edit', 'media.delete']),
+  alias('students.manage', 'accounts', 'Students (all)', ['students.view_all', 'students.create', 'students.edit', 'students.delete', 'students.assign', 'accounts.view', 'accounts.edit', 'accounts.assign', 'accounts.delete']),
 ];
 
 export const PERMISSION_KEYS = PERMISSIONS.map((permission) => permission.key);

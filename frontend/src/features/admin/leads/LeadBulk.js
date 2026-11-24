@@ -1,13 +1,12 @@
 'use client';
-// Bulk actions on the selected leads (sticky bar + the dialog each action opens). The same dialogs serve the
-// "⋮" row menu for one lead (`lead` given): those use the single-lead endpoints, so people without bulk rights can use them.
+// The dialog each bulk action on the selected leads opens (the bar itself is the shared crm/BulkBar). The same
+// dialogs serve the "⋮" row menu for one lead (`lead` given): those use the single-lead endpoints, so people without bulk rights can use them.
 import { useState } from 'react';
 import Icon from '@/components/ui/Icon';
 import AdminDrawer from '@/features/admin/AdminDrawer';
 import drawerStyles from '@/features/admin/ResourceManager.module.css';
 import ConfirmDialog from '@/features/admin/crm/ConfirmDialog';
 import { HEAT_ORDER, HEATS, PRIORITIES, PRIORITY_ORDER, STAGE_ORDER, STAGES } from '@/features/admin/crm/meta';
-import { BULK_LIMIT } from './lead-format';
 import { personName } from './lead-views';
 import styles from './LeadBulk.module.css';
 
@@ -15,24 +14,6 @@ const TITLES = {
   status: 'Change stage', heat: 'Set temperature', priority: 'Set priority', tag: 'Add a tag', assign: 'Assign to colleagues', delete: 'Delete leads',
 };
 const noun = (count) => `${count} ${count === 1 ? 'lead' : 'leads'}`;
-
-/** `allowed` = { status, heat, priority, tag, assign, delete } booleans from the viewer's permissions. */
-export function BulkBar({ count, allowed, onAction, onClear }) {
-  const actions = [
-    ['status', 'Change stage', 'trend'], ['heat', 'Set temperature', 'flame'], ['priority', 'Set priority', 'flag'],
-    ['tag', 'Add tag', 'tag'], ['assign', 'Assign', 'people'], ['delete', 'Delete', 'trash'],
-  ].filter(([key]) => allowed[key]);
-  return <div className={styles.bar} role="region" aria-label="Bulk actions">
-    <p className={styles.count} aria-live="polite"><strong className="crm-tabnum">{count}</strong> selected<span className={styles.hint} title={`Bulk actions apply to up to ${BULK_LIMIT} leads at a time (one page).`}> · this page</span></p>
-    <div className={styles.actions}>
-      {actions.map(([key, label, icon]) => <button key={key} type="button" className={`adm-btn adm-btn--sm${key === 'delete' ? ' adm-btn--danger' : ''}`} onClick={() => onAction(key)}>
-        <Icon name={icon} />{label}
-      </button>)}
-      {!actions.length && <span className={styles.hint}>Your role cannot change leads in bulk.</span>}
-    </div>
-    <button type="button" className="adm-btn adm-btn--sm adm-btn--ghost" onClick={onClear}><Icon name="close" />Clear selection</button>
-  </div>;
-}
 
 function Choices({ options, value, onChange, name }) {
   return <div className={styles.choices} role="radiogroup" aria-label={name}>

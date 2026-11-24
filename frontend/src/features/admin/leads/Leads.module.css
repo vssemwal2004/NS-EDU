@@ -88,7 +88,7 @@
 .tableCard { min-width: 0; overflow: hidden; }
 @media (min-width: 761px) {
   /* Taller than the shared default so ≥ 15 rows show in a 900px window. */
-  .tableCard > div:first-child { max-height: max(420px, calc(100dvh - 236px)); }
+  .tableCard > div:has(> table) { max-height: max(420px, calc(100dvh - 236px)); }
   .tableCard table { min-width: 812px; table-layout: fixed; font-size: var(--crm-text-sm); }
   /* Many columns switched on: scroll inside the panel instead of squeezing every column. */
   .tableCard table:has(thead th:nth-child(11)) { min-width: 1240px; }

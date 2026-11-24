@@ -117,8 +117,8 @@ async function students(now = new Date()) {
 export function homeSummary(staff) {
   const seesLeads = leadScopeOf(staff) !== 'none';
   const seesTasks = can(staff, 'leads.notes');
-  const seesCatalogue = can(staff, 'data.manage');
-  const seesStudents = can(staff, 'dashboard.view') || can(staff, 'students.manage');
+  const seesCatalogue = can(staff, 'data.view');
+  const seesStudents = can(staff, 'dashboard.view') || can(staff, 'accounts.view');
   const key = JSON.stringify([String(staff._id), leadScopeKey(staff), seesTasks, seesCatalogue, seesStudents]);
   return cache.wrap(key, async () => {
     const people = seesLeads ? staffDirectory().then((rows) => new Map(rows.map((row) => [String(row._id), row.email]))) : null;
