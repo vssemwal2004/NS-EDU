@@ -94,9 +94,9 @@ function commonsThumbnail(source) {
   if (url.hostname !== 'commons.wikimedia.org' || !url.pathname.startsWith('/wiki/File:')) return '';
   const file = decodeURIComponent(url.pathname.slice('/wiki/File:'.length)).replaceAll(' ', '_');
   if (!file || file.includes('/')) return '';
-  const hash = createHash('md5').update(file).digest('hex');
-  const encoded = encodeURIComponent(file);
-  return 'https://upload.wikimedia.org/wikipedia/commons/thumb/' + hash[0] + '/' + hash.slice(0, 2) + '/' + encoded + '/1280px-' + encoded;
+  // Hand-built upload.wikimedia.org/…/thumb/ paths now answer 429; Special:FilePath redirects to
+  // the thumbnail host Wikimedia currently serves resized copies from.
+  return 'https://commons.wikimedia.org/wiki/Special:FilePath/' + encodeURIComponent(file) + '?width=1280';
 }
 
 function sourceAddresses(job) {
