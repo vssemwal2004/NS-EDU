@@ -20,20 +20,20 @@ function PlaceFallback({ place, className }) {
   </span>;
 }
 
-// Uploaded photo, then a window into the shared landmark artwork (`art` = { src, width, height }),
-// then the designed tile. A photo that fails to load (deleted from the library) falls through too.
+// Featured places with known crops use the matching landmark from the shared artwork.
+// Other places use an uploaded photo, then the designed tile.
 export default function PlaceVisual({ place, art, className, decorative = false }) {
   const [failed, setFailed] = useState('');
-  const image = place.image?.url && place.image.url !== failed ? place.image : null;
-  if (image) {
-    return <img className={`${className ?? ''} ${styles.photo}`} src={tileImageUrl(image.url)} alt={decorative ? '' : image.alt || place.name} title={image.credit || undefined}
-      loading="lazy" decoding="async" onError={() => setFailed(image.url)} />;
-  }
   if (art && place.crop) {
     const label = decorative ? { 'aria-hidden': true, focusable: 'false' } : { role: 'img', 'aria-label': `${place.landmark || place.name} — illustrative ${place.name} landmark` };
     return <svg className={className} viewBox={place.crop.join(' ')} preserveAspectRatio="xMidYMid slice" {...label}>
       <image href={art.src} x="0" y="0" width={art.width} height={art.height} />
     </svg>;
+  }
+  const image = place.image?.url && place.image.url !== failed ? place.image : null;
+  if (image) {
+    return <img className={`${className ?? ''} ${styles.photo}`} src={tileImageUrl(image.url)} alt={decorative ? '' : image.alt || place.name} title={image.credit || undefined}
+      loading="lazy" decoding="async" onError={() => setFailed(image.url)} />;
   }
   return <PlaceFallback place={place} className={className} />;
 }
