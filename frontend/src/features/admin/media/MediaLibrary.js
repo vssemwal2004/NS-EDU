@@ -26,7 +26,7 @@ async function copyText(text) {
   try { await window.navigator.clipboard.writeText(text); return true; } catch { return false; }
 }
 
-function UploadDrawer({ open, onClose, request, config, onUploaded }) {
+function UploadDrawer({ open, onClose, request, onUploaded }) {
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState('');
   const [usage, setUsage] = useState('logo');
@@ -61,7 +61,7 @@ function UploadDrawer({ open, onClose, request, config, onUploaded }) {
     } catch (error) { setState({ busy: false, error: error.message }); }
   }
 
-  return <AdminDrawer open={open} onClose={close} title="Upload an image" subtitle={`Stored on Cloudinary${config?.cloudName ? ` (${config.cloudName})` : ''} in the ${config?.folder || 'gyaan-vidhya'} folder.`}>
+  return <AdminDrawer open={open} onClose={close} title="Upload an image" subtitle="Images are optimized on your device and uploaded directly to R2.">
     <form className={styles.form} onSubmit={submit} noValidate>
       <div className={styles.fieldBlock}>
         <span className="adm-label" id="media-file-label">Image <span className={styles.required} aria-hidden="true">*</span></span>
@@ -75,7 +75,7 @@ function UploadDrawer({ open, onClose, request, config, onUploaded }) {
       </div>
       <div className={styles.two}>
         <label className="adm-label">Used for
-          <select className="adm-select" value={usage} disabled={state.busy} title="Decides the Cloudinary folder and helps find the image later" onChange={(event) => setUsage(event.target.value)}>
+          <select className="adm-select" value={usage} disabled={state.busy} title="Helps find the image in the library" onChange={(event) => setUsage(event.target.value)}>
             {USAGES.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
           </select>
         </label>
@@ -92,8 +92,6 @@ function UploadDrawer({ open, onClose, request, config, onUploaded }) {
   </AdminDrawer>;
 }
 
-// Files go straight from the browser to Cloudinary with a short-lived signature from our API,
-// then the result is registered here. The API secret never reaches the browser.
 export default function MediaLibrary() {
   const { admin, request } = useAdminSession();
   const toast = useToaster();
@@ -159,10 +157,10 @@ export default function MediaLibrary() {
       </label>
     </>}>
       <button type="button" className="adm-btn adm-btn--primary" onClick={() => setUploading(true)} disabled={!config?.configured}
-        title={notConfigured ? 'Cloudinary is not configured on the server' : undefined}><Icon name="upload" />Upload image</button>
+        title={notConfigured ? 'Set up R2 image storage to upload' : undefined}><Icon name="upload" />Upload image</button>
     </PageToolbar>
 
-    {notConfigured && <p className={styles.notice} role="status"><Icon name="alert" />Cloudinary is not configured on the server, so uploads are off. Add CLOUDINARY_URL to backend/.env and restart the API.</p>}
+    {notConfigured && <p className={styles.notice} role="status"><Icon name="alert" />Set up R2 image storage on the server to enable uploads.</p>}
 
     <section className={`adm-panel ${styles.panel}`} aria-label="Images" aria-busy={list.loading || list.busy}>
       {list.error ? <div className={styles.state} role="alert">
@@ -200,12 +198,12 @@ export default function MediaLibrary() {
         onPage={(page) => setFilters((current) => ({ ...current, page }))} onPageSize={(limit) => setFilters((current) => ({ ...current, limit, page: 1 }))} />}
     </section>
 
-    <UploadDrawer open={uploading} onClose={() => setUploading(false)} request={request} config={config}
+    <UploadDrawer open={uploading} onClose={() => setUploading(false)} request={request}
       onUploaded={(item) => { setUploading(false); toast.success(`Uploaded “${nameOf(item)}”. Copy its URL from the ⋮ menu.`); list.reload(); }} />
 
     <ConfirmDialog open={Boolean(deleting)} tone="danger" title="Delete this image?" confirmLabel="Delete image" requireText="DELETE" busy={deleteState.busy} error={deleteState.error}
       onCancel={() => setDeleting(null)} onConfirm={remove}>
-      <strong>{deleting ? nameOf(deleting) : ''}</strong> is removed from Cloudinary for good. Pages that still use its URL will show a broken image.
+      <strong>{deleting ? nameOf(deleting) : ''}</strong> will be permanently removed. Pages that still use its URL will show a broken image.
     </ConfirmDialog>
   </>;
 }

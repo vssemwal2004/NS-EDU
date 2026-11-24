@@ -5,6 +5,7 @@ import { requireStudent } from '../../middleware/auth.js';
 import { invalidateAppliedInstitutions } from '../insights/recommend.js';
 import { CLOSED_STATUSES, CONSENT_TEXT, parseApplication, parseQuickApplication } from './schema.js';
 import { applications, clearLeadCounts, DAY, findCourse, findInstitution, leadKeys, nextRef, serializeForStudent } from './service.js';
+import { ageConsentFields } from '../privacy/guardian.js';
 
 // A student's own applications; counsellor callbacks they requested are leads but not applications.
 const ownApplications = (studentId) => ({ studentId, channel: { $ne: 'callback' } });
@@ -65,6 +66,7 @@ applicationsRouter.post('/', requireStudent, async (request, response) => {
     callback: null,
     ...leadKeys(data.applicant),
     applicant: data.applicant,
+    guardian: data.guardian,
     academics: data.academics,
     exams: data.exams,
     preference: {
@@ -77,6 +79,7 @@ applicationsRouter.post('/', requireStudent, async (request, response) => {
     consent: {
       contactConsent: true, privacyAccepted: true, version: data.consentVersion, at: now,
       text: { contact: CONSENT_TEXT.contact.replaceAll('{university}', university), privacy: CONSENT_TEXT.privacy.replaceAll('{university}', university) },
+      ...ageConsentFields({ isAdult: data.applicant.isAdult, guardian: data.guardian }),
       ip: request.ip ?? '', userAgent: String(request.get('user-agent') ?? '').slice(0, 300),
     },
     source: data.source,

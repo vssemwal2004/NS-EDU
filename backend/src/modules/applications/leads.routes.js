@@ -2,10 +2,12 @@ import { Router } from 'express';
 import { collection, COLLECTIONS, toObjectId } from '../../db/collections.js';
 import { HttpError } from '../../lib/http-error.js';
 import { encodeCursor, pagination, queryString } from '../../lib/query.js';
+import { createRateLimiter } from '../../lib/rate-limit.js';
 import { createTtlCache } from '../../lib/ttl-cache.js';
 import { assertValid } from '../../lib/validation.js';
 import { requirePermission } from '../../middleware/auth.js';
-import { assignableIds, staffDirectory } from '../access/access-service.js';
+import { assignableIds, audit, staffDirectory } from '../access/access-service.js';
+import { canRevealAll, canSeeFullContact, maskLeadContact, revealedContact } from './contact-mask.js';
 import { crmUpdate } from '../crm/crm-model.js';
 import { leadScopeOf } from './scope.js';
 import { employeeAssignmentIds } from '../admin/employee-assignments.js';
@@ -16,8 +18,13 @@ import { CLASS_LEVELS, INDIAN_STATES, SCHOOL_STREAMS, STATUSES } from './schema.
 import {
   accessFilter, applicationNotes, applications, CHANNEL_LABELS, CHANNELS, clearLeadCounts, countLeads, cursorClause, DATE_RANGES, DAY,
   filterKey, IST_OFFSET, istDayStart, istToday, LEAD_SUMMARY_FIELDS, leadStatusTrend, LIST_SORTS, resolveLeadFilter,
-  serializeLeadDetail, serializeLeadSummary, serializeNote, staffEmails, statusLabel, visibleLead,
+  serializeLeadDetail, serializeLeadSummary, serializeLeadSummaryFor, serializeNote, staffEmails, statusLabel, visibleLead,
 } from './service.js';
+
+// Revealing a masked phone/email: per staff member, a fixed number per hour (CONTACT_REVEALS_PER_HOUR, default 30).
+const REVEALS_PER_HOUR = Number.isInteger(Number(process.env.CONTACT_REVEALS_PER_HOUR)) && Number(process.env.CONTACT_REVEALS_PER_HOUR) > 0
+  ? Number(process.env.CONTACT_REVEALS_PER_HOUR) : 30;
+const revealLimiter = createRateLimiter({ windowMs: 60 * 60 * 1000, max: REVEALS_PER_HOUR });
 
 // Mounted at /api/admin/leads before the owner-only guard: employees see and act on
 // leads assigned to them; assignment and export are administrator-only.
@@ -72,7 +79,8 @@ leadsRouter.get('/', async (request, response) => {
   const rows = docs.slice(0, limit);
   if (cursor && direction === 'before') rows.reverse();
   response.json({
-    items: rows.map((doc) => ({ ...serializeLeadSummary(doc), ...(columns.length && { values: Object.fromEntries(columns.map((column) => [column.key, column.read(doc, { people }) ?? ''])) }) })),
+    // Masked once per row, so the summary and every column value (Mobile, Email, Guardian, answers) agree.
+    items: rows.map((raw) => maskLeadContact(raw, request.admin)).map((doc) => ({ ...serializeLeadSummary(doc), ...(columns.length && { values: Object.fromEntries(columns.map((column) => [column.key, column.read(doc, { people }) ?? ''])) }) })),
     total: count.total, totalExact: count.exact, page, limit,
     hasNext: cursor && direction === 'before' ? true : hasMore,
     hasPrevious: cursor ? (direction === 'before' ? hasMore : true) : page > 1,
@@ -93,7 +101,7 @@ leadsRouter.get('/uploads', requirePermission('leads.create'), async (request, r
     leads.find(filter, { projection: projectionFor([], [...LEAD_SUMMARY_FIELDS, 'createdByAdminId']) }).sort({ createdAt: -1, _id: -1 }).skip(skip).limit(limit).toArray(),
     leads.countDocuments(filter),
   ]);
-  response.json({ items: docs.map((doc) => ({ ...serializeLeadSummary(doc), canWork: request.admin.isOwner || (doc.assignedEmployeeIds ?? []).some((id) => id.equals(request.admin._id)) })), total, page, limit });
+  response.json({ items: docs.map((doc) => ({ ...serializeLeadSummaryFor(request.admin)(doc), canWork: request.admin.isOwner || (doc.assignedEmployeeIds ?? []).some((id) => id.equals(request.admin._id)) })), total, page, limit });
 });
 
 // Status chip counts: one indexed count per status (cached), instead of grouping every lead.
@@ -207,6 +215,10 @@ leadsRouter.get('/export/check', requirePermission('leads.export'), async (reque
   });
 });
 
+async function* maskedRows(cursor, staff) {
+  for await (const doc of cursor) yield maskLeadContact(doc, staff);
+}
+
 async function sendExport(request, response, { format, spec, filter }, columns) {
   if (!columns.length) throw new HttpError(400, 'Choose at least one column', { fields: { columns: 'Choose at least one column' } });
   if (spec.maxColumns && columns.length > spec.maxColumns) throw new HttpError(400, `PDF fits at most ${spec.maxColumns} columns. Use Excel or CSV for more.`, { fields: { columns: `Choose up to ${spec.maxColumns} columns` } });
@@ -214,9 +226,17 @@ async function sendExport(request, response, { format, spec, filter }, columns) 
     const { total } = await countLeads(filter, filterKey(request.query, request.admin));
     if (total === null || total > spec.maxRows) throw new HttpError(413, `${spec.label} export is limited to ${spec.maxRows.toLocaleString('en-IN')} rows. Narrow the filters or use CSV.`);
   }
+  // Phone and email in the file follow the same rule as the screen: masked on leads not assigned to the
+  // downloader unless they hold leads.contact_reveal_all. Every download is written to the activity log.
+  const fullContact = canRevealAll(request.admin);
+  await audit(request.admin, 'lead.export', { type: 'lead', label: `${spec.label} export` }, {
+    format, columns: columns.map((column) => column.key), contactMasked: !fullContact,
+    filters: Object.fromEntries(Object.entries(request.query).filter(([key]) => key !== 'columns' && key !== 'format').map(([key, value]) => [key, queryString(value, 200)])),
+  });
   await withExportSlot(async () => {
     const people = await employeeEmails();
-    const cursor = (await applications()).find(filter, { projection: projectionFor(columns) }).sort({ createdAt: -1, _id: -1 }).batchSize(500);
+    const found = (await applications()).find(filter, { projection: projectionFor(columns, fullContact ? [] : ['assignedEmployeeIds']) }).sort({ createdAt: -1, _id: -1 }).batchSize(500);
+    const cursor = fullContact ? found : maskedRows(found, request.admin);
     response.set({
       'Content-Type': spec.type,
       'Content-Disposition': `attachment; filename="gyaan-vidhya-leads-${istToday()}.${format}"`,
@@ -230,7 +250,7 @@ async function sendExport(request, response, { format, spec, filter }, columns) 
       console.error(`Lead ${format} export failed:`, error.message);
       response.destroy();
     } finally {
-      await cursor.close().catch(() => {});
+      await found.close().catch(() => {});
     }
   });
 }
@@ -319,4 +339,16 @@ leadsRouter.post('/:id/notes', requirePermission('leads.notes'), async (request,
   await (await applicationNotes()).insertOne(note);
   await (await applications()).updateOne({ _id: lead._id }, { $set: { updatedAt: note.createdAt, ...crmUpdate(lead, note.createdAt, { lastActivityAt: note.createdAt }) } });
   response.status(201).json({ item: serializeNote(note) });
+});
+
+// Shows one lead's full phone and email to someone who can see the lead but gets them masked. Rate-limited per
+// staff member (every attempt counts, so it cannot be used to sweep the lead base) and written to the activity log.
+leadsRouter.post('/:id/reveal-contact', async (request, response) => {
+  const verdict = revealLimiter.hit(String(request.admin._id));
+  if (!verdict.allowed) {
+    throw new HttpError(429, `You have revealed ${REVEALS_PER_HOUR} contacts in the last hour. Work your assigned leads or try again later.`, { retryAfterSeconds: verdict.retryAfterSeconds, code: 'REVEAL_LIMIT' });
+  }
+  const lead = await visibleLead(request.params.id, request.admin);
+  await audit(request.admin, 'contact.reveal', { type: 'lead', id: lead._id, label: lead.ref ?? '' }, { ownLead: canSeeFullContact({ _id: request.admin._id }, lead.assignedEmployeeIds) });
+  response.json({ contact: revealedContact(lead) });
 });

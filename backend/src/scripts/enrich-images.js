@@ -4,10 +4,8 @@
 //
 // Run it through the scraper CLI: `npm run scrape --workspace backend -- enrich-images [options]`.
 import { COLLECTIONS, getDb } from '../db/collections.js';
-import { accountUsage } from '../lib/cloudinary.js';
 import { compressionRatio, imageFingerprint } from '../lib/image-pipeline.js';
 import { isRetiredImage, retiredImagePattern } from '../lib/retired-images.js';
-import { r2Selected } from '../lib/r2.js';
 import { upsertUniversities } from '../modules/universities/university-service.js';
 import { scraperConfig } from '../scraper/config.js';
 import { galleryCandidates } from '../scraper/deep.js';
@@ -237,21 +235,6 @@ async function replaceRetired(doc, { home, domain, stored, images, append = fals
   return changed;
 }
 
-// Storage is billed at about 1 credit per GB stored. A run stops once the images it has uploaded
-// would take the account past this share of its credit allowance (CLOUDINARY_MAX_CREDIT_SHARE,
-// default 0.7), leaving room for the month's bandwidth. Our first account was disabled at 450%.
-const GB = 1024 ** 3;
-export function creditBudget(usage, { share = Number(process.env.CLOUDINARY_MAX_CREDIT_SHARE) || 0.7 } = {}) {
-  const limit = Number(usage?.credits?.limit) || 25;
-  const used = Number(usage?.credits?.usage) || 0;
-  const allowedBytes = Math.max(0, limit * share - used) * GB;
-  return { limit, used, share, allowedBytes, exhausted: (uploadedBytes) => uploadedBytes >= allowedBytes };
-}
-
-/**
- * @param {{ slugs?: string[], sourceUrl?: string, state?: string, limit?: number, mode?: 'missing'|'all', want?: number,
- *           concurrency?: number, dryRun?: boolean, log?: Function, signal?: AbortSignal }} options
- */
 export async function enrichImages({ slugs = [], sourceUrl = '', state = '', city = '', limit = 50, mode = 'missing', want, concurrency, part = '', maxHave = null, render = false, lenientMarkup = false, dryRun = false, log = () => {}, signal } = {}) {
   const config = scraperConfig();
   const target = Math.max(1, Math.min(want ?? config.maxImages ?? 6, MAX_PHOTOS));
@@ -267,26 +250,12 @@ export async function enrichImages({ slugs = [], sourceUrl = '', state = '', cit
   const images = pipelineFor(fetcher, { config, log });
   const perInstitution = target;
   const summary = { selected: docs.length, updated: 0, empty: 0, failed: 0, stored: 0, dryRun, images: images.stats, examples: [] };
-  if (!images.enabled && !dryRun) throw new Error('Cloudinary is not configured; set CLOUDINARY_URL in backend/.env before running enrich-images.');
-
-  let budget = null;
-  // The Cloudinary credit guard only matters when pictures go to Cloudinary; R2 has no such plan limit.
-  if (!dryRun && !r2Selected()) {
-    const usage = await accountUsage().catch((error) => { log(`[warn] could not read Cloudinary usage (${error.message}); assuming a fresh Free plan`); return null; });
-    budget = creditBudget(usage);
-    summary.budget = { plan: usage?.plan ?? 'unknown', creditsUsed: budget.used, creditLimit: budget.limit, stopAtGb: Number((budget.allowedBytes / GB).toFixed(2)) };
-    log(`[budget] Cloudinary ${summary.budget.plan}: ${budget.used} of ${budget.limit} credits used; this run stops after about ${summary.budget.stopAtGb} GB of new images.`);
-  }
+  if (!images.enabled && !dryRun) throw new Error('Enable and configure R2 image storage before running enrich-images.');
 
   const queue = [...docs];
   const lanes = Math.max(1, Math.min(concurrency ?? config.concurrency, 64));
   async function lane() {
     while (queue.length && !signal?.aborted) {
-      if (budget?.exhausted(images.stats.compressedBytes)) {
-        if (!summary.stoppedForBudget) log(`[budget] stopping: ${(images.stats.compressedBytes / GB).toFixed(2)} GB uploaded reaches ${Math.round(budget.share * 100)}% of the plan's credits. ${queue.length} institutions left for a later run.`);
-        summary.stoppedForBudget = true;
-        break;
-      }
       const doc = queue.shift();
       const budgetMs = deep ? DEEP_MS : mode === 'wide' ? WIDE_MS : PER_INSTITUTION_MS;
       const deadline = Date.now() + budgetMs;

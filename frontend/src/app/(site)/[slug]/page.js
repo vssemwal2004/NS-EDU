@@ -10,6 +10,7 @@ import styles from './page.module.css';
 const linkIcons = {
   '/about': 'spark', '/reviews': 'chat', '/contact': 'pageMail', '/help': 'pageQuestion', '/report-correction': 'edit', '/sources-and-editorial': 'book', '/accessibility': 'guidesAccess',
   '/legal': 'pageScale', '/terms-and-conditions': 'document', '/privacy-policy': 'lock', '/cookie-policy': 'layers', '/disclaimer': 'coursesInfo',
+  '/privacy-request': 'pageMail', '/grievance-redressal': 'support',
   '/blog': 'news', '/scholarships': 'cap', '/career-guidance': 'compass', '/admission-checklist': 'guidesChecklist', '/news': 'news',
 };
 const botCard = { href: '/bot', icon: 'pageBot', title: 'For university websites', text: 'How GyaanVidhyaBot collects public facts, and how to opt out.' };

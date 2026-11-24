@@ -6,7 +6,7 @@ import { FollowUpText, formatWhen, Person } from '@/features/admin/leads/lead-bi
 import RowMenu from '@/features/admin/crm/RowMenu';
 import { TASK_KINDS } from '@/features/admin/crm/meta';
 import { dateTimeOf, displayName, timeOf } from '@/features/admin/crm/format';
-import { telHref, whatsappHref } from '@/features/admin/lead-actions/contact';
+import { isDialable, telHref, whatsappHref } from '@/features/admin/lead-actions/contact';
 import styles from './MyDay.module.css';
 
 const KIND_ICON = { call: 'phone', whatsapp: 'chat', email: 'mail', meeting: 'people', visit: 'building', document: 'document', other: 'note' };
@@ -18,13 +18,15 @@ export default function TaskCard({ task, section, now, people, teamMode, canEdit
   const who = person?.name || (task.assigneeEmail && !/^demo$/i.test(task.assigneeEmail) ? displayName(task.assigneeEmail) : 'Teammate');
   const leadHref = `/admin/leads/${task.leadId}`;
   const kind = TASK_KINDS[task.kind] ?? 'Follow-up';
+  // The lead's number is masked when the lead is not assigned to you: no call link; reveal it on the lead page.
+  const dialable = isDialable(task.leadPhone);
   const items = [
     { key: 'done', label: done ? 'Mark as not done' : 'Mark done', icon: done ? 'undo' : 'checkCircle', hidden: !canEdit, onSelect: () => (done ? onUndo(task) : onDone(task)) },
     { key: 'reschedule', label: 'Reschedule', icon: 'calendar', hidden: !canEdit || done, onSelect: () => onReschedule(task) },
     { key: 'log', label: 'Log call', icon: 'note', hidden: !canEdit, onSelect: () => onLog(task) },
     { divider: true },
-    { key: 'call', label: 'Call', icon: 'phone', hint: task.leadPhone, hidden: !task.leadPhone, onSelect: () => { window.location.href = telHref(task.leadPhone); } },
-    { key: 'whatsapp', label: 'WhatsApp', icon: 'chat', hidden: !task.leadPhone, onSelect: () => window.open(whatsappHref(task.leadPhone), '_blank', 'noopener,noreferrer') },
+    { key: 'call', label: 'Call', icon: 'phone', hint: task.leadPhone, hidden: !dialable, onSelect: () => { window.location.href = telHref(task.leadPhone); } },
+    { key: 'whatsapp', label: 'WhatsApp', icon: 'chat', hidden: !dialable, onSelect: () => window.open(whatsappHref(task.leadPhone), '_blank', 'noopener,noreferrer') },
     { key: 'open', label: 'Open lead', icon: 'eye', href: leadHref },
     { divider: true, hidden: !canEdit },
     { key: 'delete', label: 'Delete follow-up…', icon: 'trash', tone: 'danger', hidden: !canEdit, onSelect: () => onDelete(task) },
@@ -38,7 +40,8 @@ export default function TaskCard({ task, section, now, people, teamMode, canEdit
       <p className={styles.taskTitle} title={`${kind}: ${task.title}`}>{task.title}</p>
       <p className={styles.taskLead}>
         <Link href={leadHref} className={styles.leadName}>{task.leadName || 'Lead'}</Link>
-        {task.leadPhone && <a className={styles.phone} href={telHref(task.leadPhone)}>{task.leadPhone}</a>}
+        {task.leadPhone && (dialable ? <a className={styles.phone} href={telHref(task.leadPhone)}>{task.leadPhone}</a>
+          : <span className={styles.phone} title="Masked: open the lead to reveal">{task.leadPhone}</span>)}
         {task.leadRef && <span className={styles.ref}>{task.leadRef}</span>}
       </p>
     </div>
@@ -48,7 +51,7 @@ export default function TaskCard({ task, section, now, people, teamMode, canEdit
     </div>
     {teamMode && <span className={styles.assignee}><Person name={who} email={person?.email || task.assigneeEmail} title={`Assigned to ${who}`} /></span>}
     <div className={styles.actions}>
-      {!done && task.leadPhone && <a className="adm-btn adm-btn--sm adm-btn--icon" href={telHref(task.leadPhone)} aria-label={`Call ${task.leadName}`} title="Call"><Icon name="phone" /></a>}
+      {!done && dialable && <a className="adm-btn adm-btn--sm adm-btn--icon" href={telHref(task.leadPhone)} aria-label={`Call ${task.leadName}`} title="Call"><Icon name="phone" /></a>}
       {!done && canEdit && <button type="button" className="adm-btn adm-btn--sm" onClick={() => onLog(task)}><Icon name="note" />Log call</button>}
       {done && canEdit && !completing && <button type="button" className="adm-btn adm-btn--sm adm-btn--ghost" onClick={() => onUndo(task)}><Icon name="undo" />Undo</button>}
       <RowMenu label={`Actions for ${task.title}`} items={items} />

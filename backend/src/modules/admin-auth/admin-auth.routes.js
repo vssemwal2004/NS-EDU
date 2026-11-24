@@ -7,7 +7,10 @@ import { burnPasswordCheck, hashPassword, verifyPassword } from '../../lib/passw
 import { createRateLimiter } from '../../lib/rate-limit.js';
 import { assertValid } from '../../lib/validation.js';
 import { optionalAdmin, requireAdmin } from '../../middleware/auth.js';
-import { attachAccess } from '../access/access-service.js';
+import { attachAccess, audit } from '../access/access-service.js';
+import {
+  CONFIDENTIALITY_VERSION, confidentialityEnforced, confidentialityRecord, confidentialitySummary, confidentialityText, mustAcceptConfidentiality,
+} from '../access/confidentiality.js';
 import { assertEmployeePassword } from './password-policy.js';
 
 const WINDOW_MS = 15 * 60 * 1000;
@@ -25,6 +28,9 @@ export const serializeAdmin = (admin) => ({
   permissions: admin.permissions ?? [], leadScope: admin.leadScope ?? 'none', analyticsScope: admin.analyticsScope ?? 'none',
   managerId: admin.managerId ? String(admin.managerId) : null,
   mustChangePassword: Boolean(admin.mustChangePassword), lastLoginAt: admin.lastLoginAt ?? null,
+  // The console shows the undertaking while this is true; `confidentialityEnforced` says the API also refuses data (never for owners).
+  mustAcceptConfidentiality: mustAcceptConfidentiality(admin), confidentialityEnforced: confidentialityEnforced(admin),
+  confidentiality: confidentialitySummary(admin), confidentialityVersion: CONFIDENTIALITY_VERSION,
 });
 
 function limit(limiter, key) {
@@ -82,6 +88,23 @@ adminAuthRouter.post('/change-password', requireAdmin, async (request, response)
   const result = await admins.updateOne({ _id: admin._id, passwordHash: admin.passwordHash }, { $set: { passwordHash: await hashPassword(newPassword), mustChangePassword: false, passwordChangedAt: new Date() } });
   if (!result.modifiedCount) throw new HttpError(409, 'Password changed in another session. Please try again.');
   response.json({ admin: serializeAdmin(await attachAccess({ ...admin, passwordHash: undefined, mustChangePassword: false })) });
+});
+
+// The staff confidentiality undertaking: its current text, and the acceptance of exactly that version.
+adminAuthRouter.get('/confidentiality', requireAdmin, (request, response) => response.json({
+  ...confidentialityText(), accepted: confidentialitySummary(request.admin),
+}));
+
+adminAuthRouter.post('/confidentiality', requireAdmin, async (request, response) => {
+  if (request.body?.agree !== true) throw new HttpError(400, 'Tick “I have read and agree” to accept the undertaking', { fields: { agree: 'Required' } });
+  if (request.body?.version !== CONFIDENTIALITY_VERSION) {
+    throw new HttpError(409, 'The undertaking was updated while you were reading it. Read the new version and accept again.', { version: CONFIDENTIALITY_VERSION });
+  }
+  const record = confidentialityRecord({ ip: request.ip, userAgent: request.get('user-agent') });
+  await (await collection(COLLECTIONS.admins)).updateOne({ _id: request.admin._id }, { $set: { confidentiality: record } });
+  await audit(request.admin, 'staff.confidentiality_accept', { type: 'staff', id: request.admin._id, label: request.admin.email }, { version: record.version, ip: record.ip });
+  request.admin.confidentiality = record;
+  response.json({ admin: serializeAdmin(request.admin) });
 });
 
 adminAuthRouter.post('/logout', (_request, response) => {

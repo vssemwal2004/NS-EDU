@@ -9,6 +9,7 @@ import { escapeRegex, isPlainObject, slugify, validate } from '../../lib/validat
 import { INDIAN_STATES } from '../applications/schema.js';
 import { applications, clearLeadCounts, leadKeys, nameTokensOf, nextRef } from '../applications/service.js';
 import { choicesOf, defaultFields, parseAnswers, parseFields, publicField } from './form-fields.js';
+import { ageConsentFields, GUARDIAN_CONSENT_TEXT, parseAgeAndGuardian } from '../privacy/guardian.js';
 
 export const leadForms = () => collection(COLLECTIONS.leadForms);
 
@@ -19,12 +20,14 @@ const newShortCode = () => Array.from({ length: 8 }, () => SHORT_CODE_ALPHABET[r
 export const publicUrl = (shortCode) => `${env.publicSiteUrl}/r/${shortCode}`;
 
 export const DRIVE_STATUSES = ['active', 'closed', 'archived'];
-// Consent wording stored verbatim with every registration. The guardian line exists because most
-// school students are minors (DPDP Act 2023: verifiable parental consent); have it reviewed by counsel.
-export const DRIVE_CONSENT_VERSION = 'drive-2026-10';
+// Consent wording stored verbatim with every registration. Most school students are minors (DPDP Act
+// 2023 s. 9: verifiable parental consent), so every form asks "Are you 18 or older?" and, if not, takes a
+// parent or guardian's name, mobile and consent (privacy/guardian.js). Have the wording reviewed by counsel.
+// drive-2026-11: the age question replaced the old "I am 18 or older, or my parent knows" checkbox.
+export const DRIVE_CONSENT_VERSION = 'drive-2026-11';
 export const DEFAULT_CONSENT_TEXT = 'I agree that Gyaan Vidhya’s admissions team may contact me by phone, SMS, WhatsApp or email about courses, universities and admission guidance.';
-export const PRIVACY_TEXT = 'I confirm these details are correct and I have read Gyaan Vidhya’s Privacy policy.';
-export const GUARDIAN_TEXT = 'I am 18 or older, or my parent or guardian knows about this registration and agrees to Gyaan Vidhya contacting us.';
+export const PRIVACY_TEXT = 'I confirm these details are correct and I have read Gyaan Vidhya’s Privacy policy. My details are shared only with the institution I choose for an application and are never sold. I can withdraw my consent at any time at /account/my-data or /privacy-request.';
+export const GUARDIAN_TEXT = 'Students under 18: a parent or guardian adds their name and mobile number and gives consent. Always asked.';
 
 // Public form definitions are read on every QR scan; admin writes clear the cache. Submits read the database.
 const publicForms = createTtlCache({ ttlMs: 30_000, maxEntries: 2000 });
@@ -71,7 +74,8 @@ export function serializeDrive(doc) {
       enabled: field.enabled !== false, builtIn: field.builtIn === true,
       options: field.builtIn ? choicesOf(field).map((choice) => choice.label) : field.options ?? [],
     })),
-    guardianConsent: doc.guardianConsent !== false,
+    // Parental consent for under-18s is always asked now; the stored per-drive switch is kept but no longer read.
+    guardianConsent: true,
     consentText: doc.consentText || DEFAULT_CONSENT_TEXT,
     consent: { version: DRIVE_CONSENT_VERSION, privacy: PRIVACY_TEXT, guardian: GUARDIAN_TEXT },
     maxSubmissions: doc.maxSubmissions ?? null,
@@ -295,7 +299,6 @@ const utmFields = UTM_KEYS.map((name) => ({ name, type: 'string', maxLength: 100
 const consentFields = [
   { name: 'contact', type: 'boolean', default: false },
   { name: 'privacy', type: 'boolean', default: false },
-  { name: 'guardian', type: 'boolean', default: false },
 ];
 
 /** Validates a public submission against the drive's current questions; every error comes back together. */
@@ -306,12 +309,12 @@ export function parseSubmission(doc, body) {
   const { value: consent } = validate(consentFields, isPlainObject(body.consent) ? body.consent : {});
   if (consent.contact !== true) errors['consent.contact'] = 'Agree to be contacted so our team can guide you';
   if (consent.privacy !== true) errors['consent.privacy'] = 'Confirm your details and the privacy policy to register';
-  if (doc.guardianConsent !== false && consent.guardian !== true) errors['consent.guardian'] = 'Ask a parent or guardian before you register';
+  const age = parseAgeAndGuardian(body, errors, { studentName: answers.fullName });
   assertNoErrors(errors);
   // UTM tags are best-effort attribution: bad ones are dropped, never a reason to refuse a registration.
   const utm = isPlainObject(body.source) ? validate(utmFields, body.source) : { value: {}, errors: {} };
   const source = { path: `/r/${doc.shortCode}`, ...Object.fromEntries(UTM_KEYS.map((key) => [key, utm.errors[key] ? '' : utm.value[key] ?? ''])) };
-  return { answers, source };
+  return { answers, source, isAdult: age.isAdult, guardian: age.guardian };
 }
 
 const isDuplicatePhone = (error) => error?.code === 11000 && (error.keyPattern?.formId || /one_phone_per_form/.test(error.message ?? ''));
@@ -328,9 +331,9 @@ function repeatOf(earlier, applicant) {
  * The unique { formId, phone } index makes a repeat registration return the first reference (see
  * repeatOf), even when two taps race. Returns { ref, created }.
  */
-export async function createDriveLead(doc, { answers, source }, { ip = '', userAgent = '', now = new Date() } = {}) {
+export async function createDriveLead(doc, { answers, source, isAdult = null, guardian = null }, { ip = '', userAgent = '', now = new Date() } = {}) {
   const school = { name: doc.school.name, district: doc.school.district, districtKey: doc.school.districtKey, state: doc.school.state, city: doc.school.city ?? '' };
-  const applicant = { fullName: answers.fullName, email: answers.email || '', phone: answers.phone, city: school.city, state: school.state };
+  const applicant = { fullName: answers.fullName, email: answers.email || '', phone: answers.phone, city: school.city, state: school.state, isAdult };
   const custom = (doc.fields ?? []).filter((field) => !field.builtIn && field.enabled !== false);
   const leads = await applications();
   const sameStudent = { formId: doc._id, 'applicant.phone': applicant.phone, channel: 'school-drive' };
@@ -345,6 +348,7 @@ export async function createDriveLead(doc, { answers, source }, { ip = '', userA
     formId: doc._id,
     school,
     applicant,
+    guardian,
     academics: answers.classLevel || answers.schoolStream ? { classLevel: answers.classLevel || '', schoolStream: answers.schoolStream || '' } : null,
     exams: [],
     preference: { institutionSlug: '', institutionName: '', city: '', state: '', courseSlug: '', courseName: '', programmeName: '', intakeYear: null },
@@ -354,8 +358,8 @@ export async function createDriveLead(doc, { answers, source }, { ip = '', userA
     contactVerified: { email: false, phone: false },
     consent: {
       contactConsent: true, privacyAccepted: true, version: DRIVE_CONSENT_VERSION, at: now,
-      text: { contact: doc.consentText || DEFAULT_CONSENT_TEXT, privacy: PRIVACY_TEXT, ...(doc.guardianConsent !== false && { guardian: GUARDIAN_TEXT }) },
-      ...(doc.guardianConsent !== false && { guardianConsent: true }),
+      text: { contact: doc.consentText || DEFAULT_CONSENT_TEXT, privacy: PRIVACY_TEXT },
+      ...ageConsentFields({ isAdult, guardian }),
       ip, userAgent,
     },
     source,
@@ -399,7 +403,8 @@ export function publicForm(code) {
       form: {
         code: doc.shortCode, title: doc.title, school,
         fields: (doc.fields ?? []).filter((field) => field.enabled !== false).map(publicField),
-        consent: { version: DRIVE_CONSENT_VERSION, contact: doc.consentText || DEFAULT_CONSENT_TEXT, privacy: PRIVACY_TEXT, guardian: doc.guardianConsent === false ? null : GUARDIAN_TEXT },
+        // `guardian` is the parent/guardian consent sentence; "{student}" is replaced with the student's name.
+        consent: { version: DRIVE_CONSENT_VERSION, contact: doc.consentText || DEFAULT_CONSENT_TEXT, privacy: PRIVACY_TEXT, guardian: GUARDIAN_CONSENT_TEXT },
       },
     };
   });

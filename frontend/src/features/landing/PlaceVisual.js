@@ -4,7 +4,6 @@ import { resizedImage } from '@/lib/image-url';
 import styles from './PlaceVisual.module.css';
 
 const TONES = 6;
-// Resized by Next (not a Cloudinary transformation), so a tile never downloads the full upload.
 const tileImageUrl = (url) => resizedImage(url, 800);
 // Stable per name, so a place keeps its colour between visits and neighbours rarely match.
 const toneOf = (name) => [...name].reduce((hash, char) => (hash * 31 + char.charCodeAt(0)) >>> 0, 7) % TONES;

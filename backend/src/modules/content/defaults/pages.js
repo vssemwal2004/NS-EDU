@@ -224,31 +224,48 @@ export default {
         },
       ],
     },
+    // Legal & privacy pages. Written for the DPDP Act, 2023 and DPDP Rules, 2025 (G.S.R. 846(E)), the IT Act, 2000
+    // with the SPDI Rules, 2011 and the IT (Intermediary Guidelines and Digital Media Ethics Code) Rules, 2021, and
+    // TRAI's TCCCPR, 2018. Every page in this group must also be linked from the "Legal & privacy" footer group, so
+    // it gets the Legal breadcrumb and "More in" list. The grievance officer's details live ONLY on
+    // `grievance-redressal`; the other pages link to it.
     legal: {
       title: 'Legal information',
       category: 'Legal & privacy',
-      updated: '2026-11-17',
-      description: 'Who runs Gyaan Vidhya, the policies that apply when you use it, and how to reach us about them.',
+      updated: '2026-11-24',
+      description: 'Who runs Gyaan Vidhya, the policies that apply when you use it, and how to raise a question or complaint.',
       sections: [
         {
           title: 'Who operates Gyaan Vidhya',
-          text: 'Gyaan Vidhya (this website and its student services) is operated by N.S. Education Society, which also runs Guidentra — our admission-guidance service — and The EduQuest education fairs. In these pages “we”, “us” and “our” mean N.S. Education Society, and “you” means anyone who uses the website, our fairs or our services.',
-          links: [{ label: 'About us', href: '/about' }],
+          text: 'Gyaan Vidhya (this website and its student services) is operated by N.S. Education Society, which also runs Guidentra — our admission-guidance service — and The EduQuest education fairs. In these pages “we”, “us” and “our” mean N.S. Education Society, and “you” means anyone who uses the website, our fairs or our services. Our registered office and the contact details of our grievance officer are on the Grievance redressal page.',
+          links: [{ label: 'About us', href: '/about' }, { label: 'Grievance redressal', href: '/grievance-redressal' }],
+        },
+        {
+          title: 'Free for every student',
+          text: 'Gyaan Vidhya, Guidentra counselling and registration at The EduQuest fairs are free for students and parents. We do not charge for counselling, for registering at a fair or for helping you apply. Our staff will never ask you for money, a one-time password (OTP), or bank, card or UPI details. Pay admission, tuition and hostel fees only to the institution itself, through its official website or office, and keep the official receipt. If anyone asks you for money in our name, do not pay: tell us, and report it to the National Cyber Crime Helpline 1930 or at cybercrime.gov.in.',
+          links: [{ label: 'Report fraud in our name', href: '/grievance-redressal#report-fraud-in-our-name' }, { label: 'National Cyber Crime Reporting Portal', href: 'https://cybercrime.gov.in' }],
+        },
+        {
+          title: 'Your data stays with us',
+          text: 'Students and parents trust us with their details, and we treat those details as theirs. We never sell or rent personal data, and we never give it to other colleges, agents, coaching centres, marketers or data brokers. We share a student’s details with one institution only — the one the student asks us to help them apply to — and only what that application needs. The Privacy policy explains what we collect, why, for how long, and the rights you have under India’s Digital Personal Data Protection Act, 2023.',
+          links: [{ label: 'Privacy policy', href: '/privacy-policy' }, { label: 'Privacy requests', href: '/privacy-request' }],
         },
         {
           title: 'Our policies',
-          text: 'These policies apply together. The Terms & conditions explain how you may use Gyaan Vidhya and what we are and are not responsible for. The Privacy policy explains what personal data we collect, why, who we share it with and your rights under India’s Digital Personal Data Protection Act, 2023. The Cookies page lists every cookie and browser-storage item we use. The Disclaimer explains the limits of the information on the site.',
+          text: 'These policies apply together. The Terms & conditions explain how you may use Gyaan Vidhya and what we are and are not responsible for. The Privacy policy explains how we handle personal data, including the data of students under 18. The Cookies page lists every cookie and browser-storage item we use. The Disclaimer explains the limits of the information on the site. The Privacy requests page explains how to get a copy of your data, correct or delete it, or stop our calls, and the Grievance redressal page explains how to complain and how quickly we respond.',
           links: [
             { label: 'Terms & conditions', href: '/terms-and-conditions' },
             { label: 'Privacy policy', href: '/privacy-policy' },
             { label: 'Cookies & browser storage', href: '/cookie-policy' },
             { label: 'Disclaimer', href: '/disclaimer' },
+            { label: 'Privacy requests', href: '/privacy-request' },
+            { label: 'Grievance redressal', href: '/grievance-redressal' },
           ],
         },
         {
           title: 'Questions, complaints and grievances',
-          text: 'For any question or complaint about these policies, your personal data or content on the site, write to us through the contact page with a short description and the page concerned. Complaints about personal data are handled by our grievance officer. If a problem is not resolved, you may approach the Data Protection Board of India.',
-          links: [{ label: 'Contact & support', href: '/contact' }, { label: 'Report a correction', href: '/report-correction' }],
+          text: 'Our grievance officer handles questions and complaints about your personal data, about content on the site such as student reviews, and about our services. We acknowledge complaints about content within 24 hours and resolve them within 7 days. We answer requests and complaints about personal data as quickly as we can, and within 90 days at the latest. If you are not satisfied with our answer, you can approach the Data Protection Board of India.',
+          links: [{ label: 'Grievance redressal', href: '/grievance-redressal' }],
         },
         {
           title: 'Names and logos of institutions',
@@ -260,20 +277,27 @@ export default {
     'terms-and-conditions': {
       title: 'Terms & conditions',
       category: 'Legal & privacy',
-      updated: '2026-11-17',
-      description: 'The rules for using Gyaan Vidhya, our admission support and our education fairs.',
+      updated: '2026-11-24',
+      description: 'The rules for using Gyaan Vidhya, our free admission support and our education fairs.',
       sections: [
         {
           title: 'About these terms',
-          text: 'These terms are an agreement between you and N.S. Education Society, the operator of Gyaan Vidhya. By using the website, creating an account, submitting an application or enquiry, registering at The EduQuest or writing a review, you agree to them and to our Privacy policy. If you do not agree, please do not use the service. We may update these terms; the date at the top shows the latest version, and continuing to use the service after a change means you accept it.',
+          text: 'These terms are an agreement between you and N.S. Education Society, the operator of Gyaan Vidhya. By using the website, creating an account, sending an application or call-back request, registering at The EduQuest or writing a review, you agree to them and to our Privacy policy. If you do not agree, please do not use the service. We may update these terms; the date at the top shows the latest version, and we will tell you about important changes on the website or by email before they apply.',
+        },
+        {
+          title: 'Our services are free',
+          text: 'Using Gyaan Vidhya, talking to a Guidentra counsellor, registering at The EduQuest and getting help with an application are all free for students and parents. Nobody from Gyaan Vidhya will ask you for money, an OTP, or bank, card or UPI details. Admission, tuition, hostel and entrance-exam fees are paid only to the institution or exam authority through its official channels — never to our staff. Because we charge students nothing, there is nothing to refund.',
+          links: [{ label: 'Report fraud in our name', href: '/grievance-redressal#report-fraud-in-our-name' }],
         },
         {
           title: 'Who can use Gyaan Vidhya',
-          text: 'Gyaan Vidhya is for students, parents and guardians exploring higher education in India. If you are under 18, use the service with the knowledge and consent of your parent or guardian, who is responsible for your use of it. You must give accurate information and use the service only for yourself or, as a parent or guardian, for your child.',
+          text: 'Gyaan Vidhya is for students, parents and guardians exploring higher education in India. Our forms ask whether you are 18 or older. If you are under 18, a parent or guardian must agree to you using our services: we ask for their name, mobile number and consent before we accept an application, call-back request or fair registration, and we may contact them to confirm it. Parents and guardians are responsible for their child’s use of the service. Give accurate information, do not pretend to be anyone else, and use the service only for yourself or, as a parent or guardian, for your child.',
+          links: [{ label: 'Students under 18', href: '/privacy-policy#students-under-18-and-their-parents' }],
         },
         {
           title: 'Your account',
-          text: 'You sign in with a one-time code sent to your email or mobile number, or with Google. Keep access to that email, phone or Google account secure: anything done after signing in is treated as done by you. One person per account. We may suspend or close an account that gives false information, is used to misuse the service or breaks these terms. You can ask us to close your account at any time.',
+          text: 'You sign in with a one-time code sent to your email or mobile number, or with Google. We do not use passwords for student accounts, and our staff will never ask you to read out a code. Keep access to that email, phone or Google account secure: anything done after signing in is treated as done by you. One person per account. You can download your data, correct it or delete your account at any time from My data in your account. We may suspend or close an account that gives false information, misuses the service or breaks these terms.',
+          links: [{ label: 'My data', href: '/account/my-data' }],
         },
         {
           title: 'Information on the platform',
@@ -282,20 +306,24 @@ export default {
         },
         {
           title: 'Applications and counselling',
-          text: 'Submitting an application or call-back request on Gyaan Vidhya does not apply to the institution directly. It sends your details to our admissions team, who will contact you by phone, SMS, WhatsApp or email and help you with the institution’s own admission process, which may include sharing the details you provided with the institution you chose. Admission, seat allocation and scholarships are decided only by the institution or admission authority; we do not guarantee any outcome. Gyaan Vidhya does not collect admission or tuition fees on this website — pay institutions only through their official channels and ask for an official receipt.',
+          text: 'Sending an application or call-back request on Gyaan Vidhya does not apply to the institution directly. It sends your details to our admissions team, who contact you in the ways you agreed to — phone, SMS, WhatsApp or email — and help you with the institution’s own admission process. When you ask us to help you apply to an institution, we share with that institution only the details its application needs, and nothing with any other institution. Admission, seat allocation and scholarships are decided only by the institution or admission authority; we do not guarantee any outcome.',
         },
         {
           title: 'The EduQuest fairs and school registrations',
-          text: 'At The EduQuest and other school visits, students may register by scanning a QR code. The details you enter are used to follow up on the courses and institutions you are interested in, as described in the Privacy policy. Institutions take part in our fairs to meet students; their participation is not a recommendation by us, and any offer or claim they make is their responsibility.',
+          text: 'At The EduQuest and other school visits, students can register by scanning a QR code. We use those details only to follow up on the courses and institutions the student is interested in, as the Privacy policy describes, and students under 18 register with their parent’s or guardian’s consent. Institutions that take part in our fairs meet students at their stalls; they do not receive the list of students who registered with us. Their participation is not a recommendation by us, and any offer or claim they make is their own responsibility.',
         },
         {
           title: 'Reviews and content you share',
-          text: 'You may write one review of Gyaan Vidhya from your account. It must be honest, about your own experience, and free of phone numbers, email addresses, links, advertising, abuse, hate, personal attacks and other people’s personal information. Our team checks every review before it appears and may decline or remove reviews that break these rules; we do not edit what you write, and we publish positive and critical reviews alike. Reviews show your first name, last initial, course and city. By submitting a review you allow us to display it on Gyaan Vidhya and in our own promotion of Gyaan Vidhya, without payment. You can edit or delete your review at any time from the reviews page.',
+          text: 'You may write one review of Gyaan Vidhya from your account. It must be honest, about your own experience, and free of phone numbers, email addresses, links, advertising and other people’s personal information. Our team checks every review before it appears and declines or removes reviews that break these terms; we do not edit what you write, and we publish positive and critical reviews alike. Reviews show your first name, last initial, course and city. By submitting a review you allow us to display it on Gyaan Vidhya and in our own promotion of Gyaan Vidhya, without payment. You can edit or delete your review at any time from the reviews page.',
           links: [{ label: 'Student reviews', href: '/reviews' }],
         },
         {
+          title: 'What you must not post',
+          text: 'Do not post or share anything that: belongs to someone else and you have no right to share; is obscene or pornographic; invades anyone’s privacy; harasses or insults anyone, including because of gender, religion, caste, race or ethnicity; is harmful to children; infringes copyright, trademarks or other rights; is false or misleading, or pretends to come from someone else; promotes gambling, money laundering or violence; threatens the unity, security or public order of India; contains viruses or harmful code; or breaks any other law.',
+        },
+        {
           title: 'Acceptable use',
-          text: 'Do not copy or scrape the directory or other content in bulk, use bots or automated tools against the service, try to get around sign-in limits or security, overload our systems, impersonate anyone, submit false applications or enquiries, or use the service for anything unlawful. We may block access that does any of this.',
+          text: 'Do not copy or scrape the directory or other content in bulk, use bots or automated tools against the service, try to get around sign-in limits or security, overload our systems, impersonate anyone, or submit false applications, enquiries or complaints. If you break these terms, we may remove the content, block access, or suspend or close your account. Posting unlawful content can lead to penalties under the law, and where the law requires an offence to be reported — for example under the Bharatiya Nyaya Sanhita, 2023 or the Protection of Children from Sexual Offences Act, 2012 — we will report it to the authorities.',
         },
         {
           title: 'Intellectual property',
@@ -307,83 +335,115 @@ export default {
         },
         {
           title: 'Limitation of liability',
-          text: 'The service is provided “as is”. To the fullest extent permitted by law, we are not liable for decisions you make based on information on the site, for actions or decisions of institutions or authorities, or for indirect or consequential loss. Nothing in these terms limits rights you have under Indian consumer law that cannot be excluded.',
+          text: 'The service is provided “as is”. To the fullest extent permitted by law, we are not liable for decisions you make based on information on the site, for actions or decisions of institutions or authorities, or for indirect or consequential loss. Nothing in these terms limits rights you have under Indian law that cannot be excluded.',
         },
         {
-          title: 'Governing law and contact',
-          text: 'These terms are governed by the laws of India. If you have a concern, please contact us first so we can try to resolve it; disputes that cannot be resolved will be subject to the jurisdiction of the competent courts in India.',
-          links: [{ label: 'Contact & support', href: '/contact' }, { label: 'Privacy policy', href: '/privacy-policy' }],
+          title: 'Complaints, governing law and contact',
+          text: 'If you have a concern, please tell our grievance officer first so we can try to put it right; the Grievance redressal page explains how, and how quickly we respond. These terms are governed by the laws of India, and disputes that cannot be resolved will be subject to the jurisdiction of the competent courts in India.',
+          links: [{ label: 'Grievance redressal', href: '/grievance-redressal' }, { label: 'Privacy policy', href: '/privacy-policy' }],
         },
       ],
     },
     'privacy-policy': {
       title: 'Privacy policy',
       category: 'Legal & privacy',
-      updated: '2026-11-17',
-      description: 'What personal data Gyaan Vidhya collects, why we use it, who sees it and the choices you have.',
+      updated: '2026-11-24',
+      description: 'What personal data Gyaan Vidhya collects, why, who sees it, how long we keep it and the rights you have.',
       sections: [
         {
-          title: 'Who we are and what this covers',
-          text: 'N.S. Education Society operates Gyaan Vidhya and decides how the personal data described here is used; under India’s Digital Personal Data Protection Act, 2023 we are the “data fiduciary”. This policy covers the Gyaan Vidhya website, student accounts, applications and counsellor call-backs, student reviews, and registrations made at The EduQuest fairs and school visits.',
+          title: 'Our promise in short',
+          text: 'We collect only what we need to guide you, use it only for what you asked us to do, and keep it safe. Our services are free. We never sell or rent your personal data, and we never give it to other colleges, agents, coaching centres, marketers or data brokers. We share your details with one institution only — the one you ask us to help you apply to — and only after you ask. You can see, download, correct or delete your data, and stop our calls, at any time from My data in your account or by making a privacy request.',
+          links: [{ label: 'My data', href: '/account/my-data' }, { label: 'Privacy requests', href: '/privacy-request' }],
         },
         {
-          title: 'Information you give us',
-          text: 'Account: your email address or mobile number (and, with Google sign-in, the name, email address and Google account id Google shares with us) and the name you add. Applications and call-backs: your name, phone, email, state and city, academic details such as class, board, marks and entrance-exam scores, the course and institution you are interested in, and a record of the consent you gave (with the time, IP address and browser). Fair and school registrations: the details on the QR form, such as your name, mobile number, class, stream, school and interests. Reviews: your name, course, optional college and city, rating and review text. Messages you send us.',
+          title: 'Who we are and what this policy covers',
+          text: 'N.S. Education Society operates Gyaan Vidhya and decides how the personal data described here is used; under India’s Digital Personal Data Protection Act, 2023 (the DPDP Act) we are the “data fiduciary”. This policy covers the Gyaan Vidhya website, student accounts, applications and counsellor call-backs, student reviews, and registrations at The EduQuest fairs and school visits. It follows the DPDP Act and the Digital Personal Data Protection Rules, 2025, which are coming into force in stages, and the Information Technology Act, 2000 and its rules. Our grievance officer answers questions about how we use your data; their contact details are on the Grievance redressal page.',
+          links: [{ label: 'Grievance redressal', href: '/grievance-redressal' }],
         },
         {
-          title: 'Information collected automatically',
-          text: 'Essential cookies keep you signed in and remember your cookie choice. Only if you choose “Accept all” do we record, against a random id, what you search for, the filters you use and the universities you open, to recommend colleges to you — we do not store your IP address or browser details with this activity. To count free profile views for visitors who are not signed in, we keep a random id and the profiles opened. Our servers also keep short technical logs (such as request time, address and errors) to keep the service secure and working.',
+          title: 'What we collect from you',
+          text: 'Account: your email address or mobile number and the name you add; with Google sign-in, the name, email address and account id Google shares with us. Applications: your name, mobile, email, date of birth, gender (optional), city, state and PIN code, a parent’s or guardian’s name and mobile, your highest qualification, board, year and marks, entrance exams and scores, the institution, course, intake year and study mode you want, hostel and budget preferences, and any message you write. Call-backs: your name, mobile, the field you want to discuss, a convenient time and any message. Fair and school registrations: your name, mobile, class, stream, optional email and the other questions on that registration form. Students under 18: a parent’s or guardian’s name, mobile and consent. Reviews: your name, course, optional college and city, rating and text. And what you tell our team in messages, calls or at a fair.',
+        },
+        {
+          title: 'What we never ask for',
+          text: 'We do not ask for passwords, Aadhaar numbers, bank, card or UPI details, or health or biometric information, and you should not send them to us. Under the Information Technology Act, 2000, passwords, financial details, health and biometric information are “sensitive personal data”; we do not collect them.',
+        },
+        {
+          title: 'What we collect automatically',
+          text: 'When you send an application, call-back request, fair registration or review, we keep a record of your consent — the wording you agreed to, the time, your IP address and browser — so we can show what you agreed to. Essential cookies keep you signed in and remember your cookie choice. Only if you choose “Accept all” do we record, against a random id, what you search for, the filters you use and the universities you open, to recommend colleges to you; we do not store your IP address or browser details with this activity. To count free profile views for visitors who are not signed in, we keep a random id and the profiles opened. Our servers also keep technical and security logs.',
           links: [{ label: 'Cookies & browser storage', href: '/cookie-policy' }],
         },
         {
-          title: 'How we use it',
-          text: 'To sign you in and secure your account; to process your applications and call-back requests and contact you about them by phone, SMS, WhatsApp or email, as you agreed when submitting; to help you with an institution’s admission process; to follow up on fair registrations; to show recommendations if you accepted personalisation; to check and publish reviews; to answer your messages; to prevent misuse and fraud; to understand, in aggregate, how the service is used; and to meet legal obligations. We do not sell your personal data and we do not use it for third-party advertising.',
+          title: 'Why we use it',
+          text: 'To sign you in and keep your account secure; to handle the applications and call-back requests you send and contact you about them; to help with an institution’s admission process when you ask us to; to follow up on fair registrations about the courses you were interested in; to show recommendations, only if you accepted personalisation; to check and publish reviews; to answer your messages and requests; to prevent misuse and fraud; to understand, as totals, how the service is used; and to meet legal duties. Our team uses the details on an enquiry and its contact history to decide whom to call first; this never decides your admission. We rely on your consent, on the details you choose to give us for a specific purpose, and on legal requirements. We never use your data for advertising.',
         },
         {
           title: 'Who we share it with',
-          text: 'Our admissions team and counsellors see the leads assigned to them; access is limited by role, and sensitive actions such as exports and deletions are recorded in an activity log. When our team helps you apply, the details needed for that application may be shared with the institution you chose. We use service providers that process data for us under our instructions: cloud database hosting (MongoDB Atlas), email delivery, SMS one-time codes (MSG91), Google sign-in (Google), and image storage and delivery (Cloudflare and Cloudinary). We disclose data to authorities only when the law requires it. Your public review shows only your first name, last initial, course and city.',
+          text: 'Our admissions team and counsellors, to help you. The institution you ask us to help you apply to: only after you ask, only that institution, and only the details its application needs. Service providers that process data for us only on our instructions: MongoDB Atlas (database hosting), the servers that run the website, an email-delivery service, MSG91 (sign-in codes by SMS) and Google (only if you choose Google sign-in). If you agree to WhatsApp contact, those messages pass through WhatsApp under its own terms. Campus photos and site images are stored with Cloudflare R2 and Cloudinary; they do not receive student data. Authorities: only when the law requires it, such as a court order or a lawful request from a government agency. Your public review shows only your first name, last initial, course and city.',
+        },
+        {
+          title: 'Who we never share it with',
+          text: 'We never sell or rent personal data. We never give it to other colleges or universities, admission agents, coaching centres, marketers, advertisers or data brokers. Institutions that take part in our fairs do not receive the list of students who registered with us. If an institution asks for a student’s details without the student asking us to apply there, the answer is no.',
+        },
+        {
+          title: 'How our team handles your data',
+          text: 'Only staff who need student data to help students can see it, and what each person sees depends on their role. Every staff member accepts a written data-confidentiality undertaking before they can open student records: they may use a student’s details only to help that student, may not copy or forward them outside our system, and may never ask a student for money. Counsellors see full phone numbers only for the students assigned to them; revealing any other number is recorded. Exports, deletions and other sensitive actions are recorded in an activity log that can be reviewed.',
+        },
+        {
+          title: 'Calls, SMS, WhatsApp and email',
+          text: 'We contact only students who asked us to — by sending an application or call-back request, or by registering at a fair — and only through the channels they agreed to, about their own enquiry. You can stop this at any time: tell the caller, reply STOP to any message from us, or withdraw your consent from My data or with a privacy request, and we will stop promptly. We follow TRAI’s rules on commercial calls and SMS. You can also report unwanted commercial calls or SMS by calling or texting 1909 or through the TRAI DND app.',
+          links: [{ label: 'My data', href: '/account/my-data' }, { label: 'Privacy requests', href: '/privacy-request' }],
+        },
+        {
+          title: 'Students under 18 and their parents',
+          text: 'Under Indian law anyone under 18 is a child, and many Class 11 and 12 students we meet are under 18. Our forms ask whether you are 18 or older. If you are not, we need your parent’s or guardian’s name, mobile number and consent, which we record with your registration, and we may contact them to confirm it. We do not track or monitor the behaviour of students under 18, and we never direct targeted advertising at them. Personalised recommendations are only for users aged 18 or over, so if you are under 18, choose “Essential only” in Cookie settings. A parent or guardian can ask to see, correct or delete their child’s data, or withdraw consent, through a privacy request. The same applies to a lawful guardian acting for a person with a disability.',
+          links: [{ label: 'Privacy requests', href: '/privacy-request' }],
         },
         {
           title: 'How long we keep it',
-          text: 'Account details are kept while your account is open. Applications, call-backs and fair registrations are kept as long as needed to help you through the admission cycle and to keep a record of your consent, and are then deleted or anonymised. Personalisation activity is deleted automatically after 180 days, anonymous cookie-choice records after 400 days, free-preview records 30 days after last use, and one-time sign-in codes as soon as they expire. You can delete your review at any time.',
+          text: 'Account details: while your account is open. Applications, call-backs and fair registrations: until the admission cycle ends and the data is no longer needed — and at the latest 24 months after our last contact with you — unless the law requires us to keep them longer; then we delete or anonymise them. Personalisation activity: deleted automatically after 180 days. Anonymous cookie-choice records: 400 days. Free-preview records: 30 days after last use. Sign-in codes: 5 minutes. Reviews: until you delete them. When you delete your account or ask us to erase data, we stop using it; we keep only what the law requires — such as basic registration details for 180 days after an account is closed (IT Rules, 2021) and records of processing for one year (DPDP Rules, 2025) — locked away and used for nothing else, then deleted.',
         },
         {
-          title: 'Your rights and choices',
-          text: 'You can ask for a summary of the personal data we hold about you and how it is used, ask us to correct, complete or update it, ask us to erase it where we no longer need it, withdraw consent you gave (this does not affect what was done before), nominate a person to exercise your rights if you die or become unable to, and raise a grievance. Use the contact page; we may need to verify your identity first. You can change your cookie choice at any time from “Cookie settings” at the bottom of every page. If you are not satisfied with our answer, you may complain to the Data Protection Board of India.',
-          links: [{ label: 'Contact & support', href: '/contact' }],
+          title: 'Your rights',
+          text: 'You have the right to: get a summary of the personal data we hold about you, what we do with it and who we have shared it with; have it corrected, completed or updated; have it erased when it is no longer needed, unless the law requires us to keep it; withdraw your consent at any time, as easily as you gave it (this does not undo what was done before, and we may no longer be able to help with an application); nominate someone to use these rights for you if you die or become unable to; and have your grievances answered. Parents and guardians can use these rights for a child under 18. In return, the law asks you to give accurate information, not to impersonate anyone and not to make false or frivolous complaints.',
         },
         {
-          title: 'Students under 18',
-          text: 'Many of the students we meet are in Class 11 or 12 and may be under 18. If you are under 18, please use Gyaan Vidhya, apply or register at a fair with the knowledge and consent of your parent or guardian. A parent or guardian can contact us to review, correct or erase their child’s data. We do not use children’s data for tracking, behavioural monitoring or targeted advertising.',
+          title: 'How to use your rights',
+          text: 'If you have an account, open My data to download a copy of your data, correct your details, stop calls, SMS and WhatsApp, or delete your account. Anyone — including parents, guardians and nominees — can use the Privacy requests page, and every request gets a reference number. We may first confirm it is you, for example with a code sent to the mobile or email we hold; never read such a code out to anyone. We answer as quickly as we can and within 90 days at the latest, and requests are free. If you would like this policy in Hindi or another language listed in the Eighth Schedule to the Constitution, ask us through a privacy request.',
+          links: [{ label: 'My data', href: '/account/my-data' }, { label: 'Privacy requests', href: '/privacy-request' }],
         },
         {
           title: 'How we protect it',
-          text: 'Pages are served over HTTPS, sessions use HTTP-only cookies, staff access to student data is limited by role with sensitive actions logged, and service providers are chosen for their security practices. No system is perfectly secure; if a breach affecting your data occurs, we will inform you and the authorities as the law requires.',
+          text: 'Pages are served over HTTPS, sessions use HTTP-only cookies, and staff access to student data is limited by role, protected by sign-in and recorded; we keep those access records for at least one year so misuse can be found and investigated. We choose service providers with strong security practices. No system is perfectly secure. If a breach affects your data, we will tell you without delay — what happened, what it may mean for you, what we are doing about it and what you can do — and report it to the Data Protection Board of India as the law requires.',
         },
         {
-          title: 'Changes and contact',
-          text: 'We will update this policy when our services or the law change, and show the date of the latest version at the top. For any privacy question, request or grievance, contact our grievance officer through the contact page.',
-          links: [{ label: 'Contact & support', href: '/contact' }, { label: 'Terms & conditions', href: '/terms-and-conditions' }],
+          title: 'Where your data is stored',
+          text: 'Our database and service providers may store data in data centres in India or abroad. Wherever it is stored, this policy applies, and we follow any restriction the Government of India places on transferring personal data outside India.',
+        },
+        {
+          title: 'Changes to this policy',
+          text: 'We will update this policy when our services or the law change, show the date of the latest version at the top, and tell you about important changes on the website or by email before they apply. For any privacy question, request or complaint, contact our grievance officer.',
+          links: [{ label: 'Grievance redressal', href: '/grievance-redressal' }, { label: 'Terms & conditions', href: '/terms-and-conditions' }],
         },
       ],
     },
     'cookie-policy': {
       title: 'Cookies & browser storage',
       category: 'Legal & privacy',
-      updated: '2026-11-17',
+      updated: '2026-11-24',
       description: 'Every cookie and browser-storage item Gyaan Vidhya uses, why, and how to change your choice.',
       sections: [
         {
           title: 'Essential cookies (always on)',
-          text: 'Logging in sets one HTTP-only cookie (nsedu_student) that keeps your session; it is cleared when you log out and stops working when the session ends. A second cookie (gv_consent) remembers your cookie choice for 180 days so we do not ask again on every page. If you are not signed in and open university profiles, a random id (gv_preview, HTTP-only, 30 days) counts your free profile views.',
+          text: 'These are needed for the site to work and are set whatever you choose. nsedu_student keeps you signed in: it is HTTP-only, lasts up to 7 days and is cleared when you log out. nsedu_oauth is set for 10 minutes only while you sign in with Google, to keep that sign-in secure. gv_consent remembers your cookie choice for 180 days so we do not ask on every page. gv_preview is a random id (HTTP-only, 30 days) that counts free profile views if you open university profiles without signing in. Our staff console uses its own sign-in cookie (nsedu_admin, 8 hours), which students never receive.',
         },
         {
           title: 'Personalisation cookie (only if you accept)',
-          text: 'If you choose “Accept all”, we set a random first-party id (gv_visitor, HTTP-only, 180 days) and record what you search for, the filters you use and the universities you open. We use this only to recommend colleges to you and to see, in aggregate, what students look for. We never store your IP address, browser details or full web addresses with this activity, and it is deleted automatically after 180 days. If you choose “Essential only”, none of this is set or stored. We do not use advertising cookies or sell your data.',
+          text: 'If you choose “Accept all”, we set a random first-party id (gv_visitor, HTTP-only, 180 days) and record what you search for, the filters you use and the universities you open. We use this only to recommend colleges to you and to see, as totals, what students look for. We never store your IP address, browser details or full web addresses with this activity, and it is deleted automatically after 180 days. Personalisation is for users aged 18 or over: if you are under 18, please choose “Essential only”. If you choose “Essential only”, none of this is set or stored. We do not use advertising or third-party tracking cookies.',
         },
         {
-          title: 'Local storage on this device',
-          text: 'Local storage is different from a cookie: it stays in your browser and is not sent to us. We use it so your choices remain when you return in the same browser: saved stories (nsedu.education.saved.v1), course and city preferences (nsedu:preferences), compare shortlists (nsedu:compare), recent searches (nsedu:recent-searches), your last log-in method (nsedu:login-channel) and guide checklist ticks (keys starting nsedu:guide-checklist:).',
+          title: 'Storage on this device',
+          text: 'Local storage stays in your browser and is not sent to us. We use it so your choices remain when you return in the same browser: saved stories (nsedu.education.saved.v1), course and city preferences (nsedu:preferences), college and university compare lists (nsedu:compare, nsedu:compare-unis), recent searches (nsedu:recent-searches), your last log-in method (nsedu:login-channel), guide checklist ticks (keys starting nsedu:guide-checklist:) and a daily count of pages explored, used to decide when to suggest logging in (gv_login_nudge). Session storage, cleared when you close the tab, holds one random number (gv:variant) that varies which colleges we feature; it identifies nobody.',
         },
         {
           title: 'Changing your choice',
@@ -403,12 +463,13 @@ export default {
     disclaimer: {
       title: 'Disclaimer',
       category: 'Legal & privacy',
-      updated: '2026-11-17',
+      updated: '2026-11-24',
       description: 'What the information on Gyaan Vidhya can and cannot tell you.',
       sections: [
         {
           title: 'Guidance, not an admission authority',
-          text: 'Gyaan Vidhya, Guidentra and The EduQuest help students explore options and prepare for admission. We are not a university, regulator or admission authority, and nothing on the site is an offer of admission, a guarantee of a seat, scholarship or placement, or official advice.',
+          text: 'Gyaan Vidhya, Guidentra and The EduQuest help students explore options and prepare for admission, free of charge. We are not a university, regulator or admission authority, and nothing on the site is an offer of admission, a guarantee of a seat, scholarship or placement, or official advice. No one can buy a guaranteed seat through us: anyone who offers one for a payment is not acting for Gyaan Vidhya.',
+          links: [{ label: 'Report fraud in our name', href: '/grievance-redressal#report-fraud-in-our-name' }],
         },
         {
           title: 'Information can change',
@@ -423,6 +484,74 @@ export default {
           title: 'Student reviews and news',
           text: 'Student reviews describe the personal experience of the people who wrote them and are not our views. News stories are summaries that link to the original publisher; the official notice is the place to confirm a deadline or requirement.',
           links: [{ label: 'Student reviews', href: '/reviews' }],
+        },
+      ],
+    },
+    'privacy-request': {
+      // Fallback copy for /privacy-request. The request form is a separate frontend route at the same path
+      // (a static route wins over [slug]), which can reuse these sections as its introduction.
+      title: 'Privacy requests',
+      category: 'Legal & privacy',
+      updated: '2026-11-24',
+      description: 'Get a copy of your data, correct or delete it, stop our calls or name a nominee — and what happens after you ask.',
+      sections: [
+        {
+          title: 'What you can ask for',
+          text: 'A summary or copy of the personal data we hold about you, what we do with it and who we have shared it with; a correction or update; erasure of your data or deletion of your account; withdrawal of your consent, including stopping our calls, SMS and WhatsApp; naming a nominee to use your rights if you die or become unable to; or a complaint about how we handled your data. Requests are free.',
+        },
+        {
+          title: 'The quickest way: My data',
+          text: 'If you have a Gyaan Vidhya account, sign in and open My data. There you can download a copy of your data, correct your details, stop calls, SMS and WhatsApp, and delete your account yourself.',
+          links: [{ label: 'Open My data', href: '/account/my-data' }],
+        },
+        {
+          title: 'Without an account, or for your child',
+          text: 'Students who registered at a fair or asked for a call-back without an account, parents and guardians of students under 18, and nominees can send us a request. Tell us your name, the mobile number or email you gave us, where you gave it (for example the fair, school or university you applied to), what you would like us to do and, if you are asking for someone else, how you are related to them. The grievance officer’s contact details are on the Grievance redressal page.',
+          links: [{ label: 'Grievance redressal', href: '/grievance-redressal' }],
+        },
+        {
+          title: 'Confirming it is you',
+          text: 'Before we share or delete anything, we check that the request comes from the right person — usually with a one-time code sent to the mobile number or email we already hold. Never read a code out to anyone, including someone who says they are from Gyaan Vidhya. For a student under 18, we confirm with the parent or guardian whose details are on the registration. Do not send identity documents unless we ask for a specific one.',
+        },
+        {
+          title: 'What happens next',
+          text: 'You get a reference number to quote in any follow-up. We answer as quickly as we can and within 90 days at the latest. If the law requires us to keep some data for a set period, we will tell you what we kept and why, and use it for nothing else. If you are not satisfied with our answer, the Grievance redressal page explains how to take it further.',
+          links: [{ label: 'Privacy policy', href: '/privacy-policy' }],
+        },
+      ],
+    },
+    'grievance-redressal': {
+      title: 'Grievance redressal',
+      category: 'Legal & privacy',
+      updated: '2026-11-24',
+      description: 'Who handles complaints about your data, our content and our services, how to reach them, and how quickly we respond.',
+      sections: [
+        {
+          // OWNER TO FILL IN: every [bracketed] item below. This is the only place on the site that names them.
+          title: 'Grievance officer and data contact',
+          text: 'Our grievance officer handles complaints about personal data, about content on Gyaan Vidhya such as student reviews, and about our services. They are also the person who answers your questions about how we process your personal data. Name: [Grievance officer name — to be added]. Designation: [Designation — to be added]. Email: [Grievance email address — to be added]. Phone: [Grievance phone number — to be added], [working days and hours — to be added]. Post: Grievance Officer, N.S. Education Society, [Registered office address — to be added].',
+        },
+        {
+          title: 'What you can raise',
+          text: 'A request about your personal data, such as a copy, a correction, erasure, stopping our calls or naming a nominee; a complaint about how we handled your data; a report of a review or other content that is unlawful, abusive, false or about you; a complaint about a counsellor, an event or our service; or a report of someone asking for money or OTPs in our name.',
+          links: [{ label: 'Privacy requests', href: '/privacy-request' }],
+        },
+        {
+          title: 'How to raise a grievance',
+          text: 'Write to the grievance officer by email or post, or use the Privacy requests page for anything about your personal data. Include your name, the mobile number or email you used with us, what happened, the page or review concerned (with its link) and what you would like us to do. A parent or guardian can write for a child under 18. Do not send passwords, OTPs, bank details or identity documents; if we need to confirm who you are, we will tell you how.',
+        },
+        {
+          title: 'How quickly we respond',
+          text: 'Every grievance gets a reference number. Complaints about content on the site: we acknowledge within 24 hours and resolve within 7 days. Requests to remove content that is obscene, invades privacy, harasses, harms children, is false or misleading or impersonates someone: within 36 hours. Content that shows a person’s private areas, nudity or sexual acts, or impersonates them, including morphed images: we act to remove it within 2 hours of the complaint. Requests and complaints about personal data: as quickly as we can, and within 90 days at the latest. We will tell you what we decided and why.',
+        },
+        {
+          title: 'If you are not satisfied',
+          text: 'For a grievance about your personal data, you can complain to the Data Protection Board of India after using our grievance process; the law asks you to come to us first. For a decision about content on the site, you can appeal to the Grievance Appellate Committee set up by the Government of India under the Information Technology Rules, 2021. You can also approach the courts. Please do not make false or frivolous complaints: the Digital Personal Data Protection Act, 2023 lists that as a breach of a user’s duties.',
+        },
+        {
+          title: 'Report fraud in our name',
+          text: 'Gyaan Vidhya, Guidentra and The EduQuest are free for students. If anyone claiming to be from us asks you for money, an OTP, or bank, card or UPI details, or promises a guaranteed seat for a payment, do not pay or share anything. Tell our grievance officer, and report it to the National Cyber Crime Helpline 1930 or at cybercrime.gov.in.',
+          links: [{ label: 'National Cyber Crime Reporting Portal', href: 'https://cybercrime.gov.in' }],
         },
       ],
     },

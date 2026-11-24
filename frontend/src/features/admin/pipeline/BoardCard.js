@@ -8,7 +8,7 @@ import { FollowUpText, PriorityText } from '@/features/admin/leads/lead-bits';
 import RowMenu from '@/features/admin/crm/RowMenu';
 import { CHANNELS, HEATS, HEAT_ORDER, STAGES, STAGE_ORDER } from '@/features/admin/crm/meta';
 import { followUpState, relativeTime } from '@/features/admin/crm/format';
-import { telHref, whatsappHref } from '@/features/admin/lead-actions/contact';
+import { isDialable, telHref, whatsappHref } from '@/features/admin/lead-actions/contact';
 import styles from './Pipeline.module.css';
 
 const courseLine = (lead) => [lead.preference?.courseName, lead.preference?.institutionName].filter(Boolean).join(' · ')
@@ -27,8 +27,9 @@ function BoardCard({ lead, closed, perms, people, dragging, moved, onDragStart, 
   const items = [
     { key: 'open', label: 'Open lead', icon: 'eye', href: `/admin/leads/${lead.id}` },
     { divider: true },
-    { key: 'call', label: 'Call', icon: 'phone', hint: applicant.phone, hidden: !applicant.phone, onSelect: () => { window.location.href = telHref(applicant.phone); } },
-    { key: 'whatsapp', label: 'WhatsApp', icon: 'chat', hidden: !applicant.phone, onSelect: () => window.open(whatsappHref(applicant.phone), '_blank', 'noopener,noreferrer') },
+    // Masked numbers (leads not assigned to you) cannot be called or copied here: open the lead and use Reveal.
+    { key: 'call', label: 'Call', icon: 'phone', hint: applicant.phone, hidden: !isDialable(applicant.phone), onSelect: () => { window.location.href = telHref(applicant.phone); } },
+    { key: 'whatsapp', label: 'WhatsApp', icon: 'chat', hidden: !isDialable(applicant.phone), onSelect: () => window.open(whatsappHref(applicant.phone), '_blank', 'noopener,noreferrer') },
     { key: 'log', label: 'Log call', icon: 'note', hidden: !perms.notes, onSelect: () => act.log(lead) },
     { key: 'follow', label: 'Schedule follow-up', icon: 'calendar', hidden: !perms.notes || closed, onSelect: () => act.follow(lead) },
     { divider: true, hidden: !perms.move },
@@ -39,7 +40,7 @@ function BoardCard({ lead, closed, perms, people, dragging, moved, onDragStart, 
     ...(perms.heat ? [...HEAT_ORDER.map((heat) => ({ key: `heat-${heat}`, label: HEATS[heat].label, icon: HEATS[heat].icon, disabled: crm.heat === heat && crm.heatSource === 'manual', hint: crm.heat === heat ? (crm.heatSource === 'manual' ? 'Current' : 'Auto') : undefined, reason: 'Already set by hand', onSelect: () => act.heat(lead, heat) })),
       { key: 'heat-auto', label: 'Let the score decide', icon: 'refresh', disabled: crm.heatSource !== 'manual', reason: 'Already automatic', onSelect: () => act.heat(lead, 'auto') }] : []),
     { divider: true },
-    { key: 'copy', label: 'Copy phone number', icon: 'copy', hidden: !applicant.phone, onSelect: () => act.copy(applicant.phone) },
+    { key: 'copy', label: 'Copy phone number', icon: 'copy', hidden: !isDialable(applicant.phone), onSelect: () => act.copy(applicant.phone) },
     { divider: true, hidden: !perms.remove },
     { key: 'delete', label: 'Delete lead…', icon: 'trash', tone: 'danger', hidden: !perms.remove, onSelect: () => act.remove(lead) },
   ];

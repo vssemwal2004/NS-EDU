@@ -17,55 +17,146 @@ export const PERMISSION_GROUPS = [
   { id: 'system', label: 'System', icon: 'settings' },
 ];
 
-const p = (key, group, label, hint, risk = 'low', implies = []) => ({ key, group, label, hint, risk, implies });
+// Modules are the rows of the employee access matrix. Each permission sits in one module and one
+// column: `view`, `create`, `edit`, `delete`, or `other` (special actions such as assign or export).
+// A module with several `view` keys is a ladder (e.g. own → team → all), shown as one choice.
+export const PERMISSION_MODULES = [
+  { id: 'leads', group: 'leads', label: 'Leads', hint: 'Enquiries from every channel, and the CRM work on them.' },
+  { id: 'drives', group: 'leads', label: 'School drives', hint: 'QR registration forms for school visits.' },
+  { id: 'analytics', group: 'analytics', label: 'Analytics', hint: 'CRM numbers, the platform dashboard and search insights.' },
+  { id: 'ref_students', group: 'students', label: 'Reference students', hint: 'Students added by staff, with follow-up notes.' },
+  { id: 'accounts', group: 'students', label: 'Student accounts', hint: 'Students who signed up on the website.' },
+  { id: 'catalogue', group: 'catalogue', label: 'Universities & courses', hint: 'Universities, programmes, courses, exams and scholarships.' },
+  { id: 'locations', group: 'catalogue', label: 'Cities & states', hint: 'City and state destinations shown on the site.' },
+  { id: 'career', group: 'catalogue', label: 'Career fields & counsellors', hint: 'The career guidance page and its counsellors.' },
+  { id: 'data', group: 'catalogue', label: 'Data pipeline', hint: 'Imports, the review queue and the website crawler.' },
+  { id: 'content', group: 'content', label: 'Site content', hint: 'Page copy, homepage sections and site images.' },
+  { id: 'reviews', group: 'content', label: 'Student reviews', hint: 'Reviews written by students before they go live.' },
+  { id: 'media', group: 'content', label: 'Media library', hint: 'Images used across the site.' },
+  { id: 'privacy', group: 'system', label: 'Privacy requests', hint: 'Data requests and grievances from students and parents.' },
+  { id: 'team', group: 'team', label: 'Team', hint: 'Employee accounts. Only the master admin changes what employees may do.' },
+  { id: 'settings', group: 'system', label: 'Settings', hint: 'Lead distribution and platform settings.' },
+  { id: 'audit', group: 'system', label: 'Activity log', hint: 'Who changed access, deleted or exported data.' },
+];
+const moduleGroup = new Map(PERMISSION_MODULES.map((module) => [module.id, module.group]));
+export const PERMISSION_ACTIONS = ['view', 'create', 'edit', 'delete', 'other'];
+
+// `alias`: an older all-in-one key kept so stored grants, roles and older code keep working. It expands to the full
+// set of new keys and is held automatically by anyone who holds that whole set. Aliases are never shown or stored.
+const p = (key, module, action, label, hint, risk = 'low', implies = [], extra = {}) => ({
+  key, module, action, group: moduleGroup.get(module), label, hint, risk, implies, ...extra,
+});
+const alias = (key, module, label, implies) => p(key, module, 'other', label, 'Older all-in-one permission.', 'high', implies, { alias: true });
+const crud = (module, noun, { view, create, edit, remove }) => [
+  p(`${module}.view`, module, 'view', `See ${noun}`, view, 'low'),
+  p(`${module}.create`, module, 'create', `Add ${noun}`, create, 'medium', [`${module}.view`]),
+  p(`${module}.edit`, module, 'edit', `Edit ${noun}`, edit, 'medium', [`${module}.view`]),
+  p(`${module}.delete`, module, 'delete', `Delete ${noun}`, remove, 'high', [`${module}.view`]),
+];
 
 export const PERMISSIONS = [
-  p('leads.view_own', 'leads', 'See leads assigned to them', 'Only leads where they are an assignee.'),
-  p('leads.view_team', 'leads', 'See their team’s leads', 'Leads assigned to anyone who reports to them.', 'low', ['leads.view_own']),
-  p('leads.view_all', 'leads', 'See every lead', 'All channels, all schools, all employees.', 'medium', ['leads.view_team', 'leads.view_own']),
-  p('leads.create', 'leads', 'Add leads by hand', 'Create a lead from a call, walk-in or list.', 'medium'),
-  p('leads.edit', 'leads', 'Edit lead details', 'Change name, phone, city, preferences.', 'medium'),
-  p('leads.change_status', 'leads', 'Move leads through the pipeline', 'Change status, e.g. Contacted → In progress.', 'medium'),
-  p('leads.notes', 'leads', 'Log calls, notes and follow-ups', 'Add timeline entries and schedule follow-ups.'),
-  p('crm.heat', 'leads', 'Set lead temperature and priority', 'Mark a lead Hot / Warm / Cold and set priority.'),
-  p('leads.assign', 'leads', 'Assign leads', 'Give leads to employees (team leads: only their team).', 'medium'),
-  p('leads.bulk', 'leads', 'Bulk actions', 'Act on up to 100 leads at once.', 'medium'),
-  p('leads.export', 'leads', 'Download leads', 'CSV, Excel and PDF exports with personal data.', 'high'),
-  p('leads.delete', 'leads', 'Delete leads', 'Move leads to the bin; owners can purge them.', 'high'),
-  p('tasks.manage_team', 'leads', 'Manage their team’s follow-ups', 'See, create and reassign follow-up tasks for the team.', 'medium'),
+  p('leads.view_own', 'leads', 'view', 'See leads assigned to them', 'Only leads where they are an assignee.'),
+  p('leads.view_team', 'leads', 'view', 'See their team’s leads', 'Leads assigned to anyone who reports to them.', 'low', ['leads.view_own']),
+  p('leads.view_all', 'leads', 'view', 'See every lead', 'All channels, all schools, all employees.', 'medium', ['leads.view_team', 'leads.view_own']),
+  p('leads.create', 'leads', 'create', 'Add leads by hand', 'Create a lead from a call, walk-in or CSV upload.', 'medium', ['leads.view_own']),
+  p('leads.edit', 'leads', 'edit', 'Edit lead details', 'Change name, phone, city, class and preferences of leads they can see.', 'medium', ['leads.view_own']),
+  p('leads.delete', 'leads', 'delete', 'Delete leads', 'Move leads they can see to the bin (restorable). Only the master admin deletes for good.', 'high', ['leads.view_own']),
+  p('leads.change_status', 'leads', 'other', 'Change stage', 'Move leads through the pipeline, e.g. Contacted → In progress.', 'medium'),
+  p('leads.notes', 'leads', 'other', 'Log calls, notes and follow-ups', 'Add timeline entries and schedule follow-ups.'),
+  p('crm.heat', 'leads', 'other', 'Set temperature and priority', 'Mark a lead Hot / Warm / Cold and set priority.'),
+  p('leads.assign', 'leads', 'other', 'Assign leads', 'Give leads to employees.', 'medium'),
+  p('leads.bulk', 'leads', 'other', 'Bulk actions', 'Act on up to 100 leads at once (each action still needs its own permission).', 'medium'),
+  p('leads.export', 'leads', 'other', 'Download leads', 'CSV, Excel and PDF exports with personal data.', 'high'),
+  p('leads.contact_reveal_all', 'leads', 'other', 'See every lead’s full phone and email', 'Without it, phone and email are masked on leads not assigned to them; each reveal is logged.', 'high'),
+  p('tasks.manage_team', 'leads', 'other', 'Manage their team’s follow-ups', 'See, create and reassign follow-up tasks for the team.', 'medium'),
 
-  p('analytics.view_own', 'analytics', 'Own performance', 'Their own numbers on the CRM dashboard.'),
-  p('analytics.view_team', 'analytics', 'Team performance', 'Numbers for everyone who reports to them.', 'low', ['analytics.view_own']),
-  p('analytics.view_all', 'analytics', 'Company-wide analytics', 'Every channel, school and employee.', 'medium', ['analytics.view_team', 'analytics.view_own']),
-  p('analytics.search', 'analytics', 'Student search insights', 'What students search and view on the site.', 'medium'),
-  p('dashboard.view', 'analytics', 'Platform dashboard', 'Site-wide activity at a glance.', 'medium'),
+  ...crud('drives', 'school drives', {
+    view: 'Drive list, QR codes and how many students registered.',
+    create: 'Create a new drive and its QR registration form.',
+    edit: 'Change drive details and open or close the form.',
+    remove: 'Delete drives (their leads stay). Only the master admin deletes for good.',
+  }),
 
-  p('students.view_assigned', 'students', 'Reference students assigned to them', 'Their own list and follow-up notes.'),
-  p('students.create', 'students', 'Add reference students', 'Add one or upload many.', 'medium'),
-  p('students.manage', 'students', 'Student accounts', 'Block, unblock and assign student accounts.', 'high'),
+  p('analytics.view_own', 'analytics', 'view', 'Own performance', 'Their own numbers on the CRM dashboard.'),
+  p('analytics.view_team', 'analytics', 'view', 'Team performance', 'Numbers for everyone who reports to them.', 'low', ['analytics.view_own']),
+  p('analytics.view_all', 'analytics', 'view', 'Company-wide analytics', 'Every channel, school and employee.', 'medium', ['analytics.view_team', 'analytics.view_own']),
+  p('analytics.search', 'analytics', 'other', 'Student search insights', 'What students search and view on the site.', 'medium'),
+  p('dashboard.view', 'analytics', 'other', 'Platform dashboard', 'Site-wide activity at a glance.', 'medium'),
 
-  p('catalogue.edit', 'catalogue', 'Universities, programmes, courses, exams', 'Edit the public directory.', 'medium'),
-  p('locations.edit', 'catalogue', 'Cities and states', 'Featured places and their images.', 'medium'),
-  p('career.manage', 'catalogue', 'Career fields and counsellors', 'The counsellor directory shown to students.', 'medium'),
-  p('drives.manage', 'catalogue', 'School drives and QR forms', 'Create, edit and delete drive forms.', 'medium'),
-  p('data.manage', 'catalogue', 'Import, scraper and review queue', 'Bulk imports and the crawler.', 'high'),
+  p('students.view_assigned', 'ref_students', 'view', 'Reference students assigned to them', 'Students assigned to them or added by them, and their follow-up notes.'),
+  p('students.view_all', 'ref_students', 'view', 'Every reference student', 'All reference students, whoever added them.', 'medium', ['students.view_assigned']),
+  p('students.create', 'ref_students', 'create', 'Add reference students', 'Add one or upload many.', 'medium', ['students.view_assigned']),
+  p('students.edit', 'ref_students', 'edit', 'Edit reference students', 'Change name, email and phone of students they can see.', 'medium', ['students.view_assigned']),
+  p('students.delete', 'ref_students', 'delete', 'Delete reference students', 'Removes the student and their follow-up notes for good.', 'high', ['students.view_assigned']),
+  p('students.assign', 'ref_students', 'other', 'Assign reference students', 'Give reference students to employees.', 'medium', ['students.view_all']),
 
-  p('content.edit', 'content', 'Site content', 'Page copy and homepage sections.', 'medium'),
-  p('media.manage', 'content', 'Media library', 'Upload and delete images.', 'medium'),
+  p('accounts.view', 'accounts', 'view', 'See student accounts', 'Every student who signed up, with contact details.', 'medium'),
+  p('accounts.edit', 'accounts', 'edit', 'Block or unblock student accounts', 'Stops or restores a student’s sign-in.', 'high', ['accounts.view']),
+  p('accounts.assign', 'accounts', 'other', 'Assign student accounts', 'Give student accounts to employees for follow-up.', 'medium', ['accounts.view']),
 
-  p('team.view', 'team', 'See the team', 'Names, roles and mentors (no passwords).'),
-  p('team.manage', 'team', 'Create and manage staff', 'Add staff, assign roles and mentors, suspend, reset passwords.', 'high'),
-  p('roles.manage', 'team', 'Edit roles and permissions', 'Change what every role can do.', 'high'),
+  ...crud('catalogue', 'universities and courses', {
+    view: 'Open the admin lists of universities, programmes, courses, exams and scholarships.',
+    create: 'Add universities, programmes, courses, exams and scholarships.',
+    edit: 'Change and publish directory records.',
+    remove: 'Delete directory records from the website.',
+  }),
+  ...crud('locations', 'cities and states', {
+    view: 'Open the admin lists of cities and states.',
+    create: 'Add city and state destinations.',
+    edit: 'Change featured places and their images.',
+    remove: 'Delete city and state destinations.',
+  }),
+  ...crud('career', 'career fields and counsellors', {
+    view: 'Open the admin lists of career fields and counsellors.',
+    create: 'Add career fields and counsellors.',
+    edit: 'Change career fields and counsellor details.',
+    remove: 'Delete career fields and counsellors.',
+  }),
+  p('data.view', 'data', 'view', 'See the data pipeline', 'Coverage, review queue, crawler status and the universities CSV export.', 'low'),
+  p('data.create', 'data', 'create', 'Import data', 'Bulk CSV/JSON imports and new crawl sources.', 'high', ['data.view']),
+  p('data.edit', 'data', 'edit', 'Run the pipeline', 'Publish or hide records in the review queue, edit sources, start, retry or cancel crawls.', 'high', ['data.view']),
+  p('data.delete', 'data', 'delete', 'Delete crawl sources', 'Removes a crawl source and stops it being crawled.', 'high', ['data.view']),
 
-  p('settings.manage', 'system', 'Platform settings', 'Session and platform status.', 'medium'),
-  p('audit.view', 'system', 'Activity log', 'Who changed access, deleted or exported leads.', 'medium'),
+  p('content.view', 'content', 'view', 'See site content', 'Open the page copy editor without saving.'),
+  p('content.edit', 'content', 'edit', 'Edit site content', 'Change page copy and homepage sections; restore older versions.', 'medium', ['content.view']),
+  p('reviews.view', 'reviews', 'view', 'See student reviews', 'All reviews, including ones waiting for a check.'),
+  p('reviews.moderate', 'reviews', 'edit', 'Publish or reject reviews', 'Approve, reject and feature reviews on the homepage.', 'medium', ['reviews.view']),
+  p('reviews.delete', 'reviews', 'delete', 'Delete reviews', 'Removes a review for good.', 'high', ['reviews.view']),
+  p('media.view', 'media', 'view', 'See the media library', 'Browse uploaded images.'),
+  p('media.upload', 'media', 'create', 'Upload images', 'Add images to the library.', 'medium', ['media.view']),
+  p('media.delete', 'media', 'delete', 'Delete images', 'Removes an image from storage; pages using it lose it.', 'high', ['media.view']),
+
+  // Owners hold it automatically; give it to others deliberately.
+  p('privacy.view', 'privacy', 'view', 'See privacy requests', 'Data requests and grievances, with the requester’s details.', 'medium'),
+  p('privacy.manage', 'privacy', 'edit', 'Act on privacy requests', 'Data-subject requests and grievances: see requesters and matched leads, resolve, stop contact, anonymise.', 'high', ['privacy.view']),
+
+  p('team.view', 'team', 'view', 'See the team', 'Names, contact details and status of employees (no passwords).'),
+  p('team.manage', 'team', 'other', 'Create and manage staff', 'Add employees, edit their details, suspend, remove and reset passwords. Access changes stay with the master admin.', 'high', ['team.view']),
+  p('roles.manage', 'team', 'other', 'Edit roles', 'Older role editor; roles no longer decide what employees can do.', 'high', [], { legacy: true }),
+
+  p('settings.manage', 'settings', 'edit', 'Platform settings', 'Lead distribution rules and platform status.', 'medium'),
+  p('audit.view', 'audit', 'view', 'Activity log', 'Who changed access, deleted or exported leads.', 'medium'),
+
+  // Older all-in-one keys (see `alias` above).
+  alias('drives.manage', 'drives', 'School drives (all)', ['drives.view', 'drives.create', 'drives.edit', 'drives.delete']),
+  alias('career.manage', 'career', 'Career guidance (all)', ['career.view', 'career.create', 'career.edit', 'career.delete']),
+  alias('data.manage', 'data', 'Data pipeline (all)', ['data.view', 'data.create', 'data.edit', 'data.delete']),
+  alias('media.manage', 'media', 'Media library (all)', ['media.view', 'media.upload', 'media.delete']),
+  alias('students.manage', 'accounts', 'Students (all)', ['students.view_all', 'students.create', 'students.edit', 'students.delete', 'students.assign', 'accounts.view', 'accounts.edit', 'accounts.assign']),
 ];
 
 export const PERMISSION_KEYS = PERMISSIONS.map((permission) => permission.key);
 const byKey = new Map(PERMISSIONS.map((permission) => [permission.key, permission]));
 export const isPermission = (key) => byKey.has(key);
+/** Keys an owner can hand to an employee (aliases and the retired role editor are not). */
+export const GRANTABLE_KEYS = PERMISSIONS.filter((permission) => !permission.alias && !permission.legacy).map((permission) => permission.key);
+const grantable = new Set(GRANTABLE_KEYS);
+const ALIASES = PERMISSIONS.filter((permission) => permission.alias);
 
-/** Expands implied permissions: holding view_all also grants view_team and view_own. */
+/**
+ * Expands implied permissions: holding view_all also grants view_team and view_own, edit grants view,
+ * an alias grants its whole set. An alias is also held by anyone who holds every key it stands for.
+ */
 export function expand(keys) {
   const out = new Set();
   const visit = (key) => {
@@ -74,8 +165,43 @@ export function expand(keys) {
     byKey.get(key).implies.forEach(visit);
   };
   keys.forEach(visit);
+  for (const item of ALIASES) if (!out.has(item.key) && item.implies.every((key) => out.has(key))) out.add(item.key);
   return out;
 }
+
+/** What gets stored on an employee: the expanded, grantable keys in catalogue order. Throws on unknown keys. */
+export function normalizeGrants(keys) {
+  if (!Array.isArray(keys) || keys.some((key) => typeof key !== 'string' || !isPermission(key))) {
+    throw Object.assign(new Error('Unknown permission in the list'), { unknownPermission: true });
+  }
+  const set = expand(keys);
+  return GRANTABLE_KEYS.filter((key) => set.has(key));
+}
+
+/**
+ * The grants after a bulk change. `add` merges; `remove` also drops anything that depends on a removed key
+ * (removing "See school drives" removes "Edit school drives" too); `replace` sets the list as given.
+ */
+export function mergeGrants(current, mode, keys) {
+  const asked = normalizeGrants(keys);
+  if (mode === 'replace') return asked;
+  const base = normalizeGrants(current ?? []);
+  if (mode === 'add') return normalizeGrants([...base, ...asked]);
+  if (mode === 'remove') {
+    const removed = new Set(keys.flatMap((key) => (byKey.get(key)?.alias ? byKey.get(key).implies : [key])));
+    return base.filter((key) => !removed.has(key) && ![...expand([key])].some((implied) => removed.has(implied)));
+  }
+  throw Object.assign(new Error('Mode must be add, remove or replace'), { badMode: true });
+}
+
+/** The before/after difference written to the activity log. */
+export function grantDiff(before, after) {
+  const was = new Set(before ?? []);
+  const now = new Set(after ?? []);
+  return { granted: [...now].filter((key) => !was.has(key)), revoked: [...was].filter((key) => !now.has(key)) };
+}
+
+export const isGrantable = (key) => grantable.has(key);
 
 // Built-in roles. `owner` is locked: it always holds everything, including permissions added later.
 export const SYSTEM_ROLES = [
@@ -110,8 +236,21 @@ export const SYSTEM_ROLES = [
 export const ROLE_COLORS = ['wine', 'blue', 'green', 'amber', 'red', 'purple', 'teal', 'slate'];
 export const DEFAULT_STAFF_ROLE = 'executive';
 export const OWNER_ROLE = 'owner';
-// Employee access is fixed; the role editor no longer controls employee accounts.
-export const EMPLOYEE_PERMISSIONS = [
-  'leads.view_own', 'leads.create', 'leads.edit', 'leads.change_status', 'leads.notes',
-  'crm.heat', 'leads.bulk', 'analytics.view_own', 'students.view_assigned', 'students.create',
+// Employee access is chosen per person by the master admin (stored on the staff doc as `access.permissions`).
+// Someone with no saved choice gets these day-to-day defaults: work their own leads, but no create, edit or
+// delete anywhere. Create / edit / delete stay with the master admin until they hand them out.
+export const DEFAULT_EMPLOYEE_PERMISSIONS = [
+  'leads.view_own', 'leads.change_status', 'leads.notes', 'crm.heat', 'analytics.view_own', 'students.view_assigned',
+];
+/** @deprecated Older name; employees now hold their own grants or DEFAULT_EMPLOYEE_PERMISSIONS. */
+export const EMPLOYEE_PERMISSIONS = DEFAULT_EMPLOYEE_PERMISSIONS;
+
+// Starting points offered in the access editor. They only fill the matrix; nothing is linked to them afterwards.
+export const ACCESS_PRESETS = [
+  { id: 'counsellor', label: 'Counsellor default', hint: 'Works the leads assigned to them. No create, edit or delete.', permissions: DEFAULT_EMPLOYEE_PERMISSIONS },
+  {
+    id: 'lead-manager', label: 'Lead manager', hint: 'Sees every lead with full create, edit and delete, assigns and bulk-acts. No downloads.',
+    permissions: ['leads.view_all', 'leads.create', 'leads.edit', 'leads.delete', 'leads.change_status', 'leads.notes', 'crm.heat', 'leads.assign',
+      'leads.bulk', 'tasks.manage_team', 'analytics.view_all', 'students.view_assigned'],
+  },
 ];

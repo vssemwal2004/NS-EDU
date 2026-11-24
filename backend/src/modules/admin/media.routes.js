@@ -1,48 +1,67 @@
+import { randomUUID } from 'node:crypto';
 import { Router } from 'express';
+import jwt from 'jsonwebtoken';
+import { requireJwtSecret } from '../../config/env.js';
 import { collection, COLLECTIONS, toObjectId } from '../../db/collections.js';
-import { cloudinaryConfig, cloudinaryFolder, destroyImage, isOwnDeliveryUrl, signedUploadParams } from '../../lib/cloudinary.js';
+import { cloudinaryConfig, destroyImage, isOwnDeliveryUrl } from '../../lib/cloudinary.js';
+import { deleteObject, objectInfo, objectKey, publicUrlFor, r2Config, signBrowserUpload } from '../../lib/r2.js';
 import { HttpError } from '../../lib/http-error.js';
 import { pagination, queryString } from '../../lib/query.js';
-import { assertValid, escapeRegex } from '../../lib/validation.js';
+import { assertValid, escapeRegex, slugify } from '../../lib/validation.js';
 
-// Media library: the browser uploads straight to Cloudinary with a short-lived signature,
-// then registers the result here so admins can reuse URLs (university logos, covers, site art).
+// The browser sends only upload metadata here. The image goes directly into the public R2 bucket.
 export const mediaRouter = Router();
 
 const USAGES = ['logo', 'cover', 'site', 'place', 'counsellor', 'other'];
+const FORMATS = { webp: 'image/webp', png: 'image/png', jpeg: 'image/jpeg', avif: 'image/avif', gif: 'image/gif' };
+const RECEIPT_AUDIENCE = 'nsedu-media-upload';
 const serialize = ({ _id, ...rest }) => ({ id: _id.toString(), ...rest });
 const requireConfigured = () => {
-  if (!cloudinaryConfig().configured) throw new HttpError(503, 'Cloudinary is not configured on the server yet. Add the Cloudinary keys to backend/.env.');
+  if (!r2Config().configured) throw new HttpError(503, 'Configure R2 image storage to enable uploads.');
 };
 
 mediaRouter.get('/config', (_request, response) => {
-  const { configured, cloudName } = cloudinaryConfig();
-  response.json({ configured, cloudName: configured ? cloudName : null, folder: cloudinaryFolder() });
+  response.json({ configured: r2Config().configured, provider: 'r2' });
 });
 
 mediaRouter.post('/sign', (request, response) => {
   requireConfigured();
-  const { usage } = assertValid([{ name: 'usage', type: 'select', options: USAGES, default: 'other' }], request.body ?? {});
-  response.json(signedUploadParams({ folder: `${cloudinaryFolder()}/${usage}`, tags: ['gyaan-vidhya', usage] }));
+  const { filename, usage, width, height, format, bytes } = assertValid([
+    { name: 'filename', type: 'string', maxLength: 255 },
+    { name: 'usage', type: 'select', options: USAGES, default: 'other' },
+    { name: 'width', type: 'integer', required: true, min: 1, max: 8192 },
+    { name: 'height', type: 'integer', required: true, min: 1, max: 8192 },
+    { name: 'format', type: 'select', required: true, options: Object.keys(FORMATS) },
+    { name: 'bytes', type: 'integer', required: true, min: 1, max: 8 * 1024 * 1024 },
+  ], request.body);
+  const basename = slugify(filename.replace(/\.[^.]+$/, '')).slice(0, 64) || 'image';
+  const key = objectKey(`media/${usage}/${basename}-${randomUUID()}.${format}`);
+  const receipt = jwt.sign({ key, width, height, format, bytes, usage }, requireJwtSecret(), {
+    algorithm: 'HS256', audience: RECEIPT_AUDIENCE, subject: String(request.admin._id), expiresIn: '30m',
+  });
+  response.json({ ...signBrowserUpload(key, FORMATS[format], bytes), receipt });
 });
 
 mediaRouter.post('/', async (request, response) => {
   requireConfigured();
-  const body = assertValid([
-    { name: 'url', type: 'url', required: true },
-    { name: 'publicId', type: 'string', required: true, maxLength: 300 },
-    { name: 'width', type: 'integer', nullable: true, min: 1, max: 50_000 },
-    { name: 'height', type: 'integer', nullable: true, min: 1, max: 50_000 },
-    { name: 'bytes', type: 'integer', nullable: true, min: 0, max: 200_000_000 },
-    { name: 'format', type: 'string', maxLength: 10 },
+  const { receipt, alt } = assertValid([
+    { name: 'receipt', type: 'string', required: true, maxLength: 2048 },
     { name: 'alt', type: 'string', maxLength: 200 },
-    { name: 'usage', type: 'select', options: USAGES, default: 'other' },
   ], request.body);
-  if (!isOwnDeliveryUrl(body.url) || !body.publicId.startsWith(`${cloudinaryFolder()}/`)) throw new HttpError(400, 'Only images uploaded to this platform’s Cloudinary folder can be registered');
-  const doc = { ...body, createdAt: new Date(), createdBy: request.admin.email };
+  let upload;
+  try {
+    upload = jwt.verify(receipt, requireJwtSecret(), { algorithms: ['HS256'], audience: RECEIPT_AUDIENCE, subject: String(request.admin._id) });
+  } catch { throw new HttpError(400, 'This upload receipt is invalid or expired. Choose the image again.'); }
+  const { key, width, height, format, bytes, usage } = upload;
+  const info = await objectInfo(key);
+  if (!info || info.contentType !== FORMATS[format] || info.bytes !== bytes) throw new HttpError(409, 'R2 could not verify the uploaded image.');
+  const url = publicUrlFor(key);
+  const check = await fetch(url, { method: 'HEAD', redirect: 'error', signal: AbortSignal.timeout(15_000) });
+  if (!check.ok || check.headers.get('content-type') !== FORMATS[format]) throw new HttpError(502, 'The uploaded image is not accessible at its public R2 address.');
+  const doc = { publicId: key, storage: 'r2', url, width, height, format, bytes, usage, alt, createdAt: new Date(), createdBy: request.admin.email };
   const media = await collection(COLLECTIONS.media);
-  await media.updateOne({ publicId: body.publicId }, { $set: doc }, { upsert: true });
-  response.status(201).json({ item: serialize(await media.findOne({ publicId: body.publicId })) });
+  await media.updateOne({ publicId: key }, { $setOnInsert: doc }, { upsert: true });
+  response.status(201).json({ item: serialize(await media.findOne({ publicId: key })) });
 });
 
 mediaRouter.get('/', async (request, response) => {
@@ -60,7 +79,10 @@ mediaRouter.delete('/:id', async (request, response) => {
   const media = await collection(COLLECTIONS.media);
   const item = _id && await media.findOne({ _id });
   if (!item) throw new HttpError(404, 'Image not found');
-  if (cloudinaryConfig().configured) await destroyImage(item.publicId);
+  if (item.storage === 'r2') {
+    requireConfigured();
+    if (item.publicId.startsWith(objectKey('media/')) && item.url === publicUrlFor(item.publicId)) await deleteObject(item.publicId);
+  } else if (cloudinaryConfig().configured && isOwnDeliveryUrl(item.url)) await destroyImage(item.publicId);
   await media.deleteOne({ _id });
   response.status(204).end();
 });

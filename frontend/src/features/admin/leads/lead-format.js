@@ -30,6 +30,8 @@ export const BULK_LIMIT = 100;
 /** Digits only, for wa.me links ("+91 98765 43210" → "919876543210"; a bare 10-digit Indian number gets 91). */
 export const phoneDigits = (value) => String(value ?? '').replace(/\D/g, '');
 export function whatsAppLink(phone) {
+  // Masked ("98XXXXXX10") and anonymised ("anon-…") values are not numbers.
+  if (/X{2,}|^anon-/.test(String(phone ?? ''))) return '';
   const digits = phoneDigits(phone);
   if (digits.length < 10) return '';
   return `https://wa.me/${digits.length === 10 ? `91${digits}` : digits}`;

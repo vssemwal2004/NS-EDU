@@ -1,4 +1,5 @@
-import Image from 'next/image';
+import Image from '@/components/ui/StudentImage';
+import { studentImageUrl } from '@/lib/student-image';
 import { isOptimisable } from '@/lib/image-url';
 
 // Scraped photos are re-hosted on our own storage (R2, or the older Cloudinary account), which
@@ -7,7 +8,8 @@ import { isOptimisable } from '@/lib/image-url';
 export const isCloudinary = (url) => { try { return new URL(url).hostname === 'res.cloudinary.com'; } catch { return false; } };
 
 /** Fills its (positioned, aspect-ratio'd) parent. No intrinsic size is known, so the box reserves space. */
-export function Photo({ src, alt = '', sizes = '100vw', priority = false, className = '' }) {
+export function Photo({ src: source, alt = '', sizes = '100vw', priority = false, className = '' }) {
+  const src = studentImageUrl(source);
   if (!src) return null;
   if (isOptimisable(src)) return <Image className={className} src={src} alt={alt} fill sizes={sizes} priority={priority} />;
   return <img className={className} src={src} alt={alt} loading={priority ? 'eager' : 'lazy'} decoding="async"

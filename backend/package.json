@@ -28,7 +28,8 @@
     "leads:backfill": "node --env-file-if-exists=.env --env-file-if-exists=.env.local src/scripts/backfill-leads.js",
     "leads:synthetic": "node --env-file-if-exists=.env --env-file-if-exists=.env.local src/scripts/seed-synthetic-leads.js",
     "db:local":"node scripts/local-mongo.mjs",
-    "db:copy": "node --env-file-if-exists=.env src/scripts/copy-database.js"
+    "retention": "node --env-file-if-exists=.env src/scripts/retention.js",
+    "db:copy":"node --env-file-if-exists=.env src/scripts/copy-database.js"
   },
   "dependencies": {
     "compression": "^1.8.2",

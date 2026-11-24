@@ -1,8 +1,8 @@
 import { afterEach, describe, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { isR2Url, publicUrlFor, r2Config, r2Selected } from '../src/lib/r2.js';
+import { isPlatformImageUrl, isR2Url, publicUrlFor, r2Config, r2Selected, signBrowserUpload } from '../src/lib/r2.js';
 
-const KEYS = ['R2_ACCOUNT_ID', 'R2_ACCESS_KEY_ID', 'R2_SECRET_ACCESS_KEY', 'R2_IMAGES_BUCKET', 'R2_IMAGES_PUBLIC_URL', 'IMAGE_STORAGE'];
+const KEYS = ['R2_ACCOUNT_ID', 'R2_ACCESS_KEY_ID', 'R2_SECRET_ACCESS_KEY', 'R2_IMAGES_BUCKET', 'R2_IMAGES_PREFIX', 'R2_IMAGES_PUBLIC_URL', 'IMAGE_STORAGE'];
 const saved = Object.fromEntries(KEYS.map((key) => [key, process.env[key]]));
 const setEnv = (values) => { for (const key of KEYS) delete process.env[key]; Object.assign(process.env, values); };
 afterEach(() => { for (const key of KEYS) { if (saved[key] === undefined) delete process.env[key]; else process.env[key] = saved[key]; } });
@@ -32,5 +32,20 @@ describe('r2 config', () => {
   test('IMAGE_STORAGE=cloudinary switches R2 off', () => {
     setEnv({ ...READY, IMAGE_STORAGE: 'cloudinary' });
     assert.equal(r2Selected(), false);
+  });
+
+  test('browser uploads bind the type, exact length and create-only condition to one object', () => {
+    setEnv({ ...READY, R2_IMAGES_PREFIX: 'project' });
+    const { uploadUrl, headers } = signBrowserUpload('project/media/logo/a b.webp', 'image/webp', 234);
+    const url = new URL(uploadUrl);
+    assert.equal(url.pathname, '/gyaan-vidhya/project/media/logo/a%20b.webp');
+    assert.equal(url.searchParams.get('X-Amz-Expires'), '300');
+    assert.equal(url.searchParams.get('X-Amz-SignedHeaders'), 'cache-control;content-length;content-type;host;if-none-match');
+    assert.equal(headers['if-none-match'], '*');
+    assert.equal(headers['content-type'], 'image/webp');
+    assert.equal(isPlatformImageUrl(publicUrlFor('project/media/logo/a b.webp')), true);
+    assert.equal(isPlatformImageUrl(publicUrlFor('other/media/logo/b.webp')), false);
+    assert.equal(isPlatformImageUrl(publicUrlFor('project/../other/logo.webp')), false);
+    assert.equal(isPlatformImageUrl('https://pub-abc.r2.dev.evil.test/project/logo.webp'), false);
   });
 });

@@ -1,5 +1,6 @@
 'use client';
 import { mediaImage } from '@/lib/hero-image';
+import { studentImageUrl } from '@/lib/student-image';
 import { useContent } from '@/providers/ContentProvider';
 
 const initials = (name = '') => name.split(/\s+/).filter((word) => word.length > 2).slice(0, 2).map((word) => word[0]).join('').toUpperCase() || 'U';
@@ -12,7 +13,7 @@ function Initials({ row, className }) {
 // `detail` uses the full-resolution variant for large frames (profile hero): crops are only ~130px wide in the source.
 export default function CollegeArtwork({ row, className, detail = false }) {
   const art = useContent('media')?.campusArt;
-  if (row.logoUrl) return <svg className={className} viewBox="0 0 100 70" preserveAspectRatio="xMidYMid meet" role="img" aria-label={`${row.name} logo`}><rect width="100" height="70" fill="#FFFAF8" /><image href={row.logoUrl} x="20" y="8" width="60" height="54" preserveAspectRatio="xMidYMid meet" /></svg>;
+  if (row.logoUrl) return <svg className={className} viewBox="0 0 100 70" preserveAspectRatio="xMidYMid meet" role="img" aria-label={`${row.name} logo`}><rect width="100" height="70" fill="#FFFAF8" /><image href={studentImageUrl(row.logoUrl)} x="20" y="8" width="60" height="54" preserveAspectRatio="xMidYMid meet" /></svg>;
   const source = Array.isArray(row.art) && art && mediaImage(art, detail ? art.width : 850);
   if (!source) return <Initials row={row} className={className} />;
   return <svg className={className} viewBox={row.art.join(' ')} preserveAspectRatio="xMidYMid slice" role="img" aria-label={`Illustrative campus image for ${row.name}`}>

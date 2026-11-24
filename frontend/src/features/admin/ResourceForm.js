@@ -111,7 +111,7 @@ function Field({ field, value, error, onChange, onBusyChange, refOptions }) {
       <option value="">{field.type === 'reference' && !refOptions ? 'Loading…' : `Choose ${field.label.toLowerCase()}`}</option>
       {options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
     </select>;
-  } else if (field.type === 'image') {
+  } else if (field.type === 'image' || (field.type === 'url' && field.usage)) {
     control = <ImageField field={field} common={common} value={value} onChange={onChange} onBusyChange={onBusyChange} />;
   } else if (field.type === 'numberArray4') {
     control = <div className={styles.quad} role="group" aria-labelledby={`${id}-label`}>{['x', 'y', 'width', 'height'].map((part, index) => <label key={part}><span>{part}</span><input className="adm-input" type="number" inputMode="numeric" min={field.min} max={field.max} value={value[index]} aria-invalid={Boolean(error)} onChange={(event) => onChange(value.map((current, position) => position === index ? event.target.value : current))} /></label>)}</div>;

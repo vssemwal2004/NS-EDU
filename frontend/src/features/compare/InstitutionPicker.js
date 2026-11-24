@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useId, useRef, useState } from 'react';
 import Icon from '@/components/ui/Icon';
+import { studentImageUrl } from '@/lib/student-image';
 import { api } from '@/lib/api/client';
 import { monogram, placeOf } from '@/features/universities/labels';
 import styles from './InstitutionCompare.module.css';
@@ -68,7 +69,7 @@ export default function InstitutionPicker({ label, placeholder = 'Search any uni
     <ul ref={listRef} id={listId} role="listbox" aria-label="Matching institutions" className={styles.listbox} hidden={!expanded}>
       {matches.map((item, index) => <li key={item.id} id={`${id}-${item.id}`} role="option" aria-selected={index === current}
         onMouseDown={(event) => event.preventDefault()} onMouseMove={() => index !== current && setActive(index)} onClick={() => choose(item)}>
-        <span className={styles.optionMark} aria-hidden="true">{item.logoUrl ? <img src={item.logoUrl} alt="" width={36} height={36} loading="lazy" decoding="async" referrerPolicy="no-referrer" /> : monogram(item.name)}</span>
+        <span className={styles.optionMark} aria-hidden="true">{item.logoUrl ? <img src={studentImageUrl(item.logoUrl)} alt="" width={36} height={36} loading="lazy" decoding="async" referrerPolicy="no-referrer" /> : monogram(item.name)}</span>
         <span className={styles.optionText}><strong>{item.name}</strong><small>{placeOf(item) || 'Location not listed'}</small></span>
       </li>)}
     </ul>

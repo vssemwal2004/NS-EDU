@@ -4,11 +4,11 @@
 // `picks.json` maps a place name to the Commons file title chosen from the plan, so a person looks at
 // every photo before it is published. Only CC0, public-domain, CC BY and CC BY-SA files are accepted, and
 // the author, licence and file page are stored with the photo so the site can credit it.
-// Photos go to Cloudinary (never a local folder); the place's imageUrl/imageAlt/imageCredit/imageSource are set.
+// Photos go to R2; the place's imageUrl/imageAlt/imageCredit/imageSource are set.
 import { readFile, writeFile } from 'node:fs/promises';
-import sharp from 'sharp';
 import { COLLECTIONS, closeDb, getDb } from '../db/collections.js';
-import { cloudinaryConfig, cloudinaryFolder, findImage, uploadImage } from '../lib/cloudinary.js';
+import { isR2Url, r2Config } from '../lib/r2.js';
+import { storeCuratedImage } from '../lib/curated-image.js';
 import { cityPhotos, statePhotos } from '../data/seed/place-photos.js';
 
 const API = 'https://commons.wikimedia.org/w/api.php';
@@ -74,8 +74,7 @@ async function download(title) {
   if (!info?.thumburl) throw new Error(`No file for ${title}`);
   const response = await fetch(info.thumburl, { headers: { 'user-agent': USER_AGENT }, signal: AbortSignal.timeout(60_000) });
   if (!response.ok) throw new Error(`Download failed (${response.status}) for ${title}`);
-  // 1600 px wide JPEG: sharp bakes in the EXIF rotation; Cloudinary re-encodes per device on delivery.
-  return sharp(Buffer.from(await response.arrayBuffer())).rotate().resize({ width: 1600, withoutEnlargement: true }).jpeg({ quality: 82, mozjpeg: true }).toBuffer();
+  return Buffer.from(await response.arrayBuffer());
 }
 
 async function apply() {
@@ -83,7 +82,7 @@ async function apply() {
   if (!planFile || !picksFile) throw new Error('Usage: places:images apply <plan.json> <picks.json> [--dry-run]');
   const planned = JSON.parse(await readFile(planFile, 'utf8'));
   const picks = JSON.parse(await readFile(picksFile, 'utf8'));
-  if (!flag('--dry-run') && !cloudinaryConfig().configured) throw new Error('Cloudinary is not configured; set it in backend/.env first.');
+  if (!flag('--dry-run') && !r2Config().configured) throw new Error('Configure R2 image storage first.');
   const db = await getDb();
   const media = db.collection(COLLECTIONS.media);
   const now = new Date();
@@ -96,10 +95,10 @@ async function apply() {
     const credit = `Photo: ${candidate.author} · ${candidate.license}`.slice(0, 200);
     if (flag('--dry-run')) { console.log(`dry    ${place.kind}:${place.name} ← ${title} (${credit})`); continue; }
     const publicId = `${place.kind}-${slugOf(place.name)}`;
-    // --reuse links the photo already on Cloudinary (e.g. after a database restore) instead of uploading it again.
-    const existing = flag('--reuse') ? await findImage(`${cloudinaryFolder()}/place/${publicId}`) : null;
-    const upload = existing ?? await uploadImage(await download(title), { publicId, folder: `${cloudinaryFolder()}/place`, overwrite: true, tags: ['gyaan-vidhya', 'place'] });
-    await media.updateOne({ publicId: upload.public_id }, { $set: { url: upload.secure_url, publicId: upload.public_id, width: upload.width, height: upload.height, bytes: upload.bytes, format: upload.format, alt: place.alt, usage: 'place', createdAt: now, createdBy: 'places:images' } }, { upsert: true });
+    const previous = flag('--reuse') && await media.findOne({ placeId: publicId, imageSource: candidate.source });
+    const upload = previous && isR2Url(previous.url) ? { ...previous, public_id: previous.publicId, secure_url: previous.url } :
+      await storeCuratedImage(await download(title), 'places/' + publicId);
+    await media.updateOne({ publicId: upload.public_id }, { $set: { url: upload.secure_url, publicId: upload.public_id, placeId: publicId, imageSource: candidate.source, width: upload.width, height: upload.height, bytes: upload.bytes, format: upload.format, alt: place.alt, usage: 'place', createdAt: now, createdBy: 'places:images' } }, { upsert: true });
     const collection = db.collection(place.kind === 'city' ? COLLECTIONS.cities : COLLECTIONS.states);
     // Upsert: union territories the directory covers had no curated tile until now.
     await collection.updateOne({ name: place.name }, {

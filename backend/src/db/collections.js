@@ -37,6 +37,7 @@ export const COLLECTIONS = Object.freeze({
   consentEvents: 'consent_events',
   previewViews: 'preview_views',
   reviews: 'reviews',
+  privacyRequests: 'privacy_requests',
 });
 
 let ready;

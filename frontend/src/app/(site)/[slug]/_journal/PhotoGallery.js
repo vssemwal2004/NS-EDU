@@ -1,5 +1,6 @@
 'use client';
-import Image from 'next/image';
+import Image from '@/components/ui/StudentImage';
+import { companyImageSources, studentImageUrl } from '@/lib/student-image';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Dialog from '@/components/ui/Dialog';
 import Icon from '@/components/ui/Icon';
@@ -8,6 +9,13 @@ import styles from './gallery.module.css';
 // Only site paths or https URLs from the admin-edited `pages` content are rendered.
 const validSrc = (src) => typeof src === 'string' && (/^\/(?!\/)[\w\-./%]+$/.test(src) || /^https:\/\/[^\s/@]+\/\S+$/.test(src));
 const usable = (photo) => photo && validSrc(photo.src) && Number.isInteger(photo.width) && Number.isInteger(photo.height) && photo.width > 0 && photo.height > 0;
+
+function GalleryImage({ photo, ...props }) {
+  const srcSet = companyImageSources(photo.src, photo.width);
+  const dimensions = { width: photo.width, height: photo.height, alt: photo.alt || '' };
+  if (srcSet) return <img {...dimensions} {...props} src={studentImageUrl(photo.src)} srcSet={srcSet} decoding="async" />;
+  return <Image {...dimensions} {...props} src={photo.src} />;
+}
 
 /**
  * Photo wall with category filters and a keyboard-friendly lightbox (← → to move, Esc to close).
@@ -45,7 +53,7 @@ export default function PhotoGallery({ gallery }) {
     <ul className={styles.wall} aria-label={`${shown.length} photos`}>
       {shown.map((photo, index) => <li key={photo.src}>
         <button type="button" className={styles.thumb} onClick={() => setOpen(index)} aria-label={`Open photo: ${photo.caption || photo.alt}`}>
-          <Image src={photo.src} width={photo.width} height={photo.height} alt={photo.alt || ''} sizes="(max-width: 640px) 50vw, (max-width: 1100px) 33vw, 260px" loading={index < 3 ? 'eager' : 'lazy'} />
+          <GalleryImage photo={photo} sizes="(max-width: 640px) 50vw, (max-width: 1100px) 33vw, 260px" loading={index < 3 ? 'eager' : 'lazy'} />
           {photo.caption && <span className={styles.caption}>{photo.caption}</span>}
           <span className={styles.zoom} aria-hidden="true"><Icon name="plus" /></span>
         </button>
@@ -54,7 +62,7 @@ export default function PhotoGallery({ gallery }) {
     <Dialog open={Boolean(current)} onClose={() => setOpen(-1)} title={current ? `Photo ${open + 1} of ${shown.length}` : ''} variant={styles.lightbox}>
       {current && <figure className={styles.figure}>
         <div className={styles.stage}>
-          <Image key={current.src} src={current.src} width={current.width} height={current.height} alt={current.alt || ''} sizes="(max-width: 1100px) 100vw, 1100px" className={styles.full} priority />
+          <GalleryImage key={current.src} photo={current} sizes="(max-width: 1100px) 100vw, 1100px" className={styles.full} loading="eager" fetchPriority="high" />
           {shown.length > 1 && <>
             <button type="button" className={`${styles.nav} ${styles.prev}`} onClick={() => step(-1)} aria-label="Previous photo"><Icon name="chevron" /></button>
             <button type="button" className={`${styles.nav} ${styles.next}`} onClick={() => step(1)} aria-label="Next photo"><Icon name="chevron" /></button>

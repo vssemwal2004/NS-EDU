@@ -1,5 +1,5 @@
 'use client';
-import Image from 'next/image';
+import Image from '@/components/ui/StudentImage';
 import { optimisable } from '@/lib/hero-image';
 import { useContent } from '@/providers/ContentProvider';
 

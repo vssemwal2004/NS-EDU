@@ -1,4 +1,4 @@
-import Image from 'next/image';
+import Image from '@/components/ui/StudentImage';
 import styles from './Brand.module.css';
 
 // The one place that knows the logo files. `lockup` is emblem + wordmark, `mark` is the emblem alone;

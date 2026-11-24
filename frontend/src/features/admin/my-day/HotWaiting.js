@@ -6,7 +6,7 @@ import Icon from '@/components/ui/Icon';
 import { useAdminSession } from '@/features/admin/AdminSession';
 import { Avatar } from '@/features/admin/crm/ui';
 import { formatNumber, relativeTime } from '@/features/admin/crm/format';
-import { telHref, whatsappHref } from '@/features/admin/lead-actions/contact';
+import { isDialable, telHref, whatsappHref } from '@/features/admin/lead-actions/contact';
 import { PriorityText } from '@/features/admin/leads/lead-bits';
 import { Panel } from '@/features/admin/ui/Page';
 import styles from './MyDay.module.css';
@@ -46,7 +46,7 @@ export default function HotWaiting({ analytics }) {
             <PriorityText priority={lead.priority} dash={false} />
             {lead.assignee && admin?.leadScope !== 'own' && <Avatar name={lead.assignee} email={lead.assignee} size={20} />}</span>
         </div>
-        {lead.phone && <div className={styles.hotActions}>
+        {isDialable(lead.phone) && <div className={styles.hotActions}>
           <a className="adm-btn adm-btn--sm adm-btn--icon" href={telHref(lead.phone)} aria-label={`Call ${lead.name}`} title="Call"><Icon name="phone" /></a>
           <a className="adm-btn adm-btn--sm adm-btn--icon" href={whatsappHref(lead.phone)} target="_blank" rel="noopener noreferrer" aria-label={`WhatsApp ${lead.name}`} title="WhatsApp"><Icon name="chat" /></a>
         </div>}

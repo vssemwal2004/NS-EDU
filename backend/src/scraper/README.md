@@ -163,11 +163,11 @@ The JS fallback uses Playwright with the installed Chrome channel. If Chrome can
 1. **Download** through the same polite fetcher as the pages: robots.txt, the per-host delay, redirects inside the institution's own domain only, an image content type, a 15 s timeout and an 8 MB cap. Nothing is streamed to disk; a response bigger than the cap is abandoned rather than truncated.
 2. **Verify** by decoding with `sharp`. A file that will not decode is not an image, whatever its extension said. Photographs must be at least 480×320 with an aspect ratio between 1.2 and 2.7 — that removes logos, icons, banner strips and portrait headshots that slipped through the filename rules.
 3. **Compress**: EXIF orientation applied and then dropped with every other metadata block, resized to at most 1600 px wide, re-encoded as WebP at quality 78. A logo keeps PNG only when it actually has an alpha channel.
-4. **Upload** to Cloudinary at `<folder>/universities/<slug>/photo-<n>` with `overwrite: true`, so re-running replaces the same objects instead of filling the account with copies. Only the returned `secure_url` is stored.
+4. **Upload** to R2 at `<prefix>/universities/<slug>/photo-<n>.webp` with `overwrite: true`, so re-running replaces the same objects instead of filling the account with copies. Only the returned `secure_url` is stored.
 
 A picture that fails any step is logged and skipped; it never fails the crawl. Run summaries print how many were uploaded, skipped and failed, and the total bytes before and after compression.
 
-**No photograph older than five years.** A campus changes, so a picture is refused when anything proves its age: the camera's own date inside the file (earliest EXIF date), a server `Last-Modified` date more than five years ago, or the address itself — a camera file name (`IMG_20190512…`), a dated upload folder (`/uploads/2018/05/`) or a year in the file name or alt text (`convocation-2017.jpg`). Candidates the address already dates are dropped before download; recent ones rank first, and the cover prefers the newest wide campus photograph. Only the year is kept (`gallery[].year`); the EXIF block itself is stripped. A picture with no date evidence at all cannot be aged and is kept. Photographs go to Cloudinary only — nothing is written to local disk.
+**No photograph older than five years.** A campus changes, so a picture is refused when anything proves its age: the camera's own date inside the file (earliest EXIF date), a server `Last-Modified` date more than five years ago, or the address itself — a camera file name (`IMG_20190512…`), a dated upload folder (`/uploads/2018/05/`) or a year in the file name or alt text (`convocation-2017.jpg`). Candidates the address already dates are dropped before download; recent ones rank first, and the cover prefers the newest wide campus photograph. Only the year is kept (`gallery[].year`); the EXIF block itself is stripped. A picture with no date evidence at all cannot be aged and is kept. Photographs go to R2 — nothing is written to local disk.
 
 ## Fee and placement documents, and pages that ship their data as JSON
 
@@ -185,7 +185,7 @@ Which pictures are even considered (`deep.js`, `galleryCandidates`): images serv
 | Field | What it holds | When it is absent |
 | --- | --- | --- |
 | `about`, `aboutSource` | Up to three factual paragraphs (≤ 2400 chars, separated by a blank line) from the institution's own about pages or home page, and the first page's URL. The first paragraph must introduce the institution (name it, or say what it is and when it was established); addresses and sentences that only sell are dropped | No about page, or nothing factual on it |
-| `gallery[]` | Up to 12 (24 for a profile topped up by `enrich-images --wide --city`) `{ url, caption?, credit: 'official website', sourcePage, width?, height?, year? }` — photographs no older than five years, re-hosted on Cloudinary | Nothing on the site passed the photo checks, or Cloudinary is not configured |
+| `gallery[]` | Up to 12 (24 for a profile topped up by `enrich-images --wide --city`) `{ url, caption?, credit: 'official website', sourcePage, width?, height?, year? }` — photographs no older than five years, re-hosted on R2 | Nothing on the site passed the photo checks, or R2 is not configured |
 | `coverUrl` | The newest wide campus/about photograph, unless a cover is already set | — |
 | `programmesOffered[]` | Up to 500 `{ name, courseSlug?, level?, durationYears?, annualFeeInr?, semesterFeeInr?, totalFeeInr?, feeYear?, feeNote?, sourcePage }` rows, from fee/course tables, fee sections and fee PDFs, topped up from the plain name list. `courseSlug` links the row to a catalogue course | — |
 | `coursesOffered[]` | The plain programme-name list, unchanged | — |
@@ -229,7 +229,7 @@ This section describes the safeguards built in. It is **not legal advice**, and 
     - every row stores `credit: 'official website'` and the `sourcePage` it came from, and the university page is expected to show both next to the photographs;
     - `overwrite: true` on a fixed public id, so a correction or a removal replaces rather than accumulates.
 
-    Before this runs beyond a pilot, get written permission or an explicit licence from the institutions, or fall back to hot-linking the original URL. Treat a takedown request as binding and immediate: delete the Cloudinary objects (`destroyImage`) as well as the `gallery` rows.
+    Before this runs beyond a pilot, get written permission or an explicit licence from the institutions, or fall back to hot-linking the original URL. Treat a takedown request as binding and immediate: remove the stored image objects as well as the `gallery` rows.
   - `logoUrl` is still only the absolute URL of the institution's own logo; the pipeline does not re-host logos by default.
 - **Attribution.** Every record keeps `source.url` and `source.fetchedAt`, and the public API returns them. University pages should show a visible "Source: official website, fetched on …" link.
 - **Personal data (DPDP Act 2023).** The extractor is built to collect only institutional contact data:

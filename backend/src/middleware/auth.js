@@ -3,6 +3,7 @@ import { ADMIN_COOKIE, STUDENT_COOKIE, clearStudentCookie } from '../lib/cookies
 import { HttpError } from '../lib/http-error.js';
 import { verifySession } from '../lib/jwt.js';
 import { attachAccess, can } from '../modules/access/access-service.js';
+import { CONFIDENTIALITY_CODE, CONFIDENTIALITY_VERSION, confidentialityEnforced } from '../modules/access/confidentiality.js';
 
 const bearer = (request) => /^Bearer ([\w-]+\.[\w-]+\.[\w-]+)$/.exec(request.get('authorization') ?? '')?.[1];
 
@@ -41,6 +42,19 @@ export async function optionalAdmin(request, _response, next) {
 
 export function requireReadyStaff(request, _response, next) {
   if (request.admin.mustChangePassword) throw new HttpError(403, 'Change your password before accessing the console');
+  next();
+}
+
+// Console routes a staff member may use before accepting the confidentiality undertaking: only their own
+// profile. Sign-in, /me, the undertaking itself, password change and logout live on /api/admin/auth, which
+// is mounted outside the console router and never passes through this guard.
+const CONFIDENTIALITY_OPEN = [/^\/access\/me\/?$/];
+
+/** Refuses every console route (leads, students, exports, ...) until the current undertaking is accepted. Owners are exempt. */
+export function requireConfidentiality(request, _response, next) {
+  if (confidentialityEnforced(request.admin) && !CONFIDENTIALITY_OPEN.some((pattern) => pattern.test(request.path))) {
+    throw new HttpError(403, 'Read and accept the student data confidentiality undertaking before using the console.', { code: CONFIDENTIALITY_CODE, version: CONFIDENTIALITY_VERSION });
+  }
   next();
 }
 

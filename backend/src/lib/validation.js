@@ -1,4 +1,5 @@
 import { isOwnDeliveryUrl } from './cloudinary.js';
+import { isPlatformImageUrl } from './r2.js';
 import { HttpError } from './http-error.js';
 
 const TEXT_TYPES = new Set(['string', 'text', 'slug', 'url', 'image', 'select', 'reference', 'email']);
@@ -37,9 +38,7 @@ function coerce(field, raw) {
         if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password) throw new Error();
       } catch { return { error: 'Enter a valid http(s) URL' }; }
     }
-    // Image fields only point at this account's Cloudinary delivery URLs, so a stored record can
-    // never make student pages load from an arbitrary host.
-    if (field.type === 'image' && !isOwnDeliveryUrl(value)) return { error: 'Upload the image here or pick one from the media library' };
+    if (field.type === 'image' && !isPlatformImageUrl(value) && !isOwnDeliveryUrl(value)) return { error: 'Upload the image here or pick one from the media library' };
     return { value };
   }
   if (field.type === 'number' || field.type === 'integer') {

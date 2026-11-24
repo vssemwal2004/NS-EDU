@@ -1,6 +1,6 @@
 'use client';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import Image from 'next/image';
+import Image from '@/components/ui/StudentImage';
 import Link from 'next/link';
 import Icon from '@/components/ui/Icon';
 import { displayNewsImage, filterEducationStories, isThumbnailOnly, newsDate, readSavedNews, SAVED_NEWS_LIMIT, savedNewsKey, usableEducationFeed } from '@/lib/education-news';

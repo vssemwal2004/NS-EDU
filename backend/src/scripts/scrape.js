@@ -156,7 +156,6 @@ async function enrichImagesCommand() {
   });
   console.log(`Selected ${summary.selected} institutions: ${summary.updated} updated, ${summary.empty} with no usable photograph, ${summary.failed} failed.`);
   console.log(`Images: ${describeImages(summary.images)}.`);
-  if (summary.stoppedForBudget) console.log('Stopped early to stay inside the Cloudinary plan. Run the same command again after the credits reset (rolling 30 days).');
   for (const example of summary.examples) console.log(`  ${example.slug}: ${example.images} photographs, first ${example.first}`);
 }
 

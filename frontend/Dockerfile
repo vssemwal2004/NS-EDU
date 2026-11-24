@@ -10,6 +10,8 @@ RUN npm ci --workspace frontend --no-audit --no-fund
 COPY frontend ./frontend
 ARG API_URL=http://api:4100
 ARG NEXT_PUBLIC_SITE_URL=http://localhost:3000
+ARG NEXT_PUBLIC_IMAGE_HOST
+ENV NEXT_PUBLIC_IMAGE_HOST=$NEXT_PUBLIC_IMAGE_HOST
 ENV API_URL=$API_URL NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL NEXT_TELEMETRY_DISABLED=1
 RUN npm run build --workspace frontend
 

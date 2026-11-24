@@ -6,7 +6,10 @@ import { hashPassword } from '../../lib/password.js';
 import { createTtlCache } from '../../lib/ttl-cache.js';
 import { slugify } from '../../lib/validation.js';
 import { assertEmployeePassword } from '../admin-auth/password-policy.js';
-import { DEFAULT_STAFF_ROLE, EMPLOYEE_PERMISSIONS, OWNER_ROLE, PERMISSION_KEYS, ROLE_COLORS, SYSTEM_ROLES, expand, isPermission } from './permissions.js';
+import {
+  DEFAULT_EMPLOYEE_PERMISSIONS, DEFAULT_STAFF_ROLE, OWNER_ROLE, PERMISSION_KEYS, ROLE_COLORS, SYSTEM_ROLES, expand, grantDiff, isPermission, mergeGrants, normalizeGrants,
+} from './permissions.js';
+import { confidentialitySummary } from './confidentiality.js';
 
 const roles = () => collection(COLLECTIONS.roles);
 const admins = () => collection(COLLECTIONS.admins);
@@ -53,9 +56,14 @@ const ladder = (permissions, prefix) => (permissions.has(`${prefix}.view_all`) ?
  * Adds what the role allows to the loaded staff document: `permissions`, `leadScope` and
  * `analyticsScope` ('all' | 'team' | 'own' | 'none') and, for team scopes, `teamIds`.
  */
+/** An employee's own grants when the master admin has chosen them, else null (= the defaults). */
+export const storedGrants = (doc) => (Array.isArray(doc?.access?.permissions) ? doc.access.permissions : null);
+
 export async function attachAccess(admin) {
   const owner = admin.role === 'admin';
-  const permissions = owner ? new Set(PERMISSION_KEYS) : expand(EMPLOYEE_PERMISSIONS);
+  // Read from the staff document on every request (loadAdmin), so an access change applies on the next request.
+  const permissions = owner ? new Set(PERMISSION_KEYS) : expand(storedGrants(admin) ?? DEFAULT_EMPLOYEE_PERMISSIONS);
+  admin.accessCustom = !owner && Boolean(storedGrants(admin));
   admin.roleId = owner ? OWNER_ROLE : DEFAULT_STAFF_ROLE;
   admin.roleName = owner ? 'Admin' : 'Employee';
   admin.roleColor = owner ? 'wine' : 'green';
@@ -194,6 +202,13 @@ export async function deleteRole(actor, slug) {
 const PHONE = /^\+?[0-9]{10,15}$/;
 const STATUSES = ['active', 'suspended'];
 
+/** `{ kind: 'owner' | 'default' | 'custom', count, updatedAt }` for the Members table chip. */
+export function accessSummary(doc) {
+  if (doc.role === 'admin') return { kind: 'owner', count: PERMISSION_KEYS.length, updatedAt: null };
+  const grants = storedGrants(doc);
+  return { kind: grants ? 'custom' : 'default', count: (grants ? normalizeGrants(grants.filter(isPermission)) : DEFAULT_EMPLOYEE_PERMISSIONS).length, updatedAt: doc.access?.updatedAt ?? null };
+}
+
 export async function serializeStaff(docs) {
   const byId = new Map(docs.map((doc) => [doc._id.toString(), doc]));
   const managerIds = [...new Set(docs.map((doc) => doc.managerId?.toString()).filter((id) => id && !byId.has(id)))];
@@ -210,16 +225,51 @@ export async function serializeStaff(docs) {
       directReports: reports.get(doc._id.toString()) ?? 0,
       status: doc.status === 'suspended' ? 'suspended' : 'active', mustChangePassword: Boolean(doc.mustChangePassword),
       lastLoginAt: doc.lastLoginAt ?? null, createdAt: doc.createdAt ?? null,
+      // Which version of the confidentiality undertaking they accepted, and when (no IP or browser here).
+      confidentiality: confidentialitySummary(doc),
+      // Summary only; the full list is fetched per person (GET /access/staff/:id/permissions).
+      access: accessSummary(doc),
     };
   });
 }
 
 // Only what the staff table, org chart and drawer show.
-const STAFF_FIELDS = { email: 1, name: 1, title: 1, phone: 1, role: 1, roleId: 1, managerId: 1, status: 1, mustChangePassword: 1, lastLoginAt: 1, createdAt: 1 };
+const STAFF_FIELDS = { email: 1, name: 1, title: 1, phone: 1, role: 1, roleId: 1, managerId: 1, status: 1, mustChangePassword: 1, lastLoginAt: 1, createdAt: 1, 'confidentiality.version': 1, 'confidentiality.acceptedAt': 1, 'access.permissions': 1, 'access.updatedAt': 1 };
 
 export async function listStaff() {
   const docs = await (await admins()).find({ role: { $in: ['admin', 'employee'] } }, { projection: STAFF_FIELDS }).sort({ createdAt: 1 }).toArray();
   return serializeStaff(docs);
+}
+
+/**
+ * One page of the Members table, filtered on the server so the screen stays fast with thousands of employees.
+ * `q` matches name, email or job title; `status` active|suspended; `access` default|custom.
+ */
+export async function listStaffPage(query = {}) {
+  const { page, limit, skip } = pagination(query, { defaultLimit: 25, maxLimit: 100 });
+  const parts = [{ role: { $in: ['admin', 'employee'] } }];
+  const q = queryString(query.q, 80);
+  if (q) {
+    const pattern = { $regex: q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' };
+    parts.push({ $or: [{ name: pattern }, { email: pattern }, { title: pattern }] });
+  }
+  const status = queryString(query.status, 12);
+  if (status === 'suspended') parts.push({ status: 'suspended' });
+  if (status === 'active') parts.push({ status: { $ne: 'suspended' } });
+  const accessFilter = queryString(query.access, 10);
+  if (accessFilter === 'custom') parts.push({ role: 'employee', 'access.permissions': { $type: 'array' } });
+  if (accessFilter === 'default') parts.push({ role: 'employee', 'access.permissions': { $not: { $type: 'array' } } });
+  const filter = { $and: parts };
+  const coll = await admins();
+  const everyone = { role: { $in: ['admin', 'employee'] } };
+  const [docs, total, all, suspended, activeOwners] = await Promise.all([
+    coll.find(filter, { projection: STAFF_FIELDS }).sort({ createdAt: 1, _id: 1 }).skip(skip).limit(limit).toArray(),
+    coll.countDocuments(filter),
+    coll.countDocuments(everyone),
+    coll.countDocuments({ ...everyone, status: 'suspended' }),
+    coll.countDocuments(isActiveOwner),
+  ]);
+  return { items: await serializeStaff(docs), total, page, limit, counts: { all, active: all - suspended, suspended, activeOwners } };
 }
 
 const isActiveOwner = { $or: [{ roleId: OWNER_ROLE }, { role: 'admin', roleId: { $exists: false } }], status: { $ne: 'suspended' } };
@@ -352,4 +402,92 @@ export async function resetStaffPassword(actor, id, password) {
   if (roleIdOf(doc) === OWNER_ROLE && !actor.isOwner) throw new HttpError(403, 'Only an owner can reset an owner’s password');
   await coll.updateOne({ _id }, { $set: { passwordHash: await hashPassword(password), mustChangePassword: true, passwordChangedAt: new Date() } });
   await audit(actor, 'staff.password_reset', { type: 'staff', id: _id, label: doc.email });
+}
+
+// -----------------------------------------------------------------------------------------------
+// Per-employee permissions. The master admin (owner) holds everything and is the only one who changes these.
+
+const ACCESS_FIELDS = { email: 1, name: 1, role: 1, 'access.permissions': 1, 'access.updatedAt': 1, 'access.updatedByEmail': 1 };
+const MAX_BULK_ACCESS = 500;
+const cleanGrants = (keys) => {
+  try { return normalizeGrants(keys); } catch { throw new HttpError(400, 'Unknown permission in the list', { fields: { permissions: 'Choose permissions from the catalogue.' } }); }
+};
+const effectiveGrants = (doc) => normalizeGrants((storedGrants(doc) ?? DEFAULT_EMPLOYEE_PERMISSIONS).filter(isPermission));
+
+function serializeAccess(doc) {
+  const owner = doc.role === 'admin';
+  return {
+    id: doc._id.toString(), email: doc.email, name: doc.name ?? '', owner,
+    custom: !owner && Boolean(storedGrants(doc)),
+    permissions: owner ? PERMISSION_KEYS : effectiveGrants(doc),
+    updatedAt: doc.access?.updatedAt ?? null, updatedBy: doc.access?.updatedByEmail ?? '',
+  };
+}
+
+export async function getStaffPermissions(id) {
+  const _id = toObjectId(id);
+  const doc = _id && await (await admins()).findOne({ _id, role: { $in: ['admin', 'employee'] } }, { projection: ACCESS_FIELDS });
+  if (!doc) throw new HttpError(404, 'Staff member not found');
+  return serializeAccess(doc);
+}
+
+const assertAccessEditor = (actor) => {
+  if (!actor?.isOwner) throw new HttpError(403, 'Only the master admin can change what employees may do');
+};
+
+/** Sets one employee's permissions; `reset: true` returns them to the defaults. Audited with what changed. */
+export async function setStaffPermissions(actor, id, body) {
+  assertAccessEditor(actor);
+  const _id = toObjectId(id);
+  const coll = await admins();
+  const doc = _id && await coll.findOne({ _id, role: { $in: ['admin', 'employee'] } }, { projection: ACCESS_FIELDS });
+  if (!doc) throw new HttpError(404, 'Staff member not found');
+  if (doc.role === 'admin') throw new HttpError(403, 'The master admin always holds every permission');
+  const reset = body?.reset === true;
+  if (!reset && !Array.isArray(body?.permissions)) throw new HttpError(400, 'Send { "permissions": [...] } or { "reset": true }');
+  const before = effectiveGrants(doc);
+  const after = reset ? normalizeGrants(DEFAULT_EMPLOYEE_PERMISSIONS) : cleanGrants(body.permissions);
+  const now = new Date();
+  const update = reset ? { $unset: { access: '' } }
+    : { $set: { access: { permissions: after, updatedAt: now, updatedById: actor._id, updatedByEmail: actor.email } } };
+  const updated = await coll.findOneAndUpdate({ _id, role: 'employee' }, update, { returnDocument: 'after', projection: ACCESS_FIELDS });
+  if (!updated) throw new HttpError(404, 'Staff member not found');
+  const diff = grantDiff(before, after);
+  await audit(actor, 'staff.access', { type: 'staff', id: _id, label: doc.email }, { ...diff, reset, wasCustom: Boolean(storedGrants(doc)) });
+  return serializeAccess(updated);
+}
+
+/**
+ * The same change for many employees: `add` or `remove` keys, or `replace` the whole list. Owners in the list are
+ * skipped and reported. One activity-log row per person who actually changed.
+ */
+export async function bulkStaffPermissions(actor, body) {
+  assertAccessEditor(actor);
+  const ids = body?.ids;
+  if (!Array.isArray(ids) || !ids.length || ids.length > MAX_BULK_ACCESS || ids.some((value) => !toObjectId(value))) {
+    throw new HttpError(400, `Choose 1 to ${MAX_BULK_ACCESS} employees`, { fields: { ids: `Choose 1 to ${MAX_BULK_ACCESS} employees.` } });
+  }
+  const mode = body?.mode;
+  if (!['add', 'remove', 'replace'].includes(mode)) throw new HttpError(400, 'Mode must be add, remove or replace', { fields: { mode: 'Choose add, remove or replace.' } });
+  if (!Array.isArray(body?.permissions) || (mode !== 'replace' && !body.permissions.length)) throw new HttpError(400, 'Choose at least one permission', { fields: { permissions: 'Choose at least one permission.' } });
+  cleanGrants(body.permissions);
+  const coll = await admins();
+  const unique = [...new Set(ids.map((value) => String(value).toLowerCase()))];
+  const docs = await coll.find({ _id: { $in: unique.map(toObjectId) }, role: { $in: ['admin', 'employee'] } }, { projection: ACCESS_FIELDS }).toArray();
+  const now = new Date();
+  const writes = [];
+  const logs = [];
+  const skipped = [];
+  for (const doc of docs) {
+    if (doc.role === 'admin') { skipped.push({ id: doc._id.toString(), email: doc.email, reason: 'The master admin always holds every permission' }); continue; }
+    const before = effectiveGrants(doc);
+    const after = mergeGrants(before, mode, body.permissions);
+    const diff = grantDiff(before, after);
+    if (!diff.granted.length && !diff.revoked.length) continue;
+    writes.push({ updateOne: { filter: { _id: doc._id, role: 'employee' }, update: { $set: { access: { permissions: after, updatedAt: now, updatedById: actor._id, updatedByEmail: actor.email } } } } });
+    logs.push({ at: now, actorId: actor._id, actorEmail: actor.email, action: 'staff.access', targetType: 'staff', targetId: doc._id.toString(), targetLabel: doc.email, meta: { ...diff, bulk: mode } });
+  }
+  if (writes.length) await coll.bulkWrite(writes, { ordered: false });
+  if (logs.length) await (await collection(COLLECTIONS.auditLogs)).insertMany(logs, { ordered: false });
+  return { changed: writes.length, unchanged: docs.length - writes.length - skipped.length, notFound: unique.length - docs.length, skipped };
 }

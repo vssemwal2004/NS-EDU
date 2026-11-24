@@ -7,6 +7,7 @@ import { escapeRegex, slugify } from '../../lib/validation.js';
 import { PUBLIC_FILTER } from '../universities/university-service.js';
 import { HEATS, PRIORITIES } from '../crm/crm-model.js';
 import { isOwnerStaff, leadScopeOf } from './scope.js';
+import { maskLeadContact } from './contact-mask.js';
 import { CLASS_LEVELS, CLOSED_STATUSES, INDIAN_STATES, SCHOOL_STREAMS, STATUS_LABELS, STATUSES } from './schema.js';
 
 export const COUNTERS = 'counters';
@@ -121,6 +122,7 @@ export const serializeForStudent = (doc, { full = false } = {}) => ({
   preference: full ? { ...preferenceSummary(doc.preference), studyMode: doc.preference.studyMode ?? '', hostelRequired: doc.preference.hostelRequired ?? null, budgetPerYearInr: doc.preference.budgetPerYearInr ?? null, message: doc.preference.message ?? '' } : preferenceSummary(doc.preference),
   ...(full ? {
     applicant: doc.applicant ?? {},
+    guardian: doc.guardian ? { name: doc.guardian.name ?? '', phone: doc.guardian.phone ?? '', consentAt: doc.guardian.consentAt ?? null } : null,
     academics: doc.academics ?? null,
     exams: doc.exams ?? [],
     statusHistory: (doc.statusHistory ?? []).map((entry) => ({ status: entry.status, statusLabel: statusLabel(entry.status), at: entry.at })),
@@ -129,7 +131,7 @@ export const serializeForStudent = (doc, { full = false } = {}) => ({
 
 export const LEAD_SUMMARY_FIELDS = [
   'applicant', 'preference', 'ref', 'channel', 'mode', 'status', 'school', 'academics.classLevel', 'academics.schoolStream',
-  'careerField', 'assignedEmployeeIds', 'assignmentSource', 'crm', 'createdAt', 'updatedAt',
+  'careerField', 'assignedEmployeeIds', 'assignmentSource', 'crm', 'createdAt', 'updatedAt', 'contactConsent',
 ];
 
 export const serializeLeadSummary = (doc) => ({
@@ -147,9 +149,18 @@ export const serializeLeadSummary = (doc) => ({
   assignedEmployeeIds: (doc.assignedEmployeeIds ?? []).map(String),
   assignmentSource: doc.assignmentSource ?? ((doc.assignedEmployeeIds ?? []).length ? 'manual' : ''),
   crm: crmSummary(doc),
+  // Set by maskLeadContact: phone and email above are masked for this viewer (see contact-mask.js).
+  contactMasked: Boolean(doc.contactMasked),
+  // Privacy: the person withdrew contact consent (no calls/SMS/WhatsApp), and the under-18 answer
+  // (true / false / null = asked before the question existed).
+  doNotContact: Boolean(doc.contactConsent?.withdrawnAt),
+  isAdult: typeof doc.applicant?.isAdult === 'boolean' ? doc.applicant.isAdult : null,
   createdAt: doc.createdAt,
   updatedAt: doc.updatedAt,
 });
+
+/** Summary of a lead for one staff member: phone and email masked unless they may see them. Use this in every admin list. */
+export const serializeLeadSummaryFor = (staff) => (doc) => serializeLeadSummary(maskLeadContact(doc, staff));
 
 // The CRM block with safe defaults, so leads created before the CRM existed still render.
 function crmSummary(doc) {
@@ -161,8 +172,10 @@ function crmSummary(doc) {
   };
 }
 
-// Staff detail: every submitted field. The IP stays in the database for audit only.
-export function serializeLeadDetail(doc, { staff, people = new Map() }) {
+// Staff detail: every submitted field. The IP stays in the database for audit only. Phone and email are masked
+// unless the lead is assigned to `staff` or they may reveal every contact (without `staff`, always masked).
+export function serializeLeadDetail(raw, { staff, people = new Map() }) {
+  const doc = maskLeadContact(raw, staff);
   const person = (id) => (id ? { id: id.toString(), email: people.get(id.toString()) ?? 'Former staff' } : null);
   return {
     ...serializeLeadSummary(doc),
@@ -174,6 +187,9 @@ export function serializeLeadDetail(doc, { staff, people = new Map() }) {
     formId: doc.formId?.toString() ?? null,
     answers: (doc.answers ?? []).map((answer) => ({ id: answer.id, label: answer.label, type: answer.type, value: answer.value })),
     callback: doc.callback ?? null,
+    guardian: doc.guardian ? { name: doc.guardian.name ?? '', phone: doc.guardian.phone ?? '', consentAt: doc.guardian.consentAt ?? null, consentVersion: doc.guardian.consentVersion ?? '', consentText: doc.guardian.consentText ?? '' } : null,
+    contactConsent: doc.contactConsent?.withdrawnAt ? { withdrawnAt: doc.contactConsent.withdrawnAt, via: doc.contactConsent.via ?? '', requestRef: doc.contactConsent.requestRef ?? '' } : null,
+    erasedAt: doc.erasure?.at ?? null,
     contactVerified: doc.contactVerified ?? { email: false, phone: false },
     consent: {
       contactConsent: doc.consent?.contactConsent ?? false, privacyAccepted: doc.consent?.privacyAccepted ?? false, at: doc.consent?.at ?? null, version: doc.consent?.version ?? '',

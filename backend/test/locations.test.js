@@ -11,6 +11,10 @@ process.env.SMS_PROVIDER = 'console';
 process.env.NODE_ENV = 'test';
 // A fake account: signing is local, and image fields must point at this cloud's delivery URLs.
 process.env.CLOUDINARY_URL = 'cloudinary://123456789:test-secret@testcloud';
+Object.assign(process.env, {
+  R2_ACCOUNT_ID: 'test-account', R2_ACCESS_KEY_ID: 'test-key', R2_SECRET_ACCESS_KEY: 'test-secret',
+  R2_IMAGES_BUCKET: 'images-test', R2_IMAGES_PREFIX: 'platform', R2_IMAGES_PUBLIC_URL: 'https://images.example.test',
+});
 
 const ADMIN = { email: 'owner@nsedu.test', password: 'correct-horse-battery' };
 const OWN_IMAGE = 'https://res.cloudinary.com/testcloud/image/upload/v1/gyaan-vidhya/place/mumbai.jpg';
@@ -113,7 +117,7 @@ describe('study locations', { skip }, () => {
     assert.ok(!states.some((state) => ['Tamil Nadu', 'Kerala', 'Goa'].includes(state.name)), 'hidden states and non-public institutions stay out');
   });
 
-  test('place images must be this account’s Cloudinary delivery URLs', async () => {
+  test('place images accept legacy platform uploads and reject untrusted URLs', async () => {
     const meta = (await api('/api/admin/resources', { cookie: owner })).body.resources.cities.fields.find((field) => field.name === 'imageUrl');
     assert.deepEqual([meta.type, meta.usage], ['image', 'place']);
 
@@ -136,11 +140,37 @@ describe('study locations', { skip }, () => {
     assert.equal((await locations()).cities.find((city) => city.name === 'Mumbai').image, null);
   });
 
-  test('uploads can be signed for place images and counsellor photos', async () => {
+  test('place and counsellor images upload directly to R2 and register only after verification', async () => {
     for (const usage of ['place', 'counsellor']) {
-      const signed = await api('/api/admin/media/sign', { method: 'POST', cookie: owner, body: { usage } });
+      const signed = await api('/api/admin/media/sign', { method: 'POST', cookie: owner, body: { usage, format: 'webp', bytes: 1234, width: 200, height: 100, filename: 'My photo.png' } });
       assert.equal(signed.status, 200, JSON.stringify(signed.body));
-      assert.match(signed.body.folder, new RegExp(`/${usage}$`));
+      const upload = new URL(signed.body.uploadUrl);
+      assert.equal(upload.hostname, 'test-account.r2.cloudflarestorage.com');
+      assert.match(upload.pathname, new RegExp(`^/images-test/platform/media/${usage}/my-photo-[a-f0-9-]+\\.webp$`));
+      assert.equal(signed.body.headers['content-type'], 'image/webp');
+      assert.equal(upload.searchParams.get('X-Amz-SignedHeaders'), 'cache-control;content-length;content-type;host;if-none-match');
+      const realFetch = globalThis.fetch;
+      let storedBytes = 999;
+      const fetchMock = mock.method(globalThis, 'fetch', (url, options) => {
+        if (String(url).startsWith(base)) return realFetch(url, options);
+        assert.equal(options.method, 'HEAD');
+        assert.ok(['test-account.r2.cloudflarestorage.com', 'images.example.test'].includes(new URL(url).hostname));
+        return Promise.resolve(new Response(null, { headers: { 'content-type': 'image/webp', 'content-length': String(storedBytes) } }));
+      });
+      try {
+        const register = () => api('/api/admin/media', { method: 'POST', cookie: owner, body: { receipt: signed.body.receipt, alt: 'Street view' } });
+        assert.equal((await register()).status, 409);
+        storedBytes = 1234;
+        const result = await register();
+        assert.equal(result.status, 201, JSON.stringify(result.body));
+        assert.equal(result.body.item.url, `https://images.example.test/${result.body.item.publicId}`);
+        assert.equal(result.body.item.storage, 'r2');
+        assert.equal((await register()).body.item.id, result.body.item.id);
+        if (usage === 'place') {
+          const [place] = (await api('/api/admin/cities?q=Mumbai', { cookie: owner })).body.items;
+          assert.equal((await api(`/api/admin/cities/${place.id}`, { method: 'PATCH', cookie: owner, body: { imageUrl: result.body.item.url } })).status, 200);
+        }
+      } finally { fetchMock.mock.restore(); }
     }
   });
 

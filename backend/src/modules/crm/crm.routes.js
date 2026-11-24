@@ -6,8 +6,9 @@ import { assignableIds, can, staffDirectory } from '../access/access-service.js'
 import { projectionFor } from '../applications/lead-columns.js';
 import { CLOSED_STATUSES, STATUS_LABELS, STATUSES } from '../applications/schema.js';
 import {
-  applications, filterKey, LEAD_SUMMARY_FIELDS, leadTotalsByStatus, resolveLeadFilter, serializeLeadDetail, serializeLeadSummary, staffEmails, statusLabel, visibleLead,
+  applications, filterKey, LEAD_SUMMARY_FIELDS, leadTotalsByStatus, resolveLeadFilter, serializeLeadDetail, serializeLeadSummaryFor, staffEmails, statusLabel, visibleLead,
 } from '../applications/service.js';
+import { stripMaskedContact } from '../applications/contact-mask.js';
 import { activityFeed } from './crm-activity.js';
 import { crmDashboard, crmHotWaiting } from './crm-analytics.js';
 import { ACTIVITY_KINDS, CALL_OUTCOMES, HEAT_LABELS, HEATS, PRIORITIES, PRIORITY_LABELS, TASK_KINDS } from './crm-model.js';
@@ -66,7 +67,7 @@ crmRouter.get('/board', requirePermission('leads.view_own', 'leads.view_team', '
   const columns = STATUSES.map((status) => ({
     status, label: statusLabel(status), closed: CLOSED_STATUSES.includes(status),
     total: totals ? totals.get(status) ?? 0 : null,
-    items: docs.filter((doc) => doc.status === status).map(serializeLeadSummary),
+    items: docs.filter((doc) => doc.status === status).map(serializeLeadSummaryFor(request.admin)),
   }));
   response.json({ columns, pageSize: BOARD_PAGE });
 });
@@ -80,7 +81,7 @@ crmRouter.get('/board/:status', requirePermission('leads.view_own', 'leads.view_
   const filter = { ...base, status: request.params.status };
   const docs = await (await applications()).find(filter, { projection: BOARD_PROJECTION })
     .sort(BOARD_SORT).skip(skip).limit(BOARD_PAGE + 1).maxTimeMS(8000).toArray();
-  response.json({ items: docs.slice(0, BOARD_PAGE).map(serializeLeadSummary), page, hasNext: docs.length > BOARD_PAGE });
+  response.json({ items: docs.slice(0, BOARD_PAGE).map(serializeLeadSummaryFor(request.admin)), page, hasNext: docs.length > BOARD_PAGE });
 });
 
 // Follow-ups ("My day").
@@ -137,7 +138,8 @@ crmRouter.patch('/leads/:id', requirePermission('crm.heat'), async (request, res
 });
 crmRouter.patch('/leads/:id/details', requirePermission('leads.edit'), async (request, response) => {
   const lead = await visibleLead(request.params.id, request.admin);
-  response.json({ item: await full(await editLead(request.admin, lead, request.body), request.admin) });
+  // A form filled from a masked lead sends the masked phone/email back; those are dropped, never saved.
+  response.json({ item: await full(await editLead(request.admin, lead, stripMaskedContact(request.body)), request.admin) });
 });
 crmRouter.delete('/leads/:id', requirePermission('leads.delete'), async (request, response) => {
   await deleteLead(request.admin, await visibleLead(request.params.id, request.admin));
@@ -147,7 +149,7 @@ crmRouter.delete('/leads/:id', requirePermission('leads.delete'), async (request
 // The bin: leads deleted by staff can be restored by anyone who may delete; only owners purge for good.
 crmRouter.get('/trash', requirePermission('leads.delete'), async (request, response) => {
   if (request.admin.leadScope !== 'all') throw new HttpError(403, 'Only roles that see every lead can open the bin');
-  response.json(await listTrash(request.query));
+  response.json(await listTrash(request.query, request.admin));
 });
 crmRouter.post('/trash/:id/restore', requirePermission('leads.delete'), async (request, response) => {
   if (request.admin.leadScope !== 'all') throw new HttpError(403, 'Only roles that see every lead can restore leads');

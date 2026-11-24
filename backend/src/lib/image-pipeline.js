@@ -1,9 +1,6 @@
 // Download → verify → compress → upload. One path for every picture the scraper re-hosts, so a
 // stored image is always one we fetched from the institution's own domain, decoded ourselves and
 // re-encoded small. Nothing here throws into the crawl: a picture that fails is skipped and logged.
-import { mkdir, writeFile } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
-import { cloudinaryConfig, cloudinaryFolder, uploadImage } from './cloudinary.js';
 import { r2Selected, uploadImage as uploadToR2 } from './r2.js';
 
 export const IMAGE_LIMITS = Object.freeze({
@@ -52,22 +49,6 @@ export function photoAge({ exif, lastModified, urlYear = null, now = new Date(),
   if (modifiedYear !== null && modifiedYear < oldest) return { takenYear: taken ?? urlYear, tooOld: true, evidence: `file unchanged since ${modifiedYear}` };
   if (urlYear !== null && urlYear < oldest) return { takenYear: urlYear, tooOld: true, evidence: `dated ${urlYear} by its address` };
   return { takenYear: taken ?? urlYear, tooOld: false, evidence: '' };
-}
-
-/**
- * IMAGE_BACKUP_DIR=<folder> also keeps every stored image on disk as
- * <folder>/universities/<slug>/<kind>-<index>.<webp|png> (the same name it has on Cloudinary), so a
- * disabled or deleted Cloudinary account never loses the pictures again and they can be uploaded to
- * any other storage later. A write that fails is logged and never stops the crawl.
- */
-async function keepLocalCopy(prepared, { slug, kind, index }, log) {
-  const dir = process.env.IMAGE_BACKUP_DIR;
-  if (!dir) return;
-  try {
-    const target = join(dir, 'universities', slug, `${kind}-${index}.${prepared.format}`);
-    await mkdir(dirname(target), { recursive: true });
-    await writeFile(target, prepared.data);
-  } catch (error) { log(`local backup failed for ${slug} — ${error.message}`); }
 }
 
 /**
@@ -177,11 +158,8 @@ export async function prepareImage(bytes, { kind = 'photo', limits = IMAGE_LIMIT
  * @param {{ download: (url: string, options?: object) => Promise<{contentType: string, body: Buffer}>,
  *           upload?: Function, enabled?: boolean, log?: Function, limits?: object }} options
  */
-export function createImagePipeline({ download, upload = r2Selected() ? uploadToR2 : uploadImage, enabled, log = () => {}, limits = IMAGE_LIMITS } = {}) {
-  // Photographs go to Cloudflare R2 when it is configured (R2_IMAGES_PUBLIC_URL and the R2 keys),
-  // otherwise to Cloudinary. IMAGE_STORAGE=cloudinary forces the old behaviour.
-  const toR2 = upload === uploadToR2;
-  const ready = enabled ?? (toR2 || cloudinaryConfig().configured);
+export function createImagePipeline({ download, upload = uploadToR2, enabled, log = () => {}, limits = IMAGE_LIMITS } = {}) {
+  const ready = enabled ?? r2Selected();
   const stats = { attempted: 0, uploaded: 0, skipped: 0, failed: 0, originalBytes: 0, compressedBytes: 0, reasons: {} };
   const note = (code) => { stats.reasons[code] = (stats.reasons[code] ?? 0) + 1; };
 
@@ -212,10 +190,9 @@ export function createImagePipeline({ download, upload = r2Selected() ? uploadTo
         if (age.tooOld) throw new ImageError(`Older than ${limits.maxAgeYears} years (${age.evidence})`, 'too-old');
         takenYear = age.takenYear;
       }
-      await keepLocalCopy(prepared, { slug, kind, index }, log);
       const result = await upload(prepared.data, {
         // The R2 bucket is ours alone, so keys start at universities/…, the layout of the disk backup.
-        folder: `${toR2 ? '' : `${cloudinaryFolder()}/`}universities/${slug}`,
+        folder: `universities/${slug}`,
         publicId: `${kind}-${index}`,
         format: prepared.format,
         overwrite: true,

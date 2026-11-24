@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import Icon from '@/components/ui/Icon';
+import { studentImageUrl } from '@/lib/student-image';
 import ApplyButton from '@/features/apply/ApplyButton';
 import { monogram } from '@/features/universities/labels';
 import styles from './InstitutionCompare.module.css';
@@ -51,7 +52,7 @@ export default function InstitutionBoard({ board, highlight, onRemove }) {
             <th scope="col" className={styles.corner}><span className="sr-only">Metric</span></th>
             {facts.map((entry) => <th scope="col" key={entry.id} className={styles.colHead}>
               <span className={styles.colMark} aria-hidden="true">{entry.item.logoUrl
-                ? <img src={entry.item.logoUrl} alt="" width={40} height={40} loading="lazy" decoding="async" referrerPolicy="no-referrer" />
+                ? <img src={studentImageUrl(entry.item.logoUrl)} alt="" width={40} height={40} loading="lazy" decoding="async" referrerPolicy="no-referrer" />
                 : monogram(entry.name)}</span>
               <Link className={styles.colName} href={`/universities/${entry.id}`}>{entry.name}</Link>
               <span className={styles.colPlace}>{entry.place || 'Location not listed'}</span>

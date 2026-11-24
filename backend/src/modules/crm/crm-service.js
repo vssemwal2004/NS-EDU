@@ -9,6 +9,7 @@ import { STATUSES, INDIAN_STATES } from '../applications/schema.js';
 import {
   accessFilter, applicationNotes, applications, clearLeadCounts, DAY, istDayStart, istToday, leadKeys, nextRef, staffEmails, statusLabel,
 } from '../applications/service.js';
+import { canRevealAll, canSeeFullContact, maskPhone } from '../applications/contact-mask.js';
 import { ACTIVITY_KINDS, CALL_OUTCOMES, HEATS, PRIORITIES, TASK_KINDS, crmUpdate } from './crm-model.js';
 
 const tasks = () => collection(COLLECTIONS.leadTasks);
@@ -98,6 +99,19 @@ export const serializeTask = (task, now = new Date()) => ({
   overdue: !task.doneAt && new Date(task.dueAt) < now, createdAt: task.createdAt,
 });
 
+/**
+ * Follow-ups carry a copy of the lead's phone. It is masked unless the lead is assigned to `staff` (or they may
+ * reveal every contact), whoever the follow-up itself is assigned to. One indexed lookup per list.
+ */
+export async function maskTaskContacts(staff, items) {
+  if (canRevealAll(staff)) return items;
+  const ids = [...new Set(items.filter((task) => task.leadPhone).map((task) => task.leadId))].map(toObjectId).filter(Boolean);
+  if (!ids.length) return items;
+  const leads = await (await applications()).find({ _id: { $in: ids } }, { projection: { assignedEmployeeIds: 1 } }).toArray();
+  const open = new Set(leads.filter((lead) => canSeeFullContact(staff, lead.assignedEmployeeIds)).map((lead) => String(lead._id)));
+  return items.map((task) => (!task.leadPhone || open.has(task.leadId) ? task : { ...task, leadPhone: maskPhone(task.leadPhone), contactMasked: true }));
+}
+
 function assertCanAssignTo(staff, assigneeId) {
   if (assigneeId.equals(staff._id)) return;
   if (!can(staff, 'tasks.manage_team') && !can(staff, 'leads.assign')) throw new HttpError(403, 'You can only schedule follow-ups for yourself');
@@ -121,7 +135,8 @@ export async function createTask(staff, lead, body) {
   };
   await (await tasks()).insertOne(task);
   await refreshLead(lead._id, {}, now);
-  return serializeTask(task, now);
+  const item = serializeTask(task, now);
+  return canSeeFullContact(staff, lead.assignedEmployeeIds) || !item.leadPhone ? item : { ...item, leadPhone: maskPhone(item.leadPhone), contactMasked: true };
 }
 
 async function taskScope(staff, scope) {
@@ -192,7 +207,7 @@ export async function listTasks(staff, query = {}) {
     state === 'done' ? coll.countDocuments({ ...scopeFilter, ...window.states.done }) : 0,
   ]);
   const total = state === 'done' ? doneTotal : state === 'open' ? open : counts[state];
-  return { items, total, page, limit, counts };
+  return { items: await maskTaskContacts(staff, items), total, page, limit, counts };
 }
 
 export async function taskPreview(staff) {
@@ -211,7 +226,8 @@ export async function taskPreview(staff) {
     { $sort: { dueAt: 1 } },
   ]).toArray();
   const sections = { overdue: { items: [] }, today: { items: [] } };
-  for (const row of rows) sections[row.section].items.push(serializeTask(row, window.now));
+  const items = await maskTaskContacts(staff, rows.map((row) => ({ ...serializeTask(row, window.now), section: row.section })));
+  for (const { section, ...item } of items) sections[section].items.push(item);
   return { sections };
 }
 
@@ -223,7 +239,7 @@ export async function listTaskSections(staff, query = {}) {
   const window = taskWindow(new Date());
   const [{ counts }, ...sections] = await Promise.all([
     taskCounts(coll, scope, window),
-    ...Object.entries(MY_DAY_LIMITS).map(async ([state, limit]) => [state, { items: await taskPage(coll, scope, state, window, limit) }]),
+    ...Object.entries(MY_DAY_LIMITS).map(async ([state, limit]) => [state, { items: await maskTaskContacts(staff, await taskPage(coll, scope, state, window, limit)) }]),
   ]);
   return { sections: Object.fromEntries(sections), counts };
 }
@@ -276,7 +292,7 @@ export async function updateTask(staff, id, body) {
   }
   const updated = await coll.findOneAndUpdate({ _id }, { $set: set }, { returnDocument: 'after' });
   await refreshLead(task.leadId, extra, now);
-  return serializeTask(updated, now);
+  return (await maskTaskContacts(staff, [serializeTask(updated, now)]))[0];
 }
 
 export async function deleteTask(staff, id) {
@@ -412,13 +428,14 @@ export async function deleteLead(staff, lead) {
   await audit(staff, 'lead.delete', { type: 'lead', id: lead._id, label: lead.ref }, { name: lead.applicant?.fullName ?? '' });
 }
 
-export async function listTrash(query = {}) {
+export async function listTrash(query = {}, staff = null) {
   const { page, limit, skip } = pagination(query, { defaultLimit: 25, maxLimit: 100 });
   const coll = await trash();
   const [docs, total] = await Promise.all([coll.find({}).sort({ deletedAt: -1 }).skip(skip).limit(limit).toArray(), coll.countDocuments({})]);
   return {
     page, limit, total,
-    items: docs.map((doc) => ({ id: doc._id.toString(), ref: doc.lead?.ref, name: doc.lead?.applicant?.fullName ?? '', phone: doc.lead?.applicant?.phone ?? '', channel: doc.lead?.channel ?? 'web-apply', deletedAt: doc.deletedAt, deletedBy: doc.deletedByEmail })),
+    items: docs.map((doc) => ({ id: doc._id.toString(), ref: doc.lead?.ref, name: doc.lead?.applicant?.fullName ?? '',
+      phone: canSeeFullContact(staff, doc.lead?.assignedEmployeeIds) ? doc.lead?.applicant?.phone ?? '' : maskPhone(doc.lead?.applicant?.phone), channel: doc.lead?.channel ?? 'web-apply', deletedAt: doc.deletedAt, deletedBy: doc.deletedByEmail })),
   };
 }
 

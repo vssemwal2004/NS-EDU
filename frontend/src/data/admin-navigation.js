@@ -64,7 +64,7 @@ export const adminNavigation = [
     { label: 'Activity log', href: '/admin/activity', icon: 'history', permissions: [...LEADS_VIEW, 'audit.view'], description: 'Calls, messages, notes and stage changes by your team, plus access changes' },
     { label: 'Site content', href: '/admin/content', icon: 'edit', permissions: ['content.edit'], description: 'Page copy, homepage, tools and site images' },
     { label: 'Student reviews', href: '/admin/reviews', icon: 'chat', permissions: ['content.edit'], description: 'Check new reviews, publish or reject them, and feature the best on the homepage' },
-    { label: 'Media library', href: '/admin/media', icon: 'archive', permissions: ['media.manage'], description: 'Images stored on Cloudinary' },
+    { label: 'Media library', href: '/admin/media', icon: 'archive', permissions: ['media.manage'], description: 'Upload and manage site images' },
     { label: 'Settings', href: '/admin/settings', icon: 'settings', permissions: ['settings.manage'], description: 'Your session and platform status' },
   ] },
 ];

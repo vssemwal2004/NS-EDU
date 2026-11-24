@@ -6,6 +6,7 @@ import { queryString } from '../../lib/query.js';
 import { createTtlCache } from '../../lib/ttl-cache.js';
 import { staffDirectory } from '../access/access-service.js';
 import { CLOSED_STATUSES, STATUSES } from '../applications/schema.js';
+import { canSeeFullContact, maskPhone } from '../applications/contact-mask.js';
 import { applicationNotes, applications, CHANNEL_LABELS, CHANNELS, DAY, IST_OFFSET, istDayStart, istToday } from '../applications/service.js';
 
 const cache = createTtlCache({ ttlMs: 60_000, maxEntries: 200 });
@@ -59,25 +60,31 @@ function hotWaitingLeads(leads, scope) {
 }
 
 const staffNames = (directory) => new Map(directory.map((doc) => [String(doc._id), doc.email]));
+// `assignedIds` stays internal: the dashboard is cached per scope, not per viewer, so cards are masked for each
+// viewer on the way out (viewerCards) and the ids are dropped there.
 const leadCard = (lead, names) => ({
-  id: lead._id.toString(), ref: lead.ref, name: lead.applicant?.fullName ?? '', phone: lead.applicant?.phone ?? '',
+  id: lead._id.toString(), ref: lead.ref, name: lead.applicant?.fullName ?? '', phone: lead.applicant?.phone ?? '', assignedIds: (lead.assignedEmployeeIds ?? []).map(String),
   status: lead.status, heat: lead.crm?.heat ?? '', priority: lead.crm?.priority ?? 'normal',
   nextFollowUpAt: lead.crm?.nextFollowUpAt ?? null, createdAt: lead.createdAt ?? null, assignee: names.get(String(lead.assignedEmployeeIds?.[0])) ?? '',
 });
+
+/** Cards as one viewer may see them: phone masked unless the lead is theirs (or they may reveal every contact). */
+const viewerCards = (cards, staff) => cards.map(({ assignedIds, ...card }) => (canSeeFullContact(staff, assignedIds) || !card.phone ? card : { ...card, phone: maskPhone(card.phone), contactMasked: true }));
 
 // My Day only needs the action cards. Apply the same analytics scope without running the charts.
 export async function crmHotWaiting(staff) {
   const scope = leadScopeFilter(scopeIds(staff, ''));
   const [leads, directory] = await Promise.all([applications().then((coll) => hotWaitingLeads(coll, scope)), staffDirectory()]);
   const names = staffNames(directory);
-  return { items: leads.map((lead) => leadCard(lead, names)) };
+  return { items: viewerCards(leads.map((lead) => leadCard(lead, names)), staff) };
 }
 
 export async function crmDashboard(staff, query = {}) {
   const range = period(query);
   const ids = scopeIds(staff, queryString(query.employee, 30));
   const key = `${staff.analyticsScope}|${range.key}|${range.start.getTime()}|${range.end.getTime()}|${ids ? ids.map(String).sort().join(',') : 'all'}`;
-  return cache.wrap(key, () => build(staff, range, ids));
+  const data = await cache.wrap(key, () => build(staff, range, ids));
+  return { ...data, actions: { overdue: viewerCards(data.actions.overdue, staff), hotWaiting: viewerCards(data.actions.hotWaiting, staff) } };
 }
 
 async function build(staff, range, ids) {

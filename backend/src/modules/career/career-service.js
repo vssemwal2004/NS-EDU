@@ -4,6 +4,7 @@ import { createTtlCache } from '../../lib/ttl-cache.js';
 import { isPlainObject, validate } from '../../lib/validation.js';
 import { normalizeIdentifier } from '../student-auth/otp.js';
 import { applicationNotes, applications, clearLeadCounts, DAY, leadKeys, nextRef } from '../applications/service.js';
+import { ageConsentFields, parseAgeAndGuardian } from '../privacy/guardian.js';
 
 export const CALLBACK_TIMES = [
   { value: 'morning', label: 'Morning (9 am–12 pm)' },
@@ -13,8 +14,9 @@ export const CALLBACK_TIMES = [
 ];
 // Stored verbatim with every callback lead. The page shows this text from GET /fields, so the
 // wording a student agreed to and the wording on record are always the same string.
-export const CALLBACK_CONSENT_VERSION = '2026-10';
-export const CALLBACK_CONSENT_TEXT = 'I agree that Gyaan Vidhya’s counsellors may call, SMS or WhatsApp me on this number about career guidance, and I have read the Privacy policy.';
+// 2026-11: sharing / never sold / withdraw wording, plus the under-18 question (privacy/guardian.js).
+export const CALLBACK_CONSENT_VERSION = '2026-11';
+export const CALLBACK_CONSENT_TEXT = 'I agree that Gyaan Vidhya’s counsellors may call, SMS or WhatsApp me on this number about career guidance, and I have read the Privacy policy. My details are shared only with the institution I choose for an application and are never sold. I can withdraw my consent at any time at /account/my-data.';
 
 // Spam ceilings that answer "ok" without creating a lead, so the endpoint never reveals which numbers asked before.
 const PER_PHONE_PER_DAY = 5;
@@ -82,13 +84,14 @@ export async function parseCallback(body) {
   }
   if (value.consent !== true && !errors.consent) errors.consent = 'Agree to be contacted so a counsellor can call you';
   if (value.consentVersion && value.consentVersion !== CALLBACK_CONSENT_VERSION) errors.consent = 'The consent wording has changed. Reload the page and review it again.';
+  const age = parseAgeAndGuardian(body, errors, { studentName: value.name });
   const field = value.fieldSlug && !errors.fieldSlug ? (await careerDirectory()).find((entry) => entry.field.slug === value.fieldSlug)?.field : null;
   if (value.fieldSlug && !errors.fieldSlug && !field) errors.fieldSlug = 'Choose a career field from the list';
   if (Object.keys(errors).length) throw new HttpError(400, 'Please correct the highlighted fields.', { fields: errors });
   // UTM tags are best-effort attribution: bad ones are dropped, never a reason to refuse a callback.
   const utm = isPlainObject(body.source) ? validate(utmFields, body.source) : { value: {}, errors: {} };
   const source = Object.fromEntries(UTM_KEYS.map((key) => [key, utm.errors[key] ? '' : utm.value[key] ?? '']));
-  return { ...value, field, source };
+  return { ...value, isAdult: age.isAdult, guardian: age.guardian, field, source };
 }
 
 // A repeat is folded into the earlier lead as an automatic note, so the counsellor still sees the newer question.
@@ -123,7 +126,7 @@ export async function createCallbackLead(data, { student = null, ip = '', userAg
   }
   if (recent.length >= PER_PHONE_PER_DAY) return { ref: null, created: false };
 
-  const applicant = { fullName: data.name, email: student?.email ?? '', phone: data.phone, city: '', state: '' };
+  const applicant = { fullName: data.name, email: student?.email ?? '', phone: data.phone, city: '', state: '', isAdult: data.isAdult ?? null };
   const doc = {
     ref: await nextRef(now),
     channel: 'callback',
@@ -132,6 +135,7 @@ export async function createCallbackLead(data, { student = null, ip = '', userAg
     formId: null,
     school: null,
     applicant,
+    guardian: data.guardian ?? null,
     academics: null,
     exams: [],
     preference: { institutionSlug: '', institutionName: '', city: '', state: '', courseSlug: '', courseName: '', programmeName: '', intakeYear: null },
@@ -141,7 +145,7 @@ export async function createCallbackLead(data, { student = null, ip = '', userAg
     contactVerified: { email: Boolean(student?.email), phone: Boolean(student?.phone) && student.phone === data.phone },
     consent: {
       contactConsent: true, privacyAccepted: true, version: CALLBACK_CONSENT_VERSION, at: now,
-      text: { contact: CALLBACK_CONSENT_TEXT }, ip, userAgent,
+      text: { contact: CALLBACK_CONSENT_TEXT }, ...ageConsentFields({ isAdult: data.isAdult, guardian: data.guardian }), ip, userAgent,
     },
     source: { path: '/career-guidance', ...data.source },
     status: 'new',

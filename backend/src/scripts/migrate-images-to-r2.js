@@ -131,7 +131,6 @@ async function main() {
 
   const stats = { uploaded: 0, alreadyThere: 0, updatedRecords: 0, failed: 0, downloaded: 0, fromDisk: 0 };
   const failures = [];
-  let checked = 0;
   const queue = [...jobs];
   const total = jobs.length;
   let done = 0;
@@ -156,9 +155,8 @@ async function main() {
     while (queue.length) {
       const job = queue.shift();
       try {
-        let present = false;
         const key = objectKey(job.key);
-        try { present = await hasObject(key); } catch { /* treat a failed check as "not there" and upload */ }
+        const present = await hasObject(key);
         if (present) stats.alreadyThere += 1;
         else {
           let bytes;
@@ -168,14 +166,12 @@ async function main() {
             if (!response.ok) throw new Error(`Cloudinary answered ${response.status}`);
             bytes = Buffer.from(await response.arrayBuffer());
             if (!bytes.byteLength) throw new Error('Cloudinary sent an empty body');
-            await writeCopy(job.key, bytes).catch(() => {}); // keep the disk copy too; never fail the migration over it
             stats.downloaded += 1;
           } else throw new Error('not on disk (--no-download)');
           await putObject(bytes, key);
           stats.uploaded += 1;
         }
-        // The first picture and about one in fifty after it are fetched back through the public address.
-        if (checked === 0 || Math.random() < 0.02) { checked += 1; await publicCheck(job); }
+        await publicCheck(job);
         await updateRecords(job, publicUrlFor(key));
       } catch (error) {
         stats.failed += 1;

@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import Image from 'next/image';
+import Image from '@/components/ui/StudentImage';
 import Icon from '@/components/ui/Icon';
 import { useCatalog } from '@/providers/CatalogProvider';
 import { optimisable } from '@/lib/hero-image';

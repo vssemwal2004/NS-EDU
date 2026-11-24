@@ -142,8 +142,8 @@ export const INSTITUTION_FIELDS = [
   { name: 'coursesOffered', label: 'Programmes offered', type: 'stringList', maxItems: 500, maxLength: 160, help: 'Programme names as published by the institution.' },
   { name: 'about', label: 'About', type: 'text', maxLength: 3000, help: 'Paragraphs are separated by a blank line.' },
   { name: 'aboutSource', label: 'About source page', type: 'url', help: 'The page the summary was read from.' },
-  { name: 'logoUrl', label: 'Logo URL', type: 'url', help: 'Upload to Cloudinary from the media screen and paste the URL.' },
-  { name: 'coverUrl', label: 'Cover image URL', type: 'url' },
+  { name: 'logoUrl', label: 'Logo URL', type: 'url', usage: 'logo', wide: true, help: 'Upload a logo or paste an existing image URL.' },
+  { name: 'coverUrl', label: 'Cover image URL', type: 'url', usage: 'cover', wide: true, help: 'Upload a cover photo or paste an existing image URL.' },
   // --- Deep-scrape detail. All optional; absent means "we have not found it", never "none".
   { name: 'gallery', label: 'Campus photos', type: 'objectList', maxItems: 24, fields: GALLERY_FIELDS, machine: true,
     help: 'Photographs from the institution\'s own site, re-hosted on Cloudinary. Each row keeps its credit and source page.' },

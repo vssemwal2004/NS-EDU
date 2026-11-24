@@ -1,4 +1,5 @@
 import '@/styles/index.css';
+import { studentImageUrl } from '@/lib/student-image';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 const title = 'Gyaan Vidhya — Find a university that fits your future';
@@ -11,7 +12,7 @@ export const metadata = {
   description,
   applicationName: 'Gyaan Vidhya',
   manifest: '/manifest.webmanifest',
-  openGraph: { title, description, siteName: 'Gyaan Vidhya', type: 'website', locale: 'en_IN', images: [{ url: '/brand/icon-512.png', width: 512, height: 512, alt: 'Gyaan Vidhya' }] },
+  openGraph: { title, description, siteName: 'Gyaan Vidhya', type: 'website', locale: 'en_IN', images: [{ url: studentImageUrl('/brand/icon-512.png'), width: 512, height: 512, alt: 'Gyaan Vidhya' }] },
   twitter: { card: 'summary', title, description },
 };
 

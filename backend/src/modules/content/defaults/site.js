@@ -54,6 +54,8 @@ export default {
       { label: 'Privacy policy', href: '/privacy-policy' },
       { label: 'Cookies & browser storage', href: '/cookie-policy' },
       { label: 'Disclaimer', href: '/disclaimer' },
+      { label: 'Privacy requests', href: '/privacy-request' },
+      { label: 'Grievance redressal', href: '/grievance-redressal' },
     ] },
   ],
 };

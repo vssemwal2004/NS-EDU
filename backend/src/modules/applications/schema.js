@@ -1,6 +1,7 @@
 import { HttpError } from '../../lib/http-error.js';
 import { isPlainObject, validate } from '../../lib/validation.js';
 import { normalizeIdentifier } from '../student-auth/otp.js';
+import { parseAgeAndGuardian } from '../privacy/guardian.js';
 
 // Lead lifecycle. "Open" leads block a duplicate application for the same university and course.
 export const STATUSES = ['new', 'contacted', 'in-progress', 'applied-to-university', 'admitted', 'not-interested', 'closed'];
@@ -34,10 +35,11 @@ export const INDIAN_STATES = [
 
 // Consent wording. The frontend copy lives in frontend/src/features/apply/apply-options.js:
 // change both together and bump the version so stale forms are asked to re-read it.
-export const CONSENT_VERSION = '2026-10';
+// 2026-11: sharing / never sold / withdraw at /account/my-data, plus the under-18 question.
+export const CONSENT_VERSION = '2026-11';
 export const CONSENT_TEXT = {
   contact: 'I agree that Gyaan Vidhya’s admissions team may contact me by phone, SMS or email about my application to {university}.',
-  privacy: 'I confirm these details are accurate and I have read the Privacy policy. I understand that submitting this form does not apply to {university} directly: Gyaan Vidhya’s admissions team receives my details and will help me with the university’s own application process.',
+  privacy: 'I confirm these details are accurate and I have read the Privacy policy. My details are shared only with the institution I choose for my application ({university}) and are never sold. Submitting this form does not apply to {university} directly: Gyaan Vidhya’s admissions team will help me with the university’s own application process. I can withdraw my consent at any time at /account/my-data.',
 };
 
 const MAX_EXAMS = 5;
@@ -142,6 +144,12 @@ export function parseApplication(body) {
       if (age < 14 || age > 70) errors['applicant.dateOfBirth'] = 'Applicants must be between 14 and 70 years old';
     }
   }
+  const age = parseAgeAndGuardian(body, errors, { studentName: applicant.fullName });
+  // The date of birth must agree with the 18+ answer, so a minor cannot skip the guardian step.
+  if (age.isAdult === true && applicant.dateOfBirth && !errors['applicant.dateOfBirth'] && ageOn(applicant.dateOfBirth) < 18) {
+    errors.isAdult = 'Your date of birth shows you are under 18: choose “No” and add a parent or guardian';
+  }
+  applicant.isAdult = age.isAdult;
 
   const rawAcademics = isPlainObject(body.academics) ? body.academics : {};
   const academics = section(academicFields(), rawAcademics, 'academics', errors);
@@ -171,7 +179,7 @@ export function parseApplication(body) {
   const source = isPlainObject(body.source) ? section(sourceFields, body.source, 'source', errors) : {};
 
   if (Object.keys(errors).length) throw new HttpError(400, 'Please correct the highlighted fields.', { fields: errors });
-  return { mode: 'detailed', applicant, academics, exams, preference, consentVersion: consent.version, source };
+  return { mode: 'detailed', applicant, guardian: age.guardian, academics, exams, preference, consentVersion: consent.version, source };
 }
 
 // Admissions in India start around July: before July the coming intake is this year, from July the next.
@@ -217,6 +225,7 @@ export function parseQuickApplication(body, { accountEmail = null } = {}) {
     applicant.email = accountEmail;
     delete errors['applicant.email'];
   } else if (!applicant.email && !errors['applicant.email']) errors['applicant.email'] = 'Enter your email address';
+  const age = parseAgeAndGuardian(body, errors, { studentName: applicant.fullName });
 
   const academics = section(quickAcademicFields, body.academics, 'academics', errors);
   if (academics.score !== null && academics.score !== undefined && !academics.scoreType) academics.scoreType = 'percentage';
@@ -236,7 +245,8 @@ export function parseQuickApplication(body, { accountEmail = null } = {}) {
   if (Object.keys(errors).length) throw new HttpError(400, 'Please correct the highlighted fields.', { fields: errors });
   return {
     mode: 'quick',
-    applicant: { fullName: applicant.fullName, email: applicant.email, phone: applicant.phone, city: applicant.city, state: applicant.state },
+    applicant: { fullName: applicant.fullName, email: applicant.email, phone: applicant.phone, city: applicant.city, state: applicant.state, isAdult: age.isAdult },
+    guardian: age.guardian,
     academics: hasAcademics ? { highestQualification: academics.highestQualification, scoreType: academics.score === null ? '' : academics.scoreType, score: academics.score } : null,
     exams: [],
     preference,

@@ -17,9 +17,9 @@ Last updated: 20 October 2026 (IST)
 | Quick apply | Every Apply button opens a popup: login first when signed out, then a one-screen form (≤ 8 inputs) with a single consent checkbox, ending in the application reference. The older long form survives as the detailed mode; admin leads record which form was used. | `/apply`, `frontend/src/features/apply/`, `/admin/leads` |
 | Premium redesign | Shared `PageIntro` band removed; every page group has its own composition on a new `--lux-*` token set and `lux-` class layer added beside the legacy styles. Mobile-first, server components by default, CSS-only motion. The landing page is deliberately frozen. | `frontend/src/styles/index.css`, `frontend/src/features/*` |
 | Dynamic content | Student-facing copy, guides, tool settings and image references live in MongoDB (`site_content`) and are edited in **Admin → Site content**. | `backend/src/modules/content/` |
-| Images | Cloudinary media library (direct signed browser uploads) and a one-command migration of the site images. | `backend/src/lib/cloudinary.js`, `/admin/media`, `npm run images:migrate` |
+| Images | Browser compression and signed uploads to Cloudflare R2. Student artwork is served from verified CDN URLs. | `backend/src/lib/r2.js`, `/admin/media`, `npm run images:migrate` |
 | Production basics | Security headers + CSP, compression, request ids + JSON access logs, global rate limit, liveness/readiness checks, fail-fast production config, graceful shutdown, error pages, robots.txt, sitemaps for every university, Dockerfiles, docker-compose and CI. | see "Operations" below |
-| Depth phase | 9,334 real institutions imported, deep scraping (about, photos, programmes, placements, facilities, campus, admissions), Cloudinary image pipeline, institution compare board, activity tracking and recommendations. | see "Depth phase" below |
+| Depth phase | 9,334 real institutions imported, deep scraping (about, photos, programmes, placements, facilities, campus, admissions), R2 image pipeline, institution compare board, activity tracking and recommendations. | see "Depth phase" below |
 
 ### Measured performance (20,000 synthetic universities, MongoDB Atlas, cold cache)
 
@@ -50,7 +50,8 @@ npm run mongo:status
 npm run seed                               # indexes, catalogue + content defaults, search keys
 npm run dev                                # web :3000, API :4100
 npm run mongo:stop                        # clean local database shutdown
-npm run images:migrate --workspace backend -- --dry-run      # then without --dry-run, then --delete-local
+npm run images:migrate --workspace backend -- --git-revision "62af780^"   # preview with the archived artwork
+npm run images:migrate --workspace backend -- --git-revision "62af780^" --apply --sync-cms
 npm run benchmark:universities --workspace backend
 docker compose up --build                  # production-like stack (API + web) against your Atlas cluster
 ```
@@ -65,7 +66,7 @@ docker compose up --build                  # production-like stack (API + web) a
 The directory stopped being a schema with sample rows in it. **9,334 real Indian institutions**
 (7,620 colleges, 1,688 universities, 26 institutes) were imported from an AISHE-derived directory
 spreadsheet, a deep scraper now fills campus detail from each institution's own website, photographs
-are re-hosted on Cloudinary, and search/view activity drives recommendations.
+are re-hosted on R2, and search/view activity drives recommendations.
 
 ### Honesty rules for this data (non-negotiable)
 
@@ -171,7 +172,7 @@ contact/approval extraction it now fills, all optional and absent when unknown:
 | Field | Shape | Notes |
 | --- | --- | --- |
 | `about` / `aboutSource` | text ≤1500 / url | factual sentences only; marketing copy is dropped |
-| `gallery` | ≤8 × `{url, caption?, credit, sourcePage?, width?, height?}` | Cloudinary `secure_url`; `credit` defaults to "official website" |
+| `gallery` | ≤8 × `{url, caption?, credit, sourcePage?, width?, height?}` | R2 delivery URL; `credit` defaults to "official website" |
 | `coverUrl` | url | set from `gallery[0]` only when no cover existed |
 | `programmesOffered` | ≤200 × `{name, level?, durationYears?, annualFeeInr?, feeNote?, sourcePage?}` | a fee is stored only when the page prints a per-year INR amount |
 | `placements` | `{year?, averagePackageLpa?, medianPackageLpa?, highestPackageLpa?, placedPercent?, recruiters?, sourcePage?}` | absent when the site printed nothing; a median is never derived from an average |
@@ -193,18 +194,23 @@ New env (documented in `backend/.env.example`): `SCRAPER_MAX_IMAGES` (default 6,
 `SCRAPER_JOB_TIMEOUT_MS` (default 480000). `SITE_URL` should be set before any large run so the
 crawler identifies itself with a contact URL and the `/bot` page.
 
-### Cloudinary image pipeline
+### R2 image storage
 
 `backend/src/lib/image-pipeline.js` (`createImagePipeline`, `prepareImage`, `IMAGE_LIMITS`) downloads
 a candidate photograph **from the institution's own domain only**, re-encodes it with `sharp`, and
-uploads it to Cloudinary under a fixed public id so a correction or a takedown overwrites rather than
-accumulates. `frontend/next.config.mjs` allows `res.cloudinary.com`, so those photos go through
-`next/image`; anything hosted elsewhere falls back to a plain lazy `<img>` with no resizing.
+uploads it to the configured R2 image bucket. Set the R2 fields in `backend/.env.example`
+and set `NEXT_PUBLIC_IMAGE_HOST` to the public bucket hostname when building the frontend.
+Admin uploads go from the browser to R2. The API signs a temporary PUT and verifies the stored
+object before saving the media record. From `backend/`, run
+`node --env-file=.env src/scripts/admin-upload-cors.js --apply` with a bucket configuration token
+to allow uploads from `PUBLIC_SITE_URL`. Additional site origins can be passed explicitly.
+The command preserves existing CORS rules. The site-art migration accepts `--from <original images folder>`
+as an alternative to restoring the originals from Git.
 
 > **Copyright.** A campus photograph is a creative work; "facts are not copyrightable" does not cover
 > it. Every row keeps `credit` and `sourcePage`, but before this runs beyond a pilot get written
 > permission from the institutions or fall back to hot-linking. Treat a takedown as binding and
-> immediate: delete the Cloudinary objects (`destroyImage`) as well as the `gallery` rows.
+> immediate: remove the stored objects as well as the `gallery` rows.
 
 ### Tracking and recommendations
 

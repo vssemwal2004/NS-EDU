@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { studentImageUrl } from '@/lib/student-image';
 import { monogram } from './labels';
 import styles from './Directory.module.css';
 
@@ -8,7 +9,10 @@ import styles from './Directory.module.css';
 // the one thing that makes a directory look abandoned, so every remote image falls back in place:
 // the crest becomes the monogram, the photograph becomes the panel's own gradient.
 // An http:// source cannot load at all under the site's image policy, so it is treated as missing.
-export const secureImage = (url) => (/^https:\/\//i.test(String(url ?? '')) ? url : '');
+export const secureImage = (source) => {
+  const url = studentImageUrl(source);
+  return /^https:\/\//i.test(String(url ?? '')) ? url : '';
+};
 
 // The markup is server-rendered, so an image can fail before React is listening and `onError` would
 // never fire. The ref re-checks on mount: a finished image with no pixels is a failed one.

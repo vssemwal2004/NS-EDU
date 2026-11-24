@@ -1,4 +1,4 @@
-// Re-creates our own images on the Cloudinary account configured in backend/.env, for images whose
+// Restores images to R2, for images whose
 // stored links point at a previous account that no longer serves them (see lib/retired-images.js).
 //
 //   npm run images:rebuild --workspace backend -- places [--dry-run]
@@ -15,9 +15,9 @@
 //   npm run scrape --workspace backend -- enrich-images --retired --limit 10000
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import sharp from 'sharp';
 import { COLLECTIONS, closeDb, getDb } from '../db/collections.js';
-import { accountUsage, cloudinaryConfig, cloudinaryFolder, uploadImage } from '../lib/cloudinary.js';
+import { storeCuratedImage } from '../lib/curated-image.js';
+import { r2Config } from '../lib/r2.js';
 import { isRetiredImage, retiredImagePattern } from '../lib/retired-images.js';
 
 const args = process.argv.slice(2);
@@ -28,9 +28,9 @@ const USER_AGENT = 'GyaanVidhyaPlacePhotos/1.0 (education directory; image resto
 const pause = (ms) => new Promise((resolve) => { setTimeout(resolve, ms); });
 const slugOf = (name) => name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
-function requireCloudinary() {
-  const config = cloudinaryConfig();
-  if (!config.configured) throw new Error('Cloudinary is not configured: set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET in backend/.env.');
+function requireR2() {
+  const config = r2Config();
+  if (!config.configured) throw new Error('Configure R2 image storage first.');
   return config;
 }
 
@@ -57,7 +57,7 @@ async function commonsThumb(title) {
 }
 
 async function places() {
-  if (!dryRun) requireCloudinary();
+  if (!dryRun) requireR2();
   const db = await getDb();
   const dead = retiredImagePattern();
   let done = 0; let failed = 0;
@@ -70,11 +70,10 @@ async function places() {
       try {
         const response = await fetch(await commonsThumb(title), { headers: { 'user-agent': USER_AGENT }, signal: AbortSignal.timeout(60_000) });
         if (!response.ok) throw new Error(`download answered ${response.status}`);
-        const jpeg = await sharp(Buffer.from(await response.arrayBuffer())).rotate().resize({ width: 1600, withoutEnlargement: true }).jpeg({ quality: 82, mozjpeg: true }).toBuffer();
-        const upload = await uploadImage(jpeg, { publicId: `${kind}-${slugOf(place.name)}`, folder: `${cloudinaryFolder()}/place`, overwrite: true, tags: ['gyaan-vidhya', 'place'] });
+        const upload = await storeCuratedImage(Buffer.from(await response.arrayBuffer()), `places/${kind}-${slugOf(place.name)}`);
         const now = new Date();
-        await db.collection(name).updateOne({ _id: place._id }, { $set: { imageUrl: upload.secure_url, updatedAt: now } });
-        await db.collection(COLLECTIONS.media).updateOne({ publicId: upload.public_id }, { $set: { url: upload.secure_url, width: upload.width, height: upload.height, bytes: upload.bytes, format: upload.format, updatedAt: now } }, { upsert: true });
+        await db.collection(name).updateOne({ _id: place._id, imageUrl: place.imageUrl }, { $set: { imageUrl: upload.secure_url, updatedAt: now } });
+        await db.collection(COLLECTIONS.media).updateOne({ $or: [{ url: place.imageUrl }, { publicId: upload.public_id }] }, { $set: { publicId: upload.public_id, url: upload.secure_url, width: upload.width, height: upload.height, bytes: upload.bytes, format: upload.format, updatedAt: now } }, { upsert: true });
         done += 1;
         console.log(`ok     ${kind}:${place.name} → ${upload.secure_url}`);
         await pause(800); // polite to Commons
@@ -90,7 +89,7 @@ async function places() {
 async function site() {
   const from = option('--from');
   if (!from) throw new Error('Usage: images:rebuild site --from <folder with the original files>');
-  if (!dryRun) requireCloudinary();
+  if (!dryRun) requireR2();
   const db = await getDb();
   const rows = await db.collection(COLLECTIONS.media).find({ usage: 'site', url: retiredImagePattern() }).toArray();
   const links = new Map();
@@ -101,8 +100,8 @@ async function site() {
     const bytes = await readFile(file).catch(() => null);
     if (!bytes) { console.log(`MISSING ${file}`); continue; }
     if (dryRun) { console.log(`dry    ${row.sourcePath} → ${row.publicId}`); continue; }
-    const upload = await uploadImage(bytes, { publicId: row.publicId, overwrite: true, tags: ['gyaan-vidhya', 'site'] });
-    await db.collection(COLLECTIONS.media).updateOne({ _id: row._id }, { $set: { url: upload.secure_url, width: upload.width, height: upload.height, bytes: upload.bytes, format: upload.format, updatedAt: new Date() } });
+    const upload = await storeCuratedImage(bytes, 'restored/site/' + slugOf(row.publicId));
+    await db.collection(COLLECTIONS.media).updateOne({ _id: row._id, url: row.url }, { $set: { publicId: upload.public_id, url: upload.secure_url, width: upload.width, height: upload.height, bytes: upload.bytes, format: upload.format, updatedAt: new Date() } });
     links.set(row.url, upload.secure_url);
     console.log(`ok     ${row.sourcePath} → ${upload.secure_url}`);
   }
@@ -130,12 +129,7 @@ async function status() {
   ]);
   const content = await db.collection(COLLECTIONS.siteContent).findOne({ key: 'media' });
   const contentLinks = [...JSON.stringify(content?.data ?? {}).matchAll(/https:\/\/res\.cloudinary\.com\/[^"]+/g)].filter(([url]) => isRetiredImage(url)).length;
-  console.log(`Cloudinary account now: ${cloudinaryConfig().cloudName || '(not configured)'}`);
   console.log('Still on a retired account:', { universitiesWithDeadPhotos: galleries, deadCovers: covers, deadLogos: logos, states, cities, mediaRows: media, siteContentLinks: contentLinks });
-  // Credits (Cloudinary updates them about once a day). Keep well under 100% or the account is disabled.
-  const usage = await accountUsage().catch((error) => ({ error: error.message }));
-  if (usage.error) console.log(`Cloudinary usage: unavailable (${usage.error})`);
-  else console.log(`Cloudinary usage (${usage.plan}, as of ${usage.last_updated}): ${usage.credits?.usage} of ${usage.credits?.limit} credits (${usage.credits?.used_percent}%); storage ${(usage.storage?.usage / 1024 ** 3).toFixed(2)} GB, bandwidth ${(usage.bandwidth?.usage / 1024 ** 3).toFixed(2)} GB, transformations ${usage.transformations?.usage}`);
 }
 
 try {

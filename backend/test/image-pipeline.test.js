@@ -72,7 +72,7 @@ describe('image pipeline: store', () => {
     const original = await photo(2000, 1200);
     const pipeline = createImagePipeline({ download: downloadOf(original), upload: upload(calls), enabled: true });
     const stored = await pipeline.process({ url: 'https://x.ac.in/img/campus.jpg', slug: 'green-valley-university', index: 3, caption: 'Main block', sourcePage: 'https://x.ac.in/campus' });
-    assert.match(calls[0].folder, /\/universities\/green-valley-university$/);
+    assert.equal(calls[0].folder, 'universities/green-valley-university');
     assert.equal(calls[0].publicId, 'photo-3');
     assert.equal(calls[0].overwrite, true);
     assert.equal(stored.credit, 'official website');

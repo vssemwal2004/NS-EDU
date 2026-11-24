@@ -1,84 +1,137 @@
-// Moves the site images out of frontend/public/images into Cloudinary.
-// Usage: npm run images:migrate --workspace backend [-- --dry-run] [-- --delete-local]
-//   1. uploads every image under frontend/public/images (public id = <folder>/site/<path>)
-//   2. checks each delivery URL answers 200
-//   3. records it in the `media` library and rewrites matching `src` values in the `media` site-content entry
-//   4. with --delete-local, deletes the local copies that were uploaded and verified
-// Brand assets (frontend/public/brand, favicon, manifest icons) stay local on purpose: browsers
-// and crawlers request them from the site's own origin.
-import { readdir, rm } from 'node:fs/promises';
-import { extname, join, relative, sep } from 'node:path';
+// npm run images:migrate --workspace backend -- [--apply] [--sync-cms] [--from <original images folder>]
+// --git-revision <commit> can supply the seven original illustrations retired from public/images.
+import { createHash } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
+import { readFile, readdir, rename, writeFile } from 'node:fs/promises';
+import { join, parse } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import sharp from 'sharp';
 import { closeDb, COLLECTIONS, getDb } from '../db/collections.js';
-import { cloudinaryConfig, cloudinaryFolder, uploadImage } from '../lib/cloudinary.js';
+import defaults from '../modules/content/defaults/media.js';
+import { hasObject, objectKey, publicUrlFor, putObject, r2Config } from '../lib/r2.js';
 
-const dryRun = process.argv.includes('--dry-run');
-const deleteLocal = process.argv.includes('--delete-local');
-const imagesDir = fileURLToPath(new URL('../../../frontend/public/images/', import.meta.url));
-const IMAGE = new Set(['.png', '.jpg', '.jpeg', '.webp', '.avif', '.gif', '.svg']);
+const args = process.argv.slice(2);
+const option = (name) => args.includes(name) ? args[args.indexOf(name) + 1] : '';
+const apply = args.includes('--apply');
+const root = fileURLToPath(new URL('../../../', import.meta.url));
+const manifestFile = join(root, 'frontend/src/lib/student-image-manifest.json');
+const publicDir = join(root, 'frontend/public');
+const legacyPaths = [];
+function collectArt(value) {
+  if (value?.src) legacyPaths.push(value.src);
+  else for (const child of Object.values(value ?? {})) collectArt(child);
+}
+collectArt(defaults);
 
-async function listImages(dir) {
-  const entries = await readdir(dir, { withFileTypes: true }).catch(() => []);
-  const files = await Promise.all(entries.map((entry) => (entry.isDirectory() ? listImages(join(dir, entry.name)) : IMAGE.has(extname(entry.name).toLowerCase()) ? [join(dir, entry.name)] : [])));
-  return files.flat();
+async function source(path) {
+  try { return await readFile(join(publicDir, path.slice(1))); } catch (error) {
+    if (error.code !== 'ENOENT' || !legacyPaths.includes(path)) throw error;
+    if (option('--from')) return readFile(join(option('--from'), path.slice('/images/'.length)));
+    if (!option('--git-revision')) throw new Error(`Provide --from or --git-revision for the original ${path}.`);
+    return execFileSync(process.env.GIT_EXECUTABLE || 'git', ['show', `${option('--git-revision')}:frontend/public${path}`], { cwd: root, maxBuffer: 32 * 1024 ** 2 });
+  }
 }
 
-// Replaces every `src` equal to a migrated local path, at any depth of the media entry.
-function rewrite(value, urls) {
-  if (Array.isArray(value)) return value.map((item) => rewrite(item, urls));
-  if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, key === 'src' && urls.has(item) ? urls.get(item) : rewrite(item, urls)]));
+const records = new Map();
+const totals = { sources: 0, originalBytes: 0, fullBytes: 0, thumbnailBytes: 0, verifiedObjects: 0 };
+async function migrate(path) {
+  const input = await source(path);
+  const isIcon = path.startsWith('/brand/') && path.endsWith('.png');
+  const isCompany = path.startsWith('/company/');
+  const format = isIcon ? 'png' : 'webp';
+  const { width, height } = await sharp(input).metadata();
+  const encode = (maxWidth) => {
+    let image = sharp(input).rotate();
+    if (maxWidth) image = image.resize({ width: maxWidth, withoutEnlargement: true });
+    return isIcon ? image.png({ compressionLevel: 9, palette: true, quality: 95 }).toBuffer() :
+      image.webp({ quality: path.startsWith('/brand/') ? 87 : 79, effort: 5, alphaQuality: 100 }).toBuffer();
+  };
+  let primary = await encode();
+  if (path.endsWith('.' + format) && input.length < primary.length) primary = input;
+  const outputs = [['', primary]];
+  if (isCompany) {
+    for (const w of [480, 960]) {
+      const resized = await encode(w);
+      outputs.push(['-' + w, width <= w || resized.length > primary.length ? primary : resized]);
+    }
+  }
+  const hash = createHash('sha256');
+  for (const [, bytes] of outputs) hash.update(bytes);
+  const stem = objectKey('student-ui' + path.slice(0, -parse(path).ext.length) + '-' + hash.digest('hex').slice(0, 20));
+  for (const [suffix, bytes] of outputs) {
+    if (suffix) totals.thumbnailBytes += bytes.length;
+    if (!apply) continue;
+    const key = stem + suffix + '.' + format;
+    if (!await hasObject(key)) await putObject(bytes, key, { cacheControl: 'public, max-age=31536000, immutable' });
+    const res = await fetch(publicUrlFor(key), { method: 'HEAD', signal: AbortSignal.timeout(30000) });
+    if (!res.ok || res.headers.get('content-type')?.split(';')[0] !== 'image/' + format || Number(res.headers.get('content-length')) !== bytes.length) {
+      throw new Error(`Public verification failed for ${path}${suffix} (HTTP ${res.status}).`);
+    }
+    totals.verifiedObjects++;
+  }
+  const key = stem + '.' + format;
+  records.set(path, { url: publicUrlFor(key), publicId: key, bytes: primary.length, width, height, format });
+  totals.originalBytes += input.length;
+  totals.fullBytes += primary.length;
+  totals.sources++;
+}
+
+function replaceLinks(value, aliases) {
+  if (typeof value === 'string') return aliases.get(value) ?? value;
+  if (Array.isArray(value)) return value.map((item) => replaceLinks(item, aliases));
+  if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).map(([key, v]) => [key, replaceLinks(v, aliases)]));
   return value;
 }
 
-try {
-  if (!cloudinaryConfig().configured) throw new Error('Cloudinary is not configured. Add CLOUDINARY_URL (or CLOUDINARY_CLOUD_NAME / CLOUDINARY_API_KEY / CLOUDINARY_API_SECRET) to backend/.env and run again.');
-  const files = await listImages(imagesDir);
-  if (!files.length) { console.log('No local images left in frontend/public/images. Nothing to migrate.'); process.exit(0); }
-  console.log(`${dryRun ? '[dry run] ' : ''}Migrating ${files.length} image(s) to Cloudinary folder "${cloudinaryFolder()}/site"`);
-
-  const migrated = [];
-  for (const file of files) {
-    const localPath = `/images/${relative(imagesDir, file).split(sep).join('/')}`;
-    const publicId = `${cloudinaryFolder()}/site/${localPath.slice('/images/'.length).replace(/\.[^.]+$/, '')}`;
-    if (dryRun) { console.log(`  would upload ${localPath} -> ${publicId}`); continue; }
-    const result = await uploadImage(file, { publicId, overwrite: true, tags: ['gyaan-vidhya', 'site'] });
-    const check = await fetch(result.secure_url, { method: 'HEAD', signal: AbortSignal.timeout(30_000) });
-    if (!check.ok) throw new Error(`Uploaded ${localPath} but ${result.secure_url} answered ${check.status}; local file kept.`);
-    migrated.push({ file, localPath, result });
-    console.log(`  ${localPath} -> ${result.secure_url} (${Math.round(result.bytes / 1024)} KB)`);
-  }
-  if (dryRun) process.exit(0);
-
+async function syncContent(aliases) {
   const db = await getDb();
-  const now = new Date();
-  await db.collection(COLLECTIONS.media).bulkWrite(migrated.map(({ localPath, result }) => ({ updateOne: {
-    filter: { publicId: result.public_id },
-    update: { $set: { publicId: result.public_id, url: result.secure_url, width: result.width, height: result.height, bytes: result.bytes, format: result.format, usage: 'site', alt: '', sourcePath: localPath, createdAt: now, createdBy: 'migrate-images' } },
-    upsert: true,
-  } })));
-
+  const media = db.collection(COLLECTIONS.media);
   const content = db.collection(COLLECTIONS.siteContent);
-  const entry = await content.findOne({ key: 'media' });
-  if (entry) {
-    const data = rewrite(entry.data, new Map(migrated.map(({ localPath, result }) => [localPath, result.secure_url])));
-    await content.updateOne({ _id: entry._id }, {
-      $set: { data, updatedAt: now, updatedBy: 'migrate-images' },
-      $push: { history: { $each: [{ data: entry.data, updatedAt: entry.updatedAt ?? now, updatedBy: entry.updatedBy ?? null }], $slice: -5 } },
+  const mediaUpdates = [];
+  for await (const row of media.find({ sourcePath: { $in: legacyPaths }, usage: 'site' })) {
+    const asset = records.get(row.sourcePath);
+    if (row.url && row.url !== asset.url) aliases.set(row.url, asset.url);
+    if (row.url !== asset.url) mediaUpdates.push({ updateOne: { filter: { _id: row._id, url: row.url }, update: { $set: { ...asset, updatedAt: new Date() } } } });
+  }
+  let updated = 0;
+  for await (const doc of content.find({}, { projection: { data: 1, updatedBy: 1, updatedAt: 1 } })) {
+    const data = replaceLinks(doc.data, aliases);
+    if (JSON.stringify(data) === JSON.stringify(doc.data)) continue;
+    const result = await content.updateOne({ _id: doc._id, data: doc.data }, {
+      $set: { data, updatedAt: new Date(), updatedBy: 'images:migrate' },
+      $push: { history: { $each: [{ data: doc.data, updatedAt: doc.updatedAt, updatedBy: doc.updatedBy }], $slice: -5 } },
     });
-    console.log('Updated the "media" site-content entry (previous version kept in its history). The API picks it up within a minute.');
-  } else {
-    console.warn('No "media" site-content entry found. Run `npm run seed` first, then re-run this script so pages use the Cloudinary URLs.');
+    if (!result.modifiedCount) throw new Error('A site content entry changed during migration. Re-run to merge it.');
+    updated++;
   }
-
-  if (deleteLocal) {
-    if (!entry) throw new Error('Refusing to delete local images: the site still points at them (no "media" entry was updated).');
-    for (const { file, localPath } of migrated) { await rm(file); console.log(`  deleted local ${localPath}`); }
-  } else {
-    console.log('Local files kept. Re-run with --delete-local after checking the site.');
-  }
-} catch (error) {
-  console.error('Image migration failed:', error.message);
-  process.exitCode = 1;
-} finally {
-  await closeDb();
+  if (mediaUpdates.length) await media.bulkWrite(mediaUpdates);
+  console.log(`Updated ${updated} site content entries and ${mediaUpdates.length} artwork records.`);
 }
+
+try {
+  if (apply && !r2Config().configured) throw new Error('Configure the R2 image bucket and public URL first.');
+  const paths = [...legacyPaths];
+  for (const folder of ['brand', 'company']) {
+    const names = await readdir(join(publicDir, folder));
+    for (const name of names.sort()) {
+      if (name.endsWith('.webp') || (folder === 'brand' && /^(apple-touch-icon|favicon-64|icon-192|icon-512)\.png$/.test(name))) paths.push('/' + folder + '/' + name);
+    }
+  }
+  const queue = [...paths];
+  await Promise.all(Array.from({ length: 3 }, async () => {
+    for (let path; (path = queue.shift());) await migrate(path);
+  }));
+  if (apply) {
+    const aliases = new Map([...records].map(([path, rec]) => [path, rec.url]));
+    const previous = await readFile(manifestFile, 'utf8').then(JSON.parse, (err) => { if (err.code === 'ENOENT') return {}; throw err; });
+    if (args.includes('--sync-cms')) await syncContent(aliases);
+    const manifest = Object.fromEntries(Object.entries({ ...previous, ...Object.fromEntries(aliases) }).sort(([a], [b]) => a.localeCompare(b)));
+    const tmp = manifestFile + '.' + process.pid + '.tmp';
+    await writeFile(tmp, JSON.stringify(manifest, null, 2) + '\n');
+    await rename(tmp, manifestFile);
+  }
+  console.log(JSON.stringify({ mode: apply ? 'apply' : 'dry-run', ...totals }));
+} catch (error) {
+  console.error(error.message);
+  process.exitCode = 1;
+} finally { await closeDb(); }

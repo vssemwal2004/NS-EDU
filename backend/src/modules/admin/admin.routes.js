@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { requireAdmin, requirePermission, requireReadyStaff } from '../../middleware/auth.js';
+import { requireAdmin, requireConfidentiality, requirePermission, requireReadyStaff } from '../../middleware/auth.js';
 import { COLLECTIONS } from '../../db/collections.js';
 import { accessRouter } from '../access/access.routes.js';
 import { can, createStaff, listStaff } from '../access/access-service.js';
@@ -20,9 +20,11 @@ import { adminInsightsRouter } from './insights.routes.js';
 import { drivesRouter } from '../drives/drives.routes.js';
 import { adminReviewsRouter } from '../reviews/reviews.routes.js';
 import { distributionRouter } from '../lead-distribution/routes.js';
+import { adminPrivacyRouter } from '../privacy/privacy.routes.js';
 
 export const adminRouter = Router();
-adminRouter.use(requireAdmin, requireReadyStaff);
+// Every console route needs a session, a changed temporary password and the accepted confidentiality undertaking.
+adminRouter.use(requireAdmin, requireReadyStaff, requireConfidentiality);
 adminRouter.use((_request, response, next) => {
   response.set('Cache-Control', 'no-store');
   next();
@@ -44,6 +46,9 @@ adminRouter.use('/content', requirePermission('content.edit'), adminContentRoute
 adminRouter.use('/reviews', requirePermission('content.edit'), adminReviewsRouter);
 adminRouter.use('/insights', requirePermission('analytics.search'), adminInsightsRouter);
 adminRouter.use('/drives', requirePermission('drives.manage'), drivesRouter);
+// DPDP privacy requests: requester contact details, matched leads and erasure. Owners only unless granted.
+// Reading needs privacy.view (implied by privacy.manage); every change checks privacy.manage in the router.
+adminRouter.use('/privacy', requirePermission('privacy.view', 'privacy.manage'), adminPrivacyRouter);
 adminRouter.get('/dashboard', requirePermission('dashboard.view'), async (_request, response) => response.json(await getDashboard()));
 // The console home: every signed-in staff member; each section follows their own permissions.
 adminRouter.get('/home', async (request, response) => response.json(await homeSummary(request.admin)));

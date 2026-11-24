@@ -2,6 +2,7 @@
 import { Fragment } from 'react';
 import Link from 'next/link';
 import Icon from '@/components/ui/Icon';
+import { studentImageUrl } from '@/lib/student-image';
 import ApplyButton from '@/features/apply/ApplyButton';
 import { kindOf, monogram, nirfOf, ownershipOf } from '@/features/universities/labels';
 import InstitutionPicker from './InstitutionPicker';
@@ -22,7 +23,7 @@ function FilledSlot({ facts, index, onRemove }) {
     <button type="button" className={styles.slotRemove} aria-label={`Remove ${facts.name} from the comparison`} onClick={() => onRemove(facts.id)}><Icon name="close" /></button>
     <span className={styles.slotIndex} aria-hidden="true">{index + 1}</span>
     <span className={styles.slotMark} aria-hidden="true">{item.logoUrl
-      ? <img src={item.logoUrl} alt="" width={52} height={52} loading="lazy" decoding="async" referrerPolicy="no-referrer" />
+      ? <img src={studentImageUrl(item.logoUrl)} alt="" width={52} height={52} loading="lazy" decoding="async" referrerPolicy="no-referrer" />
       : monogram(facts.name)}</span>
     <h3 id={`vs-slot-${facts.id}`} className={styles.slotName}>{facts.name}</h3>
     <p className={styles.slotPlace}><Icon name="uniMapPin" />{facts.place || 'Location not listed'}</p>

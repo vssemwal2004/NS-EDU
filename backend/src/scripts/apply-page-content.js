@@ -1,5 +1,6 @@
-// Copies the rewritten About and legal pages (and two small related edits) from the content defaults
-// into the database, leaving every other admin-edited page untouched.
+// Copies the rewritten About and legal pages (including privacy-request and grievance-redressal), the one
+// help answer and the related footer links from the content defaults into the database, leaving every other
+// admin-edited page untouched.
 //
 //   node --env-file-if-exists=.env src/scripts/apply-page-content.js            dry run: shows what would change
 //   node --env-file-if-exists=.env src/scripts/apply-page-content.js --apply    writes it
@@ -11,9 +12,15 @@ import { getContentDetail, setContentEntry } from '../modules/content/content-se
 import pagesDefaults from '../modules/content/defaults/pages.js';
 
 const apply = process.argv.includes('--apply');
-const PAGE_SLUGS = ['about', 'legal', 'terms-and-conditions', 'privacy-policy', 'cookie-policy', 'disclaimer'];
+const PAGE_SLUGS = ['about', 'legal', 'terms-and-conditions', 'privacy-policy', 'cookie-policy', 'disclaimer', 'privacy-request', 'grievance-redressal'];
 const HELP_QUESTION = 'Can I apply through Gyaan Vidhya?';
 const REVIEWS_LINK = { label: 'Student reviews', href: '/reviews' };
+// Appended, in this order, to the footer group that holds the Privacy policy link. A page must be in that group
+// to get the Legal breadcrumb and "More in Legal & privacy" list (see frontend/src/app/(site)/[slug]/page.js).
+const LEGAL_LINKS = [
+  { label: 'Privacy requests', href: '/privacy-request' },
+  { label: 'Grievance redressal', href: '/grievance-redressal' },
+];
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
 async function main() {
@@ -44,6 +51,15 @@ async function main() {
   if (group && !group.links.some((link) => link.href === REVIEWS_LINK.href)) {
     group.links.splice(group.links.findIndex((link) => link.href === '/about') + 1, 0, REVIEWS_LINK);
     changes.push(`site.footerGroups["${group.title}"]: add "${REVIEWS_LINK.label}" link`);
+  }
+
+  // 3. site: the privacy-request and grievance-redressal links at the end of the "Legal & privacy" group.
+  const legalGroup = site.footerGroups.find((item) => item.links.some((link) => link.href === '/privacy-policy'));
+  for (const link of LEGAL_LINKS) {
+    if (legalGroup && !legalGroup.links.some((item) => item.href === link.href)) {
+      legalGroup.links.push(link);
+      changes.push(`site.footerGroups["${legalGroup.title}"]: add "${link.label}" link`);
+    }
   }
 
   if (!changes.length) { console.log('Nothing to change: the database already matches.'); return; }

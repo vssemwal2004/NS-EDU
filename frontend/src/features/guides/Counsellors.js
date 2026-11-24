@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useId, useRef, useState } from 'react';
-import Image from 'next/image';
+import Image from '@/components/ui/StudentImage';
 import Icon from '@/components/ui/Icon';
 import { formatPhone } from '@/features/auth/login-helpers';
 import { api } from '@/lib/api/client';

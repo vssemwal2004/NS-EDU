@@ -3,6 +3,7 @@ import { HttpError } from '../../lib/http-error.js';
 import { isPlainObject, validate } from '../../lib/validation.js';
 import { CLASS_LEVELS, SCHOOL_STREAMS } from '../applications/schema.js';
 import { normalizeIdentifier } from '../student-auth/otp.js';
+import { sensitiveFieldMessage, sensitiveTopicOf } from './sensitive-fields.js';
 
 // Field engine for school drive forms: the admin builder's definitions and the public answers.
 export const FIELD_TYPES = ['text', 'textarea', 'number', 'email', 'phone', 'select', 'radio', 'checkbox', 'date'];
@@ -94,6 +95,8 @@ export function parseFields(input, { existing = [], hasSubmissions = false } = {
     // Answers already collected were checked against the old type; a new question keeps exports honest.
     if (previous && hasSubmissions && previous.type !== type) { errors[`${path}.type`] = 'Students have already answered this question. Add a new question instead of changing its type.'; return; }
     const options = CHOICE_TYPES.includes(type) ? parseOptions(raw.options, errors, `${path}.options`) : [];
+    const topic = sensitiveTopicOf({ label: value.label, help: value.help, options });
+    if (topic) { errors[`${path}.label`] = sensitiveFieldMessage(topic); return; }
     const enabled = value.enabled !== false;
     fields.push({ id: previous?.id ?? randomId(), label: value.label ?? '', type, required: enabled && value.required === true, options, help: value.help ?? '', enabled, builtIn: false });
   });

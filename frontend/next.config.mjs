@@ -1,4 +1,9 @@
 import { fileURLToPath } from 'node:url';
+import { createRequire } from 'node:module';
+
+const studentImages = createRequire(import.meta.url)('./src/lib/student-image-manifest.json');
+const storageHosts = new Set(Object.values(studentImages).map((url) => new URL(url).hostname));
+if (process.env.NEXT_PUBLIC_IMAGE_HOST) storageHosts.add(process.env.NEXT_PUBLIC_IMAGE_HOST);
 
 const isDev = process.env.NODE_ENV === 'development';
 // The HTTPS-only headers (upgrade-insecure-requests, HSTS) belong to a site that is served over
@@ -15,8 +20,8 @@ const contentSecurityPolicy = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' blob: data: https:",
   "font-src 'self'",
-  // Admin media uploads go straight from the browser to Cloudinary.
-  `connect-src 'self' https://api.cloudinary.com${isDev ? ' ws: wss:' : ''}`,
+  // Admin media uses a short-lived upload URL on the account's R2 S3 endpoint.
+  `connect-src 'self' https://*.r2.cloudflarestorage.com${isDev ? ' ws: wss:' : ''}`,
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
@@ -45,7 +50,7 @@ const nextConfig = {
       // Site images and media-library uploads (see backend/src/scripts/migrate-images.js).
       { protocol: 'https', hostname: 'res.cloudinary.com' },
       // Campus photographs on Cloudflare R2: the bucket's public host (NEXT_PUBLIC_IMAGE_HOST), nothing wider.
-      ...(process.env.NEXT_PUBLIC_IMAGE_HOST ? [{ protocol: 'https', hostname: process.env.NEXT_PUBLIC_IMAGE_HOST }] : []),
+      ...Array.from(storageHosts, (hostname) => ({ protocol: 'https', hostname })),
       { protocol: 'https', hostname: 'images.indianexpress.com' },
       { protocol: 'https', hostname: 'www.hindustantimes.com', pathname: '/ht-img/**' },
       { protocol: 'https', hostname: 'etimg.etb2bimg.com' },
@@ -60,6 +65,12 @@ const nextConfig = {
       // About-page photographs (frontend/public/company): new photos get new file names, so a month is safe.
       { source: '/company/:file*', headers: [{ key: 'Cache-Control', value: 'public, max-age=2592000, stale-while-revalidate=86400' }] },
     ];
+  },
+  async redirects() {
+    // Next discovers the two app icons by their file names. Keep those URLs valid for installed clients.
+    const icons = { '/icon.png': '/brand/icon-192.png', '/apple-icon.png': '/brand/apple-touch-icon.png', '/favicon.ico': '/brand/favicon-64.png' };
+    return Object.entries(icons).filter(([, asset]) => studentImages[asset])
+      .map(([source, asset]) => ({ source, destination: studentImages[asset], permanent: false }));
   },
   async rewrites() {
     return [{
