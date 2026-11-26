@@ -14,6 +14,7 @@ const specs = {
     [{ channel: 1, identifier: 1 }, { unique: true }],
     [{ expiresAt: 1 }, { expireAfterSeconds: 0 }],
   ],
+  admin_login_challenges: [[{ expiresAt: 1 }, { expireAfterSeconds: 0 }]],
   courses: [[{ slug: 1 }, { unique: true }], [{ order: 1, name: 1 }]],
   exams: [[{ slug: 1 }, { unique: true }], [{ order: 1, name: 1 }]],
   // Built for 20k+ institutions: prefix search, every public filter and the admin review queue.

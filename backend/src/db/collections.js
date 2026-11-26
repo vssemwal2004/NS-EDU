@@ -8,6 +8,7 @@ export const COLLECTIONS = Object.freeze({
   referenceStudents: 'reference_students',
   studentFollowups: 'student_followups',
   otpCodes: 'otp_codes',
+  adminLoginChallenges: 'admin_login_challenges',
   courses: 'courses',
   exams: 'exams',
   institutions: 'institutions',

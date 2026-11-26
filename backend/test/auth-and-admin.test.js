@@ -1,6 +1,6 @@
 import { after, before, beforeEach, describe, mock, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { randomBytes } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 
 // env.js reads process.env at import time, so configure before importing the app.
 const skip = process.env.MONGODB_URI ? false : 'MONGODB_URI is not set';
@@ -30,7 +30,16 @@ describe('auth, catalog and admin API', { skip }, () => {
   }
   const cookieFrom = (result, name) => result.setCookies.find((item) => item.startsWith(`${name}=`))?.split(';')[0];
   const tokenOf = (cookie) => cookie.split('=')[1];
-  const loginAdmin = () => api('/api/admin/auth/login', { method: 'POST', body: ADMIN });
+  const requestStaffCode = (email, password) => api('/api/admin/auth/login', { method: 'POST', body: { email, password } });
+  const verifyStaffCode = (requested) => api('/api/admin/auth/login/verify', { method: 'POST', body: { challenge: requested.body.challenge, code: requested.body.devCode } });
+  async function loginStaff(email, password) {
+    const requested = await requestStaffCode(email, password);
+    assert.equal(requested.status, 200, JSON.stringify(requested.body));
+    const verified = await verifyStaffCode(requested);
+    assert.equal(verified.status, 200, JSON.stringify(verified.body));
+    return verified;
+  }
+  const loginAdmin = () => loginStaff(ADMIN.email, ADMIN.password);
   async function signInStudent(channel, identifier) {
     const requested = await api('/api/auth/otp/request', { method: 'POST', body: { channel, identifier } });
     assert.equal(requested.status, 200, JSON.stringify(requested.body));
@@ -88,7 +97,7 @@ describe('auth, catalog and admin API', { skip }, () => {
     assert.equal((await api('/api/admin/auth/me')).status, 401);
   });
 
-  test('admin login sets a strict httpOnly cookie and rejects bad credentials', async () => {
+  test('admin login requires an emailed code before setting a strict httpOnly cookie', async () => {
     const wrong = await api('/api/admin/auth/login', { method: 'POST', body: { ...ADMIN, password: 'nope' } });
     assert.equal(wrong.status, 401);
     assert.deepEqual(wrong.body, { error: 'Invalid email or password' });
@@ -98,7 +107,15 @@ describe('auth, catalog and admin API', { skip }, () => {
     assert.equal(invalid.status, 400);
     assert.ok(invalid.body.fields.email && invalid.body.fields.password);
 
-    const ok = await api('/api/admin/auth/login', { method: 'POST', body: { email: ' ADMIN@nsedu.test ', password: ADMIN.password } });
+    const requested = await requestStaffCode(' ADMIN@nsedu.test ', ADMIN.password);
+    assert.equal(requested.status, 200);
+    assert.equal(requested.body.email, 'a***@nsedu.test');
+    assert.equal(requested.body.expiresInSeconds, 300);
+    assert.equal(cookieFrom(requested, 'nsedu_admin'), undefined);
+    assert.equal((await api('/api/admin/auth/me')).status, 401);
+    const badCode = await api('/api/admin/auth/login/verify', { method: 'POST', body: { challenge: requested.body.challenge, code: requested.body.devCode === '000000' ? '111111' : '000000' } });
+    assert.equal(badCode.status, 400);
+    const ok = await verifyStaffCode(requested);
     assert.equal(ok.status, 200);
     assert.equal(ok.body.admin.email, ADMIN.email);
     assert.ok(ok.body.admin.lastLoginAt);
@@ -107,6 +124,7 @@ describe('auth, catalog and admin API', { skip }, () => {
     assert.match(raw, /HttpOnly/i);
     assert.match(raw, /SameSite=Strict/i);
     adminCookie = cookieFrom(ok, 'nsedu_admin');
+    assert.equal((await verifyStaffCode(requested)).status, 400);
 
     const me = await api('/api/admin/auth/me', { cookie: adminCookie });
     assert.deepEqual([me.status, me.body.admin.email], [200, ADMIN.email]);
@@ -117,6 +135,61 @@ describe('auth, catalog and admin API', { skip }, () => {
     const logout = await api('/api/admin/auth/logout', { method: 'POST', cookie: adminCookie });
     assert.equal(logout.status, 204);
     assert.match(logout.setCookies[0], /^nsedu_admin=;/);
+  });
+
+  test('staff codes enforce resend cooldown, expire, and allow only five wrong attempts', async () => {
+    const requested = await requestStaffCode(ADMIN.email, ADMIN.password);
+    const early = await api('/api/admin/auth/login/resend', { method: 'POST', body: { challenge: requested.body.challenge } });
+    assert.equal(early.status, 429);
+    await db.collection('admin_login_challenges').updateOne({ _id: createHash('sha256').update(requested.body.challenge).digest('hex') }, { $set: { resendAt: new Date(0) } });
+    const resent = await api('/api/admin/auth/login/resend', { method: 'POST', body: { challenge: requested.body.challenge } });
+    assert.equal(resent.status, 200);
+    assert.equal((await api('/api/admin/auth/login/verify', { method: 'POST', body: { challenge: requested.body.challenge, code: requested.body.devCode } })).status, 400);
+    assert.equal((await api('/api/admin/auth/login/verify', { method: 'POST', body: { challenge: requested.body.challenge, code: resent.body.devCode } })).status, 200);
+
+    const locked = await requestStaffCode(ADMIN.email, ADMIN.password);
+    const wrongCode = locked.body.devCode === '000000' ? '111111' : '000000';
+    for (let attempt = 1; attempt <= 5; attempt += 1) {
+      const result = await api('/api/admin/auth/login/verify', { method: 'POST', body: { challenge: locked.body.challenge, code: wrongCode } });
+      assert.equal(result.status, attempt === 5 ? 429 : 400);
+      assert.equal(cookieFrom(result, 'nsedu_admin'), undefined);
+    }
+    assert.equal((await verifyStaffCode(locked)).status, 400);
+
+    const expired = await requestStaffCode(ADMIN.email, ADMIN.password);
+    await db.collection('admin_login_challenges').updateOne({ _id: createHash('sha256').update(expired.body.challenge).digest('hex') }, { $set: { expiresAt: new Date(0) } });
+    assert.equal((await verifyStaffCode(expired)).status, 400);
+  });
+
+  test('staff login sends the code through SMTP and fails closed when email delivery fails', async () => {
+    const original = { delivery: env.otpDelivery, from: env.smtp.from };
+    const sent = [];
+    env.otpDelivery = 'smtp';
+    env.smtp.from = 'no-reply@nsedu.test';
+    mailer.setMailTransport({ sendMail: async (message) => { sent.push(message); return { messageId: '<staff@nsedu.test>', accepted: [message.to], rejected: [] }; } });
+    try {
+      const requested = await requestStaffCode(ADMIN.email, ADMIN.password);
+      assert.equal(requested.status, 200);
+      assert.equal(requested.body.devCode, undefined);
+      assert.equal(sent[0].to, ADMIN.email);
+      assert.equal(cookieFrom(requested, 'nsedu_admin'), undefined);
+      const code = /\b(\d{6})\b/.exec(sent[0].subject)[1];
+      const verified = await api('/api/admin/auth/login/verify', { method: 'POST', body: { challenge: requested.body.challenge, code } });
+      assert.equal(verified.status, 200);
+
+      const errors = mock.method(console, 'error', () => {});
+      const countBefore = await db.collection('admin_login_challenges').countDocuments({ email: ADMIN.email });
+      mailer.setMailTransport({ sendMail: async () => { throw Object.assign(new Error('SMTP secret'), { code: 'EAUTH' }); } });
+      const failed = await requestStaffCode(ADMIN.email, ADMIN.password);
+      assert.equal(failed.status, 503);
+      assert.equal(cookieFrom(failed, 'nsedu_admin'), undefined);
+      assert.equal(await db.collection('admin_login_challenges').countDocuments({ email: ADMIN.email }), countBefore);
+      errors.mock.restore();
+    } finally {
+      env.otpDelivery = original.delivery;
+      env.smtp.from = original.from;
+      mailer.setMailTransport(null);
+    }
   });
 
   test('only an administrator can create employees and first login requires a password change', async () => {
@@ -133,7 +206,7 @@ describe('auth, catalog and admin API', { skip }, () => {
     const list = await api('/api/admin/employees', { cookie: admin });
     assert.equal(list.body.items[0].passwordHash, undefined);
 
-    const signedIn = await api('/api/admin/auth/login', { method: 'POST', body: { email: employee.email, password: employee.password } });
+    const signedIn = await loginStaff(employee.email, employee.password);
     assert.equal(signedIn.status, 200);
     assert.equal(signedIn.body.admin.role, 'employee');
     assert.equal(signedIn.body.admin.mustChangePassword, true);
@@ -150,7 +223,7 @@ describe('auth, catalog and admin API', { skip }, () => {
     assert.equal((await api('/api/admin/dashboard', { cookie: staffCookie })).status, 403);
     assert.equal((await api('/api/admin/employees', { method: 'POST', cookie: staffCookie, body: { ...employee, email: 'other@example.com' } })).status, 403);
     assert.equal((await api('/api/admin/auth/login', { method: 'POST', body: { email: employee.email, password: employee.password } })).status, 401);
-    assert.equal((await api('/api/admin/auth/login', { method: 'POST', body: { email: employee.email, password: 'New!SecurePass9' } })).status, 200);
+    assert.equal((await loginStaff(employee.email, 'New!SecurePass9')).status, 200);
   });
 
   test('reference students are isolated from login accounts and employees see only their assigned records', async () => {
@@ -158,7 +231,7 @@ describe('auth, catalog and admin API', { skip }, () => {
     const makeEmployee = async (email) => {
       const created = await api('/api/admin/employees', { method: 'POST', cookie: owner, body: { email, phone: '+919876543211', password: 'Temporary!Pass9' } });
       assert.equal(created.status, 201);
-      const login = await api('/api/admin/auth/login', { method: 'POST', body: { email, password: 'Temporary!Pass9' } });
+      const login = await loginStaff(email, 'Temporary!Pass9');
       const cookie = cookieFrom(login, 'nsedu_admin');
       const changed = await api('/api/admin/auth/change-password', { method: 'POST', cookie, body: { currentPassword: 'Temporary!Pass9', newPassword: 'Changed!Pass9' } });
       assert.equal(changed.status, 200);
